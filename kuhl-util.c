@@ -1063,7 +1063,8 @@ void kuhl_print_program_info(GLuint program)
 		GLsizei actualLength = 0;
 
 		glGetActiveAttrib(program, i, 1024, &actualLength, &arraySize, &type, buf);
-		printf("%s@%d ", buf, i);
+		GLint location = glGetAttribLocation(program, buf);
+		printf("%s@%d ", buf, location);
 	}
 	if(numVarsInProg == 0)
 		printf("[none!]\n");
