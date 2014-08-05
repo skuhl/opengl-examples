@@ -63,19 +63,67 @@
 # (i.e., QUIET, REQUIRED, etc.).
 
 #=============================================================================
-# Copyright 2007-2009 Kitware, Inc.
+# CMake - Cross Platform Makefile Generator
+# Copyright 2000-2014 Kitware, Inc.
+# Copyright 2000-2011 Insight Software Consortium
 # Copyright 2007-2008 Miguel A. Figueroa-Villanueva <miguelf at ieee dot org>
 # Copyright 2012 Rolf Eike Beer <eike@sf-mail.de>
-#
-# Distributed under the OSI-approved BSD License (the "License");
-# see accompanying file Copyright.txt for details.
-#
-# This software is distributed WITHOUT ANY WARRANTY; without even the
-# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the License for more information.
+# All rights reserved.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+
+# * Redistributions of source code must retain the above copyright
+#   notice, this list of conditions and the following disclaimer.
+
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the distribution.
+
+# * Neither the names of Kitware, Inc., the Insight Software Consortium,
+#   nor the names of their contributors may be used to endorse or promote
+#   products derived from this software without specific prior written
+#   permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# ------------------------------------------------------------------------------
+
+# The above copyright and license notice applies to distributions of
+# CMake in source and binary form.  Some source files contain additional
+# notices of original copyright by their contributors; see each source
+# for details.  Third-party software packages supplied with CMake under
+# compatible licenses provide their own copyright notices documented in
+# corresponding subdirectories.
+
+# ------------------------------------------------------------------------------
+
+# CMake was initially developed by Kitware with the following sponsorship:
+
+#  * National Library of Medicine at the National Institutes of Health
+#    as part of the Insight Segmentation and Registration Toolkit (ITK).
+
+#  * US National Labs (Los Alamos, Livermore, Sandia) ASC Parallel
+#    Visualization Initiative.
+
+#  * National Alliance for Medical Image Computing (NAMIC) is funded by the
+#    National Institutes of Health through the NIH Roadmap for Medical Research,
+#    Grant U54 EB005149.
+
+#  * Kitware, Inc.
 #=============================================================================
-# (To distribute this file outside of CMake, substitute the full
-#  License text for the above reference.)
+
 
 #---------------------------------------------------------------------
 # Helper functions
@@ -147,8 +195,9 @@ find_path(ImageMagick_EXECUTABLE_DIR
 # Find each component. Search for all tools in same dir
 # <ImageMagick_EXECUTABLE_DIR>; otherwise they should be found
 # independently and not in a cohesive module such as this one.
-unset(ImageMagick_REQUIRED_VARS)
-unset(ImageMagick_DEFAULT_EXECUTABLES)
+#unset(ImageMagick_REQUIRED_VARS)
+#unset(ImageMagick_DEFAULT_EXECUTABLES)
+set(ImageMagick_FOUND TRUE)
 foreach(component ${ImageMagick_FIND_COMPONENTS}
     # DEPRECATED: forced components for backward compatibility
     convert mogrify import montage composite
@@ -172,50 +221,25 @@ foreach(component ${ImageMagick_FIND_COMPONENTS}
     if(ImageMagick_EXECUTABLE_DIR)
       FIND_IMAGEMAGICK_EXE(${component})
     endif()
+ENDIF(component STREQUAL "Magick++")
+  
+  IF(NOT ImageMagick_${component}_FOUND)
+    LIST(FIND ImageMagick_FIND_COMPONENTS ${component} is_requested)
+    IF(is_requested GREATER -1)
+      SET(ImageMagick_FOUND FALSE)
+    ENDIF(is_requested GREATER -1)
+  ENDIF(NOT ImageMagick_${component}_FOUND)
+ENDFOREACH(component)
 
-    if(ImageMagick_FIND_COMPONENTS)
-      list(FIND ImageMagick_FIND_COMPONENTS ${component} is_requested)
-      if(is_requested GREATER -1)
-        list(APPEND ImageMagick_REQUIRED_VARS ImageMagick_${component}_EXECUTABLE)
-      endif()
-    elseif(ImageMagick_${component}_EXECUTABLE)
-      # if no components were requested explicitly put all (default) executables
-      # in the list
-      list(APPEND ImageMagick_DEFAULT_EXECUTABLES ImageMagick_${component}_EXECUTABLE)
-    endif()
-  endif()
-endforeach()
-
-if(NOT ImageMagick_FIND_COMPONENTS AND NOT ImageMagick_DEFAULT_EXECUTABLES)
-  # No components were requested, and none of the default components were
-  # found. Just insert mogrify into the list of the default components to
-  # find so FPHSA below has something to check
-  list(APPEND ImageMagick_REQUIRED_VARS ImageMagick_mogrify_EXECUTABLE)
-elseif(ImageMagick_DEFAULT_EXECUTABLES)
-  list(APPEND ImageMagick_REQUIRED_VARS ${ImageMagick_DEFAULT_EXECUTABLES})
-endif()
-
-set(ImageMagick_INCLUDE_DIRS ${ImageMagick_INCLUDE_DIRS})
-set(ImageMagick_LIBRARIES ${ImageMagick_LIBRARIES})
-
-if(ImageMagick_mogrify_EXECUTABLE)
-  execute_process(COMMAND ${ImageMagick_mogrify_EXECUTABLE} -version
-                  OUTPUT_VARIABLE imagemagick_version
-                  ERROR_QUIET
-                  OUTPUT_STRIP_TRAILING_WHITESPACE)
-  if(imagemagick_version MATCHES "^Version: ImageMagick [0-9]")
-    string(REGEX REPLACE "^Version: ImageMagick ([-0-9\\.]+).*" "\\1" ImageMagick_VERSION_STRING "${imagemagick_version}")
-  endif()
-  unset(imagemagick_version)
-endif()
+SET(ImageMagick_INCLUDE_DIRS ${ImageMagick_INCLUDE_DIRS})
+SET(ImageMagick_LIBRARIES ${ImageMagick_LIBRARIES})
 
 #---------------------------------------------------------------------
 # Standard Package Output
 #---------------------------------------------------------------------
-include(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(ImageMagick
-                                  REQUIRED_VARS ${ImageMagick_REQUIRED_VARS}
-                                  VERSION_VAR ImageMagick_VERSION_STRING
+INCLUDE(FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(
+  ImageMagick DEFAULT_MSG ImageMagick_LIBRARIES
   )
 # Maintain consistency with all other variables.
 set(ImageMagick_FOUND ${IMAGEMAGICK_FOUND})
