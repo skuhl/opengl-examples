@@ -89,17 +89,17 @@ void display()
 
 
 
-	/* Draw the scene. These examples draw triangles, but OpenGL can
-	 * draw other simple shapes too. The images on this page should
-	 * help you understand the different options (note: you may see
-	 * some non-OpenGL images in the results too!):
-	 * https://www.google.com/search?q=opengl+primitive+types&tbm=isch
-	 */
-	kuhl_errorcheck();
-	glBindVertexArray(triangleVAO);
-	kuhl_errorcheck();
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-	kuhl_errorcheck();
+		/* Draw the scene. These examples draw triangles, but OpenGL can
+		 * draw other simple shapes too. The images on this page should
+		 * help you understand the different options (note: you may see
+		 * some non-OpenGL images in the results too!):
+		 * https://www.google.com/search?q=opengl+primitive+types&tbm=isch
+		 */
+		kuhl_errorcheck();
+		glBindVertexArray(triangleVAO);
+		kuhl_errorcheck();
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		kuhl_errorcheck();
 	} // finish viewport loop
 	/* Check for errors. If there are errors, consider adding more
 	 * calls to kuhl_errorcheck() in your code. */
@@ -155,7 +155,7 @@ void init_geometryTriangle()
 	glBindBuffer(GL_ARRAY_BUFFER, cbuffer);
 	kuhl_errorcheck();
 	
-	/* The texture coordinate data that we want to draw */
+	/* The color data that we want to draw */
 	GLfloat colorData[] = {1, 0, 0,
 	                       0, 1, 0,
 	                       0, 0, 1 };
