@@ -1,0 +1,15 @@
+Many of the example programs in this directory use GLEW. The GLEW library is commonly available in many Linux distribution package magagers.
+
+If you have root access to your machine, check if packages named glew, glew-dev or glew-devel are available in your Linux distribution's package manager. Install any glew related packages that are available. If you don't have root access or can't find the glew package in your package manager.
+
+Download the source for GLEW: http://glew.sourceforge.net/
+
+Unzip the source code.
+
+Make sure cmake is installed.
+
+Run "make" to compile the library
+
+Next, use one of the following two options:
+ 1) Run "sudo make install" to install GLEW into /usr/include/GL/ and /usr/lib/
+ 2) In CMakeLists.txt for the example OpenGL programs included in this package, set the glew_src_path variable to the path to the GLEW source.
