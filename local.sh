@@ -52,8 +52,9 @@ fi
 # Add local directory to our PATH so user can use "exectuable" instead of "./executable"
 PATH=.:$PATH
 
-export VIEWMAT_MODE="ivs"
-export VIEWMAT_VRPN_OBJECT="Wand"
+#Connect to IVS tracking system?
+#export VIEWMAT_MODE="ivs"
+#export VIEWMAT_VRPN_OBJECT="Wand"
 
 # Start the master process
 export DGR_MODE="master"
