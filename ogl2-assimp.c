@@ -138,28 +138,28 @@ void display()
 	kuhl_errorcheck();
 	
 
-    for(int view=0; view<viewmat_num_viewports(); view++)
+    for(int viewportID=0; viewportID<viewmat_num_viewports(); viewportID++)
     {
 	    /* Where is the viewport that we are drawing onto and what is its size? */
 	    int viewport[4];
-	    viewmat_get_viewport(viewport, view);
+	    viewmat_get_viewport(viewport, viewportID);
 	    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
 	    /* Get the view frustum information. */
 	    float f[6];
 	    projmat_get_frustum(f, viewport[2], viewport[3]);
 	    
-	    /* Get the projection matrix, update view frustum if necessary. */
+	    /* Get the view/camera matrix, update view frustum if necessary. */
 	    float viewMat[16];
-	    viewmat_get(viewMat, f, view);
+	    viewmat_get(viewMat, f, viewportID);
 	    
 	    /* Communicate matricies to OpenGL */
 	    glMatrixMode(GL_PROJECTION);
 	    glLoadIdentity();
-	    glFrustum(f[0], f[1], f[2], f[3], f[4], f[5]);
+	    glFrustum(f[0], f[1], f[2], f[3], f[4], f[5]); // projection matrix
 	    glMatrixMode(GL_MODELVIEW);
 	    glLoadIdentity();
-	    glMultMatrixf(viewMat);
+	    glMultMatrixf(viewMat); // view/camera matrix
 	    kuhl_errorcheck();
 	    float modelMat[16];
 	    get_model_matrix(modelMat);
