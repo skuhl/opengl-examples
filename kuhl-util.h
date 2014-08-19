@@ -1029,6 +1029,27 @@ void mat3d_rotateAxis_new(double result[ 9], double degrees, double axisX, doubl
 void mat4f_rotateAxis_new(float  result[16], float  degrees, float  axisX, float  axisY, float  axisZ);
 void mat4d_rotateAxis_new(double result[16], double degrees, double axisX, double axisY, double axisZ);
 
+/* Calculate rotation matrices from a quaternion */
+void mat3f_rotateQuatVec_new(float matrix[9], const float quat[4]);
+void mat3d_rotateQuatVec_new(double matrix[9], const double quat[4]);
+void mat4f_rotateQuatVec_new(float matrix[16], const float quat[4]);
+void mat4d_rotateQuatVec_new(double matrix[16], const double quat[4]);
+void mat3f_rotateQuat_new(float matrix[9], float x, float y, float z, float w);
+void mat3d_rotateQuat_new(double matrix[9], double x, double y, double z, double w);
+void mat4f_rotateQuat_new(float matrix[16], float x, float y, float z, float w);
+void mat4d_rotateQuat_new(double matrix[16], double x, double y, double z, double w);
+
+/* Create unit quaternion from a rotation matrix */
+void quatf_from_mat3f(float quat[4], const float matrix[9]);
+void quatd_from_mat3d(double quat[4], const double matrix[9]);
+void quatf_from_mat4f(float quat[4], const float matrix[16]);
+void quatd_from_mat4d(double quat[4], const double matrix[16]);
+
+/* Create a quaternion (x,y,z,w) based an axis and angle */
+void quatf_rotateAxis_new(float quat[4], float x, float y, float z, float degrees);
+void quatd_rotateAxis_new(double quat[4], double x, double y, double z, double degrees);
+void quatd_rotateAxisVec_new(double quat[4], double axis[3], double degrees);
+void quatf_rotateAxisVec_new(float quat[4], float axis[3], double degrees);
 
 
 /* Create a new translation matrix (rotation part set to

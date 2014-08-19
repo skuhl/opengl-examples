@@ -1027,7 +1027,320 @@ void mat4d_rotateAxis_new(double result[16], double degrees, double axisX, doubl
 }
 
 
+/** Creates a 3x3 rotation matrix from a quaternion (x,y,z,w).
 
+    This method makes assumptions that are commonly made in this file:
+    A column vector is multiplied on the left of the matrix produced
+    by this function. We are using a right-handed coordinate system
+    and right-handed rotations.
+
+    This code is based on Ken Shoemake's SIGGRAPH Tutorial on Quaternions:
+    http://www.cs.ucr.edu/~vbz/resources/quatut.pdf
+
+    @param matrix The location to store the output matrix.
+   
+    @param quat The input quaternion. The quaternion does not need
+    to be unit length.
+*/
+void mat3f_rotateQuatVec_new(float matrix[9], const float quat[4])
+{
+	int X=0, Y=1, Z=2, W=3;
+	float s = 2.0 / (quat[X]*quat[X] + quat[Y]*quat[Y] +
+	                 quat[Z]*quat[Z] + quat[W]*quat[W]);
+	float xs, ys, zs,
+	      wx, wy, wz,
+	      xx, xy, xz,
+	      yy, yz, zz;
+
+   xs = quat[X] * s;   ys = quat[Y] * s;   zs = quat[Z] * s;
+   wx = quat[W] * xs;  wy = quat[W] * ys;  wz = quat[W] * zs;
+   xx = quat[X] * xs;  xy = quat[X] * ys;  xz = quat[X] * zs;
+   yy = quat[Y] * ys;  yz = quat[Y] * zs;  zz = quat[Z] * zs;
+
+   // first row
+   matrix[0] = 1.0 - (yy + zz);
+   matrix[3] = xy + wz;
+   matrix[6] = xz - wy;
+
+   // second row
+   matrix[1] = xy - wz;
+   matrix[4] = 1.0 - (xx + zz);
+   matrix[7] = yz + wx;
+
+   // third row
+   matrix[2] = xz + wy;
+   matrix[5] = yz - wx;
+   matrix[8] = 1.0 - (xx + yy);
+}
+
+/** Creates a 3x3 rotation matrix from a quaternion (x,y,z,w). For
+ * full documentation, see mat3f_rotateQuatVec_new() */
+void mat3d_rotateQuatVec_new(double matrix[9], const double quat[4])
+{
+	int X=0, Y=1, Z=2, W=3;
+	double s = 2.0 / (quat[X]*quat[X] + quat[Y]*quat[Y] +
+	                 quat[Z]*quat[Z] + quat[W]*quat[W]);
+	double xs, ys, zs,
+	       wx, wy, wz,
+	       xx, xy, xz,
+	       yy, yz, zz;
+
+   xs = quat[X] * s;   ys = quat[Y] * s;   zs = quat[Z] * s;
+   wx = quat[W] * xs;  wy = quat[W] * ys;  wz = quat[W] * zs;
+   xx = quat[X] * xs;  xy = quat[X] * ys;  xz = quat[X] * zs;
+   yy = quat[Y] * ys;  yz = quat[Y] * zs;  zz = quat[Z] * zs;
+
+   // first row
+   matrix[0] = 1.0 - (yy + zz);
+   matrix[3] = xy + wz;
+   matrix[6] = xz - wy;
+
+   // second row
+   matrix[1] = xy - wz;
+   matrix[4] = 1.0 - (xx + zz);
+   matrix[7] = yz + wx;
+
+   // third row
+   matrix[2] = xz + wy;
+   matrix[5] = yz - wx;
+   matrix[8] = 1.0 - (xx + yy);
+}
+/** Creates a 4x4 rotation matrix from a quaternion (x,y,z,w). For
+ * full documentation, see mat4f_rotateQuatVec_new() */
+void mat4f_rotateQuatVec_new(float matrix[16], const float quat[4])
+{
+	float tmpMat[9];
+	mat3f_rotateQuatVec_new(tmpMat, quat);
+	mat3f_to_mat4f(matrix, tmpMat);
+}
+/** Creates a 4x4 rotation matrix from a quaternion (x,y,z,w). For
+ * full documentation, see mat4f_rotateQuatVec_new() */
+void mat4d_rotateQuatVec_new(double matrix[16], const double quat[4])
+{
+	double tmpMat[9];
+	mat3d_rotateQuatVec_new(tmpMat, quat);
+	mat3d_to_mat4d(matrix, tmpMat);
+}
+/** Creates a 3x3 rotation matrix from a quaternion (x,y,z,w). For
+ * full documentation, see mat4f_rotateQuatVec_new() */
+void mat3f_rotateQuat_new(float matrix[9], float x, float y, float z, float w)
+{
+	float quat[4] = { x,y,z,w };
+	mat3f_rotateQuatVec_new(matrix, quat);
+}
+/** Creates a 3x3 rotation matrix from a quaternion (x,y,z,w). For
+ * full documentation, see mat4f_rotateQuatVec_new() */
+void mat3d_rotateQuat_new(double matrix[9], double x, double y, double z, double w)
+{
+	double quat[4] = { x,y,z,w };
+	mat3d_rotateQuatVec_new(matrix, quat);
+}
+/** Creates a 4x4 rotation matrix from a quaternion (x,y,z,w). For
+ * full documentation, see mat4f_rotateQuatVec_new() */
+void mat4f_rotateQuat_new(float matrix[16], float x, float y, float z, float w)
+{
+	float quat[4] = { x,y,z,w };
+	mat3f_rotateQuatVec_new(matrix, quat);
+}
+/** Creates a 4x4 rotation matrix from a quaternion (x,y,z,w). For
+ * full documentation, see mat4f_rotateQuatVec_new() */
+void mat4d_rotateQuat_new(double matrix[16], double x, double y, double z, double w)
+{
+	double quat[4] = { x,y,z,w };
+	mat3d_rotateQuatVec_new(matrix, quat);
+}
+
+/** Creates a unit quaternion (x,y,z,w) from a rotation matrix.
+
+    This code is based on Ken Shoemake's SIGGRAPH Tutorial on Quaternions:
+    http://www.cs.ucr.edu/~vbz/resources/quatut.pdf
+    It is also based code in quat.c on VRPN 2.76 (public domain).
+
+    @param matrix The location to store the output matrix.
+   
+    @param quat The input quaternion. The quaternion does not need
+    to be unit length.
+*/
+void quatf_from_mat3f(float quat[4], const float matrix[9])
+{
+	int X=0, Y=1, Z=2, W=3;
+	float trace = matrix[0]+matrix[4]+matrix[8]; // sum of diagonal
+
+   if (trace > 0.0)
+   {
+	   float s = sqrtf(trace + 1.0);
+	   quat[W] = s * 0.5;
+	   s = 0.5 / s;
+
+	   quat[X] = (matrix[mat3_getIndex(Y,Z)] - matrix[mat3_getIndex(Z,Y)]) * s;
+	   quat[Y] = (matrix[mat3_getIndex(Z,X)] - matrix[mat3_getIndex(X,Z)]) * s;
+	   quat[Z] = (matrix[mat3_getIndex(X,Y)] - matrix[mat3_getIndex(Y,X)]) * s;
+   }
+
+   else
+   {
+	   int next[3] = {Y, Z, X};
+	   int i = X;
+	   if (matrix[mat3_getIndex(Y,Y)] > matrix[mat3_getIndex(X,X)])
+		   i = Y;
+	   if (matrix[mat3_getIndex(Z,Z)] > matrix[mat3_getIndex(i,i)])
+		   i = Z;
+	   int j = next[i];
+	   int k = next[j];
+	   
+	   float s = sqrtf( (matrix[mat3_getIndex(i,i)] - (matrix[mat3_getIndex(j,j)] + matrix[mat3_getIndex(k,k)])) + 1.0 );
+	   quat[i] = s * 0.5;
+	   
+	   s = 0.5 / s;
+	   
+	   quat[W] = (matrix[mat3_getIndex(j,k)] - matrix[mat3_getIndex(k,j)]) * s;
+	   quat[j] = (matrix[mat3_getIndex(i,j)] + matrix[mat3_getIndex(j,i)]) * s;
+	   quat[k] = (matrix[mat3_getIndex(i,k)] + matrix[mat3_getIndex(k,i)]) * s;
+   }
+}
+/** Creates a unit quaternion (x,y,z,w) from a rotation matrix. For full documentation, see quatf_from_mat3f() */
+void quatd_from_mat3d(double quat[4], const double matrix[9])
+{
+	int X=0, Y=1, Z=2, W=3;
+	double trace = matrix[0]+matrix[4]+matrix[8]; // sum of diagonal
+
+   if (trace > 0.0)
+   {
+	   double s = sqrtf(trace + 1.0);
+	   quat[W] = s * 0.5;
+	   s = 0.5 / s;
+
+	   quat[X] = (matrix[mat3_getIndex(Y,Z)] - matrix[mat3_getIndex(Z,Y)]) * s;
+	   quat[Y] = (matrix[mat3_getIndex(Z,X)] - matrix[mat3_getIndex(X,Z)]) * s;
+	   quat[Z] = (matrix[mat3_getIndex(X,Y)] - matrix[mat3_getIndex(Y,X)]) * s;
+   }
+
+   else
+   {
+	   int next[3] = {Y, Z, X};
+	   int i = X;
+	   if (matrix[mat3_getIndex(Y,Y)] > matrix[mat3_getIndex(X,X)])
+		   i = Y;
+	   if (matrix[mat3_getIndex(Z,Z)] > matrix[mat3_getIndex(i,i)])
+		   i = Z;
+	   int j = next[i];
+	   int k = next[j];
+	   
+	   float s = sqrtf( (matrix[mat3_getIndex(i,i)] - (matrix[mat3_getIndex(j,j)] + matrix[mat3_getIndex(k,k)])) + 1.0 );
+	   quat[i] = s * 0.5;
+	   
+	   s = 0.5 / s;
+	   
+	   quat[W] = (matrix[mat3_getIndex(j,k)] - matrix[mat3_getIndex(k,j)]) * s;
+	   quat[j] = (matrix[mat3_getIndex(i,j)] + matrix[mat3_getIndex(j,i)]) * s;
+	   quat[k] = (matrix[mat3_getIndex(i,k)] + matrix[mat3_getIndex(k,i)]) * s;
+   }
+}
+
+/** Creates a unit quaternion (x,y,z,w) from a rotation matrix. For full documentation, see quatf_from_mat3f() */
+void quatf_from_mat4f(float quat[4], const float matrix[16])
+{
+	float tmpMat[9];
+	mat4f_to_mat3f(tmpMat, matrix);
+	quatf_from_mat3f(quat, tmpMat);
+}
+/** Creates a unit quaternion (x,y,z,w) from a rotation matrix. For full documentation, see quatf_from_mat3f() */
+void quatd_from_mat4d(double quat[4], const double matrix[16])
+{
+	double tmpMat[9];
+	mat4d_to_mat3d(tmpMat, matrix);
+	quatd_from_mat3d(quat, tmpMat);
+}
+
+/** Creates a quaternion (x,y,z,w) based on an axis and the number of degrees to rotate around that axis. 
+
+    Based code in quat.c on VRPN 2.76 (public domain).
+
+    @param quat The location to store the output quaternion. If the axis is a zero vector, the identity quaternion is returned.
+    @param x The x-component of a vector representing the axis to rotate around.
+    @param y The y-component of a vector representing the axis to rotate around.
+    @param z The z-component of a vector representing the axis to rotate around.
+    @param degrees The amount to rotate around the given axis in degrees.
+*/
+void quatf_rotateAxis_new(float quat[4], float x, float y, float z, float degrees)
+{
+	int X=0,Y=1,Z=2,W=3;
+	// Angle needs to be negated to make it correspond to the behavior of mat3f_rotateAxis_new().
+	float angle = -degrees * M_PI/180;
+
+	/* normalize vector */
+	float length = sqrtf( x*x + y*y + z*z );
+
+	/* If zero vector passed in for the axis, just return identity quaternion   */
+	if (length < 1e-10) {
+		quat[X] = 0;
+		quat[Y] = 0;
+		quat[Z] = 0;
+		quat[W] = 1;
+		return;
+	}
+
+	x /= length;
+	y /= length;
+	z /= length;
+
+	float cosA = cosf(angle / 2.0);
+	float sinA = sinf(angle / 2.0);
+	quat[W] = cosA;
+	quat[X] = sinA * x;
+	quat[Y] = sinA * y;
+	quat[Z] = sinA * z;
+}
+
+/** Creates a quaternion (x,y,z,w) based on an axis and the number of
+ * degrees to rotate around that axis. See quatf_rotateAxis_new() for
+ * full documentation.
+*/
+void quatd_rotateAxis_new(double quat[4], double x, double y, double z, double degrees)
+{
+	int X=0,Y=1,Z=2,W=3;
+	// Angle needs to be negated to make it correspond to the behavior of mat3f_rotateAxis_new().
+	double angle = -degrees * M_PI/180;
+
+	/* normalize vector */
+	double length = sqrt( x*x + y*y + z*z );
+
+	/* If zero vector passed in for the axis, just return identity quaternion   */
+	if (length < 1e-10) {
+		quat[X] = 0;
+		quat[Y] = 0;
+		quat[Z] = 0;
+		quat[W] = 1;
+		return;
+	}
+
+	x /= length;
+	y /= length;
+	z /= length;
+
+	double cosA = cos(angle / 2.0);
+	double sinA = sin(angle / 2.0);
+	quat[W] = cosA;
+	quat[X] = sinA * x;
+	quat[Y] = sinA * y;
+	quat[Z] = sinA * z;
+}
+/** Creates a quaternion (x,y,z,w) based on an axis and the number of
+ * degrees to rotate around that axis. See quatf_rotateAxis_new() for
+ * full documentation.
+*/
+void quatd_rotateAxisVec_new(double quat[4], double axis[3], double degrees)
+{
+	quatd_rotateAxis_new(quat, axis[0], axis[1], axis[2], axis[3], degrees);
+}
+/** Creates a quaternion (x,y,z,w) based on an axis and the number of
+ * degrees to rotate around that axis. See quatf_rotateAxis_new() for
+ * full documentation.
+*/
+void quatf_rotateAxisVec_new(float quat[4], float axis[3], double degrees)
+{
+	quatf_rotateAxis_new(quat, axis[0], axis[1], axis[2], axis[3], degrees);
+}
 
 void mat4f_translate_new(float  result[16], float x, float y, float z)
 {
