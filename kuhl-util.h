@@ -712,45 +712,131 @@ static inline void mat3d_getRow(double result[3], const double m[ 9], const int 
  * match the size of the vector for these to work correctly (i.e., if
  * you want to set a row or column of a 4x4 matrix, you must use
  * mat4[fd]_set[Row|Column]() and pass in a vector with 4 elements. */
+
+
+/** Set a column of an NxN float matrix to a specific set of values.
+ @param matrix The matrix to be changed.
+ @param v The values to be placed into a specific column of the matrix.
+ @param row The row to replace (the first column is column 0).
+ @param n The size of the matrix (and the length of the vector v)
+*/
 static inline void matNf_setColumn(float  matrix[  ], const float  v[ ], const int col, const int n)
 { for(int row=0; row<n; row++) matrix[matN_getIndex(row, col, n)] = v[row]; }
+/** Set a column of an NxN double matrix to a specific set of values.
+ @param matrix The matrix to be changed.
+ @param v The values to be placed into a specific column of the matrix.
+ @param row The row to replace (the first column is column 0).
+ @param n The size of the matrix (and the length of the vector v)
+*/
 static inline void matNd_setColumn(double matrix[  ], const double v[ ], const int col, const int n)
 { for(int row=0; row<n; row++) matrix[matN_getIndex(row, col, n)] = v[row]; }
+
+/** Set a column of an 3x3 float matrix to a specific set of values.
+ @param matrix The matrix to be changed.
+ @param v The values to be placed into a specific column of the matrix.
+ @param row The row to replace (the first column is column 0).
+*/
 static inline void mat3f_setColumn(float  matrix[ 9], const float  v[3], const int col)
 { matNf_setColumn(matrix, v, col, 3); }
+/** Set a column of an 3x3 double matrix to a specific set of values.
+ @param matrix The matrix to be changed.
+ @param v The values to be placed into a specific column of the matrix.
+ @param row The row to replace (the first column is column 0).
+*/
 static inline void mat3d_setColumn(double matrix[ 9], const double v[3], const int col)
 { matNd_setColumn(matrix, v, col, 3); }
+/** Set a column of an 4x4 float matrix to a specific set of values.
+ @param matrix The matrix to be changed.
+ @param v The values to be placed into a specific column of the matrix.
+ @param row The row to replace (the first column is column 0).
+*/
 static inline void mat4f_setColumn(float  matrix[16], const float  v[4], const int col)
 { matNf_setColumn(matrix, v, col, 4); }
+/** Set a column of an 4x4 double matrix to a specific set of values.
+ @param matrix The matrix to be changed.
+ @param v The values to be placed into a specific column of the matrix.
+ @param row The row to replace (the first column is column 0).
+*/
 static inline void mat4d_setColumn(double matrix[16], const double v[4], const int col)
 { matNd_setColumn(matrix, v, col, 4); }
+/** Set a row of an NxN float matrix to a specific set of values.
+ @param matrix The matrix to be changed.
+ @param v The values to be placed into a specific row of the matrix.
+ @param row The row to replace (the first row is row 0).
+ @param n The size of the matrix (and the length of the vector v)
+*/
 static inline void matNf_setRow(float  matrix[  ], const float  v[ ], const int row, const int n)
-{ for(int col=0; col<n; col++) matrix[matN_getIndex(row, col, n)] = v[row]; }
+{ for(int col=0; col<n; col++) matrix[matN_getIndex(row, col, n)] = v[col]; }
+/** Set a row of an NxN double matrix to a specific set of values.
+ @param matrix The matrix to be changed.
+ @param v The values to be placed into a specific row of the matrix.
+ @param row The row to replace (the first row is row 0).
+ @param n The size of the matrix (and the length of the vector v)
+*/
 static inline void matNd_setRow(double matrix[  ], const double v[ ], const int row, const int n)
-{ for(int col=0; col<n; col++) matrix[matN_getIndex(row, col, n)] = v[row]; }
+{ for(int col=0; col<n; col++) matrix[matN_getIndex(row, col, n)] = v[col]; }
+/** Set a row of an 3x3 float matrix to a specific set of values.
+ @param matrix The matrix to be changed.
+ @param v The values to be placed into a specific row of the matrix.
+ @param row The row to replace (the first row is row 0).
+*/
 static inline void mat3f_setRow(float  matrix[ 9], const float  v[3], const int row)
 { matNf_setRow(matrix, v, row, 3); }
+/** Set a row of an 3x3 double matrix to a specific set of values.
+ @param matrix The matrix to be changed.
+ @param v The values to be placed into a specific row of the matrix.
+ @param row The row to replace (the first row is row 0).
+*/
 static inline void mat3d_setRow(double matrix[ 9], const double v[3], const int row)
 { matNd_setRow(matrix, v, row, 3); }
+/** Set a row of an 4x4 float matrix to a specific set of values.
+ @param matrix The matrix to be changed.
+ @param v The values to be placed into a specific row of the matrix.
+ @param row The row to replace (the first row is row 0).
+*/
 static inline void mat4f_setRow(float  matrix[16], const float  v[4], const int row)
 { matNf_setRow(matrix, v, row, 4); }
+/** Set a row of an 4x4 double matrix to a specific set of values.
+ @param matrix The matrix to be changed.
+ @param v The values to be placed into a specific row of the matrix.
+ @param row The row to replace (the first row is row 0).
+*/
 static inline void mat4d_setRow(double matrix[16], const double v[4], const int row)
 { matNd_setRow(matrix, v, row, 4); }
 
 
 
 
-/* Copies a NxN matrix */
+/** Copies a NxN float matrix.
+ @param dest The location to store the new copy of the matrix.
+ @param src The matrix to be copied.
+ @param n The size of the matrix. */
 static inline void matNf_copy(float dest[], const float src[], const int n)
 { memcpy(dest, src, n*n*sizeof(float)); }
+/** Copies a NxN double matrix.
+ @param dest The location to store the new copy of the matrix.
+ @param src The matrix to be copied.
+ @param n The size of the matrix. */
 static inline void matNd_copy(double dest[], const double src[], const int n)
 { memcpy(dest, src, n*n*sizeof(double)); }
+/** Copies a 3x3 float matrix.
+ @param dest The location to store the new copy of the matrix.
+ @param src The matrix to be copied. */
 static inline void mat3f_copy(float dest[9], const float src[9])
 { matNf_copy(dest, src, 3); }
+/** Copies a 3x3 double matrix.
+ @param dest The location to store the new copy of the matrix.
+ @param src The matrix to be copied. */
 static inline void mat3d_copy(double dest[9], const double src[9])
 { matNd_copy(dest, src, 3); }
+/** Copies a 4x4 float matrix.
+ @param dest The location to store the new copy of the matrix.
+ @param src The matrix to be copied. */
 static inline void mat4f_copy(float dest[16], const float src[16])
 { matNf_copy(dest, src, 4); }
+/** Copies a 4x4 double matrix.
+ @param dest The location to store the new copy of the matrix.
+ @param src The matrix to be copied. */
 static inline void mat4d_copy(double dest[16], const double src[16])
 { matNd_copy(dest, src, 4); }
 
@@ -856,7 +942,10 @@ static inline void mat4d_mult_vec4d(double vector[4], const double matrix[16])
 { mat4d_mult_vec4d_new(vector, matrix, vector); }
 
 
-/* Transpose an n*n matrix in place */
+
+/** Transpose a NxN matrix in place.
+ @param m The matrix to be transposed.
+ @param n The size of the matrix. */
 static inline void matNf_transpose(float m[], const int n)
 {
 	float tmp;
@@ -872,6 +961,9 @@ static inline void matNf_transpose(float m[], const int n)
 		}
 	}
 }
+/** Transpose a NxN matrix in place.
+ @param m The matrix to be transposed.
+ @param n The size of the matrix. */
 static inline void matNd_transpose(double m[], const int n)
 {
 	double tmp;
@@ -887,32 +979,63 @@ static inline void matNd_transpose(double m[], const int n)
 		}
 	}
 }
+
+/** Transpose a matrix in place.
+ @param m The matrix to be transposed. */
 static inline void mat3f_transpose(float m[9])
 { matNf_transpose(m, 3); }
+/** Transpose a matrix in place.
+ @param m The matrix to be transposed. */
 static inline void mat3d_transpose(double m[9])
 { matNd_transpose(m, 3); }
+/** Transpose a matrix in place.
+ @param m The matrix to be transposed. */
 static inline void mat4f_transpose(float m[16])
 { matNf_transpose(m, 4); }
+/** Transpose a matrix in place.
+ @param m The matrix to be transposed. */
 static inline void mat4d_transpose(double m[16])
 { matNd_transpose(m, 4); }
 
-/* Transpose a matrix and store the result at a new location. */
+/** Transpose a NxN matrix and store the result at a new location.
+ @param dest Where the transposed matrix should be stored.
+ @param src The matrix to be transposed.
+ @param n The size of the matrix. */
 static inline void matNf_transpose_new(float  dest[  ], const float  src[  ], const int n)
 { matNf_copy(dest, src, n); matNf_transpose(dest, n); }
+/** Transpose a NxN matrix and store the result at a new location.
+ @param dest Where the transposed matrix should be stored.
+ @param src The matrix to be transposed.
+ @param n The size of the matrix. */
 static inline void matNd_transpose_new(double dest[  ], const double src[  ], const int n)
 { matNd_copy(dest, src, n); matNd_transpose(dest, n); }
+/** Transpose a matrix and store the result at a new location.
+ @param dest Where the transposed matrix should be stored.
+ @param src The matrix to be transposed. */
 static inline void mat3f_transpose_new(float  dest[ 9], const float  src[ 9])
 { mat3f_copy(dest, src); mat3f_transpose(dest); }
+/** Transpose a matrix and store the result at a new location.
+ @param dest Where the transposed matrix should be stored.
+ @param src The matrix to be transposed. */
 static inline void mat3d_transpose_new(double dest[ 9], const double src[ 9])
 { mat3d_copy(dest, src); mat3d_transpose(dest); }
+/** Transpose a matrix and store the result at a new location.
+ @param dest Where the transposed matrix should be stored.
+ @param src The matrix to be transposed. */
 static inline void mat4f_transpose_new(float  dest[16], const float  src[16])
 { mat4f_copy(dest, src); mat4f_transpose(dest); }
+/** Transpose a matrix and store the result at a new location.
+ @param dest Where the transposed matrix should be stored.
+ @param src The matrix to be transposed. */
 static inline void mat4d_transpose_new(double dest[16], const double src[16])
 { mat4d_copy(dest, src); mat4d_transpose(dest); }
 
 
 
-/* fills in a NxN matrix with the identity matrix */
+/** Create a NxN float identity matrix.
+ @param m Location to store the resulting identity matrix.
+ @param n The size of the matrix.
+*/
 static inline void matNf_identity(float m[], int n)
 {
 	for(int i=0; i<n; i++)
@@ -922,6 +1045,10 @@ static inline void matNf_identity(float m[], int n)
 			else
 				m[matN_getIndex(i,j,n)] = 0.0f;
 }
+/** Create a NxN double identity matrix.
+ @param m Location to store the resulting identity matrix.
+ @param n The size of the matrix.
+*/
 static inline void matNd_identity(double m[], int n)
 {
 	for(int i=0; i<n; i++)
@@ -931,15 +1058,32 @@ static inline void matNd_identity(double m[], int n)
 			else
 				m[matN_getIndex(i,j,n)] = 0.0;
 }
+/** Create a 3x3 float identity matrix.
+ @param m Location to store the resulting identity matrix.
+*/
 static inline void mat3f_identity(float m[9])
 { matNf_identity(m, 3); }
+/** Create a 3x3 double identity matrix.
+ @param m Location to store the resulting identity matrix.
+*/
 static inline void mat3d_identity(double m[9])
 { matNd_identity(m, 3); }
+
+/** Create a 4x4 float identity matrix.
+ @param m Location to store the resulting identity matrix.
+*/
 static inline void mat4f_identity(float m[16])
 { matNf_identity(m, 4); }
+/** Create a 4x4 double identity matrix.
+ @param m Location to store the resulting identity matrix.
+*/
 static inline void mat4d_identity(double m[16])
 { matNd_identity(m, 4); }
 
+/** Print a NxN float matrix to standard out.
+ @param m The matrix to print.
+ @param N The size of the matrix.
+*/
 static inline void matNf_print(const float  m[], const int n)
 {
 	printf("matrix:\n");
@@ -950,6 +1094,10 @@ static inline void matNf_print(const float  m[], const int n)
 		printf("\n");
 	}
 }
+/** Print a NxN double matrix to standard out.
+ @param m The matrix to print.
+ @param N The size of the matrix.
+*/
 static inline void matNd_print(const double m[], const int n)
 {
 	printf("matrix:\n");
@@ -960,22 +1108,50 @@ static inline void matNd_print(const double m[], const int n)
 		printf("\n");
 	}
 }
+/** Print a 3x3 float matrix to standard out.
+ @param m The matrix to print.
+*/
 static inline void mat3f_print(const float m[9])
 { matNf_print(m, 3); }
+/** Print a 3x3 double matrix to standard out.
+ @param m The matrix to print.
+*/
 static inline void mat3d_print(const double m[9])
 { matNd_print(m, 3); }
+/** Print a 4x4 float matrix to standard out.
+ @param m The matrix to print.
+*/
 static inline void mat4f_print(const float m[16])
 { matNf_print(m, 4); }
+/** Print a 4x4 double matrix to standard out.
+ @param m The matrix to print.
+*/
 static inline void mat4d_print(const double m[16])
 { matNd_print(m, 4); }
 
-static inline void mat3f_to_mat3d(double dest[ 9], const float  src[ 9])
+/** Create a 3x3 double matrix from a 3x3 float matrix.
+    @param dest Location to store now matrix.
+    @param src Location of the original matrix.
+*/
+static inline void mat3d_from_mat3f(double dest[ 9], const float  src[ 9])
 { for(int i=0; i<9; i++) dest[i] = (double) src[i]; }
-static inline void mat4f_to_mat4d(double dest[16], const float  src[16])
+/** Create a 4x4 double matrix from a 4x4 float matrix.
+    @param dest Location to store now matrix.
+    @param src Location of the original matrix.
+*/
+static inline void mat4d_from_mat4f(double dest[16], const float  src[16])
 { for(int i=0; i<16; i++) dest[i] = (double) src[i]; }
-static inline void mat3d_to_mat3f(float  dest[ 9], const double src[ 9])
+/** Create a 3x3 float matrix from a 3x3 double matrix.
+    @param dest Location to store now matrix.
+    @param src Location of the original matrix.
+*/
+static inline void mat3f_from_mat3d(float  dest[ 9], const double src[ 9])
 { for(int i=0; i<9; i++) dest[i] = (float) src[i]; }
-static inline void mat4d_to_mat4f(float  dest[16], const double src[16])
+/** Create a 4x4 float matrix from a 4x4 double matrix.
+    @param dest Location to store now matrix.
+    @param src Location of the original matrix.
+*/
+static inline void mat4f_from_mat4d(float  dest[16], const double src[16])
 { for(int i=0; i<16; i++) dest[i] = (float) src[i]; }
 
 
@@ -1046,10 +1222,10 @@ void quatf_from_mat4f(float quat[4], const float matrix[16]);
 void quatd_from_mat4d(double quat[4], const double matrix[16]);
 
 /* Create a quaternion (x,y,z,w) based an axis and angle */
-void quatf_rotateAxis_new(float quat[4], float x, float y, float z, float degrees);
-void quatd_rotateAxis_new(double quat[4], double x, double y, double z, double degrees);
-void quatd_rotateAxisVec_new(double quat[4], double axis[3], double degrees);
-void quatf_rotateAxisVec_new(float quat[4], float axis[3], double degrees);
+void quatf_rotateAxis_new(float quat[4], float degrees, float x, float y, float z);
+void quatd_rotateAxis_new(double quat[4], double degrees, double x, double y, double z);
+void quatf_rotateAxisVec_new(float quat[4], float degrees, const float axis[3]);
+void quatd_rotateAxisVec_new(double quat[4], double degrees, const double axis[3]);
 
 
 /* Create a new translation matrix (rotation part set to
@@ -1068,11 +1244,11 @@ void mat4d_scaleVec_new(double result[16], const double xyz[3]);
 
 /* Sets dest to the identity and then copies src into the upper-left
  * corner of dest. */
-void mat3f_to_mat4f(float  dest[16], const float  src[ 9]);
-void mat3d_to_mat4d(double dest[16], const double src[ 9]);
+void mat4f_from_mat3f(float  dest[16], const float  src[ 9]);
+void mat4d_from_mat3d(double dest[16], const double src[ 9]);
 /* Copies upper-left 3x3 portion of src into dest. */
-void mat4f_to_mat3f(float  dest[ 9], const float  src[16]);
-void mat4d_to_mat3d(double dest[ 9], const double src[16]);
+void mat3f_from_mat4f(float  dest[ 9], const float  src[16]);
+void mat3d_from_mat4d(double dest[ 9], const double src[16]);
 
 /* Replacements for glFrustum, glOrtho, gluPerspective */
 void mat4f_frustum_new(float  result[16], float  left, float  right, float  bottom, float  top, float  near, float  far);
@@ -1105,6 +1281,13 @@ void kuhl_limitfps(int fps);
 float kuhl_getfps(int milliseconds);
 
 GLuint kuhl_read_texture_rgba_array(const char *array, int width, int height);
+
+
+int kuhl_randomInt(int min, int max);
+
+
+void kuhl_shuffle(void *array, int n, int size);
+
 
 #ifdef KUHL_UTIL_USE_IMAGEMAGICK
 float kuhl_make_label(const char *label, GLuint *texName, float color[3], float bgcolor[4], float pointsize);

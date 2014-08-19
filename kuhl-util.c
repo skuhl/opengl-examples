@@ -11,6 +11,8 @@
 #include <GL/glew.h>
 #include <GL/glx.h> // for setting vsync interval
 
+#define __GNU_SOURCE // make sure are allowed to use GNU extensions. Redundant if compiled with -std=gnu99
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -18,6 +20,7 @@
 #include <libgen.h> // for dirname()
 #include <sys/time.h> // gettimeofday()
 #include <unistd.h> // usleep()
+#include <time.h> // time()
 
 #ifdef KUHL_UTIL_USE_ASSIMP
 #include <assimp/cimport.h>
@@ -274,10 +277,10 @@ extern inline void mat4f_print(const float  m[16]);
 extern inline void mat4d_print(const double m[16]);
 
 /* Convert between 3x3 and 4x4 matrices */
-extern inline void mat3f_to_mat3d(double dest[ 9], const float  src[ 9]);
-extern inline void mat4f_to_mat4d(double dest[16], const float  src[16]);
-extern inline void mat3d_to_mat3f(float  dest[ 9], const double src[ 9]);
-extern inline void mat4d_to_mat4f(float  dest[16], const double src[16]);
+extern inline void mat3d_from_mat3f(double dest[ 9], const float  src[ 9]);
+extern inline void mat4d_from_mat4f(double dest[16], const float  src[16]);
+extern inline void mat3f_from_mat3d(float  dest[ 9], const double src[ 9]);
+extern inline void mat4f_from_mat4d(float  dest[16], const double src[16]);
 
 /** Don't call this function, call kuhl_errorcheck() instead. */
 int kuhl_errorcheckFileLine(char *file, int line)
@@ -455,21 +458,25 @@ int mat3d_invert_new(double out[9], const double m[9])
 }
 /** Inverts a 4x4 float matrix in place.
  * @param matrix The matrix to be inverted in place.
+ * @return Returns 1 if the matrix was inverted. Returns 0 if an error occurred. When an error occurs, a message is also printed out to standard out and the matrix is left unchanged.
  */
 int mat4f_invert(float  matrix[16])
 { return mat4f_invert_new(matrix, matrix); }
 /** Inverts a 4x4 double matrix in place.
  * @param matrix The matrix to be inverted in place.
+ * @return Returns 1 if the matrix was inverted. Returns 0 if an error occurred. When an error occurs, a message is also printed out to standard out and the matrix is left unchanged.
  */
 int mat4d_invert(double matrix[16])
 { return mat4d_invert_new(matrix, matrix); }
 /** Inverts a 3x3 float matrix in place.
  * @param matrix The matrix to be inverted in place.
+ * @return Returns 1 if the matrix was inverted. Returns 0 if an error occurred. When an error occurs, a message is also printed out to standard out and the matrix is left unchanged.
  */
 int mat3f_invert(float  matrix[ 9])
 { return mat3f_invert_new(matrix, matrix); }
 /** Inverts a 3x3 double matrix in place.
  * @param matrix The matrix to be inverted in place.
+ * @return Returns 1 if the matrix was inverted. Returns 0 if an error occurred. When an error occurs, a message is also printed out to standard out and the matrix is left unchanged.
  */
 int mat3d_invert(double matrix[ 9])
 { return mat3d_invert_new(matrix, matrix); }
@@ -566,7 +573,7 @@ void mat4f_rotateEuler_new(float result[16], float a1_degrees, float a2_degrees,
 {
 	float tmpMat[9];
 	mat3f_rotateEuler_new(tmpMat, a1_degrees, a2_degrees, a3_degrees, order);
-	mat3f_to_mat4f(result, tmpMat);
+	mat4f_from_mat3f(result, tmpMat);
 }
 
 /** Creates a 4x4 rotation matrix of doubles from intrinsic Euler
@@ -578,7 +585,7 @@ void mat4d_rotateEuler_new(double result[16], double a1_degrees, double a2_degre
 {
 	double tmpMat[9];
 	mat3d_rotateEuler_new(tmpMat, a1_degrees, a2_degrees, a3_degrees, order);
-	mat3d_to_mat4d(result, tmpMat);
+	mat4d_from_mat3d(result, tmpMat);
 }
 
 
@@ -618,7 +625,7 @@ void mat4d_rotateEuler_new(double result[16], double a1_degrees, double a2_degre
     where you are looking down -Z, the angles correspond to pitch,
     yaw, roll, respectively.).
 */
-void euler_from_mat3f(float angles[3], const float m[9], const char order[3])
+void eulerf_from_mat3f(float angles[3], const float m[9], const char order[3])
 {
 	/* Create an easy-to-use array of the axis ordering from the
 	 * user-provided input. */
@@ -721,7 +728,7 @@ void euler_from_mat3f(float angles[3], const float m[9], const char order[3])
 
  @see euler_from_mat3f()
 */
-void euler_from_mat3d(double angles[3], const double m[9], const char order[3])
+void eulerd_from_mat3d(double angles[3], const double m[9], const char order[3])
 {
 	/* Create an easy-to-use array of the axis ordering from the
 	 * user-provided input. */
@@ -827,8 +834,8 @@ void euler_from_mat3d(double angles[3], const double m[9], const char order[3])
 void euler_from_mat4f(float angles[3], const float m[16], const char order[3])
 {
 	float tmpMat[9];
-	mat4f_to_mat3f(tmpMat, m);
-	euler_from_mat3f(angles, tmpMat, order);
+	mat3f_from_mat4f(tmpMat, m);
+	eulerf_from_mat3f(angles, tmpMat, order);
 }
 /** Given a 4x4 rotation matrix and a Euler rotation ordering,
  calculate the Euler angles used to produce the matrix.
@@ -838,8 +845,8 @@ void euler_from_mat4f(float angles[3], const float m[16], const char order[3])
 void euler_from_mat4d(double angles[3], const double m[16], const char order[3])
 {
 	double tmpMat[9];
-	mat4d_to_mat3d(tmpMat, m);
-	euler_from_mat3d(angles, tmpMat, order);
+	mat3d_from_mat4d(tmpMat, m);
+	eulerd_from_mat3d(angles, tmpMat, order);
 }
 
 
@@ -950,7 +957,7 @@ void mat4f_rotateAxisVec_new(float result[16], float degrees, const float axis[3
 {
 	float tmpMat[9];
 	mat3f_rotateAxisVec_new(tmpMat, degrees, axis);
-	mat3f_to_mat4f(result, tmpMat);
+	mat4f_from_mat3f(result, tmpMat);
 }
 /** Create a 4x4 rotation matrix given a rotation axis and the number
  * of degrees to rotate.
@@ -962,7 +969,7 @@ void mat4d_rotateAxisVec_new(double result[16], double degrees, const double axi
 {
 	double tmpMat[9];
 	mat3d_rotateAxisVec_new(tmpMat, degrees, axis);
-	mat3d_to_mat4d(result, tmpMat);
+	mat4d_from_mat3d(result, tmpMat);
 }
 
 /** Create a 3x3 rotation matrix given a rotation axis and the number
@@ -1111,7 +1118,7 @@ void mat4f_rotateQuatVec_new(float matrix[16], const float quat[4])
 {
 	float tmpMat[9];
 	mat3f_rotateQuatVec_new(tmpMat, quat);
-	mat3f_to_mat4f(matrix, tmpMat);
+	mat4f_from_mat3f(matrix, tmpMat);
 }
 /** Creates a 4x4 rotation matrix from a quaternion (x,y,z,w). For
  * full documentation, see mat4f_rotateQuatVec_new() */
@@ -1119,7 +1126,7 @@ void mat4d_rotateQuatVec_new(double matrix[16], const double quat[4])
 {
 	double tmpMat[9];
 	mat3d_rotateQuatVec_new(tmpMat, quat);
-	mat3d_to_mat4d(matrix, tmpMat);
+	mat4d_from_mat3d(matrix, tmpMat);
 }
 /** Creates a 3x3 rotation matrix from a quaternion (x,y,z,w). For
  * full documentation, see mat4f_rotateQuatVec_new() */
@@ -1241,14 +1248,14 @@ void quatd_from_mat3d(double quat[4], const double matrix[9])
 void quatf_from_mat4f(float quat[4], const float matrix[16])
 {
 	float tmpMat[9];
-	mat4f_to_mat3f(tmpMat, matrix);
+	mat3f_from_mat4f(tmpMat, matrix);
 	quatf_from_mat3f(quat, tmpMat);
 }
 /** Creates a unit quaternion (x,y,z,w) from a rotation matrix. For full documentation, see quatf_from_mat3f() */
 void quatd_from_mat4d(double quat[4], const double matrix[16])
 {
 	double tmpMat[9];
-	mat4d_to_mat3d(tmpMat, matrix);
+	mat3d_from_mat4d(tmpMat, matrix);
 	quatd_from_mat3d(quat, tmpMat);
 }
 
@@ -1262,7 +1269,7 @@ void quatd_from_mat4d(double quat[4], const double matrix[16])
     @param z The z-component of a vector representing the axis to rotate around.
     @param degrees The amount to rotate around the given axis in degrees.
 */
-void quatf_rotateAxis_new(float quat[4], float x, float y, float z, float degrees)
+void quatf_rotateAxis_new(float quat[4], float degrees, float x, float y, float z)
 {
 	int X=0,Y=1,Z=2,W=3;
 	// Angle needs to be negated to make it correspond to the behavior of mat3f_rotateAxis_new().
@@ -1296,7 +1303,7 @@ void quatf_rotateAxis_new(float quat[4], float x, float y, float z, float degree
  * degrees to rotate around that axis. See quatf_rotateAxis_new() for
  * full documentation.
 */
-void quatd_rotateAxis_new(double quat[4], double x, double y, double z, double degrees)
+void quatd_rotateAxis_new(double quat[4], double degrees, double x, double y, double z)
 {
 	int X=0,Y=1,Z=2,W=3;
 	// Angle needs to be negated to make it correspond to the behavior of mat3f_rotateAxis_new().
@@ -1329,19 +1336,26 @@ void quatd_rotateAxis_new(double quat[4], double x, double y, double z, double d
  * degrees to rotate around that axis. See quatf_rotateAxis_new() for
  * full documentation.
 */
-void quatd_rotateAxisVec_new(double quat[4], double axis[3], double degrees)
+void quatf_rotateAxisVec_new(float quat[4], float degrees, const float axis[3])
 {
-	quatd_rotateAxis_new(quat, axis[0], axis[1], axis[2], axis[3], degrees);
+	quatf_rotateAxis_new(quat, degrees, axis[0], axis[1], axis[2]);
 }
+
 /** Creates a quaternion (x,y,z,w) based on an axis and the number of
  * degrees to rotate around that axis. See quatf_rotateAxis_new() for
  * full documentation.
 */
-void quatf_rotateAxisVec_new(float quat[4], float axis[3], double degrees)
+void quatd_rotateAxisVec_new(double quat[4], double degrees, const double axis[3])
 {
-	quatf_rotateAxis_new(quat, axis[0], axis[1], axis[2], axis[3], degrees);
+	quatd_rotateAxis_new(quat, degrees, axis[0], axis[1], axis[2]);
 }
 
+/** Creates a new 4x4 float translation matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new translation matrix.
+    @param x The x coordinate to be placed into the matrix.
+    @param y The y coordinate to be placed into the matrix.
+    @param z The z coordinate to be placed into the matrix.
+*/
 void mat4f_translate_new(float  result[16], float x, float y, float z)
 {
 	mat4f_identity(result);
@@ -1350,6 +1364,12 @@ void mat4f_translate_new(float  result[16], float x, float y, float z)
 	result[14] = z;
 	result[15] = 1;
 }
+/** Creates a new 4x4 double translation matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new translation matrix.
+    @param x The x coordinate to be placed into the matrix.
+    @param y The y coordinate to be placed into the matrix.
+    @param z The z coordinate to be placed into the matrix.
+*/
 void mat4d_translate_new(double result[16], double x, double y, double z)
 {
 	mat4d_identity(result);
@@ -1358,12 +1378,25 @@ void mat4d_translate_new(double result[16], double x, double y, double z)
 	result[14] = z;
 	result[15] = 1;
 }
+/** Creates a new 4x4 float translation matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new translation matrix.
+    @param xyz A vector containing the translation value to put in the matrix.
+*/
 void mat4f_translateVec_new(float  result[16], const float  xyz[3])
 { mat4f_translate_new(result, xyz[0], xyz[1], xyz[2]); }
+/** Creates a new 4x4 double translation matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new translation matrix.
+    @param xyz A vector containing the translation value to put in the matrix.
+*/
 void mat4d_translateVec_new(double result[16], const double xyz[3])
 { mat4d_translate_new(result, xyz[0], xyz[1], xyz[2]); }
 
-/* Create a scale matrix */
+/** Creates a new 4x4 float scale matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new scale matrix.
+    @param x The amount that the matrix should scale the x-components by.
+    @param y The amount that the matrix should scale the y-components by.
+    @param z The amount that the matrix should scale the z-components by.
+*/
 void mat4f_scale_new(float  result[16], float x, float y, float z)
 {
 	mat4f_identity(result);
@@ -1371,6 +1404,12 @@ void mat4f_scale_new(float  result[16], float x, float y, float z)
 	result[mat4_getIndex(1,1)] = y;
 	result[mat4_getIndex(2,2)] = z;
 }
+/** Creates a new 4x4 double scale matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new scale matrix.
+    @param x The amount that the matrix should scale the x-components by.
+    @param y The amount that the matrix should scale the y-components by.
+    @param z The amount that the matrix should scale the z-components by.
+*/
 void mat4d_scale_new(double result[16], double x, double y, double z)
 {
 	mat4d_identity(result);
@@ -1378,10 +1417,24 @@ void mat4d_scale_new(double result[16], double x, double y, double z)
 	result[mat4_getIndex(1,1)] = y;
 	result[mat4_getIndex(2,2)] = z;
 }
+/** Creates a new 4x4 float scale matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new scale matrix.
+    @param xyz A vector containing the amount to scale each component by.
+*/
 void mat4f_scaleVec_new(float  result[16], const float  xyz[3])
 { mat4f_scale_new(result, xyz[0], xyz[1], xyz[2]); }
+/** Creates a new 4x4 double scale matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new scale matrix.
+    @param xyz A vector containing the amount to scale each component by.
+*/
 void mat4d_scaleVec_new(double result[16], const double xyz[3])
 { mat4d_scale_new(result, xyz[0], xyz[1], xyz[2]); }
+/** Creates a new 3x3 float scale matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new scale matrix.
+    @param x The amount that the matrix should scale the x-components by.
+    @param y The amount that the matrix should scale the y-components by.
+    @param z The amount that the matrix should scale the z-components by.
+*/
 void mat3f_scale_new(float  result[9], float x, float y, float z)
 {
 	mat3f_identity(result);
@@ -1389,6 +1442,12 @@ void mat3f_scale_new(float  result[9], float x, float y, float z)
 	result[mat3_getIndex(1,1)] = y;
 	result[mat3_getIndex(2,2)] = z;
 }
+/** Creates a new 3x3 double scale matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new scale matrix.
+    @param x The amount that the matrix should scale the x-components by.
+    @param y The amount that the matrix should scale the y-components by.
+    @param z The amount that the matrix should scale the z-components by.
+*/
 void mat3d_scale_new(double result[9], double x, double y, double z)
 {
 	mat3d_identity(result);
@@ -1396,22 +1455,40 @@ void mat3d_scale_new(double result[9], double x, double y, double z)
 	result[mat3_getIndex(1,1)] = y;
 	result[mat3_getIndex(2,2)] = z;
 }
+/** Creates a new 3x3 float scale matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new scale matrix.
+    @param xyz A vector containing the amount to scale each component by.
+*/
 void mat3f_scaleVec_new(float  result[9], const float  xyz[3])
 { mat3f_scale_new(result, xyz[0], xyz[1], xyz[2]); }
+/** Creates a new 3x3 double scale matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new scale matrix.
+    @param xyz A vector containing the amount to scale each component by.
+*/
 void mat3d_scaleVec_new(double result[9], const double xyz[3])
 { mat3d_scale_new(result, xyz[0], xyz[1], xyz[2]); }
 
 
-/* Sets dest to the identity and then copies src into the upper-left
- * corner of dest. */
-void mat3f_to_mat4f(float  dest[16], const float  src[ 9])
+/** Creates a 4x4 matrix from a 3x3 matrix. The new matrix is set to
+    the identity and then the 3x3 matrix is copied into the upper left
+    corner of the matrix.
+    @param dest The new 4x4 matrix.
+    @param src The original 3x3 matrix.
+*/
+void mat4f_from_mat3f(float  dest[16], const float  src[ 9])
 {
 	mat4f_identity(dest);
 	for(int i=0; i<3; i++)
 		for(int j=0; j<3; j++)
 			dest[mat4_getIndex(i,j)] = src[mat3_getIndex(i,j)];
 }
-void mat3d_to_mat4d(double dest[16], const double src[ 9])
+/** Creates a 4x4 matrix from a 3x3 matrix. The new matrix is set to
+    the identity and then the 3x3 matrix is copied into the upper left
+    corner of the matrix.
+    @param dest The new 4x4 matrix.
+    @param src The original 3x3 matrix.
+*/
+void mat4d_from_mat3d(double dest[16], const double src[ 9])
 {
 	mat4d_identity(dest);
 	for(int i=0; i<3; i++)
@@ -1419,14 +1496,21 @@ void mat3d_to_mat4d(double dest[16], const double src[ 9])
 			dest[mat4_getIndex(i,j)] = src[mat3_getIndex(i,j)];
 }
 
-/* Copies upper-left 3x3 portion of src into dest. */
-void mat4f_to_mat3f(float  dest[ 9], const float  src[16])
+/** Creates a 3x3 matrix from a 4x4 matrix by copying only the upper-left 3x3 components from the 4x4 matrix.
+    @param dest The new 3x3 matrix.
+    @param src The original 4x4 matrix.
+*/
+void mat3f_from_mat4f(float  dest[ 9], const float  src[16])
 {
 	for(int i=0; i<3; i++)
 		for(int j=0; j<3; j++)
 			dest[mat3_getIndex(i,j)] = src[mat4_getIndex(i,j)];
 }
-void mat4d_to_mat3d(double dest[ 9], const double src[16])
+/** Creates a 3x3 matrix from a 4x4 matrix by copying only the upper-left 3x3 components from the 4x4 matrix.
+    @param dest The new 3x3 matrix.
+    @param src The original 4x4 matrix.
+*/
+void mat3d_from_mat4d(double dest[ 9], const double src[16])
 {
 	for(int i=0; i<3; i++)
 		for(int j=0; j<3; j++)
@@ -1456,7 +1540,7 @@ void mat4f_frustum_new(float result[16], float left, float right, float bottom, 
 	mat4f_identity(result);
 	if(left == right || bottom == top || near == far || near == 0)
 	{
-		fprintf(stderr, "kuhl-util: Invalid view frustum matrix.\n");
+		fprintf(stderr, "%s: Invalid view frustum matrix.\n", __func__);
 		return;
 	}
 	result[0]  =  2.0f * near / (right - left);
@@ -1491,7 +1575,7 @@ void mat4d_frustum_new(double result[16], double left, double right, double bott
 	mat4d_identity(result);
 	if(left == right || bottom == top || near == far || near == 0)
 	{
-		fprintf(stderr, "kuhl-util: Invalid view frustum matrix.\n");
+		fprintf(stderr, "%s: Invalid view frustum matrix.\n", __func__);
 		return;
 	}
 	result[0]  =  2.0f * near / (right - left);
@@ -1524,7 +1608,7 @@ void mat4f_ortho_new(float result[16], float left, float right, float bottom, fl
 	mat4f_identity(result);
 	if(left == right || bottom == top || near == far)
 	{
-		fprintf(stderr, "kuhl-util: Invalid orthographic projection matrix.\n");
+		fprintf(stderr, "%s: Invalid orthographic projection matrix.\n", __func__);
 		return;
 	}
 	result[0]  =  2 / (right-left);
@@ -1555,7 +1639,7 @@ void mat4d_ortho_new(double result[16], double left, double right, double bottom
 	mat4d_identity(result);
 	if(left == right || bottom == top || near == far)
 	{
-		fprintf(stderr, "kuhl-util: Invalid orthographic projection matrix.\n");
+		fprintf(stderr, "%s: Invalid orthographic projection matrix.\n", __func__);
 		return;
 	}
 	result[0]  =  2 / (right-left);
@@ -1584,7 +1668,7 @@ void mat4f_perspective_new(float result[16], float  fovy, float  aspect, float  
 	far = fabs(far);
 	if(near == 0)
 	{
-		fprintf(stderr, "kuhl-util: Invalid perspective projection matrix.\n");
+		fprintf(stderr, "%s: Invalid perspective projection matrix.\n", __func__);
 		return;
 	}
 	float fovyRad = fovy * M_PI/180.0f;
@@ -1609,7 +1693,7 @@ void mat4d_perspective_new(double result[16], double fovy, double aspect, double
 	near = abs(near);
 	far = abs(far);
 	{
-		fprintf(stderr, "kuhl-util: Invalid perspective projection matrix.\n");
+		fprintf(stderr, "%s: Invalid perspective projection matrix.\n", __func__);
 		mat4d_identity(result);
 		return;
 	}
@@ -1619,6 +1703,16 @@ void mat4d_perspective_new(double result[16], double fovy, double aspect, double
 	mat4d_frustum_new(result, -width, width, -height, height, near, far);
 }
 
+/** Creates a new lookat matrix (aka viewing transformation) which
+ * defines the position and orientation of the virtual camera. This
+ * creates a matrix that is similar to what gluLookAt() would
+ * typically apply to the matrix stack in earlier versions of OpenGL.
+ *
+ * @param result The resulting view transformation matrix.
+ * @param eye The position of the virtual camera.
+ * @param center A point in 3D space that the camera is looking at. (This value is not a vector that the camera is looking down).
+ * @param up An up vector. If you don't know what to put here, start with 0,1,0. (The up vector must not be parallel to the view vector calculated as center-eye.)
+ */
 void mat4f_lookatVec_new(float  result[16], const float  eye[3], const float  center[3], const float  up[3])
 {
 	/* Calculate appropriate vectors */
@@ -1653,6 +1747,10 @@ void mat4f_lookatVec_new(float  result[16], const float  eye[3], const float  ce
 	/* Multiply the matrices together */
 	mat4f_mult_mat4f_new(result, rotationPart, translationPart);
 }
+/** Creates a new lookat matrix (aka viewing transformation) which
+ * defines the position and orientation of the virtual camera.
+ * For full documentation, see mat4f_lookatVec_new()
+ */
 void mat4d_lookatVec_new(double result[16], const double eye[3], const double center[3], const double up[3])
 {
 	/* Calculate appropriate vectors */
@@ -1687,6 +1785,11 @@ void mat4d_lookatVec_new(double result[16], const double eye[3], const double ce
 	/* Multiply the matrices together */
 	mat4d_mult_mat4d_new(result, rotationPart, translationPart);
 }
+
+/** Creates a new lookat matrix (aka viewing transformation) which
+ * defines the position and orientation of the virtual camera.
+ * For full documentation, see mat4f_lookatVec_new()
+ */
 void mat4f_lookat_new(float result[16], float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ)
 {
 	float eye[3], center[3], up[3];
@@ -1695,6 +1798,10 @@ void mat4f_lookat_new(float result[16], float eyeX, float eyeY, float eyeZ, floa
 	vec3f_set(up,         upX,     upY,     upZ);
 	mat4f_lookatVec_new(result, eye, center, up);
 }
+/** Creates a new lookat matrix (aka viewing transformation) which
+ * defines the position and orientation of the virtual camera.
+ * For full documentation, see mat4f_lookatVec_new()
+ */
 void mat4d_lookat_new(double result[16], double eyeX, double eyeY, double eyeZ, double centerX, double centerY, double centerZ, double upX, double upY, double upZ)
 {
 	double eye[3], center[3], up[3];
@@ -2834,4 +2941,56 @@ float kuhl_getfps(int milliseconds)
 		fps_frame = 0;
 	}
 	return fps_now;
+}
+
+/** Generates a random integer between min and max inclusive. This
+ * uses floating point to avoid possible issues with using rand()
+ * along with modulo. This approach isn't completely bias free since
+ * doubles don't have infinite precision and we aren't guaranteed
+ * perfectly uniform distribution after multiplying the value returned
+ * by drand48(). But, this is good enough for most purposes.
+ *
+ * @param min Smallest random number that we want.
+ * @param max Largest random number that we want.
+ */
+static int kuhl_random_init_done = 0;
+int kuhl_randomInt(int min, int max)
+{
+	if(kuhl_random_init_done == 0)
+	{
+		// http://stackoverflow.com/questions/8056371
+		srand48((getpid()*2654435761U)^time(NULL));
+		kuhl_random_init_done = 1;
+	}
+	
+	int possibleVals = max-min+1;
+	double fl = drand48(); // [0, 1.0)
+	fl = fl*possibleVals; // [0, possibleVals)
+	fl = fl+min;          // [min, min+possibleVals)
+	                      // [min, min+(max-min+1))
+	                      // [min, max+1)
+	return floor(fl); // casting to int fails to work with negative values
+}
+
+/** Shuffles an array of items randomly.
+
+   @param array Array of items
+   @param n Number of items in the array.
+   @param size Size of each item.
+*/
+void kuhl_shuffle(void *array, int n, int size)
+{
+	char *arr = (char*) array; // Use a char array which we know uses 1 byte pointer arithmetic
+
+	// https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+	for(int i=n-1; i>=1; i--)
+	{
+		int j = kuhl_randomInt(0, i); // index to swap
+
+		// Swap the values
+		char tmp[size];
+		memcpy(tmp,        arr+j*size, size);
+		memcpy(arr+j*size, arr+i*size, size);
+		memcpy(arr+i*size, tmp,        size);
+	}
 }
