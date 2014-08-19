@@ -76,7 +76,7 @@ void display()
 		float angle = count / 10000.0 * 360;
 		dgr_setget("angle", &angle, sizeof(GLfloat));
 		float animationMat[16];
-		mat4f_rotate_new(animationMat, angle, 0,1,0);
+		mat4f_rotateAxis_new(animationMat, angle, 0,1,0);
 
 		float scaleMatrix[16];
 		mat4f_scale_new(scaleMatrix, 3, 3, 3);

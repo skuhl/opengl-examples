@@ -94,7 +94,7 @@ void get_model_matrix(float result[16])
 	float rotateAnimate[16], scaleBoundBox[16], moveToOrigin[16], moveToLookPoint[16];
 	mat4f_translate_new(moveToOrigin, -bb_center[0], -bb_center[1], -bb_center[2]); // move to origin
 	mat4f_scale_new(scaleBoundBox, tmp, tmp, tmp); // scale model based on bounding box size
-	mat4f_rotate_new(rotateAnimate, angle, 0, 1, 0); // rotate the object
+	mat4f_rotateAxis_new(rotateAnimate, angle, 0, 1, 0); // rotate the object
 	mat4f_translateVec_new(moveToLookPoint, placeToPutModel);
 
 	mat4f_mult_mat4f_new(result, moveToOrigin, result);
