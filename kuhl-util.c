@@ -294,6 +294,9 @@ int kuhl_errorcheckFileLine(char *file, int line)
 
 /** Inverts a 4x4 float matrix.
  *
+ * This works regardless of if we are treating the data as row major
+ * or column major order because: (A^T)^-1 == (A^-1)^T
+ *
  * @param out Location to store the inverted matrix.
  * @param m The matrix to invert.
  * @return Returns 1 if the matrix was inverted. Returns 0 if an error occurred. When an error occurs, a message is also printed out to standard out and the output matrix is left unchanged.
@@ -333,6 +336,9 @@ int mat4f_invert_new(float out[16], const float m[16])
 }
 
 /** Inverts a 4x4 double matrix.
+ *
+ * This works regardless of if we are treating the data as row major
+ * or column major order because: (A^T)^-1 == (A^-1)^T
  *
  * @param out Location to store the inverted matrix.
  * @param m The matrix to invert.
@@ -374,6 +380,9 @@ int mat4d_invert_new(double out[16], const double m[16])
 
 /** Inverts a 3x3 float matrix.
  *
+ * This works regardless of if we are treating the data as row major
+ * or column major order because: (A^T)^-1 == (A^-1)^T
+ *
  * @param out Location to store the inverted matrix.
  * @param m The matrix to invert.
  * @return Returns 1 if the matrix was inverted. Returns 0 if an error occurred. When an error occurs, a message is also printed out to standard out and the output matrix is left unchanged.
@@ -408,6 +417,9 @@ int mat3f_invert_new(float out[9], const float m[9])
 }
 
 /** Inverts a 3x3 double matrix.
+ *
+ * This works regardless of if we are treating the data as row major
+ * or column major order because: (A^T)^-1 == (A^-1)^T
  *
  * @param out Location to store the inverted matrix.
  * @param m The matrix to invert.
@@ -463,104 +475,555 @@ int mat3d_invert(double matrix[ 9])
 { return mat3d_invert_new(matrix, matrix); }
 
 
-void mat3f_rotateVec_new(float result[9], float degrees, const float axis[3])
+/** Creates a 3x3 rotation matrix of floats from Euler angles.
+
+If order="XYZ", we will create a rotation matrix which rotates a point
+around X, Y and then Z using intrinsic rotations. This results in a
+single matrix that is comprised of three rotation matrices:
+RotZ*RotY*RotX. If you prefer to think in extrinsic rotations, using
+order="XYZ" is equivalent to rotating around Z, Y, and then X.
+
+This implementation matches what Wolfram Alpha does except that the
+signs on all of the angles need to be negated.  For example, see the
+matrices for right-handed systems on Wikipedia and note that Wolfram
+alpha has all of the sin()s negated---making it use a left-handed
+system.
+
+If you want to rotate a camera in OpenGL, you may wish to invert this
+matrix (if R = RxRyRz, then R^-1 = Rz^-1 Ry^-1 Rx^-1). Otherwise, this
+matrix can be applied to rotate vertices in an object.
+
+Intended to work with:
+XYZ XZY YXZ YZX ZXY ZYX (Tait-Bryan angles)
+XYX XZX YXY YZY ZXZ ZYZ (Euler angles)
+
+@param result The location to store the rotation matrix calculated from the Euler angles.
+@param a1_degrees The amount of rotation around the first axis in degrees (-180 to 180).
+
+@param a2_degrees The amount of rotation around the second axis in
+degrees. If first and last rotation axes are different (Tait-Bryan
+angles), must be between -90 to 90. If the first and last rotation
+axes are the same (traditional Euler angles), must be between 0 and
+180. When this parameter is near the limits, gimbal lock occurs.
+
+@param a3_degrees The amount of rotation around the third axis in
+degrees (-180 to 180).
+
+@param order A string representing the order that the rotations should
+be applied. In graphics, typically "XYZ".
+*/
+void mat3f_rotateEuler_new(float result[9], float a1_degrees, float a2_degrees, float a3_degrees, const char order[3])
 {
-	float v[3];
-	vec3f_copy(v,axis);
-	if(vec3f_normSq(v) < EPSILON)
-		printf("%s: Vector to rotate around was 0!", __func__);
-	vec3f_normalize(v);
-	float x = v[0];
-	float y = v[1];
-	float z = v[2];
-	float r = degrees * M_PI/180;
-#define c(r) (1.0-cosf(r))
-#define s(r) sinf(r)
-	// first row
-	result[0] = 1+c(r)*(x*x-1);
-	result[3] = c(r)*x*y-z*s(r);
-	result[6] = c(r)*x*z+y*s(r);
-
-	// second row
-	result[1] = c(r)*x*y + z*s(r);
-	result[4] = 1+c(r)*(y*y-1);
-	result[7] = c(r)*y*z-x*s(r);
-
-	// third row
-	result[2] = c(r)*x*z-y*s(r);
-	result[5] = c(r)*y*z+x*s(r);
-	result[8] = 1+c(r)*(z*z-1);
-#undef c
-#undef s
+	// Convert from degrees to radians
+	float angles[3] = { a1_degrees, a2_degrees, a3_degrees };
+	mat3f_identity(result);
+	float rot[9];
+	for(int i=0; i<3; i++)
+	{
+		if(order[i] == 'X' || order[i] == '1')
+			mat3f_rotateAxis_new(rot, angles[i], 1, 0, 0);
+		else if(order[i] == 'Y' || order[i] == '2')
+			mat3f_rotateAxis_new(rot, angles[i], 0, 1, 0);
+		else if(order[i] == 'Z' || order[i] == '3')
+			mat3f_rotateAxis_new(rot, angles[i], 0, 0, 1);
+		else
+			printf("%s: Unknown axis: %c\n", __func__, order[i]);
+		mat3f_mult_mat3f_new(result, rot, result);
+	}
 }
 
+/** Creates a 3x3 rotation matrix of doubles from intrinsic Euler
+    angles. For full documentation, see mat3f_rotateEuler_new().
 
-void mat3d_rotateVec_new(double result[9], double degrees, const double axis[3])
+    @see mat3f_rotateEuler_new()
+*/
+void mat3d_rotateEuler_new(double result[9], double a1_degrees, double a2_degrees, double a3_degrees, const char order[3])
 {
-	double v[3];
-	vec3d_copy(v,axis);
-	if(vec3d_normSq(v) < EPSILON)
-		printf("%s: Vector to rotate around was 0!", __func__);
-	vec3d_normalize(v);
-	double x = v[0];
-	double y = v[1];
-	double z = v[2];
-	double r = degrees * M_PI/180;
-#define c(r) (1.0-cos(r))
-#define s(r) sin(r)
-	// first row
-	result[0] = 1+c(r)*(x*x-1);
-	result[3] = c(r)*x*y-z*s(r);
-	result[6] = c(r)*x*z+y*s(r);
-
-	// second row
-	result[1] = c(r)*x*y + z*s(r);
-	result[4] = 1+c(r)*(y*y-1);
-	result[7] = c(r)*y*z-x*s(r);
-
-	// third row
-	result[2] = c(r)*x*z-y*s(r);
-	result[5] = c(r)*y*z+x*s(r);
-	result[8] = 1+c(r)*(z*z-1);
-#undef c
-#undef s
+	// Convert from degrees to radians
+	double angles[3] = { a1_degrees, a2_degrees, a3_degrees };
+	mat3d_identity(result);
+	double rot[9];
+	for(int i=0; i<3; i++)
+	{
+		if(order[i] == 'X' || order[i] == '1')
+			mat3d_rotateAxis_new(rot, 1, 0, 0, angles[i]);
+		else if(order[i] == 'Y' || order[i] == '2')
+			mat3d_rotateAxis_new(rot, 0, 1, 0, angles[i]);
+		else if(order[i] == 'Z' || order[i] == '3')
+			mat3d_rotateAxis_new(rot, 0, 0, 1, angles[i]);
+		else
+			printf("%s: Unknown axis: %c\n", __func__, order[i]);
+		mat3d_mult_mat3d_new(result, rot, result);
+	}
 }
 
-void mat4f_rotateVec_new(float result[16], float degrees, const float axis[3])
+/** Creates a 4x4 rotation matrix of floats from intrinsic Euler
+    angles. For full documentation, see mat3f_rotateEuler_new().
+
+    @see mat3f_rotateEuler_new()
+*/
+void mat4f_rotateEuler_new(float result[16], float a1_degrees, float a2_degrees, float a3_degrees, const char order[3])
 {
 	float tmpMat[9];
-	mat3f_rotateVec_new(tmpMat, degrees, axis);
+	mat3f_rotateEuler_new(tmpMat, a1_degrees, a2_degrees, a3_degrees, order);
 	mat3f_to_mat4f(result, tmpMat);
 }
-void mat4d_rotateVec_new(double result[16], double degrees, const double axis[3])
+
+/** Creates a 4x4 rotation matrix of doubles from intrinsic Euler
+    angles. For full documentation, see mat3f_rotateEuler_new().
+
+    @see mat3f_rotateEuler_new()
+*/
+void mat4d_rotateEuler_new(double result[16], double a1_degrees, double a2_degrees, double a3_degrees, const char order[3])
 {
 	double tmpMat[9];
-	mat3d_rotateVec_new(tmpMat, degrees, axis);
+	mat3d_rotateEuler_new(tmpMat, a1_degrees, a2_degrees, a3_degrees, order);
 	mat3d_to_mat4d(result, tmpMat);
 }
-void mat3f_rotate_new(float  result[ 9], float  degrees, float axisX, float axisY, float axisZ)
+
+
+
+/** Given a 3x3 rotation matrix and a Euler rotation ordering,
+    calculate Euler angles that could be used to produce the matrix.
+
+    Gimbal lock can occur and depending on the value of the second
+    Euler angle. If you are using traditional Euler angles (first and
+    last axis are the same), gimbal lock occurs when the second angle
+    is either 0 or 180 degrees. If you are using Tait Brian angles
+    (first and last axis are different), then gimbal lock occurs when
+    the second angle is -90 or 90 degrees. In those cases, expect that
+    the Euler->matrix->Euler conversions may not produce the same
+    output Euler angle output as the input since there are multiple
+    Euler angles representing the same orientation under gimbal lock.
+
+    This implementation uses the method described in "Extracting Euler
+    Angles from a Rotation Matrix" by Mike Day (Insomniac Games) to
+    allow matrix->Euler->matrix conversion to have the output matrix
+    be the same (or very similar) to the input matrix. Kevin
+    Shoemake's "Euler Angle Conversion" in Graphics Gems IV also
+    served as a source of inspiration for this code.
+    
+    @param angles The resulting Euler angles in degrees. The first and
+    last angles will be in the range of -180 and 180 degrees. If using
+    traditional Euler angles (first and last axis are the same), the
+    second angle will be between 0 and 90. If using Tait-Bryan angles
+    (first and last axis are different), the second angle will be
+    between -90 and 90. If the second angle is near the range limits,
+    gimbal lock has occurred or almost has occurred.
+    
+    @param m The rotation matrix to calculate the Euler angles from.
+    
+    @param order The axis ordering to use (for example "XYZ"). "XYZ"
+    is commonly used in graphics and aerospace engineering (in OpenGL,
+    where you are looking down -Z, the angles correspond to pitch,
+    yaw, roll, respectively.).
+*/
+void euler_from_mat3f(float angles[3], const float m[9], const char order[3])
+{
+	/* Create an easy-to-use array of the axis ordering from the
+	 * user-provided input. */
+	int index[3] = { 0, 0, 0 };
+	for(int i=0; i<3; i++)
+	{
+		if(order[i] == 'X' || order[i] == '1')
+			index[i] = 0;
+		else if(order[i] == 'Y' || order[i] == '2')
+			index[i] = 1;
+		else if(order[i] == 'Z' || order[i] == '3')
+			index[i] = 2;
+		else
+			printf("%s: Unknown axis: %c\n", __func__, order[i]);
+	}
+
+    // Check if the first and last rotations are around the same axis.
+	if(index[0] == index[2])
+	{
+		float sign = 1;
+		if((index[0] == 0 && index[1] == 1 && index[2] == 0) ||
+		   (index[0] == 1 && index[1] == 2 && index[2] == 1) ||
+		   (index[0] == 2 && index[1] == 0 && index[2] == 2))
+		{
+			sign = -1;
+		}
+
+		/* Set index[2] to indicate the 3rd dimension that was left out of
+		   order. */
+		if(index[0] != 0 && index[1] != 0 && index[2] != 0)
+			index[2] = 0;
+		if(index[0] != 1 && index[1] != 1 && index[2] != 1)
+			index[2] = 1;
+		if(index[0] != 2 && index[1] != 2 && index[2] != 2)
+			index[2] = 2;
+
+		// Make code easier to read by storing matrix values directly so
+		// we don't need to calculate the location of the value in the 1D
+		// array in each of our calculations.
+		float index00 = m[mat3_getIndex(index[0],index[0])];
+		float index01 = m[mat3_getIndex(index[0],index[1])];
+		float index02 = m[mat3_getIndex(index[0],index[2])];
+//		float index10 = m[mat3_getIndex(index[1],index[0])]; // unused
+		float index11 = m[mat3_getIndex(index[1],index[1])];
+		float index12 = m[mat3_getIndex(index[1],index[2])];
+//		float index20 = m[mat3_getIndex(index[2],index[0])]; // unused
+		float index21 = m[mat3_getIndex(index[2],index[1])];
+		float index22 = m[mat3_getIndex(index[2],index[2])];
+
+		double sy = sqrtf(index01*index01 + index02*index02);
+		angles[0] = atan2f(index01, -sign*index02);
+		angles[1] = atan2f(sy, index00);
+		float s1=sinf(angles[0]);
+		float c1=cosf(angles[0]);
+		float c2=cosf(angles[1]);
+		angles[2] = atan2f(c1*index12-s1*index22,
+		                   c1*index11+s1*c2*index21);
+	}
+	else // first and last rotations are different axes
+	{
+		float sign = 1;
+		if((index[0] == 1 && index[1] == 2 && index[2] == 0) ||
+		   (index[0] == 2 && index[1] == 0 && index[2] == 1) ||
+		   (index[0] == 0 && index[1] == 1 && index[2] == 2))
+		{
+			sign = -1;
+		}
+
+		// Make code easier to read by storing matrix values directly so
+		// we don't need to calculate the location of the value in the 1D
+		// array in each of our calculations.
+		float index00 = m[mat3_getIndex(index[0],index[0])];
+		float index01 = m[mat3_getIndex(index[0],index[1])];
+		float index02 = m[mat3_getIndex(index[0],index[2])];
+		float index10 = m[mat3_getIndex(index[1],index[0])];
+		float index11 = m[mat3_getIndex(index[1],index[1])];
+		float index12 = m[mat3_getIndex(index[1],index[2])];
+		float index20 = m[mat3_getIndex(index[2],index[0])];
+		float index21 = m[mat3_getIndex(index[2],index[1])];
+		float index22 = m[mat3_getIndex(index[2],index[2])];
+
+		float cy = sqrtf(index00*index00+index10*index10);
+		angles[0] = -sign*atan2f(index21, index22);
+		angles[1] = -sign*atan2f(-index20, cy);
+		float s1= -sign*sinf(angles[0]);
+		float c1=cosf(angles[0]);
+		angles[2] = -sign*atan2f((s1*index02-c1*index01),
+		                         (c1*index11-s1*index12));
+	}
+
+
+	// Convert to degrees.
+	for(int i=0; i<3; i++)
+		angles[i] = angles[i] * 180/M_PI;
+}
+
+
+/** Given a 3x3 rotation matrix and a Euler rotation ordering,
+    calculate the Euler angles used to produce the matrix.
+
+ @see euler_from_mat3f()
+*/
+void euler_from_mat3d(double angles[3], const double m[9], const char order[3])
+{
+	/* Create an easy-to-use array of the axis ordering from the
+	 * user-provided input. */
+	int index[3] = { 0, 0, 0 };
+	for(int i=0; i<3; i++)
+	{
+		if(order[i] == 'X' || order[i] == '1')
+			index[i] = 0;
+		else if(order[i] == 'Y' || order[i] == '2')
+			index[i] = 1;
+		else if(order[i] == 'Z' || order[i] == '3')
+			index[i] = 2;
+		else
+			printf("%s: Unknown axis: %c\n", __func__, order[i]);
+	}
+
+    // Check if the first and last rotations are around the same axis.
+	if(index[0] == index[2])
+	{
+		double sign = 1;
+		if((index[0] == 0 && index[1] == 1 && index[2] == 0) ||
+		   (index[0] == 1 && index[1] == 2 && index[2] == 1) ||
+		   (index[0] == 2 && index[1] == 0 && index[2] == 2))
+		{
+			sign = -1;
+		}
+
+		/* Set index[2] to indicate the 3rd dimension that was left out of
+		   order. */
+		if(index[0] != 0 && index[1] != 0 && index[2] != 0)
+			index[2] = 0;
+		if(index[0] != 1 && index[1] != 1 && index[2] != 1)
+			index[2] = 1;
+		if(index[0] != 2 && index[1] != 2 && index[2] != 2)
+			index[2] = 2;
+
+		// Make code easier to read by storing matrix values directly so
+		// we don't need to calculate the location of the value in the 1D
+		// array in each of our calculations.
+		double index00 = m[mat3_getIndex(index[0],index[0])];
+		double index01 = m[mat3_getIndex(index[0],index[1])];
+		double index02 = m[mat3_getIndex(index[0],index[2])];
+//		float index10 = m[mat3_getIndex(index[1],index[0])]; // unused
+		double index11 = m[mat3_getIndex(index[1],index[1])];
+		double index12 = m[mat3_getIndex(index[1],index[2])];
+//		double index20 = m[mat3_getIndex(index[2],index[0])]; // unused
+		double index21 = m[mat3_getIndex(index[2],index[1])];
+		double index22 = m[mat3_getIndex(index[2],index[2])];
+
+		double sy = sqrt(index01*index01 + index02*index02);
+		angles[0] = atan2(index01, -sign*index02);
+		angles[1] = atan2(sy, index00);
+		double s1=sin(angles[0]);
+		double c1=cos(angles[0]);
+		double c2=cos(angles[1]);
+		angles[2] = atan2(c1*index12-s1*index22,
+		                   c1*index11+s1*c2*index21);
+	}
+	else // first and last rotations are different axes
+	{
+		double sign = 1;
+		if((index[0] == 1 && index[1] == 2 && index[2] == 0) ||
+		   (index[0] == 2 && index[1] == 0 && index[2] == 1) ||
+		   (index[0] == 0 && index[1] == 1 && index[2] == 2))
+		{
+			sign = -1;
+		}
+
+		// Make code easier to read by storing matrix values directly so
+		// we don't need to calculate the location of the value in the 1D
+		// array in each of our calculations.
+		double index00 = m[mat3_getIndex(index[0],index[0])];
+		double index01 = m[mat3_getIndex(index[0],index[1])];
+		double index02 = m[mat3_getIndex(index[0],index[2])];
+		double index10 = m[mat3_getIndex(index[1],index[0])];
+		double index11 = m[mat3_getIndex(index[1],index[1])];
+		double index12 = m[mat3_getIndex(index[1],index[2])];
+		double index20 = m[mat3_getIndex(index[2],index[0])];
+		double index21 = m[mat3_getIndex(index[2],index[1])];
+		double index22 = m[mat3_getIndex(index[2],index[2])];
+
+		double cy = sqrt(index00*index00+index10*index10);
+		angles[0] = -sign*atan2(index21, index22);
+		angles[1] = -sign*atan2(-index20, cy);
+		double s1= -sign*sin(angles[0]);
+		double c1=cos(angles[0]);
+		angles[2] = -sign*atan2((s1*index02-c1*index01),
+		                        (c1*index11-s1*index12));
+	}
+
+
+	// Convert to degrees.
+	for(int i=0; i<3; i++)
+		angles[i] = angles[i] * 180/M_PI;
+}
+
+
+/** Given a 4x4 rotation matrix and a Euler rotation ordering,
+ calculate the Euler angles used to produce the matrix.
+
+ @see euler_from_mat3f()
+*/
+void euler_from_mat4f(float angles[3], const float m[16], const char order[3])
+{
+	float tmpMat[9];
+	mat4f_to_mat3f(tmpMat, m);
+	euler_from_mat3f(angles, tmpMat, order);
+}
+/** Given a 4x4 rotation matrix and a Euler rotation ordering,
+ calculate the Euler angles used to produce the matrix.
+
+ @see euler_from_mat3f()
+*/
+void euler_from_mat4d(double angles[3], const double m[16], const char order[3])
+{
+	double tmpMat[9];
+	mat4d_to_mat3d(tmpMat, m);
+	euler_from_mat3d(angles, tmpMat, order);
+}
+
+
+/** Create a 3x3 rotation matrix given a rotation axis and the number
+ * of degrees to rotate.
+ *
+ * @param result The location to store the resulting matrix.
+ * @param degrees The number of degrees to rotate around the axis.
+ * @param axis A vector representing the axis to rotate around (must have a non-zero length). */
+void mat3f_rotateAxisVec_new(float result[9], float degrees, const float axis[3])
+{
+	float angle = degrees * M_PI/180;
+	float c = cosf(angle);
+	float s = sinf(angle);
+	float t = 1-c;
+	// 1-c is numerically unsound when angle is small.
+	// See: https://en.wikipedia.org/wiki/Loss_of_significance
+	// Use fix described at:
+	// http://math.stackexchange.com/questions/38144
+	if(c > .9)
+		t = 2.0 * sinf(angle/2.0)*sinf(angle/2.0);
+
+	// If zero vector is passed in, return identity matrix
+	float length = vec3f_norm(axis);
+	if(length < EPSILON)
+	{
+		printf("%s: Vector to rotate around was 0!", __func__);
+		mat3f_identity(result);
+		return;
+	}
+
+	float x = axis[0]/length;
+	float y = axis[1]/length;
+	float z = axis[2]/length;
+
+	// first row
+	result[0] = x*x*t+c;
+	result[3] = x*y*t-z*s;
+	result[6] = x*z*t+y*s;
+
+	// second row
+	result[1] = y*x*t+z*s;
+	result[4] = y*y*t+c;
+	result[7] = y*z*t-x*s;
+
+	// third row
+	result[2] = z*x*t-y*s;
+	result[5] = z*y*t+x*s;
+	result[8] = z*z*t+c;
+}
+
+
+/** Create a 3x3 rotation matrix given a rotation axis and the number
+ * of degrees to rotate.
+ *
+ * @param result The location to store the resulting matrix.
+ * @param degrees The number of degrees to rotate around the axis.
+ * @param axis A vector representing the axis to rotate around (must have a non-zero length). */
+void mat3d_rotateAxisVec_new(double result[9], double degrees, const double axis[3])
+{
+	double angle = degrees * M_PI/180;
+	double c = cos(angle);
+	double s = sin(angle);
+	double t = 1-c;
+	// 1-c is numerically unsound when angle is small.
+	// See: https://en.wikipedia.org/wiki/Loss_of_significance
+	// Use fix described at:
+	// http://math.stackexchange.com/questions/38144
+	if(angle < .01)
+		t = 2.0 * sin(angle/2.0)*sin(angle/2.0);
+
+	// If zero vector is passed in, return identity matrix
+	double length = vec3d_norm(axis);
+	if(length < EPSILON)
+	{
+		printf("%s: Vector to rotate around was 0!", __func__);
+		mat3d_identity(result);
+		return;
+	}
+
+	double x = axis[0]/length;
+	double y = axis[1]/length;
+	double z = axis[2]/length;
+
+	// first row
+	result[0] = x*x*t+c;
+	result[3] = x*y*t-z*s;
+	result[6] = x*z*t+y*s;
+
+	// second row
+	result[1] = y*x*t+z*s;
+	result[4] = y*y*t+c;
+	result[7] = y*z*t-x*s;
+
+	// third row
+	result[2] = z*x*t-y*s;
+	result[5] = z*y*t+x*s;
+	result[8] = z*z*t+c;
+}
+
+/** Create a 4x4 rotation matrix given a rotation axis and the number
+ * of degrees to rotate.
+ *
+ * @param result The location to store the resulting matrix.
+ * @param degrees The number of degrees to rotate around the axis.
+ * @param axis A vector representing the axis to rotate around (must have a non-zero length). */
+void mat4f_rotateAxisVec_new(float result[16], float degrees, const float axis[3])
+{
+	float tmpMat[9];
+	mat3f_rotateAxisVec_new(tmpMat, degrees, axis);
+	mat3f_to_mat4f(result, tmpMat);
+}
+/** Create a 4x4 rotation matrix given a rotation axis and the number
+ * of degrees to rotate.
+ *
+ * @param result The location to store the resulting matrix.
+ * @param degrees The number of degrees to rotate around the axis.
+ * @param axis A vector representing the axis to rotate around (must have a non-zero length). */
+void mat4d_rotateAxisVec_new(double result[16], double degrees, const double axis[3])
+{
+	double tmpMat[9];
+	mat3d_rotateAxisVec_new(tmpMat, degrees, axis);
+	mat3d_to_mat4d(result, tmpMat);
+}
+
+/** Create a 3x3 rotation matrix given a rotation axis and the number
+ * of degrees to rotate.
+ *
+ * @param result The location to store the resulting matrix.
+ * @param degrees The number of degrees to rotate around the axis.
+ * @param x The x-component of the axis to rotate around.
+ * @param y The y-component of the axis to rotate around.
+ * @param z The z-component of the axis to rotate around.
+ */
+void mat3f_rotateAxis_new(float  result[ 9], float  degrees, float axisX, float axisY, float axisZ)
 {
 	float vec[3];
 	vec3f_set(vec, axisX, axisY, axisZ);
-	mat3f_rotateVec_new(result, degrees, vec);
+	mat3f_rotateAxisVec_new(result, degrees, vec);
 }
-void mat3d_rotate_new(double result[ 9], double degrees, double axisX, double axisY, double axisZ)
+/** Create a 3x3 rotation matrix given a rotation axis and the number
+ * of degrees to rotate.
+ *
+ * @param result The location to store the resulting matrix.
+ * @param degrees The number of degrees to rotate around the axis.
+ * @param x The x-component of the axis to rotate around.
+ * @param y The y-component of the axis to rotate around.
+ * @param z The z-component of the axis to rotate around.
+ */
+void mat3d_rotateAxis_new(double result[ 9], double degrees, double axisX, double axisY, double axisZ)
 {
 	double vec[3];
 	vec3d_set(vec, axisX, axisY, axisZ);
-	mat3d_rotateVec_new(result, degrees, vec);
+	mat3d_rotateAxisVec_new(result, degrees, vec);
 }
-void mat4f_rotate_new(float  result[16], float  degrees, float axisX, float axisY, float axisZ)
+/** Create a 4x4 rotation matrix given a rotation axis and the number
+ * of degrees to rotate.
+ *
+ * @param result The location to store the resulting matrix.
+ * @param degrees The number of degrees to rotate around the axis.
+ * @param x The x-component of the axis to rotate around.
+ * @param y The y-component of the axis to rotate around.
+ * @param z The z-component of the axis to rotate around.
+ */
+void mat4f_rotateAxis_new(float  result[16], float  degrees, float axisX, float axisY, float axisZ)
 {
 	float vec[3];
 	vec3f_set(vec, axisX, axisY, axisZ);
-	mat4f_rotateVec_new(result, degrees, vec);
+	mat4f_rotateAxisVec_new(result, degrees, vec);
 }
-void mat4d_rotate_new(double result[16], double degrees, double axisX, double axisY, double axisZ)
+/** Create a 4x4 rotation matrix given a rotation axis and the number
+ * of degrees to rotate.
+ *
+ * @param result The location to store the resulting matrix.
+ * @param degrees The number of degrees to rotate around the axis.
+ * @param x The x-component of the axis to rotate around.
+ * @param y The y-component of the axis to rotate around.
+ * @param z The z-component of the axis to rotate around.
+ */
+void mat4d_rotateAxis_new(double result[16], double degrees, double axisX, double axisY, double axisZ)
 {
 	double vec[3];
 	vec3d_set(vec, axisX, axisY, axisZ);
-	mat4d_rotateVec_new(result, degrees, vec);
+	mat4d_rotateAxisVec_new(result, degrees, vec);
 }
 
 

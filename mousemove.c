@@ -122,7 +122,7 @@ static void mousemove_private_rotate_point(float degrees, float axis[3], float p
 		return;
 
 	float m[9];
-	mat3f_rotateVec_new(m,degrees,axis);
+	mat3f_rotateAxisVec_new(m,degrees,axis);
 	mat3f_mult_vec3f_new(point, m, point);
 }
 
