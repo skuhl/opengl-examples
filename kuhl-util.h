@@ -1001,6 +1001,18 @@ int mat4d_invert(double matrix[16]);
 int mat3f_invert(float  matrix[ 9]);
 int mat3d_invert(double matrix[ 9]);
 
+/* Creates 3x3 rotation matrix from Euler angles. */
+void mat3f_rotateEuler_new(float result[9], float a1_degrees, float a2_degrees, float a3_degrees, const char order[3]);
+void mat3d_rotateEuler_new(double result[9], double a1_degrees, double a2_degrees, double a3_degrees, const char order[3]);
+void mat4f_rotateEuler_new(float result[16], float a1_degrees, float a2_degrees, float a3_degrees, const char order[3]);
+void mat4d_rotateEuler_new(double result[16], double a1_degrees, double a2_degrees, double a3_degrees, const char order[3]);
+
+/* Calculate Euler angles from rotation matrices. */
+void euler_from_mat3f(float  angles[3], const float  m[9], const char order[3]);
+void euler_from_mat3d(double angles[3], const double m[9], const char order[3]);
+void euler_from_mat4f(float angles[3], const float m[16], const char order[3]);
+void euler_from_mat4d(double angles[3], const double m[16], const char order[3]);
+
 
 /* Creates a new 3x3 rotation matrix which produces a rotation around
    the given "axis" by the given number of "degrees".  Stores the
