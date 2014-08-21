@@ -214,7 +214,7 @@ foreach(component ${ImageMagick_FIND_COMPONENTS}
     list(APPEND ImageMagick_REQUIRED_VARS ImageMagick_MagickWand_LIBRARY)
   elseif(component STREQUAL "MagickCore")
     FIND_IMAGEMAGICK_API(MagickCore magick/MagickCore.h
-      Magick MagickCore CORE_RL_magick_ MagickCore-6.Q16 MagickCore-Q16 MagickCore-6.Q8 MagickCore-Q8 MagickCore-6.Q16HDRI MagickCore-Q16HDRI MagickCore-6.Q8HDRI MagickCore-Q8HDRI
+      MagickCore CORE_RL_magick_ MagickCore-6.Q16 MagickCore-Q16 MagickCore-6.Q8 MagickCore-Q8 MagickCore-6.Q16HDRI MagickCore-Q16HDRI MagickCore-6.Q8HDRI MagickCore-Q8HDRI Magick
       )
     list(APPEND ImageMagick_REQUIRED_VARS ImageMagick_MagickCore_LIBRARY)
   else()
