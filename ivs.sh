@@ -88,6 +88,8 @@ fi
 # Add local directory to our PATH so user can use "exectuable" instead of "./executable"
 PATH=.:$PATH
 
+printMessage "Making sure everything is recompiled on this computer..."
+make --quiet "$1" dgr-relay
 
 # Create a persistant ssh connection that we will reuse. This will
 # just make it so we have to SSH into ivs once (might be slow, might
