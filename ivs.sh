@@ -74,6 +74,12 @@ if [[ $# -lt 1 ]]; then
     exit 1
 fi
 
+# Add local directory to our PATH so user can use "exectuable" instead of "./executable"
+PATH=.:$PATH
+
+printMessage "Making sure everything is recompiled on this computer..."
+make --quiet "$1" dgr-relay
+
 # Make sure that the dgr-relay and the program we want to execute exist and are executable.
 if [[ ! -x dgr-relay ]]; then
     echo "dgr-relay program is missing or not executable. Have you compiled it?"
@@ -84,12 +90,6 @@ if [[ ! -x "$1" ]]; then
     exit 1
 fi
 
-
-# Add local directory to our PATH so user can use "exectuable" instead of "./executable"
-PATH=.:$PATH
-
-printMessage "Making sure everything is recompiled on this computer..."
-make --quiet "$1" dgr-relay
 
 # Create a persistant ssh connection that we will reuse. This will
 # just make it so we have to SSH into ivs once (might be slow, might
