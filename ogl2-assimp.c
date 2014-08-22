@@ -203,6 +203,8 @@ void display()
 	/* Display the buffer we just drew (necessary for double buffering). */
 	glutSwapBuffers();
 
+	// kuhl_video_record("videoout", 30);
+	
 	/* Ask GLUT to call display() again. We shouldn't call display()
 	 * ourselves recursively because it will not leave time for GLUT
 	 * to call other callback functions for when a key is pressed, the

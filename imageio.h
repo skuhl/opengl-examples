@@ -84,7 +84,7 @@ typedef struct {
        value is pre-multiplied to (0,.5,0,.5).  If such a file format is
        being used, ImageMagick performs the conversion for us.
     */
-	const char *map;
+	char *map;
 
 	/** Type of array: CharPixel, DoublePixel, FloatPixel, IntegerPixel,
        LongPixel, or ShortPixel.  Range of char/int/short are all
@@ -93,12 +93,12 @@ typedef struct {
 
 
     /* Information only used for file OUTPUT: */
-	const char *filename; /**< Name of the file that we want imagein()
-	                       * to read or the name of the file that we
-	                       * want imageout() to write to. As long as
-	                       * the filename extension is supported, the
-	                       * code will write the image correctly to
-	                       * disk. */
+	char *filename; /**< Name of the file that we want imagein()
+	                 * to read or the name of the file that we
+	                 * want imageout() to write to. As long as
+	                 * the filename extension is supported, the
+	                 * code will write the image correctly to
+	                 * disk. */
     unsigned long depth; /**< Number of bits per color channel that
                           * should be written to the file. This
                           * variable is only used when writing files

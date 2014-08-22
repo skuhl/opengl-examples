@@ -1292,12 +1292,14 @@ void kuhl_shuffle(void *array, int n, int size);
 #ifdef KUHL_UTIL_USE_IMAGEMAGICK
 float kuhl_make_label(const char *label, GLuint *texName, float color[3], float bgcolor[4], float pointsize);
 float kuhl_read_texture_file(const char *filename, GLuint *texName);
-#endif
+void kuhl_screenshot(const char *outputImageFilename);
+void kuhl_video_record(const char *fileLabel, int fps);
+#endif // end use imagemagick
 
 #ifdef KUHL_UTIL_USE_ASSIMP
 int kuhl_draw_model_file_ogl2(const char *modelFilename, const char *textureDirname);
 int kuhl_model_bounding_box(const char *modelFilename, float min[3], float max[3], float center[3]);
-#endif
+#endif // end use assimp
 
 
 #endif

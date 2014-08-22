@@ -9,7 +9,7 @@
 
 
 #include <GL/glew.h>
-#include <GL/glx.h> // for setting vsync interval
+#include <GL/freeglut.h>
 
 #define __GNU_SOURCE // make sure are allowed to use GNU extensions. Redundant if compiled with -std=gnu99
 
@@ -2346,11 +2346,12 @@ float kuhl_read_texture_file(const char *filename, GLuint *texName)
      * http://www.opengl.org/wiki/Common_Mistakes#Image_precision
      */
 	imageio_info iioinfo;
-	iioinfo.filename   = filename;
+	iioinfo.filename   = strdup(filename);
 	iioinfo.type       = CharPixel;
 	iioinfo.map        = (char*) "RGBA";
 	iioinfo.colorspace = sRGBColorspace;
 	char *image = (char*) imagein(&iioinfo);
+	free(iioinfo.filename);
 	if(image == NULL)
 	{
 		fprintf(stderr, "\n%s: Unable to read image.\n", filename);
@@ -2379,7 +2380,99 @@ float kuhl_read_texture_file(const char *filename, GLuint *texName)
 
 	return aspectRatio;
 }
-#endif
+
+void kuhl_screenshot(const char *outputImageFilename)
+{
+	// Get window size
+	int windowWidth  = glutGet(GLUT_WINDOW_WIDTH);
+	int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+
+	// Allocate space for data from window
+	char data[windowWidth*windowHeight*3];
+	// Read pixels from the window
+	glReadPixels(0,0,windowWidth,windowHeight,
+	             GL_RGB,GL_UNSIGNED_BYTE, data);
+	// Set up image output settings
+	imageio_info info_out;
+	info_out.width    = windowWidth;
+	info_out.height   = windowHeight;
+	info_out.depth    = 8; // bits/color in output image
+	info_out.quality  = 85;
+	info_out.filename = strdup(outputImageFilename);
+	info_out.comment  = NULL;
+	info_out.type     = CharPixel;
+	info_out.map      = "RGB";
+	// Write image to disk
+	imageout(&info_out, data);
+	free(info_out.filename); // cleanup
+}
+
+static int kuhl_video_record_frame = 0; // frame that we have recorded.
+static time_t kuhl_video_record_prev_sec = 0; // time of previous frame (seconds)
+static suseconds_t kuhl_video_record_prev_usec = 0; // time of previous frame usecs
+
+/** Records individual frames to image files that can later be
+  combined into a single video file. Call this function every frame
+  and it will capture the image data from the frame buffer and write
+  it to an image file if enough time has elapsed to record a
+  frame. Each image filename will include a frame number. This
+  function writes TIFF files to avoid unnecessary computation
+  compressing images. Instructions for converting the image files into
+  a video file using ffmpeg or avconv will be printed to standard
+  out. This may run slowly if you are saving files to a non-local
+  filesystem.
+
+    @param fileLabel If fileLabel is set to "label", this function
+    will create files such as "label-00000000.tif"
+    
+    @param fps The number of frames per second to record. Suggested value: 30.
+ */
+void kuhl_video_record(const char *fileLabel, int fps)
+{
+	// Get current time
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+
+	if(kuhl_video_record_prev_sec == 0) // first time
+	{
+		kuhl_video_record_prev_sec  = tv.tv_sec;
+		kuhl_video_record_prev_usec = tv.tv_usec;
+		printf("%s: Recording %d frames per second\n", __func__, fps);
+		printf("Use either of the following commands to assemble Ogg video (Ogg video files are widely supported and not encumbered by patent restrictions):\n");
+		printf("ffmpeg -r %d -f image2 -i %s-%%08d.tif -qscale:v 7 output.ogv\n", fps, fileLabel);
+		printf(" - or -\n");
+		printf("avconv -r %d -f image2 -i %s-%%08d.tif -qscale:v 7 output.ogv\n", fps, fileLabel);
+		printf("In either program, the -qscale:v parameter sets the quality: 0 (lowest) to 10 (highest)\n");
+
+	}
+
+	time_t sec       = tv.tv_sec;
+	suseconds_t usec = tv.tv_usec;
+
+	// useconds between recording frames
+	int usecs_over_seconds = 1000000;
+	int usec_to_wait = usecs_over_seconds / fps;
+
+	if(kuhl_video_record_prev_sec == sec &&
+	   usec - kuhl_video_record_prev_usec < usec_to_wait)
+		return; // don't take screenshot
+	else if(kuhl_video_record_prev_sec == sec-1 &&
+	        (usecs_over_seconds-kuhl_video_record_prev_usec)+usec<usec_to_wait)
+		return; // don't take screenshot
+	else
+	{
+		kuhl_video_record_prev_sec  = sec;
+		kuhl_video_record_prev_usec = usec;
+		char filename[1024];
+		snprintf(filename, 1024, "%s-%08d.tif", fileLabel, kuhl_video_record_frame);
+		kuhl_screenshot(filename);
+		kuhl_video_record_frame++;
+	}
+
+}
+
+
+#endif // end use imagemagick
 
 
 #ifdef KUHL_UTIL_USE_ASSIMP
@@ -2994,3 +3087,6 @@ void kuhl_shuffle(void *array, int n, int size)
 		memcpy(arr+i*size, tmp,        size);
 	}
 }
+
+#ifdef KUHL_UTIL_USE_IMAGEMAGICK
+#endif
