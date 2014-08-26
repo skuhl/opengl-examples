@@ -726,7 +726,7 @@ void eulerf_from_mat3f(float angles[3], const float m[9], const char order[3])
 /** Given a 3x3 rotation matrix and a Euler rotation ordering,
     calculate the Euler angles used to produce the matrix.
 
- @see euler_from_mat3f()
+ @see eulerf_from_mat3f()
 */
 void eulerd_from_mat3d(double angles[3], const double m[9], const char order[3])
 {
@@ -829,9 +829,9 @@ void eulerd_from_mat3d(double angles[3], const double m[9], const char order[3])
 /** Given a 4x4 rotation matrix and a Euler rotation ordering,
  calculate the Euler angles used to produce the matrix.
 
- @see euler_from_mat3f()
+ @see eulerf_from_mat3f()
 */
-void euler_from_mat4f(float angles[3], const float m[16], const char order[3])
+void eulerf_from_mat4f(float angles[3], const float m[16], const char order[3])
 {
 	float tmpMat[9];
 	mat3f_from_mat4f(tmpMat, m);
@@ -840,9 +840,9 @@ void euler_from_mat4f(float angles[3], const float m[16], const char order[3])
 /** Given a 4x4 rotation matrix and a Euler rotation ordering,
  calculate the Euler angles used to produce the matrix.
 
- @see euler_from_mat3f()
+ @see eulerf_from_mat3f()
 */
-void euler_from_mat4d(double angles[3], const double m[16], const char order[3])
+void eulerd_from_mat4d(double angles[3], const double m[16], const char order[3])
 {
 	double tmpMat[9];
 	mat3d_from_mat4d(tmpMat, m);
@@ -2381,6 +2381,10 @@ float kuhl_read_texture_file(const char *filename, GLuint *texName)
 	return aspectRatio;
 }
 
+/** Takes a screenshot of the current OpenGL screen and writes it to an image file.
+
+    @param outputImageFilename The name of the image file that you want to record the screenshot in. The type of image file is determined by the filename extension. This function will allow you to write to any image format that ImageMagick supports. Suggestion: PNG files often work best for screenshots; try "output.png".
+*/
 void kuhl_screenshot(const char *outputImageFilename)
 {
 	// Get window size
@@ -3036,6 +3040,7 @@ float kuhl_getfps(int milliseconds)
 	return fps_now;
 }
 
+static int kuhl_random_init_done = 0; /*< Have we called srand48() yet? */
 /** Generates a random integer between min and max inclusive. This
  * uses floating point to avoid possible issues with using rand()
  * along with modulo. This approach isn't completely bias free since
@@ -3046,7 +3051,6 @@ float kuhl_getfps(int milliseconds)
  * @param min Smallest random number that we want.
  * @param max Largest random number that we want.
  */
-static int kuhl_random_init_done = 0;
 int kuhl_randomInt(int min, int max)
 {
 	if(kuhl_random_init_done == 0)

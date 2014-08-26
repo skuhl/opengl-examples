@@ -206,7 +206,10 @@ void viewmat_get_hmd(float viewmatrix[16], int viewportNum)
 
 
 
-/** Get a view matrix from mousemove. */
+/** Get a view matrix from mousemove.
+
+ @param viewmatrix The location where the viewmatrix should be stored.
+*/
 void viewmat_get_mouse(float viewmatrix[16])
 {
 	float pos[3],look[3],up[3];
@@ -216,7 +219,10 @@ void viewmat_get_mouse(float viewmatrix[16])
 }
 
 /** Get a view matrix from VRPN and adjust the view frustum
- * appropriately. */
+ * appropriately.
+ * @param viewmatrix The location where the viewmatrix should be stored.
+ * @param frustum The location of the view frustum that should be adjusted.
+ */
 void viewmat_get_ivs(float viewmatrix[16], float frustum[6])
 {
 	float pos[3];
@@ -279,7 +285,7 @@ void viewmat_get(float viewmatrix[16], float frustum[6], int viewportNum)
 		viewmat_get_hmd(viewmatrix, viewportNum);
 }
 
-/* Gets the viewport information for a particular viewport.
+/** Gets the viewport information for a particular viewport.
 
  @param viewportValue A location to be filled in with the viewport x
  coordinate, y coordinate, width and height.
@@ -303,7 +309,10 @@ void viewmat_get_viewport(int viewportValue[4], int viewportNum)
 
 }
 
-/** Returns the number of viewports that viewmat has. */
+/** Returns the number of viewports that viewmat has.
+
+    @return The number of viewports that viewmat has.
+*/
 int viewmat_num_viewports()
 {
 	viewmat_refresh_viewports();

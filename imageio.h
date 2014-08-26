@@ -30,8 +30,8 @@ http://www.imagemagick.org/script/license.php
 
 
 /** Calculates the appropriate index into the 1D array from a 2D coordinate.
-   @param X The x coordinate (0=left)
-   @param Y The y coordinate (0=bottom)
+   @param x The x coordinate (0=left)
+   @param y The y coordinate (0=bottom)
    @param component Which component do we want the index of (red=0, green=1, etc)
    @param width The width of the image in pixels
    @param totalComponents The number of components in the image.

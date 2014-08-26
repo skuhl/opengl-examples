@@ -634,6 +634,10 @@ static inline void vec4d_sub_new(double result[4], const double a[4], const doub
 { vecNd_sub_new(result, a, b, 4); }
 
 
+/** Print an N-component float vector to stdout (all on one line).
+    @param v The N-component vector to print.
+    @param n The number of components in the vector.
+*/
 static inline void vecNf_print(const float v[ ], const int n)
 {
 	// use temporary variable since arguments to printf are not const.
@@ -644,6 +648,10 @@ static inline void vecNf_print(const float v[ ], const int n)
 		printf("%10.3f ",tmp[i]);
 	printf(")\n");
 }
+/** Print an N-component double vector to stdout (all on one line).
+    @param v The N-component vector to print.
+    @param n The number of components in the vector.
+*/
 static inline void vecNd_print(const double v[ ], const int n)
 {
 	// use temporary variable since arguments to printf are not const.
@@ -655,69 +663,167 @@ static inline void vecNd_print(const double v[ ], const int n)
 	printf(")\n");
 }
 
+/** Print a vec3f vector to stdout (all on one line).
+    @param v The vector to print.
+*/
 static inline void vec3f_print(const float v[3])
 { vecNf_print(v, 3); }
+/** Print a vec3d vector to stdout (all on one line).
+    @param v The vector to print.
+*/
 static inline void vec3d_print(const double v[3])
 { vecNd_print(v, 3); }
+/** Print a vec4f vector to stdout (all on one line).
+    @param v The vector to print.
+*/
 static inline void vec4f_print(const float v[4])
 { vecNf_print(v, 4); }
+/** Print a vec4d vector to stdout (all on one line).
+    @param v The vector to print.
+*/
 static inline void vec4d_print(const double v[4])
 { vecNd_print(v, 4); }
 
+/** Get the index of the value at a specific row and column in an NxN matrix.
+    @param row The row that the value is at in the matrix (0=first row).
+    @param col The column that the value is at in the matrix (0=first column).
+    @param n The size of the matrix (use 3 for a 3x3 matrix)
+    @return The index that the value is at in the matrix array. */
 static inline int matN_getIndex(const int row, const int col, const int n)
 { return row+col*n; }
+/** Get the index of the value at a specific row and column in an 3x3 matrix.
+    @param row The row that the value is at in the matrix (0=first row).
+    @param col The column that the value is at in the matrix (0=first column).
+    @return The index that the value is at in the matrix array. */
 static inline int mat3_getIndex(const int row, const int col)
 { return matN_getIndex(row, col, 3); }
+/** Get the index of the value at a specific row and column in an 4x4 matrix.
+    @param row The row that the value is at in the matrix (0=first row).
+    @param col The column that the value is at in the matrix (0=first column).
+    @return The index that the value is at in the matrix array. */
 static inline int mat4_getIndex(const int row, const int col)
 { return matN_getIndex(row, col, 4); }
+/** Get the index of the value at a specific row and column in an 3x3 float matrix. Equivalent to mat3_getIndex().
+    @param row The row that the value is at in the matrix (0=first row).
+    @param col The column that the value is at in the matrix (0=first column).
+    @return The index that the value is at in the matrix array. */
 static inline int mat3f_getIndex(const int row, const int col)
 { return matN_getIndex(row, col, 3); }
+/** Get the index of the value at a specific row and column in an 4x4 float matrix. Equivalent to mat4_getIndex().
+    @param row The row that the value is at in the matrix (0=first row).
+    @param col The column that the value is at in the matrix (0=first column).
+    @return The index that the value is at in the matrix array. */
 static inline int mat4f_getIndex(const int row, const int col)
 { return matN_getIndex(row, col, 4); }
+/** Get the index of the value at a specific row and column in an 3x3 double matrix. Equivalent to mat3_getIndex().
+    @param row The row that the value is at in the matrix (0=first row).
+    @param col The column that the value is at in the matrix (0=first column).
+    @return The index that the value is at in the matrix array. */
 static inline int mat3d_getIndex(const int row, const int col)
 { return matN_getIndex(row, col, 3); }
+/** Get the index of the value at a specific row and column in an 4x4 double matrix. Equivalent to mat4_getIndex().
+    @param row The row that the value is at in the matrix (0=first row).
+    @param col The column that the value is at in the matrix (0=first column).
+    @return The index that the value is at in the matrix array. */
 static inline int mat4d_getIndex(const int row, const int col)
 { return matN_getIndex(row, col, 4); }
 
-/* Get a column from a matrix. The first column in the matrix is column 0. */
+/** Copy the values in a matrix column into a vector.
+    @param result The vector containing the column from the matrix.
+    @param m The matrix to copy a column from.
+    @param col The column to copy (0=first column)
+    @param n The size of the matrix (3 means 3x3 matrix and a 3-component output vector).
+*/
 static inline void matNf_getColumn(float  result[ ], const float  m[  ], const int col, const int n)
 { for(int i=0; i<n; i++) result[i] = m[matN_getIndex(i, col, n)]; }
+/** Copy the values in a matrix column into a vector.
+    @param result The vector containing the column from the matrix.
+    @param m The matrix to copy a column from.
+    @param col The column to copy (0=first column)
+    @param n The size of the matrix (3 means 3x3 matrix and a 3-component output vector).
+*/
 static inline void matNd_getColumn(double result[ ], const double m[  ], const int col, const int n)
 { for(int i=0; i<n; i++) result[i] = m[matN_getIndex(i, col, n)]; }
+/** Copy the values in a 4x4 matrix column into a vector.
+    @param result The vector containing the column from the matrix.
+    @param m The matrix to copy a column from.
+    @param col The column to copy (0=first column)
+*/
 static inline void mat4f_getColumn(float  result[4], const float  m[16], const int col)
 { matNf_getColumn(result, m, col, 4); }
+/** Copy the values in a 4x4 matrix column into a vector.
+    @param result The vector containing the column from the matrix.
+    @param m The matrix to copy a column from.
+    @param col The column to copy (0=first column)
+*/
 static inline void mat4d_getColumn(double result[4], const double m[16], const int col)
 { matNd_getColumn(result, m, col, 4); }
+/** Copy the values in a 3x3 matrix column into a vector.
+    @param result The vector containing the column from the matrix.
+    @param m The matrix to copy a column from.
+    @param col The column to copy (0=first column)
+*/
 static inline void mat3f_getColumn(float  result[3], const float  m[ 9], const int col)
 { matNf_getColumn(result, m, col, 3); }
+/** Copy the values in a 3x3 matrix column into a vector.
+    @param result The vector containing the column from the matrix.
+    @param m The matrix to copy a column from.
+    @param col The column to copy (0=first column)
+*/
 static inline void mat3d_getColumn(double result[3], const double m[ 9], const int col)
 { matNd_getColumn(result, m, col, 3); }
 
-/* Get a row from a matrix. The first row in the matrix is row 0. */
+
+/** Copy the values in a matrix row into a vector.
+    @param result The vector containing the row from the matrix.
+    @param m The matrix to copy a row from.
+    @param row The row to copy (0=first row)
+    @param n The size of the matrix (3 means 3x3 matrix and a 3-component output vector).
+*/
 static inline void matNf_getRow(float  result[ ], const float  m[  ], const int row, const int n)
 { for(int i=0; i<n; i++) result[i] = m[matN_getIndex(row, i, n)]; }
+/** Copy the values in a matrix row into a vector.
+    @param result The vector containing the row from the matrix.
+    @param m The matrix to copy a row from.
+    @param row The row to copy (0=first row)
+    @param n The size of the matrix (3 means 3x3 matrix and a 3-component output vector).
+*/
 static inline void matNd_getRow(double result[ ], const double m[  ], const int row, const int n)
 { for(int i=0; i<n; i++) result[i] = m[matN_getIndex(row, i, n)]; }
+/** Copy the values in a 4x4 matrix row into a vector.
+    @param result The vector containing the row from the matrix.
+    @param m The matrix to copy a row from.
+    @param row The row to copy (0=first row)
+*/
 static inline void mat4f_getRow(float  result[4], const float  m[16], const int row)
 { matNf_getRow(result, m, row, 4); }
+/** Copy the values in a 4x4 matrix row into a vector.
+    @param result The vector containing the row from the matrix.
+    @param m The matrix to copy a row from.
+    @param row The row to copy (0=first row)
+*/
 static inline void mat4d_getRow(double result[4], const double m[16], const int row)
 { matNd_getRow(result, m, row, 4); }
+/** Copy the values in a 3x3 matrix row into a vector.
+    @param result The vector containing the row from the matrix.
+    @param m The matrix to copy a row from.
+    @param row The row to copy (0=first row)
+*/
 static inline void mat3f_getRow(float  result[3], const float  m[ 9], const int row)
 { matNf_getRow(result, m, row, 3); }
+/** Copy the values in a 3x3 matrix row into a vector.
+    @param result The vector containing the row from the matrix.
+    @param m The matrix to copy a row from.
+    @param row The row to copy (0=first row)
+*/
 static inline void mat3d_getRow(double result[3], const double m[ 9], const int row)
 { matNd_getRow(result, m, row, 3); }
-
-/* Set the specific column or row in matrix to the values stored in
- * vector v. The first row/column is 0. The size of the matrix must
- * match the size of the vector for these to work correctly (i.e., if
- * you want to set a row or column of a 4x4 matrix, you must use
- * mat4[fd]_set[Row|Column]() and pass in a vector with 4 elements. */
 
 
 /** Set a column of an NxN float matrix to a specific set of values.
  @param matrix The matrix to be changed.
  @param v The values to be placed into a specific column of the matrix.
- @param row The row to replace (the first column is column 0).
+ @param col The column to replace (the first column is column 0).
  @param n The size of the matrix (and the length of the vector v)
 */
 static inline void matNf_setColumn(float  matrix[  ], const float  v[ ], const int col, const int n)
@@ -725,7 +831,7 @@ static inline void matNf_setColumn(float  matrix[  ], const float  v[ ], const i
 /** Set a column of an NxN double matrix to a specific set of values.
  @param matrix The matrix to be changed.
  @param v The values to be placed into a specific column of the matrix.
- @param row The row to replace (the first column is column 0).
+ @param col The column to replace (the first column is column 0).
  @param n The size of the matrix (and the length of the vector v)
 */
 static inline void matNd_setColumn(double matrix[  ], const double v[ ], const int col, const int n)
@@ -734,28 +840,28 @@ static inline void matNd_setColumn(double matrix[  ], const double v[ ], const i
 /** Set a column of an 3x3 float matrix to a specific set of values.
  @param matrix The matrix to be changed.
  @param v The values to be placed into a specific column of the matrix.
- @param row The row to replace (the first column is column 0).
+ @param col The column to replace (the first column is column 0).
 */
 static inline void mat3f_setColumn(float  matrix[ 9], const float  v[3], const int col)
 { matNf_setColumn(matrix, v, col, 3); }
 /** Set a column of an 3x3 double matrix to a specific set of values.
  @param matrix The matrix to be changed.
  @param v The values to be placed into a specific column of the matrix.
- @param row The row to replace (the first column is column 0).
+ @param col The column to replace (the first column is column 0).
 */
 static inline void mat3d_setColumn(double matrix[ 9], const double v[3], const int col)
 { matNd_setColumn(matrix, v, col, 3); }
 /** Set a column of an 4x4 float matrix to a specific set of values.
  @param matrix The matrix to be changed.
  @param v The values to be placed into a specific column of the matrix.
- @param row The row to replace (the first column is column 0).
+ @param col The column to replace (the first column is column 0).
 */
 static inline void mat4f_setColumn(float  matrix[16], const float  v[4], const int col)
 { matNf_setColumn(matrix, v, col, 4); }
 /** Set a column of an 4x4 double matrix to a specific set of values.
  @param matrix The matrix to be changed.
  @param v The values to be placed into a specific column of the matrix.
- @param row The row to replace (the first column is column 0).
+ @param col The column to replace (the first column is column 0).
 */
 static inline void mat4d_setColumn(double matrix[16], const double v[4], const int col)
 { matNd_setColumn(matrix, v, col, 4); }
@@ -1082,7 +1188,7 @@ static inline void mat4d_identity(double m[16])
 
 /** Print a NxN float matrix to standard out.
  @param m The matrix to print.
- @param N The size of the matrix.
+ @param n The size of the matrix.
 */
 static inline void matNf_print(const float  m[], const int n)
 {
@@ -1096,7 +1202,7 @@ static inline void matNf_print(const float  m[], const int n)
 }
 /** Print a NxN double matrix to standard out.
  @param m The matrix to print.
- @param N The size of the matrix.
+ @param n The size of the matrix.
 */
 static inline void matNd_print(const double m[], const int n)
 {
@@ -1185,10 +1291,10 @@ void mat4f_rotateEuler_new(float result[16], float a1_degrees, float a2_degrees,
 void mat4d_rotateEuler_new(double result[16], double a1_degrees, double a2_degrees, double a3_degrees, const char order[3]);
 
 /* Calculate Euler angles from rotation matrices. */
-void euler_from_mat3f(float  angles[3], const float  m[9], const char order[3]);
-void euler_from_mat3d(double angles[3], const double m[9], const char order[3]);
-void euler_from_mat4f(float angles[3], const float m[16], const char order[3]);
-void euler_from_mat4d(double angles[3], const double m[16], const char order[3]);
+void eulerf_from_mat3f(float  angles[3], const float  m[9], const char order[3]);
+void eulerd_from_mat3d(double angles[3], const double m[9], const char order[3]);
+void eulerf_from_mat4f(float angles[3], const float m[16], const char order[3]);
+void eulerd_from_mat4d(double angles[3], const double m[16], const char order[3]);
 
 
 /* Creates a new 3x3 rotation matrix which produces a rotation around
