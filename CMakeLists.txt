@@ -165,6 +165,12 @@ add_executable(ogl3-triangle ogl3-triangle.c kuhl-util.c dgr.c mousemove.c projm
 target_link_libraries(ogl3-triangle ${COMMON_LIBRARIES} ${GLUT_LIBRARIES})
 set_target_properties(ogl3-triangle PROPERTIES COMPILE_DEFINITIONS "MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
 	
+# === ogl3-prerend ===
+add_executable(ogl3-prerend ogl3-prerend.c kuhl-util.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
+target_link_libraries(ogl3-prerend ${COMMON_LIBRARIES} ${GLUT_LIBRARIES})
+set_target_properties(ogl3-prerend PROPERTIES COMPILE_DEFINITIONS "MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
+
+
 # === ogl3-triangle-color ===
 add_executable(ogl3-triangle-color ogl3-triangle-color.c kuhl-util.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
 target_link_libraries(ogl3-triangle-color ${COMMON_LIBRARIES} ${GLUT_LIBRARIES})
