@@ -10,8 +10,9 @@
 #include "viewmat.h"
 GLuint program = 0; // id value for the GLSL program
 
-GLuint triangleVAO = 0; // id for our vertex array object
-GLuint quadVAO = 0;
+kuhl_geometry triangle;
+kuhl_geometry quad;
+
 
 /* Called by GLUT whenever a key is pressed. */
 void keyboard(unsigned char key, int x, int y)
@@ -41,11 +42,11 @@ void display()
 
 
 
-	for(int view=0; view<viewmat_num_viewports(); view++)
+	for(int viewportID=0; viewportID<viewmat_num_viewports(); viewportID++)
 	{
 		/* Where is the viewport that we are drawing onto and what is its size? */
 		int viewport[4];
-		viewmat_get_viewport(viewport, view);
+		viewmat_get_viewport(viewport, viewportID);
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
 		/* Get the view frustum information. */
@@ -54,7 +55,7 @@ void display()
 	    
 		/* Get the projection matrix, update view frustum if necessary. */
 		float viewMat[16];
-		viewmat_get(viewMat, f, view);
+		viewmat_get(viewMat, f, viewportID);
 
 		/* Communicate matricies to OpenGL */
 		float perspective[16];
@@ -87,23 +88,9 @@ void display()
 		                   0, // transpose
 		                   modelview); // value
 		kuhl_errorcheck();
+		kuhl_geometry_draw(&triangle);
+		kuhl_geometry_draw(&quad);
 
-
-		/* Draw the scene. These examples draw triangles, but OpenGL can
-		 * draw other simple shapes too. The images on this page should
-		 * help you understand the different options (note: you may see
-		 * some non-OpenGL images in the results too!):
-		 * https://www.google.com/search?q=opengl+primitive+types&tbm=isch
-		 */
-		kuhl_errorcheck();
-		glBindVertexArray(triangleVAO);
-		kuhl_errorcheck();
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-		kuhl_errorcheck();
-	
-		glBindVertexArray(quadVAO);
-		kuhl_errorcheck();
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
 	} // finish viewport loop
 	/* Check for errors. If there are errors, consider adding more
 	 * calls to kuhl_errorcheck() in your code. */
@@ -119,59 +106,48 @@ void display()
 	glutPostRedisplay();
 }
 
-void init_geometryTriangle()
+void init_geometryTriangle(GLuint program)
 {
-	/* Create a vertex array object (VAO) */
-	glGenVertexArrays(1, &triangleVAO);
-	glBindVertexArray(triangleVAO);
+	kuhl_geometry_zero(&triangle);
+	triangle.program = program;
+	triangle.primitive_type = GL_TRIANGLES;
 
 	/* The data that we want to draw */
 	GLfloat vertexData[] = {0, 0, 0,
 	                        1, 0, 0,
 	                        1, 1, 0};
-	kuhl_array_buffer(vertexData,
-	                  9,  // array contains 9 items
-	                  0,  // attribute location
-	                  3);  // 3 components
+	triangle.vertex_count = 3; // 3 vertices
+	triangle.attrib_pos = vertexData;
+	triangle.attrib_pos_components = 3; // each vertex has X, Y, Z
+	triangle.attrib_pos_name = "in_Position";
 
-	/* Unbind VAO. */
-	glBindVertexArray(0);
+	kuhl_geometry_init(&triangle);
 }
 
 
-/* This illustrates how to draw a quad by drawing two triangles. An
- * easier way to draw a quad would be to use glDrawArray(GL_QUADS,
- * ...), but this allows us to draw a quad with only triangles. The
- * purpose of this is to show how you can refer to vertices in a
- * list. This saves space because if the same vertex is used by
- * multiple triangles, you don't have to store the vertex in memory
- * multiple times. */
-void init_geometryQuad()
+/* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
+void init_geometryQuad(GLuint program)
 {
-	/* Create a vertex array object (VAO) */
-	glGenVertexArrays(1, &quadVAO);
-	glBindVertexArray(quadVAO);
+	kuhl_geometry_zero(&quad);
+	quad.program = program;
+	quad.primitive_type = GL_TRIANGLES;
+
 
 	/* The data that we want to draw */
 	GLfloat vertexData[] = {0+1.1, 0, 0,
 	                        1+1.1, 0, 0,
 	                        1+1.1, 1, 0,
 	                        0+1.1, 1, 0 };
-	kuhl_array_buffer(vertexData,
-	                  3*4,  // array contains 9 items
-	                  0,  // attribute location
-	                  3);  // 3 components
+	quad.attrib_pos = vertexData;
+	quad.vertex_count = 4;  // 4 vertices
+	quad.attrib_pos_components = 3; // each vertex has X, Y, Z
+	quad.attrib_pos_name = "in_Position";
 
-
-	/* Copy the indices data into the currently bound buffer. */
 	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
 	                       0, 2, 3 }; // indices of second triangle.
-	kuhl_element_array_buffer(indexData,
-	                          6,  // array contains 6 items
-	                          0); // attribute location
-
-	/* Unbind VAO. */
-	glBindVertexArray(0);
+	quad.indices = indexData;
+	quad.indices_len = 6;
+	kuhl_geometry_init(&quad);
 }
 
 int main(int argc, char** argv)
@@ -207,20 +183,15 @@ int main(int argc, char** argv)
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
 
-	/* attribs is a list of attributes in the program. The last item
-	 * should be NULL so kuhl_create_program() can determine how many
-	 * attributes you passed in. The first attribute in this list will
-	 * be stored at location 0, the second at location 1, etc. */
-	char *attribs[] = { "in_Position", NULL };
-	program = kuhl_create_program("ogl3-triangle.vert", "ogl3-triangle.frag", attribs);
+	program = kuhl_create_program("ogl3-triangle.vert", "ogl3-triangle.frag");
 	glUseProgram(program);
 	kuhl_errorcheck();
 	/* Set the uniform variable in the shader that is named "red" to the value 1. */
 	glUniform1i(kuhl_get_uniform(program, "red"), 1);
 	kuhl_errorcheck();
 
-	init_geometryTriangle();
-	init_geometryQuad();
+	init_geometryTriangle(program);
+	init_geometryQuad(program);
 
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);

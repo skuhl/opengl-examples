@@ -374,7 +374,7 @@ void keyboard(unsigned char key, int x, int y)
 
 	if (key == 'b' || key == 'p' || key == 73) // back or previous - 73=pageup
 	{
-	  printf("Advancing to previous image...please wait...\n");
+		printf("Advancing to previous image...please wait...\n");
 		// If we press spacebar, advance to next image even if scrolling
 		// didn't finish---so we will artificially add a lot of scroll so
 		// display() thinks scrolling is done.
@@ -412,10 +412,10 @@ void keyboard(unsigned char key, int x, int y)
 
 void special_keyboard(int key, int x, int y)
 {
-  if(key == GLUT_KEY_PAGE_DOWN)
-    keyboard('n', 0,0);
-  if(key == GLUT_KEY_PAGE_UP)
-    keyboard('p', 0,0);
+	if(key == GLUT_KEY_PAGE_DOWN)
+		keyboard('n', 0,0);
+	if(key == GLUT_KEY_PAGE_UP)
+		keyboard('p', 0,0);
 }
 
 int main(int argc, char** argv)

@@ -10,7 +10,7 @@
 #include "viewmat.h"
 GLuint program = 0; // id value for the GLSL program
 
-GLuint triangleVAO = 0; // id for our vertex array object
+kuhl_geometry triangle;
 GLuint texName1 = 0;
 GLuint texName2 = 0;
 
@@ -29,7 +29,6 @@ void keyboard(unsigned char key, int x, int y)
 	glutPostRedisplay();
 }
 
-
 void display()
 {
 	dgr_update();
@@ -40,6 +39,8 @@ void display()
 	glEnable(GL_DEPTH_TEST); // turn on depth testing
 	kuhl_errorcheck();
 
+	glUseProgram(program);
+
 	/* Turn on blending (note, if you are using transparent textures,
 	   the transparency may not look correctly unless you draw further
 	   items before closer items. This program always draws the
@@ -48,11 +49,11 @@ void display()
 	glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 	
-	for(int view=0; view<viewmat_num_viewports(); view++)
+	for(int viewportID=0; viewportID<viewmat_num_viewports(); viewportID++)
 	{
 		/* Where is the viewport that we are drawing onto and what is its size? */
 		int viewport[4];
-		viewmat_get_viewport(viewport, view);
+		viewmat_get_viewport(viewport, viewportID);
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
 		/* Get the view frustum information. */
@@ -61,7 +62,7 @@ void display()
 	    
 		/* Get the projection matrix, update view frustum if necessary. */
 		float viewMat[16];
-		viewmat_get(viewMat, f, view);
+		viewmat_get(viewMat, f, viewportID);
 
 		/* Communicate matricies to OpenGL */
 		float perspective[16];
@@ -95,39 +96,8 @@ void display()
 		                   modelview); // value
 		kuhl_errorcheck();
 
+		kuhl_geometry_draw(&triangle);
 
-	/* Draw the scene. These examples draw triangles, but OpenGL can
-	 * draw other simple shapes too. The images on this page should
-	 * help you understand the different options (note: you may see
-	 * some non-OpenGL images in the results too!):
-	 * https://www.google.com/search?q=opengl+primitive+types&tbm=isch
-	 */
-	kuhl_errorcheck();
-	glBindVertexArray(triangleVAO);
-	kuhl_errorcheck();
-
-	/* Set up the texture. Make sure that our texture is set up in texture unit 0. */
-	glActiveTexture(GL_TEXTURE0); /* Turn on and use texture unit 0 */
-	kuhl_errorcheck();
-	glBindTexture(GL_TEXTURE_2D, texName1); /* Use our previously loaded texture */
-	kuhl_errorcheck();
-	glDrawArrays(GL_TRIANGLES, 0, 3); // DRAW!
-	kuhl_errorcheck();
-
-	/* Add a new translation to the modelview matrix. */
-	float translate[16];
-	mat4f_translate_new(translate, 1.2, 0, 0);
-	mat4f_mult_mat4f_new(modelview, modelview, translate);
-	glUniformMatrix4fv(kuhl_get_uniform(program, "ModelView"),
-	                   1, // count
-	                   0, // transpose
-	                   modelview); // value
-	glBindTexture(GL_TEXTURE_2D, texName2); 
-	glDrawArrays(GL_TRIANGLES, 0, 3); // DRAW again---but translated this time.
-	
-	// unbind:
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBindVertexArray(0);
 	} // finish viewport loop
 	/* Check for errors. If there are errors, consider adding more
 	 * calls to kuhl_errorcheck() in your code. */
@@ -143,81 +113,38 @@ void display()
 	glutPostRedisplay();
 }
 
-void init_geometryTriangle()
+void init_geometryTriangle(GLuint program)
 {
-	/* Create a vertex array object (VAO) */
-	glGenVertexArrays(1, &triangleVAO);
-	glBindVertexArray(triangleVAO);
+	kuhl_geometry_zero(&triangle);
+	triangle.program = program;
+	triangle.primitive_type = GL_TRIANGLES;
 
-	/* Set up a buffer object (BO) which is a place to store the data on the graphics card. */
-	GLuint vbuffer;
-	glGenBuffers(1, &vbuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, vbuffer);
-	kuhl_errorcheck();
-	
 	/* The data that we want to draw */
 	GLfloat vertexData[] = {0, 0, 0,
 	                        1, 0, 0,
 	                        1, 1, 0};
-	/* Copy the our data into the buffer object that is currently bound. */
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
-	kuhl_errorcheck();
+	triangle.vertex_count = 3; // 3 vertices
+	triangle.attrib_pos = vertexData;
+	triangle.attrib_pos_components = 3; // each vertex has X, Y, Z
+	triangle.attrib_pos_name = "in_Position";
 
-	/* Tell OpenGL some information about the data that is in the
-	 * buffer. Among other things, we need to tell OpenGL which
-	 * attribute number (i.e., variable) the data should correspond to
-	 * in the vertex program. */
-	glEnableVertexAttribArray(0); // turn on attribute location 0
-	glVertexAttribPointer(
-		0, // attribute location in glsl program
-		3, // number of elements (x,y,z)
-		GL_FLOAT, // type of each element
-		GL_FALSE, // should OpenGL normalize values?
-		0,        // no extra data between each position
-		0 );      // offset of first element
-	kuhl_errorcheck();
-
-	/* Set up a buffer object (BO) which is a place to store data (in this case, texture coordinates) on the graphics card. */
-	GLuint tcbuffer;
-	glGenBuffers(1, &tcbuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, tcbuffer);
-	kuhl_errorcheck();
-	
-	/* The data that we want to draw */
 	GLfloat texcoordData[] = {0, 0,
 	                          1, 0,
 	                          1, 1 };
-	/* Copy the our data into the buffer object that is currently bound. */
-	glBufferData(GL_ARRAY_BUFFER, sizeof(texcoordData), texcoordData, GL_STATIC_DRAW);
-	kuhl_errorcheck();
+	triangle.attrib_texcoord = texcoordData;
+	triangle.attrib_texcoord_components = 2; // each texcoord has u, v
+	triangle.attrib_texcoord_name = "in_TexCoord";
 
-	/* Tell OpenGL some information about the data that is in the
-	 * buffer. Among other things, we need to tell OpenGL which
-	 * attribute number (i.e., variable) the data should correspond to
-	 * in the vertex program. */
-	glEnableVertexAttribArray(1); // turn on attribute location 0
-	glVertexAttribPointer(
-		1, // attribute location in glsl program
-		2, // number of elements (u,v)
-		GL_FLOAT, // type of each element
-		GL_FALSE, // should OpenGL normalize values?
-		0,        // no extra data between each position
-		0 );      // offset of first element
-	kuhl_errorcheck();
 
 	/* Load the texture. It will be bound to texName */
 	kuhl_read_texture_file("images/blue.png", &texName1);
-	kuhl_read_texture_file("images/rainbow-alpha.png", &texName2);
-	kuhl_errorcheck();
-	/* We will make sure that our texture is in texture unit 0 inside
-	 * of display(). Here, we tell OpenGL that the texture that we
-	 * refer to in our GLSL program (named "tex") is going to be in
-	 * texture unit 0. */
-	glUniform1i(kuhl_get_uniform(program, "tex"), 0);
-	kuhl_errorcheck();
 
-	/* Unbind VAO. */
-	glBindVertexArray(0);
+	/* Tell our kuhl_geometry object about the texture */
+	triangle.texture = texName1;
+	triangle.texture_name = "tex"; // name in GLSL fragment program
+	kuhl_geometry_init(&triangle);
+
+	kuhl_errorcheck();
 }
 
 int main(int argc, char** argv)
@@ -253,16 +180,11 @@ int main(int argc, char** argv)
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
 
-	/* attribs is a list of attributes in the program. The last item
-	 * should be NULL so kuhl_create_program() can determine how many
-	 * attributes you passed in. The first attribute in this list will
-	 * be stored at location 0, the second at location 1, etc. */
-	char *attribs[] = { "in_Position", "in_TexCoord", NULL };
-	program = kuhl_create_program("ogl3-texture.vert", "ogl3-texture.frag", attribs);
+	program = kuhl_create_program("ogl3-texture.vert", "ogl3-texture.frag");
 	glUseProgram(program);
 	kuhl_errorcheck();
 
-	init_geometryTriangle();
+	init_geometryTriangle(program);
 	
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);

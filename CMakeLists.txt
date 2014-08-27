@@ -185,6 +185,16 @@ else()
 	message("Not compiling ogl2-texture because ImageMagick library was not found on this system.")
 endif()
 
+# === ogl3-texture ===
+if(ImageMagick_FOUND)
+	add_executable(ogl3-texture ogl3-texture.c kuhl-util.c dgr.c mousemove.c imageio.c projmat.c viewmat.c vrpn-help.cpp)
+	target_link_libraries(ogl3-texture ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ImageMagick_LIBRARIES})
+	set_target_properties(ogl3-texture PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
+else()
+	message("Not compiling ogl3-texture because ImageMagick library was not found on this system.")
+endif()
+
+
 # === ogl2-slideshow ===
 if(ImageMagick_FOUND)
 	add_executable(ogl2-slideshow ogl2-slideshow.c dgr.c imageio.c kuhl-util.c projmat.c)
@@ -209,6 +219,21 @@ else()
 	endif()
 endif()
 
+# === ogl3-assimp ===
+if(ASSIMP_FOUND AND ImageMagick_FOUND)
+	add_executable(ogl3-assimp ogl3-assimp.c kuhl-util.c imageio.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
+	target_link_libraries(ogl3-assimp ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES})
+	set_target_properties(ogl3-assimp PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_ASSIMP;KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
+else()
+	if(NOT ASSIMP_FOUND)
+		message("Not compiling ogl3-assimp because ASSIMP library was not found on this system.")
+	endif()
+	if(NOT ImageMagick_FOUND)
+		message("Not compiling ogl3-assimp because ImageMagick library was not found on this system.")
+	endif()
+endif()
+
+	
 
 
 if(Threads_FOUND)

@@ -1999,45 +1999,16 @@ void kuhl_print_program_info(GLuint program)
  *
  * @param fragFilename The filename of the fragment program.
  *
- * @param attribs A NULL terminated list of attributes in the shader
- * program. For example, if your vertices have in_Position and
- * in_Color attributes, you might set attribs to { "in_Position",
- * "in_Color", NULL } and then in_Position will be in location 0 and
- * in_Color will be in location 1 in the resulting OpenGL program.
- *
  * @return If success, returns the GLuint used to refer to the
  * program. Returns 0 if no shader program was created.
  */
-GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename, char *attribs[])
+GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename)
 {
-	if(vertexFilename == NULL || fragFilename == NULL || attribs == NULL)
+	if(vertexFilename == NULL || fragFilename == NULL)
 	{
 		fprintf(stderr, "kuhl_create_program(): One or more of the parameters were NULL\n");
 		return 0;
 	}
-
-	/* If your program is crashing here, you should ensure that the
-	 * last attribute in attribs is NULL or an empty string. */
-	int numAttribs = 0;
-	while(attribs[numAttribs] != NULL)
-		numAttribs++;
-
-	/* Attributes can't begin with "gl_" */
-	for(int i=0; i<numAttribs; i++)
-		if(strncmp("gl_", attribs[i], 3) == 0)
-			fprintf(stderr, "kuhl_create_program(): WARNING: Your attribute '%s' begins with 'gl_' (OpenGL doesn't allow this).", attribs[i]);
-
-	/* Check for duplicates in the attribute list. */
-	for(int i=1; i<numAttribs; i++)
-		for(int j=0; j<i; j++)
-			if(strcmp(attribs[i], attribs[j]) == 0)
-				fprintf(stderr, "kuhl_create_program(): WARNING: Your attribute list contained a duplicate: %s\n", attribs[i]);
-	
-	/* Make sure we don't have too many attributes. */
-	GLint maxAttribs = 0;
-	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &maxAttribs);
-	if(numAttribs > maxAttribs)
-		fprintf(stderr, "kuhl_create_program(): WARNING: You provided %d attributes in your list but OpenGL only supports up to %d attributes.\n", numAttribs, maxAttribs);
 
 	/* Create a program to attach our shaders to. */
 	GLuint program = glCreateProgram();
@@ -2059,20 +2030,6 @@ GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename,
 	glAttachShader(program, vertexShader);
 	kuhl_errorcheck();
 
-	/* We could let OpenGL assign attribute locations and get those
-	   locations with glGetAttribLocation(), but sometimes this isn't
-	   a good idea. (For example, see
-	   http://stackoverflow.com/questions/4635913 ). Therefore, we
-	   bind attributes to locations ourselves! If you bind them in a
-	   consistent manner, you can use the location numbers directly
-	   inside of display() instead of having to work out the correct
-	   location from the name. */
-	for(int i=0; i<numAttribs; i++)
-	{
-		glBindAttribLocation(program, i, attribs[i]);
-		kuhl_errorcheck();
-	}
-
 	/* Try to link the program. */
 	glLinkProgram(program);
 	kuhl_errorcheck();
@@ -2088,28 +2045,6 @@ GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename,
 		fprintf(stderr, "kuhl_create_program(): ERROR: Failed to link GLSL program.\n");
 		exit(1);
 	}
-
-	/* Check that each of the attributes the user passed to were
-	 * actually in the program. glBindAttribLocation() doesn't provide
-	 * any indication of if the attribute exists in the program or
-	 * not. We can't do this until we have linked the program. */
-	int incorrectAttribCount = 0;
-	for(int i=0; i<numAttribs; i++)
-	{
-		if(glGetAttribLocation(program, attribs[i]) == -1)
-		{
-			fprintf(stderr, "WARNING: You passed '%s' attribute to kuhl_create_program(), but the attribute didn't exist in the GLSL program.\n", attribs[i]);
-			incorrectAttribCount++;
-		}
-	}
-
-	/* Check that the number of attributes that were successfully
-	 * bound matches the number of attributes actually in the
-	 * program. */
-	GLint numAttribsInProg = 0;
-	glGetProgramiv(program, GL_ACTIVE_ATTRIBUTES, &numAttribsInProg);
-	if(numAttribsInProg != numAttribs - incorrectAttribCount)
-		fprintf(stderr, "kuhl_create_program(): NOTE: Some of the attributes in your GLSL program were missing from the list of attributes you passed to kuhl_create_program(). You will need to query the automatically assigned location yourself using glGetAttribLocation().\n");
 
 	glValidateProgram(program);
 	kuhl_errorcheck();
@@ -2174,76 +2109,333 @@ void kuhl_delete_program(GLuint program)
  */
 GLint kuhl_get_uniform(GLuint program, const char *uniformName)
 {
+	if(uniformName == NULL || strlen(uniformName) == 0)
+	{
+		fprintf(stderr, "kuhl_get_uniform(): You asked for the location of an uniform name, but your name was an empty string or a NULL pointer.\n");
+	}
+	
 	GLint loc = glGetUniformLocation(program, uniformName);
+	kuhl_errorcheck();
 	if(loc == -1)
-		fprintf(stderr, "kuhl_get_uniform(): Uniform variable '%s' is missing or is inactive in your GLSL program.\n", uniformName);
+	{
+		fprintf(stderr, "kuhl_get_uniform(): Uniform variable '%s' is missing or inactive in your GLSL program.\n", uniformName);
+
+	}
 	return loc;
 }
 
-/** Create an OpenGL element array buffer object. This function is useful for
-    drawing graphics in OpenGL 3.0+ applications.
-    
-    @param array The array of indices to create a buffer object from.
-
-    @param arrayLength The total number of items in the array (or the length of the array).
-
-    @param attribLocation The attribute location that we want the data
-    to appear at in the GLSL program.
-*/
-GLuint kuhl_element_array_buffer(const GLuint indices[], int arrayLength, int attribLocation)
+/** glGetAttribLocation() with error checking. This function behaves
+ * the same as glGetAttribLocation() except that when an error
+ * occurs, it prints an error message if the attribute variable doesn't
+ * exist (or is inactive) in the GLSL program. glGetAttributeLocation()
+ * only returns -1 when the attribute variable is not found.
+ *
+ * @param program The OpenGL shader program containing the attribute variable.
+ *
+ * @param attributeName The name of the attribute variable.
+ *
+ * @return The location of the attribute variable.
+ */
+GLint kuhl_get_attribute(GLuint program, const char *attributeName)
 {
-	/* Set up a buffer object (BO) which is a place to store the *indices* on the graphics card. */
-	GLuint buffer;
-	glGenBuffers(1, &buffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer);
+	if(attributeName == NULL || strlen(attributeName) == 0)
+	{
+		fprintf(stderr, "kuhl_get_attribute(): You asked for the location of an attribute name, but your name was an empty string or a NULL pointer.\n");
+	}
+		
+	GLint loc = glGetAttribLocation(program, attributeName);
 	kuhl_errorcheck();
-
-	/* Copy the indices data into the currently bound buffer. */
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*arrayLength, indices, GL_STATIC_DRAW);
-	kuhl_errorcheck();
-	return buffer;
+	if(loc == -1)
+	{
+		fprintf(stderr, "kuhl_get_attribute(): Attribute variable '%s' is missing or inactive in your GLSL program.\n", attributeName);
+	}
+	return loc;
 }
 
-/** Create an OpenGL array buffer object. This function is useful for
-    drawing graphics in OpenGL 3.0+ applications.
 
-    @param array The array of data (vertices, texture coordinates,
-    colors, etc) to create a buffer object from.
 
-    @param arrayLength The total number of items in the array (or the length of the array).
+/** Initializes all items in a kuhl_geometry struct to 0.
 
-    @param attribLocation The attribute location that we want the data
-    to appear at in the GLSL program.
-
-    @param numComponents The number of components in each item (you mights use 3 for XYZ coordinates, 2 for 2D texture coordinates).
+ @param geom The kuhl_geometry struct to be zero'd out.
 */
-GLuint kuhl_array_buffer(const GLfloat array[], int arrayLength, int attribLocation, int numComponents)
+void kuhl_geometry_zero(kuhl_geometry *geom)
 {
-	/* Set up a buffer object (BO) which is a place to store the data on the graphics card. */
-	GLuint bufferObject;
-	glGenBuffers(1, &bufferObject);
-	glBindBuffer(GL_ARRAY_BUFFER, bufferObject);
-	kuhl_errorcheck();
+	geom->vao = 0;
+	geom->program = 0;
+	geom->vertex_count = 0;
+	geom->primitive_type = 0;
 
-	/* Copy the our data into the buffer object that is currently bound. */
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*arrayLength, array, GL_STATIC_DRAW);
-	kuhl_errorcheck();
+	geom->texture = 0;
+	geom->texture_name = NULL;
+	
+	geom->indices = NULL;
+	geom->indices_len = 0;
+	geom->indices_bufferobject = 0;
 
-	/* Tell OpenGL some information about the data that is in the
-	 * buffer. Among other things, we need to tell OpenGL which
-	 * attribute number (i.e., variable) the data should correspond to
-	 * in the vertex program. */
-	glEnableVertexAttribArray(attribLocation); // turn on attribute location 0
-	glVertexAttribPointer(
-		attribLocation, // attribute location in glsl program
-		numComponents, // number of elements (x,y,z)
-		GL_FLOAT, // type of each element
-		GL_FALSE, // should OpenGL normalize values?
-		0,        // no extra data between each position
-		0 );      // offset of first element
-	kuhl_errorcheck();
-	return bufferObject;
+	geom->attrib_pos = NULL;
+	geom->attrib_pos_components = 0;
+	geom->attrib_pos_name = NULL;
+	geom->attrib_pos_bufferobject = 0;
+
+	geom->attrib_color = NULL;
+	geom->attrib_color_components = 0;
+	geom->attrib_color_name = NULL;
+	geom->attrib_color_bufferobject = 0;
+
+	geom->attrib_texcoord = NULL;
+	geom->attrib_texcoord_components = 0;
+	geom->attrib_texcoord_name = NULL;
+	geom->attrib_texcoord_bufferobject = 0;
+	
+	geom->attrib_normal = NULL;
+	geom->attrib_normal_components = 0;
+	geom->attrib_normal_name = NULL;
+	geom->attrib_normal_bufferobject = 0;
+
+	geom->attrib_custom = NULL;
+	geom->attrib_custom_components = 0;
+	geom->attrib_custom_name = NULL;
+	geom->attrib_custom_bufferobject = 0;
+
 }
+
+/** Checks a kuhl_geometry struct to ensure the values are
+ * reasonable. Can be called any time after kuhl_geometry_init() is
+ * called on the struct. When an error occurs, a message is printed to
+ * stderr and exit() is called. Important note: This does not check
+ * that the data arrays are non-NULL or look at values in the
+ * arrays. This is because after the kuhl_geometry information is
+ * copied into OpenGL, the caller can free() that information. For a
+ * similar reason, we do not check if the GLSL names are set.
+
+ @param geom The kuhl_geometry object to check.
+*/
+static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
+{
+	if(geom->program == 0)
+	{
+		fprintf(stderr, "%s: The program element was not set in your kuhl_geometry struct. You must specify which GLSL program will be used with this geometry.\n", __func__);
+		exit(EXIT_FAILURE);
+	}
+
+	if(geom->vertex_count < 1)
+	{
+		fprintf(stderr, "%s: vertex_count must be greater than 0.\n", __func__);
+		exit(EXIT_FAILURE);
+	}
+
+	if(!(geom->primitive_type == GL_POINTS ||
+	     geom->primitive_type == GL_LINE_STRIP ||
+	     geom->primitive_type == GL_LINE_LOOP ||
+	     geom->primitive_type == GL_LINES ||
+	     geom->primitive_type == GL_TRIANGLE_STRIP ||
+	     geom->primitive_type == GL_TRIANGLE_FAN ||
+	     geom->primitive_type == GL_TRIANGLES))
+	{
+		fprintf(stderr, "%s: primitive_type must be set to GL_POINTS, GL_LINE_STRIP, GL_LINE_LOOP, GL_LINES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, or GL_TRIANGLES.\n", __func__);
+		exit(EXIT_FAILURE);
+	}
+
+	/* If one part of the position attribute is set, all parts of it should be set. */
+	if(geom->attrib_pos_components || geom->attrib_pos_bufferobject)
+	{
+		if(!(geom->attrib_pos_components && geom->attrib_pos_bufferobject))
+		{
+			fprintf(stderr, "%s: Position attribute was not fully set.\n", __func__);
+			exit(EXIT_FAILURE);
+		}
+	}
+		
+	if(geom->attrib_color_components || geom->attrib_color_bufferobject)
+	{
+		if(!(geom->attrib_color_components && geom->attrib_color_bufferobject))
+		{
+			fprintf(stderr, "%s: Color attribute was not fully set.\n", __func__);
+			exit(EXIT_FAILURE);
+		}
+	}
+		
+	if(geom->attrib_texcoord_components || geom->attrib_texcoord_bufferobject)
+	{
+		if(!(geom->attrib_texcoord_components && geom->attrib_texcoord_bufferobject))
+		{
+			fprintf(stderr, "%s: Texcoord attribute was not fully set.\n", __func__);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if(geom->attrib_normal_components || geom->attrib_normal_bufferobject)
+	{
+		if(!(geom->attrib_normal_components && geom->attrib_normal_bufferobject))
+		{
+			fprintf(stderr, "%s: Normal attribute was not fully set.\n", __func__);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if(geom->attrib_custom_components || geom->attrib_custom_bufferobject)
+	{
+		if(!(geom->attrib_custom_components && geom->attrib_custom_bufferobject))
+		{
+			fprintf(stderr, "%s: Custom attribute was not fully set.\n", __func__);
+			exit(EXIT_FAILURE);
+		}
+	}
+	
+}
+
+/** Creates an OpenGL vertex array object from information in a
+    kuhl_geometry struct. When this function successfully completes,
+    the arrays of data stored in the kuhl_geometry struct can be freed
+    (for example, geom->attrib_pos, geom->attrib_color, geom->indices,
+    etc.) because OpenGL has made its own copy of the data. The rest
+    of the information in the struct should be left untouched, since
+    they may be used in kuhl_geometry_draw().
+
+    @param geom A kuhl_geometry struct populated with the information
+    necessary to draw some geometry.
+*/
+void kuhl_geometry_init(kuhl_geometry *geom)
+{
+	kuhl_errorcheck();
+	/* Create a vertex array object (VAO) */
+	glGenVertexArrays(1, &(geom->vao));
+	glBindVertexArray(geom->vao);
+	kuhl_errorcheck();
+
+	/* The position, texcoord, color, normal, etc. can all be
+	 * processed in the same way. Make some arrays so we can just loop
+	 * through them. */
+	GLfloat *data[] =    { geom->attrib_pos,            geom->attrib_color,            geom->attrib_texcoord, geom->attrib_normal, geom->attrib_custom };
+	GLint components[] = { geom->attrib_pos_components, geom->attrib_color_components, geom->attrib_texcoord_components, geom->attrib_normal_components, geom->attrib_custom_components };
+	char *name[]       = { geom->attrib_pos_name,       geom->attrib_color_name,       geom->attrib_texcoord_name, geom->attrib_normal_name, geom->attrib_custom_name };
+	GLuint bo[]        = { geom->attrib_pos_bufferobject, geom->attrib_color_bufferobject, geom->attrib_texcoord_bufferobject, geom->attrib_normal_bufferobject, geom->attrib_custom_bufferobject };
+
+	for(int i=0; i<5; i++)
+	{
+		if(data[i] == 0 || components[i] == 0 || name[i] == NULL || strlen(name[i]) == 0)
+			continue;
+
+		glGenBuffers(1, &(bo[i]));
+		glBindBuffer(GL_ARRAY_BUFFER, bo[i]);
+		kuhl_errorcheck();
+
+		/* Copy the our data into the buffer object that is currently bound. */
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*geom->vertex_count*components[i], data[i], GL_STATIC_DRAW);
+		kuhl_errorcheck();
+
+		/* Get attribute location */
+		GLuint attribLocation = kuhl_get_attribute(geom->program, name[i]);
+
+		/* Tell OpenGL some information about the data that is in the
+		 * buffer. Among other things, we need to tell OpenGL which
+		 * attribute number (i.e., variable) the data should correspond to
+		 * in the vertex program. */
+		glEnableVertexAttribArray(attribLocation); // turn on attribute location 0
+		glVertexAttribPointer(
+			attribLocation, // attribute location in glsl program
+			components[i], // number of elements (x,y,z)
+			GL_FLOAT, // type of each element
+			GL_FALSE, // should OpenGL normalize values?
+			0,        // no extra data between each position
+			0 );      // offset of first element
+		kuhl_errorcheck();
+	}
+
+	/* Make sure that the bufferobject names get copied back into the
+	 * struct that the user passed in to this function. */
+	geom->attrib_pos_bufferobject = bo[0];
+	geom->attrib_color_bufferobject = bo[1];
+	geom->attrib_texcoord_bufferobject = bo[2];
+
+
+	if(geom->indices != NULL && geom->indices_len > 0)
+	{
+		/* Verify that the indices the user passed in are
+		 * appropriate. If there are only 10 vertices, then a user
+		 * can't draw a vertex at index 10, 11, 13, etc. */
+		for(GLuint i=0; i<geom->indices_len; i++)
+		{
+			if(geom->indices[i] >= geom->vertex_count)
+				fprintf(stderr, "%s: kuhl_geometry has %d vertices but indices[%d] is asking for vertex at index %d to be drawn.\n", __func__, geom->vertex_count, i, geom->indices[i]);
+		}
+
+		/* Set up a buffer object (BO) which is a place to store the *indices* on the graphics card. */
+		glGenBuffers(1, &(geom->indices_bufferobject));
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->indices_bufferobject);
+		kuhl_errorcheck();
+
+		/* Copy the indices data into the currently bound buffer. */
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*geom->indices_len, geom->indices, GL_STATIC_DRAW);
+		kuhl_errorcheck();
+	}
+
+	if(geom->texture)
+	{
+		/* We will make sure that our texture is in texture unit 0 inside
+		 * of display(). Here, we tell OpenGL that the texture that we
+		 * refer to in our GLSL program is going to be in texture unit
+		 * 0. */
+		glUniform1i(kuhl_get_uniform(geom->program, geom->texture_name), 0);
+		kuhl_errorcheck();
+	}
+
+
+	kuhl_geometry_sanity_check(geom);
+
+    /* Unbind VAO. */
+	glBindVertexArray(0);
+}
+
+/** Draws a kuhl_geometry struct to the screen. The struct passed into
+ * this function should have been set up with kuhl_geometry_init()
+ * first!
+
+ @param geom The geometry to draw to the screen. */
+void kuhl_geometry_draw(kuhl_geometry *geom)
+{
+	kuhl_geometry_sanity_check(geom);
+
+	/* Use the program the user wants us to use */
+	glUseProgram(geom->program);
+	kuhl_errorcheck();
+
+	/* Use the vertex array object for this geometry */
+	glBindVertexArray(geom->vao);
+	kuhl_errorcheck();
+
+	if(geom->texture)
+	{
+		glActiveTexture(GL_TEXTURE0); /* Turn on texture unit 0 */
+		kuhl_errorcheck();
+		glBindTexture(GL_TEXTURE_2D, geom->texture); /* Use our previously loaded texture */
+		kuhl_errorcheck();
+	}
+	
+	/* If the user provided us with indices, use glDrawElements to draw the geometry. */
+	if(geom->indices_len > 0 && geom->indices_bufferobject != 0)
+	{
+		glDrawElements(geom->primitive_type,
+		               geom->indices_len,
+		               GL_UNSIGNED_INT,
+		               (void*)0);
+		kuhl_errorcheck();
+	}
+	else
+	{
+		/* If the user didn't provide us with indices, just draw the vertices in order. */
+		glDrawArrays(geom->primitive_type, 0, geom->vertex_count);
+		kuhl_errorcheck();
+	}
+
+	if(geom->texture)
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+	/* Unbind the VAO */
+	glBindVertexArray(0);
+}
+
+
 
 /** Converts an array containing RGBA image data into an OpenGL texture.
  *
@@ -2270,14 +2462,15 @@ GLuint kuhl_read_texture_rgba_array(const char* array, int width, int height)
 		printf("Either your video card/driver doesn't support OpenGL 2.0 or better OR you forgot to call glewInit() at the appropriate time at the beginning of your program.\n");
 		return 0;
 	}
-
+	kuhl_errorcheck();
 	glGenTextures(1, &texName);
 	glBindTexture(GL_TEXTURE_2D, texName);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
+	kuhl_errorcheck();
+	
 	/* If anisotropic filtering is available, turn it on.  This does not
 	 * override the MIN_FILTER. The MIN_FILTER setting may affect how the
 	 * videocard decides to do anisotropic filtering, however.  For more info:
@@ -2767,17 +2960,18 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 	}
 
 
+
 	/* Store the scene information in our list structure so we can
 	 * find the scene from the model filename again in the future. */
 	if(sceneMapSize >= sceneMapMaxSize)
-	{
-		printf("You have loaded more scenes than the hardcoded limit. Exiting.\n");
+	{	
+		fprintf(stderr, "%s: You have loaded more scenes than the hardcoded limit. Exiting.\n", __func__);
 		exit(EXIT_FAILURE);
 	}
 
 	index = sceneMapSize;
 	sceneMapSize++;
-	
+
 	sceneMap[index].modelFilename = strdup(modelFilename);
 	sceneMap[index].scene = scene;
 	kuhl_private_calc_bbox(scene->mRootNode, NULL, scene, index);
@@ -2788,7 +2982,6 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 	vec3f_print(sceneMap[index].bb_max);
 	printf("%s: Bounding box ctr: ", modelFilename);
 	vec3f_print(sceneMap[index].bb_center);
-
 	return index;
 }
 
@@ -2966,6 +3159,113 @@ static void kuhl_private_recrend_ogl2(const struct aiScene *sc, const struct aiN
 	glPopMatrix();
 }
 
+
+/** Recursively render the scene and apply materials appropriately using OpenGL 3 calls.
+ *
+ * @param sc The scene that we want to render.
+ *
+ * @param nd The current node that we are rendering.
+ */
+static void kuhl_private_recrend_ogl3(const struct aiScene *sc, const struct aiNode* nd)
+{
+	struct aiMatrix4x4 m = nd->mTransformation;
+
+	// update transform.
+	// TODO: We actually aren't using the transform matrix! Perhaps we should try using aiProcess_PreTransformVertices so that we don't have to worry about it!
+	aiTransposeMatrix4(&m);
+	float *tmp = (float*)&m;
+	float transformMat[16];
+	for(int i=0; i<16; i++)
+		transformMat[i] = *(tmp+i);
+
+	// draw all meshes assigned to this node
+	for(unsigned int n=0; n < nd->mNumMeshes; n++)
+	{
+		const struct aiMesh* mesh = sc->mMeshes[nd->mMeshes[n]];
+
+		/* Fill in a list of our vertices. */
+		kuhl_geometry geom;
+		kuhl_geometry_zero(&geom);
+		geom.program = 1; // TODO: Fix this!
+		geom.primitive_type = GL_TRIANGLES;
+		geom.vertex_count = mesh->mNumVertices;
+		float vertexPositions[mesh->mNumVertices*3];
+		for(unsigned int i=0; i<mesh->mNumVertices; i++)
+		{
+			vertexPositions[i*3+0] = (mesh->mVertices)[i].x;
+			vertexPositions[i*3+1] = (mesh->mVertices)[i].y;
+			vertexPositions[i*3+2] = (mesh->mVertices)[i].z;
+		}
+		geom.attrib_pos = vertexPositions;
+		geom.attrib_pos_components = 3;
+		geom.attrib_pos_name = "in_Position";
+
+		/* Fill a list of texture coordinates */
+		float texCoord[mesh->mNumVertices*2];
+		if(mesh->mTextureCoords != NULL && mesh->mTextureCoords[0] != NULL)
+		{
+			for(unsigned int i=0; i<mesh->mNumVertices; i++)
+			{
+				texCoord[i*2+0] = (mesh->mTextureCoords)[0][i].x;
+				texCoord[i*2+1] = (mesh->mTextureCoords)[0][i].y;
+			}
+			geom.attrib_texcoord = texCoord;
+			geom.attrib_texcoord_components = 2;
+			geom.attrib_texcoord_name = "in_TexCoord";
+		}
+
+		/* Find our texture and tell our kuhl_geometry object about
+		 * it. */
+		struct aiString texPath;	//contains filename of texture
+		int texIndex = 0;
+		if(AI_SUCCESS == aiGetMaterialTexture(sc->mMaterials[mesh->mMaterialIndex],
+		                                      aiTextureType_DIFFUSE, texIndex, &texPath,
+		                                      NULL, NULL, NULL, NULL, NULL, NULL))
+		{
+			geom.texture_name = "tex"; // name of sampler in GLSL fragment program.
+			for(int i=0; i<textureIdMapSize; i++)
+				if(strcmp(textureIdMap[i].textureFileName, texPath.data) == 0)
+					geom.texture = textureIdMap[i].textureID;
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			kuhl_errorcheck();
+		}
+
+		/* Get indices to draw with */
+		geom.indices_len = mesh->mNumFaces * 3;
+		GLuint indices[geom.indices_len];
+		for(unsigned int t = 0; t<mesh->mNumFaces; t++)
+		{
+			const struct aiFace* face = &mesh->mFaces[t];
+			if(face->mNumIndices != 3)
+			{
+				fprintf(stderr, "%s: We only support drawing triangle meshes.\n", __func__);
+				exit(EXIT_FAILURE);
+			}
+			indices[t*3+0] = face->mIndices[0];
+			indices[t*3+1] = face->mIndices[1];
+			indices[t*3+2] = face->mIndices[2];
+		}
+		geom.indices = indices;
+
+		// TODO: Handle normals.
+
+		// TODO: We should init all of this only the first time that
+		// everything is loaded and keep track of a list of
+		// kuhl_geometry objects to draw.
+		kuhl_geometry_init(&geom);
+		kuhl_geometry_draw(&geom);
+	}
+
+	// Draw all children nodes too.
+	for (unsigned int i = 0; i < nd->mNumChildren; i++)
+		kuhl_private_recrend_ogl3(sc, nd->mChildren[i]);
+
+
+}
+
+
+
 /** Given a model file, load the model (if it hasn't been loaded
  * already) and render that file using OpenGL2. The preprocessor
  * variable KUHL_UTIL_USE_ASSIMP must be defined to use this function.
@@ -3000,6 +3300,40 @@ int kuhl_draw_model_file_ogl2(const char *modelFilename, const char *textureDirn
 	// aiDetachAllLogStreams();
 }
 
+
+/** Given a model file, load the model (if it hasn't been loaded
+ * already) and render that file using OpenGL 3. The preprocessor
+ * variable KUHL_UTIL_USE_ASSIMP must be defined to use this function.
+ *
+ * @param modelFilename The filename of the model.
+ *
+ * @param textureDirname The directory that the model's textures are saved in. If set to NULL, the textures are assumed to be in the same directory as the model is in.
+ *
+ * @return Returns 1 if successful and 0 if we failed to load the model.
+ */
+int kuhl_draw_model_file_ogl3(const char *modelFilename, const char *textureDirname)
+{
+
+	// Load the model if necessary and get its index in our sceneMap.
+	int index = kuhl_private_load_model(modelFilename, textureDirname);
+	
+	if(index >= 0)
+	{
+		
+		// Draw the scene
+		kuhl_private_recrend_ogl3(sceneMap[index].scene, sceneMap[index].scene->mRootNode);
+//		exit(1);
+		return 1;
+	}
+	return 0;
+	
+	/* TODO: Think about proving a way for a user to cleanup models
+	   appropriately. We would call these two functions: */
+	// aiReleaseImport(scene);
+	// aiDetachAllLogStreams();
+}
+
+
 /** Returns the bounding box for a model file.
  *
  * @param modelFilename The 3D model file that you want the bounding box for.
@@ -3016,7 +3350,12 @@ int kuhl_model_bounding_box(const char *modelFilename, float min[3], float max[3
 {
 	int index = kuhl_private_modelIndex(modelFilename);
 	if(index < 0)
+	{
+		vec3f_set(min, 0,0,0);
+		vec3f_set(max, 0,0,0);
+		vec3f_set(center, 0,0,0);
 		return 0;
+	}
 
 	vec3f_copy(min,    sceneMap[index].bb_min);
 	vec3f_copy(max,    sceneMap[index].bb_max);

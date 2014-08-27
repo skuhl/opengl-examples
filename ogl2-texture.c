@@ -65,72 +65,72 @@ void display()
 	kuhl_errorcheck();
 	
 
-    for(int view=0; view<viewmat_num_viewports(); view++)
-    {
-	    /* Where is the viewport that we are drawing onto and what is its size? */
-	    int viewport[4];
-	    viewmat_get_viewport(viewport, view);
-	    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+	for(int viewportID=0; viewportID<viewmat_num_viewports(); viewportID++)
+	{
+		/* Where is the viewport that we are drawing onto and what is its size? */
+		int viewport[4];
+		viewmat_get_viewport(viewport, viewportID);
+		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
-	    /* Get the view frustum information. */
-	    float f[6];
-	    projmat_get_frustum(f, viewport[2], viewport[3]);
+		/* Get the view frustum information. */
+		float f[6];
+		projmat_get_frustum(f, viewport[2], viewport[3]);
 	    
-	    /* Get the projection matrix, update view frustum if necessary. */
-	    float viewMat[16];
-	    viewmat_get(viewMat, f, view);
+		/* Get the view/camera matrix, update view frustum if necessary. */
+		float viewMat[16];
+		viewmat_get(viewMat, f, viewportID);
 	    
-	    /* Communicate matricies to OpenGL */
-	    glMatrixMode(GL_PROJECTION);
-	    glLoadIdentity();
-	    glFrustum(f[0], f[1], f[2], f[3], f[4], f[5]);
-	    glMatrixMode(GL_MODELVIEW);
-	    glLoadIdentity();
-	    glMultMatrixf(viewMat);
-	    kuhl_errorcheck();
+		/* Communicate matricies to OpenGL */
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glFrustum(f[0], f[1], f[2], f[3], f[4], f[5]); // projection matrix
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		glMultMatrixf(viewMat); // view/camera matrix
+		kuhl_errorcheck();
 
 
-	/* Change angle for animation. */
-	int count = glutGet(GLUT_ELAPSED_TIME) % 10000; // get a counter that repeats every 10 seconds
-	float angle = count / 10000.0 * 360;
-	dgr_setget("angle", &angle, sizeof(GLfloat));
+		/* Change angle for animation. */
+		int count = glutGet(GLUT_ELAPSED_TIME) % 10000; // get a counter that repeats every 10 seconds
+		float angle = count / 10000.0 * 360;
+		dgr_setget("angle", &angle, sizeof(GLfloat));
 
-	glScalef(3,3,3); /* Scale triangle (second!) */
-	glRotatef(angle, 0,1,0); /* Rotate triangle (first!) */
+		glScalef(3,3,3); /* Scale triangle (second!) */
+		glRotatef(angle, 0,1,0); /* Rotate triangle (first!) */
 
 
 
-	/* Draw a triangle. Since triangles have two sides, we can
-	 * distinguish between the sides of the triangles two different
-	 * ways. If you draw the 1st, 2nd, and 3rd vertex in order and
-	 * they follow a counter-clockwise order, they triangle is facing
-	 * toward you. Furthermore, each vertex can have a normal vector
-	 * associated with them. The normal vector may (or may not) point
-	 * perpendicular to the face of the triangle and can also be used
-	 * to indicate which direction the triangle is facing.
-	 *
-	 * glFrontFace(GL_CW) can be used to make clockwise ordering be the front of triangles.
-	 *
-	 * glCullFace() tells OpenGL that front-facing (GL_FRONT),
-	 * back-facing (GL_BACK) or all (GL_FRONT_AND_BACK) should be
-	 * culled or removed from the scene.
-	 */
-	glEnable(GL_TEXTURE_2D); // enable 2d texture
-	glBindTexture(GL_TEXTURE_2D, texID);
-	glBegin(GL_TRIANGLES);
-	glNormal3f(0,0,1);
-	glTexCoord2f(0,0);
-	glVertex3f(0,0,0);
-	glTexCoord2f(1,0);
-	glVertex3f(1,0,0);
-	glTexCoord2f(1,1);
-	glVertex3f(1,1,0);
-	glEnd(); // GL_TRIANGLES
+		/* Draw a triangle. Since triangles have two sides, we can
+		 * distinguish between the sides of the triangles two different
+		 * ways. If you draw the 1st, 2nd, and 3rd vertex in order and
+		 * they follow a counter-clockwise order, they triangle is facing
+		 * toward you. Furthermore, each vertex can have a normal vector
+		 * associated with them. The normal vector may (or may not) point
+		 * perpendicular to the face of the triangle and can also be used
+		 * to indicate which direction the triangle is facing.
+		 *
+		 * glFrontFace(GL_CW) can be used to make clockwise ordering be the front of triangles.
+		 *
+		 * glCullFace() tells OpenGL that front-facing (GL_FRONT),
+		 * back-facing (GL_BACK) or all (GL_FRONT_AND_BACK) should be
+		 * culled or removed from the scene.
+		 */
+		glEnable(GL_TEXTURE_2D); // enable 2d texture
+		glBindTexture(GL_TEXTURE_2D, texID);
+		glBegin(GL_TRIANGLES);
+		glNormal3f(0,0,1);
+		glTexCoord2f(0,0);
+		glVertex3f(0,0,0);
+		glTexCoord2f(1,0);
+		glVertex3f(1,0,0);
+		glTexCoord2f(1,1);
+		glVertex3f(1,1,0);
+		glEnd(); // GL_TRIANGLES
 
-	    /* Check for errors. If there are errors, consider adding more
-	     * calls to kuhl_errorcheck() in your code. */
-	    kuhl_errorcheck();
-    } // finish viewport loop	kuhl_errorcheck();
+		/* Check for errors. If there are errors, consider adding more
+		 * calls to kuhl_errorcheck() in your code. */
+		kuhl_errorcheck();
+	} // finish viewport loop
     
 	/* Display the buffer we just drew (necessary for double buffering). */
 	glutSwapBuffers();

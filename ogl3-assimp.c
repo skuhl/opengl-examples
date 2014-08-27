@@ -14,6 +14,7 @@
 #include "dgr.h"
 #include "projmat.h"
 #include "viewmat.h"
+GLuint program = 0; // id value for the GLSL program
 
 /** Set this variable to 1 to force this program to scale the entire
  * model and translate it so that we can see the entire model. This is
@@ -21,7 +22,7 @@
  * are unsure about the units and position of the model geometry. */
 #define FIT_TO_VIEW_AND_ROTATE 1
 /** The location in 3D space that we want the center of the bounding box to be (if FIT_TO_VIEW_AND_ROTATE is set) or the location that we should put the origin of the model */
-float placeToPutModel[3] = { 0,0,-4 };
+float placeToPutModel[3] = { 0,0, -4 };
 /** SketchUp produces files that older versions of ASSIMP think 1 unit
  * is 1 inch. However, all of this software assumes that 1 unit is 1
  * meter. So, we need to convert some models from inches to
@@ -111,30 +112,6 @@ void display()
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST); // turn on depth testing
 
-	/* Turn on lighting. By default, the light is where the camera
-	 * is. */
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	// Apply light to back and front faces the same way
-	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-
-	glEnable(GL_COLOR_MATERIAL);
-	glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
-
-	/* Normal vectors should be normalized for proper
-	   lighting. GL_NORMALIZE makes OpenGL normalize all normal vectors
-	   (regardless of if they already are!). Even if your normal vectors
-	   are normalized, they can still be scaled by glScale()---so
-	   GL_NORMALIZE is a good idea. Improperly scaled normal vectors can
-	   often result in unexpected lighting. */
-	glEnable(GL_NORMALIZE);
-
-	/* If you encounter a model that looks incorrectly rendered, it
-	   may be caused by vertices on a polygon being defined clockwise
-	   (CW) instead of counter-clock-wise (CCW). Try commenting out
-	   the following line. */
-	// glFrontFace(GL_CW);
-
 	kuhl_errorcheck();
 	
 
@@ -149,41 +126,35 @@ void display()
 		float f[6];
 		projmat_get_frustum(f, viewport[2], viewport[3]);
 	    
-		/* Get the view/camera matrix, update view frustum if necessary. */
+		/* Get the projection matrix, update view frustum if necessary. */
 		float viewMat[16];
 		viewmat_get(viewMat, f, viewportID);
-	    
+
+		glUseProgram(1);
 		/* Communicate matricies to OpenGL */
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		glFrustum(f[0], f[1], f[2], f[3], f[4], f[5]); // projection matrix
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
-		glMultMatrixf(viewMat); // view/camera matrix
-		kuhl_errorcheck();
+		float perspective[16];
+		mat4f_frustum_new(perspective,f[0], f[1], f[2], f[3], f[4], f[5]);
+		glUniformMatrix4fv(kuhl_get_uniform(1, "Projection"),
+		                   1, // count
+		                   0, // transpose
+		                   perspective); // value
 		float modelMat[16];
 		get_model_matrix(modelMat);
-		glMultMatrixf(modelMat);
+		
+		// modelview = view * model
+		float modelview[16];
+		mat4f_mult_mat4f_new(modelview, viewMat, modelMat);
 
-		// If the display list has not been made yet, create a new one and
-		// fill it with scene contents. Note: OpenGL display lists have
-		// been deprecated in OpenGL 3. For more information, see:
-		// http://stackoverflow.com/questions/4113989/
-		if(scene_list == 0) {
-			// make sure the scene & textures are loaded.
-			if(kuhl_draw_model_file_ogl2(modelFilename, modelTexturePath) == 0)
-				exit(EXIT_FAILURE);
+		glUniformMatrix4fv(kuhl_get_uniform(1, "ModelView"),
+		                   1, // count
+		                   0, // transpose
+		                   modelview); // value
+		kuhl_errorcheck();
+		kuhl_errorcheck();
 
-			// Create a display list
-			scene_list = glGenLists(1);
-			glNewList(scene_list, GL_COMPILE);
-			// now begin at the root node of the imported data and traverse
-			// the scenegraph by multiplying subsequent local transforms
-			// together on GL's matrix stack.
-			kuhl_draw_model_file_ogl2(modelFilename, modelTexturePath);
-			glEndList();
-		}
-		glCallList(scene_list);
+
+		kuhl_draw_model_file_ogl3(modelFilename, modelTexturePath);
+		kuhl_errorcheck();
 	}
 	    
 
@@ -202,6 +173,7 @@ void display()
 	
 	/* Display the buffer we just drew (necessary for double buffering). */
 	glutSwapBuffers();
+//	exit(1);
 
 	// kuhl_video_record("videoout", 30);
 	
@@ -239,23 +211,45 @@ int main(int argc, char** argv)
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitContextVersion(3,0);
+	glutInitContextProfile(GLUT_CORE_PROFILE);
+	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE); // Don't allow deprecated OpenGL calls.
 	glutCreateWindow(argv[0]); // set window title to executable name
 
 	/* Initialize GLEW */
+	glewExperimental = GL_TRUE;
 	GLenum glewError = glewInit();
 	if(glewError != GLEW_OK)
 	{
 		fprintf(stderr, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
 		exit(EXIT_FAILURE);
 	}
-	kuhl_errorcheck();
+	/* When experimental features are turned on in GLEW, the first
+	 * call to glGetError() or kuhl_errorcheck() may incorrectly
+	 * report an error. So, we call glGetError() to ensure that a
+	 * later call to glGetError() will only see correct errors. For
+	 * details, see:
+	 * http://www.opengl.org/wiki/OpenGL_Loading_Library */
+	glGetError();
 
 	// setup callbacks
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
 
-	float initPos[3] = {0,0,3};
-	float initLook[3] = {0,0,0};
+	kuhl_errorcheck();
+	/* Set the uniform variable in the shader that is named "red" to the value 1. */
+//	glUniform1i(kuhl_get_uniform(program, "red"), 1);
+	kuhl_errorcheck();
+
+	GLuint program = kuhl_create_program("ogl3-assimp.vert", "ogl3-assimp.frag");
+	glUseProgram(program);
+
+
+	/* Good practice: Unbind objects until we really need them. */
+	glUseProgram(0);
+
+	float initPos[3] = {0,0,0};
+	float initLook[3] = {0,0,-4};
 	float initUp[3] = {0,1,0};
 
 	// Initialize DGR
