@@ -2180,8 +2180,70 @@ GLint kuhl_get_uniform(GLuint program, const char *uniformName)
 	return loc;
 }
 
+/** Create an OpenGL element array buffer object. This function is useful for
+    drawing graphics in OpenGL 3.0+ applications.
+    
+    @param array The array of indices to create a buffer object from.
 
+    @param arrayLength The total number of items in the array (or the length of the array).
 
+    @param attribLocation The attribute location that we want the data
+    to appear at in the GLSL program.
+*/
+GLuint kuhl_element_array_buffer(const GLuint indices[], int arrayLength, int attribLocation)
+{
+	/* Set up a buffer object (BO) which is a place to store the *indices* on the graphics card. */
+	GLuint buffer;
+	glGenBuffers(1, &buffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer);
+	kuhl_errorcheck();
+
+	/* Copy the indices data into the currently bound buffer. */
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*arrayLength, indices, GL_STATIC_DRAW);
+	kuhl_errorcheck();
+	return buffer;
+}
+
+/** Create an OpenGL array buffer object. This function is useful for
+    drawing graphics in OpenGL 3.0+ applications.
+
+    @param array The array of data (vertices, texture coordinates,
+    colors, etc) to create a buffer object from.
+
+    @param arrayLength The total number of items in the array (or the length of the array).
+
+    @param attribLocation The attribute location that we want the data
+    to appear at in the GLSL program.
+
+    @param numComponents The number of components in each item (you mights use 3 for XYZ coordinates, 2 for 2D texture coordinates).
+*/
+GLuint kuhl_array_buffer(const GLfloat array[], int arrayLength, int attribLocation, int numComponents)
+{
+	/* Set up a buffer object (BO) which is a place to store the data on the graphics card. */
+	GLuint bufferObject;
+	glGenBuffers(1, &bufferObject);
+	glBindBuffer(GL_ARRAY_BUFFER, bufferObject);
+	kuhl_errorcheck();
+
+	/* Copy the our data into the buffer object that is currently bound. */
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*arrayLength, array, GL_STATIC_DRAW);
+	kuhl_errorcheck();
+
+	/* Tell OpenGL some information about the data that is in the
+	 * buffer. Among other things, we need to tell OpenGL which
+	 * attribute number (i.e., variable) the data should correspond to
+	 * in the vertex program. */
+	glEnableVertexAttribArray(attribLocation); // turn on attribute location 0
+	glVertexAttribPointer(
+		attribLocation, // attribute location in glsl program
+		numComponents, // number of elements (x,y,z)
+		GL_FLOAT, // type of each element
+		GL_FALSE, // should OpenGL normalize values?
+		0,        // no extra data between each position
+		0 );      // offset of first element
+	kuhl_errorcheck();
+	return bufferObject;
+}
 
 /** Converts an array containing RGBA image data into an OpenGL texture.
  *
@@ -2192,7 +2254,9 @@ GLint kuhl_get_uniform(GLuint program, const char *uniformName)
  * @param height The height of the image represented by the array in pixels.
  *
  * @return The texture name that you can use with glBindTexture() to
- * enable this particular texture when drawing.
+ * enable this particular texture when drawing. When you are done with
+ * the texture, use glDeleteTextures(1, &textureName) where
+ * textureName is set to the value returned by this function.
  */
 GLuint kuhl_read_texture_rgba_array(const char* array, int width, int height)
 {

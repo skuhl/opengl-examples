@@ -125,33 +125,14 @@ void init_geometryTriangle()
 	glGenVertexArrays(1, &triangleVAO);
 	glBindVertexArray(triangleVAO);
 
-	/* Set up a buffer object (BO) which is a place to store the data on the graphics card. */
-	GLuint vbuffer;
-	glGenBuffers(1, &vbuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, vbuffer);
-	kuhl_errorcheck();
-	
 	/* The data that we want to draw */
 	GLfloat vertexData[] = {0, 0, 0,
 	                        1, 0, 0,
 	                        1, 1, 0};
-	/* Copy the our data into the buffer object that is currently bound. */
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
-	kuhl_errorcheck();
-
-	/* Tell OpenGL some information about the data that is in the
-	 * buffer. Among other things, we need to tell OpenGL which
-	 * attribute number (i.e., variable) the data should correspond to
-	 * in the vertex program. */
-	glEnableVertexAttribArray(0); // turn on attribute location 0
-	glVertexAttribPointer(
-		0, // attribute location in glsl program
-		3, // number of elements (x,y,z)
-		GL_FLOAT, // type of each element
-		GL_FALSE, // should OpenGL normalize values?
-		0,        // no extra data between each position
-		0 );      // offset of first element
-	kuhl_errorcheck();
+	kuhl_array_buffer(vertexData,
+	                  9,  // array contains 9 items
+	                  0,  // attribute location
+	                  3);  // 3 components
 
 	/* Unbind VAO. */
 	glBindVertexArray(0);
@@ -171,46 +152,23 @@ void init_geometryQuad()
 	glGenVertexArrays(1, &quadVAO);
 	glBindVertexArray(quadVAO);
 
-	/* Set up a buffer object (BO) which is a place to store the *vertices* on the graphics card. */
-	GLuint vbuffer;
-	glGenBuffers(1, &vbuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, vbuffer);
-	kuhl_errorcheck();
-	
 	/* The data that we want to draw */
 	GLfloat vertexData[] = {0+1.1, 0, 0,
 	                        1+1.1, 0, 0,
 	                        1+1.1, 1, 0,
 	                        0+1.1, 1, 0 };
-	/* Copy the our data into the buffer object that is currently bound. */
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
-	kuhl_errorcheck();
+	kuhl_array_buffer(vertexData,
+	                  3*4,  // array contains 9 items
+	                  0,  // attribute location
+	                  3);  // 3 components
 
-	/* Tell OpenGL some information about the data that is in the
-	 * buffer. Among other things, we need to tell OpenGL which
-	 * attribute number (i.e., variable) the data should correspond to
-	 * in the vertex program. */
-	glEnableVertexAttribArray(0); // turn on attribute location 0
-	glVertexAttribPointer(
-		0, // attribute location in glsl program
-		3, // number of elements (x,y,z)
-		GL_FLOAT, // type of each element
-		GL_FALSE, // should OpenGL normalize values?
-		0,        // no extra data between each position
-		0 );      // offset of first element
-	kuhl_errorcheck();
-
-	/* Set up a buffer object (BO) which is a place to store the *indices* on the graphics card. */
-	GLuint ibuffer;
-	glGenBuffers(1, &ibuffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibuffer);
-	kuhl_errorcheck();
 
 	/* Copy the indices data into the currently bound buffer. */
 	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
 	                       0, 2, 3 }; // indices of second triangle.
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexData), indexData, GL_STATIC_DRAW);
-	kuhl_errorcheck();
+	kuhl_element_array_buffer(indexData,
+	                          6,  // array contains 6 items
+	                          0); // attribute location
 
 	/* Unbind VAO. */
 	glBindVertexArray(0);

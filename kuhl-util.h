@@ -1386,6 +1386,9 @@ void kuhl_limitfps(int fps);
 
 float kuhl_getfps(int milliseconds);
 
+
+GLuint kuhl_element_array_buffer(const GLuint indices[], int arrayLength, int attribLocation);
+GLuint kuhl_array_buffer(const GLfloat array[], int arrayLength, int attribLocation, int numComponents);
 GLuint kuhl_read_texture_rgba_array(const char *array, int width, int height);
 
 
