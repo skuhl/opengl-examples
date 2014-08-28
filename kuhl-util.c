@@ -1692,6 +1692,7 @@ void mat4d_perspective_new(double result[16], double fovy, double aspect, double
 {
 	near = abs(near);
 	far = abs(far);
+	if(near == 0)
 	{
 		fprintf(stderr, "%s: Invalid perspective projection matrix.\n", __func__);
 		mat4d_identity(result);
@@ -2932,11 +2933,15 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 				// Copy the directory that the model file is in into the fullpath variable
 				char *filenameCopy = strdup(modelFilename);
 				strncpy(fullpath, dirname(filenameCopy), 1024);
+				fullpath[1023] = '\0'; // make sure it is null terminated
 				free(filenameCopy);
 			}
 			else
+			{
 				// Copy the user-specified texture directory into fullpath variable
 				strncpy(fullpath, textureDirname, 1024);
+				fullpath[1023] = '\0'; // make sure it is null terminated
+			}
 
 			strncat(fullpath, "/", 1024-strlen(fullpath)); // make sure there is a slash between the directory and the texture's filename
 			strncat(fullpath, path.data, 1024-strlen(fullpath));
@@ -3162,6 +3167,8 @@ static void kuhl_private_recrend_ogl2(const struct aiScene *sc, const struct aiN
 
 /** Recursively render the scene and apply materials appropriately using OpenGL 3 calls.
  *
+ * TODO: Significant improvements to this function are needed.
+ *
  * @param sc The scene that we want to render.
  *
  * @param nd The current node that we are rendering.
@@ -3170,14 +3177,15 @@ static void kuhl_private_recrend_ogl3(const struct aiScene *sc, const struct aiN
 {
 	struct aiMatrix4x4 m = nd->mTransformation;
 
-	// update transform.
 	// TODO: We actually aren't using the transform matrix! Perhaps we should try using aiProcess_PreTransformVertices so that we don't have to worry about it!
+#if 0
 	aiTransposeMatrix4(&m);
 	float *tmp = (float*)&m;
 	float transformMat[16];
 	for(int i=0; i<16; i++)
 		transformMat[i] = *(tmp+i);
-
+#endif
+	
 	// draw all meshes assigned to this node
 	for(unsigned int n=0; n < nd->mNumMeshes; n++)
 	{
@@ -3305,9 +3313,15 @@ int kuhl_draw_model_file_ogl2(const char *modelFilename, const char *textureDirn
  * already) and render that file using OpenGL 3. The preprocessor
  * variable KUHL_UTIL_USE_ASSIMP must be defined to use this function.
  *
+ * TODO: This is less complete and less efficient than OpenGL 2.0
+ * variation named kuhl_draw_model_file_ogl2(). It is a work in
+ * progress and any contributions to improve it are welcome!
+ *
  * @param modelFilename The filename of the model.
  *
- * @param textureDirname The directory that the model's textures are saved in. If set to NULL, the textures are assumed to be in the same directory as the model is in.
+ * @param textureDirname The directory that the model's textures are
+ * saved in. If set to NULL, the textures are assumed to be in the
+ * same directory as the model is in.
  *
  * @return Returns 1 if successful and 0 if we failed to load the model.
  */
@@ -3351,6 +3365,9 @@ int kuhl_model_bounding_box(const char *modelFilename, float min[3], float max[3
 	int index = kuhl_private_modelIndex(modelFilename);
 	if(index < 0)
 	{
+		/* Set the values to 0 if the model hasn't been loaded
+		 * yet. This helps prevent a user from using uninitialized
+		 * variables in his or her calculations. */
 		vec3f_set(min, 0,0,0);
 		vec3f_set(max, 0,0,0);
 		vec3f_set(center, 0,0,0);

@@ -1458,6 +1458,7 @@ void kuhl_video_record(const char *fileLabel, int fps);
 
 #ifdef KUHL_UTIL_USE_ASSIMP
 int kuhl_draw_model_file_ogl2(const char *modelFilename, const char *textureDirname);
+int kuhl_draw_model_file_ogl3(const char *modelFilename, const char *textureDirname);
 int kuhl_model_bounding_box(const char *modelFilename, float min[3], float max[3], float center[3]);
 #endif // end use assimp
 
