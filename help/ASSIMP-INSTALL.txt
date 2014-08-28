@@ -1,0 +1,12 @@
+ASSIMP 3.0 is available in the Ubuntu 14.04 package manager. It is sufficient for most purposes. If you are trying to use ASSIMP for the first time, I recommend that you try this easy option before trying to download and compile the latest version.
+
+If you are encountering problems are loading lots of 3D models, getting the latest version (3.1.1, at the current time of writing) may be useful. I have run across at least two issues in ASSIMIP 3.0 that is resolved in ASSIMP 3.1.1.
+
+To compile it yourself, download a copy:
+http://assimp.sourceforge.net/
+
+Run "cmake ."
+Run "make"
+Run "make install" to install files into /usr/local
+
+To make sure that cmake finds your copy of the library, run "./cleanup.sh" to clean up all of the binaries and CMake cache files from your opengl-examples directory. Then run "cmake ." and "make" to compile with ASSIMP. If CMake doesn't find your copy of the ASSIMP library, you may need to edit CMakeLists.txt in the opengl-examples directory.
