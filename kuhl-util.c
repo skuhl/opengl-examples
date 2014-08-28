@@ -2368,7 +2368,8 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 				fprintf(stderr, "%s: kuhl_geometry has %d vertices but indices[%d] is asking for vertex at index %d to be drawn.\n", __func__, geom->vertex_count, i, geom->indices[i]);
 		}
 
-		/* Set up a buffer object (BO) which is a place to store the *indices* on the graphics card. */
+		/* Set up a buffer object (BO) which is a place to store the
+		 * *indices* on the graphics card. */
 		glGenBuffers(1, &(geom->indices_bufferobject));
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->indices_bufferobject);
 		kuhl_errorcheck();
@@ -2509,6 +2510,11 @@ GLuint kuhl_read_texture_rgba_array(const char* array, int width, int height)
 	glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &tmp);
 	if(tmp == 0)
 	{
+		fprintf(stderr, "%s: Unable to load %dx%d texture (possibily because it is too large)\n", __func__, width, height);
+		GLint maxTextureSize = 0;
+		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+		fprintf(stderr, "%s: Your card's rough estimate for the maximum texture size that it supports: %dx%d\n", __func__, maxTextureSize, maxTextureSize);
+
 		glBindTexture(GL_TEXTURE_2D, 0);
 		return 0;
 	}
@@ -3278,20 +3284,19 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 				if(strcmp(textureIdMap[i].textureFileName, texPath.data) == 0)
 					geom.texture = textureIdMap[i].textureID;
 			if(geom.texture == 0)
-				// Model uses texture but we can't find texture file
-				glUniform1i(kuhl_get_uniform(program, "texPresent"), 0);
+			{
+				fprintf(stderr, "%s: Model uses texture '%s'. This texture should have been loaded earlier, but we can't find it now.\n", __func__, texPath.data);
+			}
 			else
+			{
 				// Model uses texture and we found the texture file
-				glUniform1i(kuhl_get_uniform(program, "texPresent"), 1);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			kuhl_errorcheck();
-		}
-		else
-		{
-			// No texture
-			glUniform1i(kuhl_get_uniform(program, "texPresent"), 0);
-			kuhl_errorcheck();
+
+				/* Make sure we repeat instead of clamp textures */
+				glBindTexture(GL_TEXTURE_2D, geom.texture);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+				kuhl_errorcheck();
+			}
 		}
 
 		/* Get indices to draw with */
