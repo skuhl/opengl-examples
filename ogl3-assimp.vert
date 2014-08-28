@@ -4,6 +4,7 @@
 // in_Position was bound to attribute index 0("shaderAttribute")
 in vec3 in_Position;
 in vec2 in_TexCoord;
+in vec3 in_Normal;
 
 uniform mat4 ModelView;
 uniform mat4 Projection;

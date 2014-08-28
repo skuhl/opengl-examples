@@ -2268,6 +2268,7 @@ static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
 	{
 		if(!(geom->attrib_normal_components && geom->attrib_normal_bufferobject))
 		{
+			printf("%d %d\n", geom->attrib_normal_components, geom->attrib_normal_bufferobject);
 			fprintf(stderr, "%s: Normal attribute was not fully set.\n", __func__);
 			exit(EXIT_FAILURE);
 		}
@@ -2347,7 +2348,8 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 	geom->attrib_pos_bufferobject = bo[0];
 	geom->attrib_color_bufferobject = bo[1];
 	geom->attrib_texcoord_bufferobject = bo[2];
-
+	geom->attrib_normal_bufferobject = bo[3];
+	geom->attrib_custom_bufferobject = bo[4];
 
 	if(geom->indices != NULL && geom->indices_len > 0)
 	{
@@ -3210,6 +3212,21 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		geom.attrib_pos_components = 3;
 		geom.attrib_pos_name = "in_Position";
 
+		/* Fill a list of normal vectors */
+		float normals[mesh->mNumVertices*3];
+		if(mesh->mNormals != NULL)
+		{
+			for(unsigned int i=0; i<mesh->mNumVertices; i++)
+			{
+				normals[i*3+0] = mesh->mNormals[i].x;
+				normals[i*3+1] = mesh->mNormals[i].y;
+				normals[i*3+2] = mesh->mNormals[i].z;
+			}
+		}
+		geom.attrib_normal = normals;
+		geom.attrib_normal_components = 3;
+		geom.attrib_normal_name = "in_Normal";
+		
 		/* Fill a list of texture coordinates */
 		float texCoord[mesh->mNumVertices*2];
 		if(mesh->mTextureCoords != NULL && mesh->mTextureCoords[0] != NULL)
@@ -3265,9 +3282,13 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		// kuhl_geometry objects to draw.
 		kuhl_geometry_init(&geom);
 		sceneMapStruct *sm = &(sceneMap[sceneMapIndex]);
+		if(sm->geom_count >= sceneMapMaxSize)
+		{
+			printf("The model required too many kuhl_geometry structs.\n");
+			exit(EXIT_FAILURE);
+		}
 		sm->geom[sm->geom_count] = geom;
 		sm->geom_count = sm->geom_count+1;
-		printf("geom_count %d\n", sm->geom_count);
 	}
 
 	// Draw all children nodes too.
