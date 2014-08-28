@@ -2108,6 +2108,7 @@ void kuhl_delete_program(GLuint program)
  *
  * @return The location of the uniform variable.
  */
+static int missingUniformCount = 0;
 GLint kuhl_get_uniform(GLuint program, const char *uniformName)
 {
 	if(uniformName == NULL || strlen(uniformName) == 0)
@@ -2117,9 +2118,12 @@ GLint kuhl_get_uniform(GLuint program, const char *uniformName)
 	
 	GLint loc = glGetUniformLocation(program, uniformName);
 	kuhl_errorcheck();
-	if(loc == -1)
+	if(loc == -1 && missingUniformCount < 50)
 	{
 		fprintf(stderr, "kuhl_get_uniform(): Uniform variable '%s' is missing or inactive in your GLSL program.\n", uniformName);
+		missingUniformCount++;
+		if(missingUniformCount == 50)
+			fprintf(stderr, "kuhl_get_uniform(): Hiding any additional error messages.\n");
 	}
 	return loc;
 }
@@ -2326,21 +2330,23 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 		kuhl_errorcheck();
 
 		/* Get attribute location */
-		GLuint attribLocation = kuhl_get_attribute(geom->program, name[i]);
-
-		/* Tell OpenGL some information about the data that is in the
-		 * buffer. Among other things, we need to tell OpenGL which
-		 * attribute number (i.e., variable) the data should correspond to
-		 * in the vertex program. */
-		glEnableVertexAttribArray(attribLocation); // turn on attribute location 0
-		glVertexAttribPointer(
-			attribLocation, // attribute location in glsl program
-			components[i], // number of elements (x,y,z)
-			GL_FLOAT, // type of each element
-			GL_FALSE, // should OpenGL normalize values?
-			0,        // no extra data between each position
-			0 );      // offset of first element
-		kuhl_errorcheck();
+		GLint attribLocation = kuhl_get_attribute(geom->program, name[i]);
+		if(attribLocation >= 0)
+		{
+			/* Tell OpenGL some information about the data that is in the
+			 * buffer. Among other things, we need to tell OpenGL which
+			 * attribute number (i.e., variable) the data should correspond to
+			 * in the vertex program. */
+			glEnableVertexAttribArray(attribLocation); // turn on attribute location
+			glVertexAttribPointer(
+				attribLocation, // attribute location in glsl program
+				components[i], // number of elements (x,y,z)
+				GL_FLOAT, // type of each element
+				GL_FALSE, // should OpenGL normalize values?
+				0,        // no extra data between each position
+				0 );      // offset of first element
+			kuhl_errorcheck();
+		}
 	}
 
 	/* Make sure that the bufferobject names get copied back into the
@@ -3198,10 +3204,10 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		/* Fill in a list of our vertices. */
 		kuhl_geometry geom;
 		kuhl_geometry_zero(&geom);
-		geom.program = 1; // TODO: Fix this!
+		geom.program = program;
 		geom.primitive_type = GL_TRIANGLES;
 		geom.vertex_count = mesh->mNumVertices;
-		float vertexPositions[mesh->mNumVertices*3];
+		float *vertexPositions = malloc(sizeof(float)*mesh->mNumVertices*3);
 		for(unsigned int i=0; i<mesh->mNumVertices; i++)
 		{
 			vertexPositions[i*3+0] = (mesh->mVertices)[i].x;
@@ -3212,29 +3218,46 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		geom.attrib_pos_components = 3;
 		geom.attrib_pos_name = "in_Position";
 
+		/* Fill a list of colors */
+		if(mesh->mColors != NULL && mesh->mColors[0] != NULL)
+		{
+			float *colors = malloc(sizeof(float)*mesh->mNumVertices*3);
+			
+			for(unsigned int i=0; i<mesh->mNumVertices; i++)
+			{
+				colors[i*3+0] = mesh->mColors[0][i].r;
+				colors[i*3+1] = mesh->mColors[0][i].g;
+				colors[i*3+2] = mesh->mColors[0][i].b;
+			}
+			geom.attrib_color = colors;
+			geom.attrib_color_components = 3;
+			geom.attrib_color_name = "in_Color";
+		}
+
 		/* Fill a list of normal vectors */
-		float normals[mesh->mNumVertices*3];
 		if(mesh->mNormals != NULL)
 		{
+			float *normals = malloc(sizeof(float)*mesh->mNumVertices*3);
 			for(unsigned int i=0; i<mesh->mNumVertices; i++)
 			{
-				normals[i*3+0] = mesh->mNormals[i].x;
-				normals[i*3+1] = mesh->mNormals[i].y;
-				normals[i*3+2] = mesh->mNormals[i].z;
+				normals[i*3+0] = (mesh->mNormals)[i].x;
+				normals[i*3+1] = (mesh->mNormals)[i].y;
+				normals[i*3+2] = (mesh->mNormals)[i].z;
 			}
+
+			geom.attrib_normal = normals;
+			geom.attrib_normal_components = 3;
+			geom.attrib_normal_name = "in_Normal";
 		}
-		geom.attrib_normal = normals;
-		geom.attrib_normal_components = 3;
-		geom.attrib_normal_name = "in_Normal";
 		
 		/* Fill a list of texture coordinates */
-		float texCoord[mesh->mNumVertices*2];
 		if(mesh->mTextureCoords != NULL && mesh->mTextureCoords[0] != NULL)
 		{
+			float *texCoord = malloc(sizeof(float)*mesh->mNumVertices*2);
 			for(unsigned int i=0; i<mesh->mNumVertices; i++)
 			{
-				texCoord[i*2+0] = (mesh->mTextureCoords)[0][i].x;
-				texCoord[i*2+1] = (mesh->mTextureCoords)[0][i].y;
+				texCoord[i*2+0] = mesh->mTextureCoords[0][i].x;
+				texCoord[i*2+1] = mesh->mTextureCoords[0][i].y;
 			}
 			geom.attrib_texcoord = texCoord;
 			geom.attrib_texcoord_components = 2;
@@ -3250,17 +3273,30 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		                                      NULL, NULL, NULL, NULL, NULL, NULL))
 		{
 			geom.texture_name = "tex"; // name of sampler in GLSL fragment program.
+			geom.texture = 0;
 			for(int i=0; i<textureIdMapSize; i++)
 				if(strcmp(textureIdMap[i].textureFileName, texPath.data) == 0)
 					geom.texture = textureIdMap[i].textureID;
+			if(geom.texture == 0)
+				// Model uses texture but we can't find texture file
+				glUniform1i(kuhl_get_uniform(program, "texPresent"), 0);
+			else
+				// Model uses texture and we found the texture file
+				glUniform1i(kuhl_get_uniform(program, "texPresent"), 1);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			kuhl_errorcheck();
+		}
+		else
+		{
+			// No texture
+			glUniform1i(kuhl_get_uniform(program, "texPresent"), 0);
 			kuhl_errorcheck();
 		}
 
 		/* Get indices to draw with */
 		geom.indices_len = mesh->mNumFaces * 3;
-		GLuint indices[geom.indices_len];
+		GLuint *indices = malloc(sizeof(GLuint)*geom.indices_len);
 		for(unsigned int t = 0; t<mesh->mNumFaces; t++)
 		{
 			const struct aiFace* face = &mesh->mFaces[t];
@@ -3275,12 +3311,22 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		}
 		geom.indices = indices;
 
-		// TODO: Handle normals.
-
-		// TODO: We should init all of this only the first time that
-		// everything is loaded and keep track of a list of
-		// kuhl_geometry objects to draw.
+		/* Initialize this geometry object */
 		kuhl_geometry_init(&geom);
+
+		/* Free stuff we don't need any more. Note: We don't store
+		 * these arrays on the stack because large models can result
+		 * in arrays which are too large to fit in the stack. So, we
+		 * use malloc() for them. After we initialize the
+		 * kuhl_geometry structs, the data has been copied to OpenGL
+		 * and we can safely free them. */
+		if(geom.attrib_pos) free(geom.attrib_pos);
+		if(geom.attrib_color) free(geom.attrib_color);
+		if(geom.attrib_normal) free(geom.attrib_normal);
+		if(geom.attrib_texcoord) free(geom.attrib_texcoord);
+		if(geom.indices) free(geom.indices);
+		
+		/* Save this geometry object so we can draw it later */
 		sceneMapStruct *sm = &(sceneMap[sceneMapIndex]);
 		if(sm->geom_count >= sceneMapMaxSize)
 		{
@@ -3335,10 +3381,6 @@ int kuhl_draw_model_file_ogl2(const char *modelFilename, const char *textureDirn
 /** Given a model file, load the model (if it hasn't been loaded
  * already) and render that file using OpenGL 3. The preprocessor
  * variable KUHL_UTIL_USE_ASSIMP must be defined to use this function.
- *
- * TODO: This is less complete and less efficient than OpenGL 2.0
- * variation named kuhl_draw_model_file_ogl2(). It is a work in
- * progress and any contributions to improve it are welcome!
  *
  * @param modelFilename The filename of the model.
  *

@@ -149,6 +149,17 @@ void display()
 		                   1, // count
 		                   0, // transpose
 		                   modelview); // value
+		// Normal matrix = transpose(inverse(modelview))
+		float normalMat[16];
+		mat4f_copy(normalMat, modelview);
+		mat4f_invert(normalMat);
+		mat4f_transpose(normalMat);
+		glUniformMatrix4fv(kuhl_get_uniform(program, "NormalMat"),
+		                   1, // count
+		                   0, // transpose
+		                   modelview); // value
+
+		
 		kuhl_errorcheck();
 
 		kuhl_draw_model_file_ogl3(modelFilename, modelTexturePath, program);
@@ -256,7 +267,7 @@ int main(int argc, char** argv)
 	viewmat_init(initPos, initLook, initUp);
 
 	// Clear the screen while things might be loading
-	glClearColor(0,0,0,1);
+	glClearColor(.2,.2,.2,1);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glutSwapBuffers();
 	
