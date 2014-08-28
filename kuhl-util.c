@@ -2120,7 +2120,6 @@ GLint kuhl_get_uniform(GLuint program, const char *uniformName)
 	if(loc == -1)
 	{
 		fprintf(stderr, "kuhl_get_uniform(): Uniform variable '%s' is missing or inactive in your GLSL program.\n", uniformName);
-
 	}
 	return loc;
 }
@@ -2748,6 +2747,7 @@ typedef struct {
 static textureIdMapStruct textureIdMap[textureIdMapMaxSize]; /**<List of textures for the models */
 static int textureIdMapSize = 0; /**< Number of items in textureIdMap */
 
+#define sceneMapMaxSize 1024 /**< Maximum number of scenes in sceneMap */
 /** This struct is used internally by kuhl_util.c to keep track of all
  * of the models that we have loaded. */
 typedef struct {
@@ -2756,8 +2756,10 @@ typedef struct {
 	float bb_min[3]; /**< Smallest X,Y,Z coordinates out of all vertices */
 	float bb_max[3]; /**< Largest X,Y,Z coordinates out of all vertices */
 	float bb_center[3]; /**< Average of smallest and largest vertex coordinates */
+	kuhl_geometry geom[sceneMapMaxSize]; /**< list of kuhl_geometry structs. Used for OpenGL 3.0 rendering */
+	int geom_count; /**< Number of kuhl_geometry structs in geom array. Used for OpenGL 3.0 rendering */
 } sceneMapStruct;
-#define sceneMapMaxSize 1024 /**< Maximum number of scenes in sceneMap */
+
 static sceneMapStruct sceneMap[sceneMapMaxSize]; /**< A list of scenes */
 static int sceneMapSize = 0; /**< Number of items in the sceneMap list */
 
@@ -2916,6 +2918,9 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 		{
 			sceneMap[i].modelFilename = NULL;
 			sceneMap[i].scene = NULL;
+			for(int j=0; j<sceneMapMaxSize; j++)
+				kuhl_geometry_zero(&(sceneMap[i].geom[j]));
+			sceneMap[i].geom_count = 0;
 		}
 	}
 
@@ -3164,21 +3169,18 @@ static void kuhl_private_recrend_ogl2(const struct aiScene *sc, const struct aiN
 	glPopMatrix();
 }
 
-
-/** Recursively render the scene and apply materials appropriately using OpenGL 3 calls.
- *
- * TODO: Significant improvements to this function are needed.
+/** Recursively calls itself to create one or more kuhl_geometry structs for all of the nodes in the scene.
  *
  * @param sc The scene that we want to render.
  *
  * @param nd The current node that we are rendering.
  */
-static void kuhl_private_recrend_ogl3(const struct aiScene *sc, const struct aiNode* nd)
-{
-	struct aiMatrix4x4 m = nd->mTransformation;
 
+static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct aiNode* nd, GLuint program, int sceneMapIndex)
+{
 	// TODO: We actually aren't using the transform matrix! Perhaps we should try using aiProcess_PreTransformVertices so that we don't have to worry about it!
 #if 0
+	struct aiMatrix4x4 m = nd->mTransformation;
 	aiTransposeMatrix4(&m);
 	float *tmp = (float*)&m;
 	float transformMat[16];
@@ -3262,16 +3264,16 @@ static void kuhl_private_recrend_ogl3(const struct aiScene *sc, const struct aiN
 		// everything is loaded and keep track of a list of
 		// kuhl_geometry objects to draw.
 		kuhl_geometry_init(&geom);
-		kuhl_geometry_draw(&geom);
+		sceneMapStruct *sm = &(sceneMap[sceneMapIndex]);
+		sm->geom[sm->geom_count] = geom;
+		sm->geom_count = sm->geom_count+1;
+		printf("geom_count %d\n", sm->geom_count);
 	}
 
 	// Draw all children nodes too.
 	for (unsigned int i = 0; i < nd->mNumChildren; i++)
-		kuhl_private_recrend_ogl3(sc, nd->mChildren[i]);
-
-
+		kuhl_private_setup_model_ogl3(sc, nd->mChildren[i], program, sceneMapIndex);
 }
-
 
 
 /** Given a model file, load the model (if it hasn't been loaded
@@ -3323,23 +3325,29 @@ int kuhl_draw_model_file_ogl2(const char *modelFilename, const char *textureDirn
  * saved in. If set to NULL, the textures are assumed to be in the
  * same directory as the model is in.
  *
+ * @param program The GLSL program to draw the model with.
+ *
  * @return Returns 1 if successful and 0 if we failed to load the model.
  */
-int kuhl_draw_model_file_ogl3(const char *modelFilename, const char *textureDirname)
+int kuhl_draw_model_file_ogl3(const char *modelFilename, const char *textureDirname, GLuint program)
 {
-
-	// Load the model if necessary and get its index in our sceneMap.
-	int index = kuhl_private_load_model(modelFilename, textureDirname);
+	int index = kuhl_private_modelIndex(modelFilename);
+	if(index < 0) // if we need to load the model
+	{
+		// Load the model if necessary and get its index in our sceneMap.
+		index = kuhl_private_load_model(modelFilename, textureDirname);
+		kuhl_private_setup_model_ogl3(sceneMap[index].scene, sceneMap[index].scene->mRootNode, program, index);
+	}
 	
 	if(index >= 0)
 	{
-		
-		// Draw the scene
-		kuhl_private_recrend_ogl3(sceneMap[index].scene, sceneMap[index].scene->mRootNode);
-//		exit(1);
+		sceneMapStruct *sm = &(sceneMap[index]);
+		for(int i=0; i < sm->geom_count; i++)
+			kuhl_geometry_draw(&(sm->geom[i]));
 		return 1;
 	}
-	return 0;
+	else
+		return 0;
 	
 	/* TODO: Think about proving a way for a user to cleanup models
 	   appropriately. We would call these two functions: */

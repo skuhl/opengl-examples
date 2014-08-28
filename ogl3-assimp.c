@@ -130,11 +130,11 @@ void display()
 		float viewMat[16];
 		viewmat_get(viewMat, f, viewportID);
 
-		glUseProgram(1);
+		glUseProgram(program);
 		/* Communicate matricies to OpenGL */
 		float perspective[16];
 		mat4f_frustum_new(perspective,f[0], f[1], f[2], f[3], f[4], f[5]);
-		glUniformMatrix4fv(kuhl_get_uniform(1, "Projection"),
+		glUniformMatrix4fv(kuhl_get_uniform(program, "Projection"),
 		                   1, // count
 		                   0, // transpose
 		                   perspective); // value
@@ -145,15 +145,13 @@ void display()
 		float modelview[16];
 		mat4f_mult_mat4f_new(modelview, viewMat, modelMat);
 
-		glUniformMatrix4fv(kuhl_get_uniform(1, "ModelView"),
+		glUniformMatrix4fv(kuhl_get_uniform(program, "ModelView"),
 		                   1, // count
 		                   0, // transpose
 		                   modelview); // value
 		kuhl_errorcheck();
-		kuhl_errorcheck();
 
-
-		kuhl_draw_model_file_ogl3(modelFilename, modelTexturePath);
+		kuhl_draw_model_file_ogl3(modelFilename, modelTexturePath, program);
 		kuhl_errorcheck();
 	}
 	    
@@ -241,7 +239,7 @@ int main(int argc, char** argv)
 //	glUniform1i(kuhl_get_uniform(program, "red"), 1);
 	kuhl_errorcheck();
 
-	GLuint program = kuhl_create_program("ogl3-assimp.vert", "ogl3-assimp.frag");
+	program = kuhl_create_program("ogl3-assimp.vert", "ogl3-assimp.frag");
 	glUseProgram(program);
 
 
