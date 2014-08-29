@@ -238,7 +238,8 @@ int main(int argc, char** argv)
 	glutInitWindowSize(512, 512);
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
+	glEnable(GL_MULTISAMPLE);
 	glutCreateWindow(argv[0]); // set window title to executable name
 
 	/* Initialize GLEW */

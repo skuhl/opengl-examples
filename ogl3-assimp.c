@@ -21,8 +21,10 @@ GLuint program = 0; // id value for the GLSL program
  * a useful setting to use when you are loading a new model that you
  * are unsure about the units and position of the model geometry. */
 #define FIT_TO_VIEW_AND_ROTATE 1
-/** The location in 3D space that we want the center of the bounding box to be (if FIT_TO_VIEW_AND_ROTATE is set) or the location that we should put the origin of the model */
-float placeToPutModel[3] = { 0,0, -4 };
+/** The location in 3D space that we want the center of the bounding
+ * box to be (if FIT_TO_VIEW_AND_ROTATE is set) or the location that
+ * we should put the origin of the model */
+float placeToPutModel[3] = { 0,0, 0 };
 /** SketchUp produces files that older versions of ASSIMP think 1 unit
  * is 1 inch. However, all of this software assumes that 1 unit is 1
  * meter. So, we need to convert some models from inches to
@@ -94,6 +96,7 @@ void get_model_matrix(float result[16])
 #undef mymax
 	float rotateAnimate[16], scaleBoundBox[16], moveToOrigin[16], moveToLookPoint[16];
 	mat4f_translate_new(moveToOrigin, -bb_center[0], -bb_center[1], -bb_center[2]); // move to origin
+//	printf("Scaling by factor %f\n", tmp); 
 	mat4f_scale_new(scaleBoundBox, tmp, tmp, tmp); // scale model based on bounding box size
 	mat4f_rotateAxis_new(rotateAnimate, angle, 0, 1, 0); // rotate the object
 	mat4f_translateVec_new(moveToLookPoint, placeToPutModel);
@@ -219,7 +222,8 @@ int main(int argc, char** argv)
 	glutInitWindowSize(512, 512);
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
+	glEnable(GL_MULTISAMPLE);
 	glutInitContextVersion(3,0);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE); // Don't allow deprecated OpenGL calls.
@@ -257,8 +261,8 @@ int main(int argc, char** argv)
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);
 
-	float initPos[3] = {0,0,0};
-	float initLook[3] = {0,0,-4};
+	float initPos[3] = {0,0,4};
+	float initLook[3] = {0,0,0};
 	float initUp[3] = {0,1,0};
 
 	// Initialize DGR

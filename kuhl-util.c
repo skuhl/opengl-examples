@@ -2900,7 +2900,23 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 	/* Try loading the model. We are using a postprocessing preset
 	 * here so we don't have to set many options. */
 	char *modelFilenameVarying = strdup(modelFilename); // aiImportFile doesn't declare filaname parameter as const!
-	const struct aiScene* scene = aiImportFile(modelFilenameVarying, aiProcessPreset_TargetRealtime_MaxQuality);
+
+	/* We will load the file and do significant processing (split
+	 * large meshes into smaller ones, triangulate polygons in meshes,
+	 * apply transformation matrices. For more information about model loading options, see:
+	 * http://assimp.sourceforge.net/lib_html/postprocess_8h.html
+	 *
+	 * The postprocess procedures can greatly influence how long it
+	 * takes to load a model. If you are trying to load a large model,
+	 * try setting the post-process settings to NULL.
+	 *
+	 * Other options:
+	 * aiProcessPreset_TargetRealtime_Fast
+	 * aiProcessPreset_TargetRealtime_Quality
+	 * aiProcessPreset_TargetRealtime_MaxQuality
+	 * aiProcess_PreTransformVertices
+	 */ 
+	const struct aiScene* scene = aiImportFile(modelFilenameVarying, aiProcessPreset_TargetRealtime_Quality|aiProcess_PreTransformVertices);
 	free(modelFilenameVarying);
 	if(scene == NULL)
 	{
@@ -3107,7 +3123,10 @@ static void kuhl_private_material_ogl2(const struct aiMaterial *mtl)
 			glDisable(GL_CULL_FACE);
 }
 
-/** Recursively render the scene and apply materials appropriately using OpenGL 1 and 2 calls.
+/** Recursively render the scene and apply materials appropriately
+ * using OpenGL 1 and 2 calls. This code should handle transformation
+ * matrices that might be loaded in the file correctly (if we didn't
+ * apply them when ASSIMP actually imported/loaded the model file).
  *
  * @param sc The scene that we want to render.
  *
