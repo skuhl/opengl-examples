@@ -3307,7 +3307,7 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 			const struct aiFace* face = &mesh->mFaces[t];
 			if(face->mNumIndices != 3)
 			{
-				fprintf(stderr, "%s: We only support drawing triangle meshes.\n", __func__);
+				fprintf(stderr, "%s: We only support drawing triangle meshes. We found a face in this model that only had %d (not 3) indices.\n", __func__, face->mNumIndices);
 				exit(EXIT_FAILURE);
 			}
 			indices[t*3+0] = face->mIndices[0];
