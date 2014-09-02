@@ -24,7 +24,7 @@ GLuint program = 0; // id value for the GLSL program
 /** The location in 3D space that we want the center of the bounding
  * box to be (if FIT_TO_VIEW_AND_ROTATE is set) or the location that
  * we should put the origin of the model */
-float placeToPutModel[3] = { 0,0, 0 };
+float placeToPutModel[3] = { 0, 0, 0 };
 /** SketchUp produces files that older versions of ASSIMP think 1 unit
  * is 1 inch. However, all of this software assumes that 1 unit is 1
  * meter. So, we need to convert some models from inches to
@@ -35,7 +35,7 @@ float placeToPutModel[3] = { 0,0, 0 };
 GLuint scene_list = 0; // display list for model
 char *modelFilename = NULL;
 char *modelTexturePath = NULL;
-
+int renderStyle = 0;
 
 
 /* Called by GLUT whenever a key is pressed. */
@@ -47,6 +47,21 @@ void keyboard(unsigned char key, int x, int y)
 		case 'Q':
 		case 27: // ASCII code for Escape key
 			exit(0);
+			break;
+		case ' ':
+			renderStyle++;
+			if(renderStyle > 6)
+				renderStyle = 0;
+			switch(renderStyle)
+			{
+				case 0: printf("Render style: Texture\n"); break;
+				case 1: printf("Render style: Vertex color\n"); break;
+				case 2: printf("Render style: Normals\n"); break;
+				case 3: printf("Render style: Texture coordinates\n"); break;
+				case 4: printf("Render style: Front (green) and black (red) faces based on winding\n"); break;
+				case 5: printf("Render style: Front (green) and black (red) based on normals\n"); break;
+				case 6: printf("Render style: Depth (white=far; black=close)\n"); break;
+			}
 			break;
 	}
 	glutPostRedisplay();
@@ -162,6 +177,9 @@ void display()
 		                   0, // transpose
 		                   modelview); // value
 
+		glUniform1i(kuhl_get_uniform(program, "renderStyle"), renderStyle);
+		// Copy far plane value into vertex program so we can render depth buffer.
+		glUniform1f(kuhl_get_uniform(program, "farPlane"), f[5]);
 		
 		kuhl_errorcheck();
 
@@ -261,7 +279,7 @@ int main(int argc, char** argv)
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);
 
-	float initPos[3] = {0,0,4};
+	float initPos[3] = {0,0,2};
 	float initLook[3] = {0,0,0};
 	float initUp[3] = {0,1,0};
 

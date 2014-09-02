@@ -1,5 +1,4 @@
 #version 130 // Specify which version of GLSL we are using.
-#pragma optimize (off)
 
 // in_Position was bound to attribute index 0("shaderAttribute")
 in vec3 in_Position;
@@ -7,6 +6,7 @@ in vec2 in_TexCoord;
 in vec3 in_Normal;
 in vec3 in_Color;
 
+uniform float farPlane;
 uniform mat4 NormalMat;
 uniform mat4 ModelView;
 uniform mat4 Projection;
@@ -14,6 +14,8 @@ uniform mat4 Projection;
 out vec2 out_TexCoord;
 out vec3 out_Normal;
 out vec3 out_Color;
+out float out_Depth;
+out vec3 out_EyeCoord;
 
 void main() 
 {
@@ -23,4 +25,6 @@ void main()
 	out_Normal = normalize(out_Normal);
 	out_Color = in_Color;
 	gl_Position = Projection * ModelView * pos; // object -> unhomogenized canonical view volume
+	out_Depth = gl_Position.z / farPlane;
+	out_EyeCoord = vec3(ModelView * pos);
 }

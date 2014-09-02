@@ -2351,11 +2351,11 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 
 	/* Make sure that the bufferobject names get copied back into the
 	 * struct that the user passed in to this function. */
-	geom->attrib_pos_bufferobject = bo[0];
-	geom->attrib_color_bufferobject = bo[1];
+	geom->attrib_pos_bufferobject      = bo[0];
+	geom->attrib_color_bufferobject    = bo[1];
 	geom->attrib_texcoord_bufferobject = bo[2];
-	geom->attrib_normal_bufferobject = bo[3];
-	geom->attrib_custom_bufferobject = bo[4];
+	geom->attrib_normal_bufferobject   = bo[3];
+	geom->attrib_custom_bufferobject   = bo[4];
 
 	if(geom->indices != NULL && geom->indices_len > 0)
 	{
@@ -2388,7 +2388,6 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 		glUniform1i(kuhl_get_uniform(geom->program, geom->texture_name), 0);
 		kuhl_errorcheck();
 	}
-
 
 	kuhl_geometry_sanity_check(geom);
 
@@ -3211,7 +3210,9 @@ static void kuhl_private_recrend_ogl2(const struct aiScene *sc, const struct aiN
 
 static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct aiNode* nd, GLuint program, int sceneMapIndex)
 {
-	// TODO: We actually aren't using the transform matrix! Perhaps we should try using aiProcess_PreTransformVertices so that we don't have to worry about it!
+	// TODO: We actually aren't using the transform matrix! We should
+	// do this if we don't use the aiProcess_PreTransformVertices as a
+	// post-process during ASSIMP model loading..
 #if 0
 	struct aiMatrix4x4 m = nd->mTransformation;
 	aiTransposeMatrix4(&m);
@@ -3231,6 +3232,7 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		kuhl_geometry_zero(&geom);
 		geom.program = program;
 		geom.primitive_type = GL_TRIANGLES;
+		printf("%s: Number of vertices: %d\n", __func__, mesh->mNumVertices);
 		geom.vertex_count = mesh->mNumVertices;
 		float *vertexPositions = malloc(sizeof(float)*mesh->mNumVertices*3);
 		for(unsigned int i=0; i<mesh->mNumVertices; i++)
@@ -3239,6 +3241,7 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 			vertexPositions[i*3+1] = (mesh->mVertices)[i].y;
 			vertexPositions[i*3+2] = (mesh->mVertices)[i].z;
 		}
+
 		geom.attrib_pos = vertexPositions;
 		geom.attrib_pos_components = 3;
 		geom.attrib_pos_name = "in_Position";
@@ -3257,6 +3260,7 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 			geom.attrib_color = colors;
 			geom.attrib_color_components = 3;
 			geom.attrib_color_name = "in_Color";
+			printf("%s: Vertices have color.\n", __func__);
 		}
 
 		/* Fill a list of normal vectors */
@@ -3273,6 +3277,7 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 			geom.attrib_normal = normals;
 			geom.attrib_normal_components = 3;
 			geom.attrib_normal_name = "in_Normal";
+			printf("%s: Vertices have normal vectors.\n", __func__);
 		}
 		
 		/* Fill a list of texture coordinates */
@@ -3287,6 +3292,7 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 			geom.attrib_texcoord = texCoord;
 			geom.attrib_texcoord_components = 2;
 			geom.attrib_texcoord_name = "in_TexCoord";
+			printf("%s: Vertices have texture coordinates.\n", __func__);
 		}
 
 		/* Find our texture and tell our kuhl_geometry object about
@@ -3332,9 +3338,11 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 			indices[t*3+0] = face->mIndices[0];
 			indices[t*3+1] = face->mIndices[1];
 			indices[t*3+2] = face->mIndices[2];
+
 		}
 		geom.indices = indices;
-
+		printf("%s: Number of indices: %d\n", __func__, mesh->mNumFaces*3);
+		
 		/* Initialize this geometry object */
 		kuhl_geometry_init(&geom);
 
