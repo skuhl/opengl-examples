@@ -2240,53 +2240,41 @@ static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
 		exit(EXIT_FAILURE);
 	}
 
-	/* If one part of the position attribute is set, all parts of it should be set. */
-	if(geom->attrib_pos_components || geom->attrib_pos_bufferobject)
+	/* If one part of the attribute is set but both parts are not set, print a message */
+	if((geom->attrib_pos_components || glIsBuffer(geom->attrib_pos_bufferobject)) &&
+	   !(geom->attrib_pos_components && glIsBuffer(geom->attrib_pos_bufferobject)))
 	{
-		if(!(geom->attrib_pos_components && geom->attrib_pos_bufferobject))
-		{
-			fprintf(stderr, "%s: Position attribute was not fully set.\n", __func__);
-			exit(EXIT_FAILURE);
-		}
+		fprintf(stderr, "%s: Position attribute was not fully set.\n", __func__);
+		exit(EXIT_FAILURE);
 	}
 		
-	if(geom->attrib_color_components || geom->attrib_color_bufferobject)
+	if((geom->attrib_color_components || glIsBuffer(geom->attrib_color_bufferobject)) &&
+		!(geom->attrib_color_components && glIsBuffer(geom->attrib_color_bufferobject)))
 	{
-		if(!(geom->attrib_color_components && geom->attrib_color_bufferobject))
-		{
-			fprintf(stderr, "%s: Color attribute was not fully set.\n", __func__);
-			exit(EXIT_FAILURE);
-		}
-	}
-		
-	if(geom->attrib_texcoord_components || geom->attrib_texcoord_bufferobject)
-	{
-		if(!(geom->attrib_texcoord_components && geom->attrib_texcoord_bufferobject))
-		{
-			fprintf(stderr, "%s: Texcoord attribute was not fully set.\n", __func__);
-			exit(EXIT_FAILURE);
-		}
+		fprintf(stderr, "%s: Color attribute was not fully set.\n", __func__);
+		exit(EXIT_FAILURE);
 	}
 
-	if(geom->attrib_normal_components || geom->attrib_normal_bufferobject)
+	if((geom->attrib_texcoord_components || glIsBuffer(geom->attrib_texcoord_bufferobject)) &&
+	   !(geom->attrib_texcoord_components && glIsBuffer(geom->attrib_texcoord_bufferobject)))
 	{
-		if(!(geom->attrib_normal_components && geom->attrib_normal_bufferobject))
-		{
-			printf("%d %d\n", geom->attrib_normal_components, geom->attrib_normal_bufferobject);
-			fprintf(stderr, "%s: Normal attribute was not fully set.\n", __func__);
-			exit(EXIT_FAILURE);
-		}
+		fprintf(stderr, "%s: Texcoord attribute was not fully set.\n", __func__);
+		exit(EXIT_FAILURE);
 	}
 
-	if(geom->attrib_custom_components || geom->attrib_custom_bufferobject)
+	if((geom->attrib_normal_components || glIsBuffer(geom->attrib_normal_bufferobject)) &&
+	   !(geom->attrib_normal_components && glIsBuffer(geom->attrib_normal_bufferobject)))
 	{
-		if(!(geom->attrib_custom_components && geom->attrib_custom_bufferobject))
-		{
+		fprintf(stderr, "%s: Normal attribute was not fully set.\n", __func__);
+		exit(EXIT_FAILURE);
+	}
+
+	if((geom->attrib_custom_components || glIsBuffer(geom->attrib_custom_bufferobject)) &&
+	   !(geom->attrib_custom_components && glIsBuffer(geom->attrib_custom_bufferobject)))
+	{
 			fprintf(stderr, "%s: Custom attribute was not fully set.\n", __func__);
 			exit(EXIT_FAILURE);
-		}
 	}
-	
 }
 
 /** Creates an OpenGL vertex array object from information in a
@@ -2379,7 +2367,7 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 		kuhl_errorcheck();
 	}
 
-	if(geom->texture)
+	if(glIsTexture(geom->texture))
 	{
 		/* We will make sure that our texture is in texture unit 0 inside
 		 * of display(). Here, we tell OpenGL that the texture that we
@@ -2410,24 +2398,33 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	kuhl_errorcheck();
 
 	/* Use the vertex array object for this geometry */
-	glBindVertexArray(geom->vao);
-	kuhl_errorcheck();
+	if(glIsVertexArray(geom->vao))
+	{
+		glBindVertexArray(geom->vao);
+		kuhl_errorcheck();
+	}
+	else
+	{
+		printf("%s: Not a valid vertex array object: %d\n", __func__, geom->vao);
+		return;
+	}
 
-	if(geom->texture)
+
+	if(glIsTexture(geom->texture))
 	{
 		glActiveTexture(GL_TEXTURE0); /* Turn on texture unit 0 */
 		kuhl_errorcheck();
 		glBindTexture(GL_TEXTURE_2D, geom->texture); /* Use our previously loaded texture */
 		kuhl_errorcheck();
 	}
-	
+
 	/* If the user provided us with indices, use glDrawElements to draw the geometry. */
-	if(geom->indices_len > 0 && geom->indices_bufferobject != 0)
+	if(geom->indices_len > 0 && glIsBuffer(geom->indices_bufferobject))
 	{
 		glDrawElements(geom->primitive_type,
 		               geom->indices_len,
 		               GL_UNSIGNED_INT,
-		               (void*)0);
+		               NULL);
 		kuhl_errorcheck();
 	}
 	else
@@ -2437,11 +2434,43 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		kuhl_errorcheck();
 	}
 
-	if(geom->texture)
+
+	/* Unbind texture */
+	if(glIsTexture(geom->texture))
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 	/* Unbind the VAO */
 	glBindVertexArray(0);
+}
+
+/** Deletes kuhl_geometry struct by freeing the OpenGL buffers that
+ * kuhl_geometry_init() created. Call kuhl_geometry_zero() to zero out all elements within kuhl_geometry.
+ *
+ * Important note: kuhl_geometry_init() does not allocate space for
+ * textures---so kuhl_geometry_delete() does not delete textures! This
+ * behavior is useful in the event that a single texture is shared
+ * among several kuhl_geometry structs.
+ *
+ * @param geom The geometry to draw to free.
+*/
+void kuhl_geometry_delete(kuhl_geometry *geom)
+{
+	/* Delete the associated buffer objects */
+	GLuint *bos[] = { &(geom->attrib_pos_bufferobject),
+	                  &(geom->attrib_color_bufferobject),
+	                  &(geom->attrib_texcoord_bufferobject),
+	                  &(geom->attrib_normal_bufferobject),
+	                  &(geom->attrib_custom_bufferobject) };
+	for(int i=0; i<5; i++)
+	{
+		if(glIsBuffer(*(bos[i])))
+			glDeleteBuffers(1, bos[i]);
+		// Make sure we set bufferobjects to 0 in case someone tries to draw this geometry.
+		*bos[i] = 0;
+	}
+	if(glIsVertexArray(geom->vao))
+		glDeleteVertexArrays(1, &(geom->vao));
+	geom->vao = 0;
 }
 
 
