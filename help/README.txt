@@ -71,10 +71,12 @@ ImageMagick's MagickCore library (optional, necessary to load textures from imag
  - ImageMagick License: http://www.imagemagick.org/script/license.php
 
 ASSIMP (optional, necessary to load 3D model files)
+ - For a guide to install ASSIMP, see ASSIMP-INSTALL.txt
  - Homepage: http://assimp.sourceforge.net/
  - License: http://assimp.sourceforge.net/main_license.html
 
 VRPN (optional, necessary to communicate with a VRPN tracking system server)
+ - For a guide to install VRPN, see VRPN-INSTALL.txt
  - Homepage: http://www.cs.unc.edu/Research/vrpn/
  - License: http://www.cs.unc.edu/Research/vrpn/obtaining_vrpn.html
 
@@ -83,7 +85,7 @@ VRPN (optional, necessary to communicate with a VRPN tracking system server)
 === Compilation system
 ===
 
-cmake - Cmake is a modern compilation system that is now easily installed on nearly any Linux machine via the package manager. You need to download and install this before you can compile the programs in this package. 
+cmake - Cmake is a modern compilation system that is now easily installed on nearly any Linux machine via the package manager. You need to download and install this before you can compile the programs in this package.
 
 ===
 === Units & coordinate systems
