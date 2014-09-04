@@ -6,11 +6,14 @@ Delete any cmake files to ensure we start from a fresh copy
 
     rm -rf CMakeCache.txt CMakeFiles
 
-Search for required/optional libraries and create a Makefile. If cmake
-gives you an error message, you must fix that before proceeding. Read
-this file and look at the other files in this directory for help:
+Search for required/optional libraries and create a Makefile.
 
     cmake .
+
+If cmake indicates that an error occurred, you probably do not have
+all of the libraries that this code requires. If you are missing a
+library, look for additional help in this file or in other files in
+this directory.
 
 Try to compile the programs
 
@@ -18,31 +21,31 @@ Try to compile the programs
 
 Try running a program
 
-    ./ogl2-triangle
+    ./ogl3-triangle
 
 Check out model loading and texturing capabilities
 
-    ./ogl2-assimp models/duck.dae
+    ./ogl3-assimp models/duck.dae
 
 Run code for an HMD:
 
-    ./hmd.sh ./ogl2-triangle
+    ./hmd.sh ./ogl3-triangle
 
 Run code on the IVS display wall (if you have permission to do so)
 
-    ./ivs.sh ./ogl2-triangle
+    ./ivs.sh ./ogl3-triangle
 
 Test to see if program will work on IVS without access to the IVS display wall.
 
-    ./local.sh ./ogl2-triangle
+    ./local.sh ./ogl3-triangle
 
 Run code on the IVS display wall and update the viewport based on tracking the user's head (if you have permission to do so)
 
-    ./ivs-track.sh ./ogl2-triangle
+    ./ivs-track.sh ./ogl3-triangle
 
 Run code on the IVS display wall and account for the screen bezels (if you have permission to do so)
 
-    ./ivs3.sh ./ogl2-triangle
+    ./ivs3.sh ./ogl3-triangle
 
 
 ===
@@ -102,4 +105,4 @@ It is generally recommended that you look at the documentation for the headers f
 === Comparing files
 ===
 
-If you want to know what changes are necessary to add texturing to a program, use the "meld" program to compare two different files in a user-friendly way.
+Use the "meld" program to compare two different files in a user-friendly way. For example, if you want to see how two files differ from each other, try "meld ogl3-triangle.c ogl3-triangle-color.c".
