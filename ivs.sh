@@ -93,17 +93,31 @@ fi
 
 # Create a persistant ssh connection that we will reuse. This will
 # just make it so we have to SSH into ivs once (might be slow, might
-# prompt for a password) but then previous ssh calls are nearly
+# prompt for a password) but then subsequent ssh calls are nearly
 # instantanious.
+#  Use -x to explicitly disable X forwarding since we don't need it (and the user might have specified it as an option in their own ssh config file)
+# Use -S to create/specify an ssh control socket.
+# Use -t to force tty allocation.
+# Use -q to supress warning/diagnostic messages.
+# Use -oBatchMode=yes to cause a failure if a password prompt appears.
 printMessage "Connecting to IVS..."
 rm -rf ./.temp-dgr-ssh-socket
-ssh -q -t -t -x -M -S ./.temp-dgr-ssh-socket ${IVS_USER}@${IVS_HOSTNAME} "sleep 1d" &
+ssh -oBatchMode=yes -q -t -t -x -M -S ./.temp-dgr-ssh-socket ${IVS_USER}@${IVS_HOSTNAME} "sleep 1d" &
+sleep 1
+if [[ ! -r ./.temp-dgr-ssh-socket ]]; then
+	echo "We failed to establish an SSH control socket."
+	echo "You can typically resolve this problem by:"
+	echo " (1) Creating an ssh key with no password and the default options (run 'ssh-keygen')"
+	echo " (2) Copy the contents of ~/.ssh/id_rsa.pub from your computer and paste it into a file named ~/.ssh/authorized_keys on the IVS machine (if the authorized_keys file exists, paste it at the bottom of the file."
+
+	# If we don't exit in this situation, this script would prompt for
+	# the password for every SSH call below.
+	exit
+fi
 printMessage "Connected to IVS."
 
 # Create an ssh command with appropriate arguments that we can use
-# repeatedly to run programs on IVS. Use -x to explicitly disable X
-# forwarding since we don't need it (and the user might have specified
-# it as an option in the ssh config file.
+# repeatedly to run programs on IVS. 
 SSH_CMD="ssh -q -t -t -x -S ./.temp-dgr-ssh-socket ${IVS_USER}@${IVS_HOSTNAME}"
 
 
