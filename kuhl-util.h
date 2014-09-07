@@ -1464,4 +1464,6 @@ int kuhl_model_bounding_box(const char *modelFilename, float min[3], float max[3
 #endif // end use assimp
 
 
-#endif
+void kuhl_play_sound(const char *filename);
+
+#endif // __KUHL_UTIL_H__

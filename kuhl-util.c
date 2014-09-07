@@ -21,6 +21,10 @@
 #include <sys/time.h> // gettimeofday()
 #include <unistd.h> // usleep()
 #include <time.h> // time()
+#ifdef __linux
+#include <sys/prctl.h> // kill a forked child when parent exits
+#include <signal.h>
+#endif
 
 #ifdef KUHL_UTIL_USE_ASSIMP
 #include <assimp/cimport.h>
@@ -3644,5 +3648,50 @@ void kuhl_shuffle(void *array, int n, int size)
 	}
 }
 
-#ifdef KUHL_UTIL_USE_IMAGEMAGICK
+
+/** Plays a audio files asynchronously. This method of playing
+    sounds is far from ideal and will only work on Linux. However, it
+    is a quick and easy method that does not make our code rely on any
+    additional libraries.
+
+    @param filename The filename to play.
+ */
+void kuhl_play_sound(const char *filename)
+{
+#if __linux
+	int forkRet = fork();
+	if(forkRet == -1) // if fork() error
+		perror("fork");
+	else if(forkRet == 0) // if child
+	{
+		/* A Linux-only way for child to ask to receive a SIGHUP
+		 * signal when parent dies/exits. */
+		prctl(PR_SET_PDEATHSIG, SIGHUP);
+
+		if(strlen(filename) > 4 && !strcasecmp(filename + strlen(filename) - 4, ".wav"))
+		{
+			/* aplay is a command-line program commonly installed on Linux machines */
+			execlp("aplay", "aplay", "--quiet", filename, NULL);
+		}
+		else if(strlen(filename) > 4 && !strcasecmp(filename + strlen(filename) - 4, ".ogg"))
+		{
+			/* ogg123 is a command-line program commonly installed on Linux machines */
+			execlp("ogg123", "ogg123", "--quiet", filename, NULL);
+		}
+
+		/* play is a program that comes with the SoX audio package
+		 * that is also commonly installed on Linux systems. It
+		 * supports a variety of different file formats. */
+		execlp("play", "play", "-q", filename, NULL);
+
+		/* Since exec will never return, we can only get here if exec
+		 * failed. */
+		perror("execvp");
+		fprintf(stderr, "%s: Error playing file %s (do you have the aplay, ogg123 and play commands installed on your machine?)\n", __func__, filename);
+		exit(EXIT_FAILURE);
+	}
+
+#else
+	fprintf(stderr, "%s only works on Linux systems\n", __func__);
 #endif
+}
