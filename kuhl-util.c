@@ -3649,10 +3649,10 @@ void kuhl_shuffle(void *array, int n, int size)
 }
 
 
-/** Plays a audio files asynchronously. This method of playing
-    sounds is far from ideal and will only work on Linux. However, it
-    is a quick and easy method that does not make our code rely on any
-    additional libraries.
+/** Plays an audio files asynchronously. This method of playing sounds
+    is far from ideal, is not efficient, and will only work on
+    Linux. However, it is a quick and easy method that does not make
+    our code rely on any additional libraries.
 
     @param filename The filename to play.
  */
