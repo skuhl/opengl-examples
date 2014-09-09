@@ -2908,7 +2908,8 @@ static void kuhl_private_calc_bbox(const struct aiNode* nd, struct aiMatrix4x4* 
 
 
 /** Loads a model (if needed) and returns its index in the sceneMap
- * array.
+ * array. This function also reads texture files that the model refers
+ * too.
  *
  * @param modelFilename The filename of a model to load.
  *
