@@ -111,11 +111,11 @@ void projmat_init()
 	}
 
 	if(projmat_mode == -1)
-		printf("projmat is using the default perspective projection.\n");
+		printf("projmat: Using default perspective projection.\n");
 	else if(projmat_mode == 0)
-		printf("projmat is using a simple perspective projection (vfov=%f degrees).\n", projmat_vfov);
+		printf("projmat: Using a simple perspective projection (vfov=%f degrees).\n", projmat_vfov);
 	else if(projmat_mode == 1)
-		printf("projmat is using a view frustum.\n");
+		printf("projmat: Using a view frustum.\n");
 	else
 	{
 		printf("projmat is confused.\n");
