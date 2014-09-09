@@ -3103,36 +3103,36 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 	for(unsigned int i=0; i<scene->mNumAnimations; i++)
 	{
 		struct aiAnimation* anim = scene->mAnimations[i];
-		printf("%s: Animation #%ud: ===================================", modelFilename, i);
-		printf("%s: Animation #%ud: name (probably blank): %s\n", modelFilename, i, anim->mName.data);
-		printf("%s: Animation #%ud: duration in ticks: %f\n",     modelFilename, i, anim->mDuration);
-		printf("%s: Animation #%ud: ticks per second: %f\n",      modelFilename, i, anim->mTicksPerSecond);
-		printf("%s: Animation #%ud: number of bone channels: %d\n", modelFilename, i, anim->mNumChannels);
-		printf("%s: Animation #%ud: number of mesh channels: %d\n", modelFilename, i, anim->mNumMeshChannels);
+		printf("%s: Animation #%u: ===================================\n", modelFilename, i);
+		printf("%s: Animation #%u: name (probably blank): %s\n", modelFilename, i, anim->mName.data);
+		printf("%s: Animation #%u: duration in ticks: %f\n",     modelFilename, i, anim->mDuration);
+		printf("%s: Animation #%u: ticks per second: %f\n",      modelFilename, i, anim->mTicksPerSecond);
+		printf("%s: Animation #%u: number of bone channels: %d\n", modelFilename, i, anim->mNumChannels);
+		printf("%s: Animation #%u: number of mesh channels: %d\n", modelFilename, i, anim->mNumMeshChannels);
 
 		// Bones
 		for(unsigned int j=0; j<anim->mNumChannels; j++)
 		{
 			struct aiNodeAnim* animNode = anim->mChannels[j];
-			printf("%s: Animation #%ud: Bone channel #%ud: -----------------------------------", modelFilename, i, j);
-			printf("%s: Animation #%ud: Bone channel #%ud: Name of node affected: %s\n", modelFilename, i, j, animNode->mNodeName.data);
-			printf("%s: Animation #%ud: Bone channel #%ud: Num of position keys: %d\n", modelFilename, i, j, animNode->mNumPositionKeys);
-			printf("%s: Animation #%ud: Bone channel #%ud: Num of rotation keys: %d\n", modelFilename, i, j, animNode->mNumRotationKeys);
-			printf("%s: Animation #%ud: Bone channel #%ud: Num of scaling keys: %d\n", modelFilename, i, j, animNode->mNumScalingKeys);
+			printf("%s: Animation #%u: Bone channel #%u: -----------------------------------\n", modelFilename, i, j);
+			printf("%s: Animation #%u: Bone channel #%u: Name of node affected: %s\n", modelFilename, i, j, animNode->mNodeName.data);
+			printf("%s: Animation #%u: Bone channel #%u: Num of position keys: %d\n", modelFilename, i, j, animNode->mNumPositionKeys);
+			printf("%s: Animation #%u: Bone channel #%u: Num of rotation keys: %d\n", modelFilename, i, j, animNode->mNumRotationKeys);
+			printf("%s: Animation #%u: Bone channel #%u: Num of scaling keys: %d\n", modelFilename, i, j, animNode->mNumScalingKeys);
 		}
 
 		// Mesh
 		for(unsigned int j=0; j<anim->mNumMeshChannels; j++)
 		{
-			printf("%s: Animation #%ud: Mesh channel #%ud: -----------------------------------", modelFilename, i, j);
+			printf("%s: Animation #%u: Mesh channel #%u: -----------------------------------", modelFilename, i, j);
 			struct aiMeshAnim* animMesh = anim->mMeshChannels[j];
-			printf("%s: Animation #%ud: Mesh channel #%ud: Name of node affected: %s\n", modelFilename, i, j, animMesh->mName.data);
-			printf("%s: Animation #%ud: Mesh channel #%ud: Num of keys: %d\n", modelFilename, i, j, animMesh->mNumKeys);
+			printf("%s: Animation #%u: Mesh channel #%u: Name of node affected: %s\n", modelFilename, i, j, animMesh->mName.data);
+			printf("%s: Animation #%u: Mesh channel #%u: Num of keys: %d\n", modelFilename, i, j, animMesh->mNumKeys);
 			for(unsigned int k=0; k<animMesh->mNumKeys; k++)
 			{
 				struct aiMeshKey mkey = animMesh->mKeys[k];
-				printf("%s: Animation #%ud: Mesh channel #%ud: Key #%ud: Time of this mesh key: %f\n", modelFilename, i, j, k, mkey.mTime);
-				printf("%s: Animation #%ud: Mesh channel #%ud: Key #%ud: Index into the mAnimMeshes array: %d\n", modelFilename, i, j, k, mkey.mValue);
+				printf("%s: Animation #%ud: Mesh channel #%u: Key #%u: Time of this mesh key: %f\n", modelFilename, i, j, k, mkey.mTime);
+				printf("%s: Animation #%ud: Mesh channel #%u: Key #%u: Index into the mAnimMeshes array: %d\n", modelFilename, i, j, k, mkey.mValue);
 			}
 		}
 	}
