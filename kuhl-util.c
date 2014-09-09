@@ -2101,6 +2101,7 @@ void kuhl_delete_program(GLuint program)
 }
 
 
+static int missingUniformCount = 0; /**< Used by kuhl_get_uniform() */
 /** glGetUniformLocation() with error checking. This function behaves
  * the same as glGetUniformLocation() except that when an error
  * occurs, it prints an error message if the uniform variable doesn't
@@ -2113,7 +2114,6 @@ void kuhl_delete_program(GLuint program)
  *
  * @return The location of the uniform variable.
  */
-static int missingUniformCount = 0;
 GLint kuhl_get_uniform(GLuint program, const char *uniformName)
 {
 	if(uniformName == NULL || strlen(uniformName) == 0)

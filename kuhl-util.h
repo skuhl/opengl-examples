@@ -1442,9 +1442,6 @@ void kuhl_geometry_init(kuhl_geometry *geom);
 void kuhl_geometry_draw(kuhl_geometry *geom);
 void kuhl_geometry_delete(kuhl_geometry *geom);
 
-GLuint kuhl_element_array_buffer(const GLuint indices[], int arrayLength, int attribLocation);
-GLuint kuhl_array_buffer(const GLfloat array[], int arrayLength, int attribLocation, int numComponents);
-
 
 
 GLuint kuhl_read_texture_rgba_array(const char *array, int width, int height);
