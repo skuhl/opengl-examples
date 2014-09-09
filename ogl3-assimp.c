@@ -95,6 +95,7 @@ void get_model_matrix(float result[16])
 	int count = glutGet(GLUT_ELAPSED_TIME) % 10000; // get a counter that repeats every 10 seconds
 	float angle = count / 10000.0 * 360;
 	dgr_setget("angle", &angle, sizeof(GLfloat));
+	// angle = 0; // Don't spin the model
 
 	/* Calculate the width/height/depth of the bounding box and
 	 * determine which one of the three is the largest. Then, scale

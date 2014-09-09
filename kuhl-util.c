@@ -30,6 +30,7 @@
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/anim.h>
 #endif
 
 #include "kuhl-util.h"
@@ -2955,14 +2956,56 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 		printf("%s: ASSIMP was unable to import the model file.\n", modelFilename);
 		return -1;
 	}
+	if(scene->mNumAnimations > 0)
+		printf("%s: WARNING: This model has %d animations embedded in it that we are ignoring.\n", modelFilename, scene->mNumAnimations);
+	if(scene->mNumCameras > 0)
+		printf("%s: WARNING: This model has %d cameras embedded in it that we are ignoring.\n", modelFilename, scene->mNumCameras);
+	if(scene->mNumLights > 0)
+		printf("%s: WARNING: This model has %d lights embedded in it that we are ignoring.\n", modelFilename, scene->mNumLights);
 
 	/* Print warning message if model file contains embedded textures or animations since we don't support that (even if ASSIMP might). */
 	if(scene->mNumTextures > 0)
 		printf("%s: WARNING: This model has %d textures embedded in it. This program currently ignores embedded textures.\n", modelFilename, scene->mNumTextures);
 
-	if(scene->mNumAnimations > 0)
-		printf("%s: WARNING: This model has %d animations embedded in it. This program currently ignores embedded animations.\n", modelFilename, scene->mNumAnimations);
 
+	for(unsigned int i=0; i<scene->mNumAnimations; i++)
+	{
+		struct aiAnimation* anim = scene->mAnimations[i];
+		printf("Animation name (probably blank): %s\n", anim->mName.data);
+		printf("Animation duration in ticks: %f\n", anim->mDuration);
+		printf("Animation ticks per second: %f\n", anim->mTicksPerSecond);
+		printf("Animation number of bone channels: %d\n", anim->mNumChannels);
+		printf("Animation number of mesh channels: %d\n", anim->mNumMeshChannels);
+
+		// Bones
+		for(unsigned int j=0; j<anim->mNumChannels; j++)
+		{
+			printf("This is bone channel %d\n", j);
+			struct aiNodeAnim* animNode = anim->mChannels[j];
+			printf("Name of node affected: %s\n", animNode->mNodeName.data);
+			printf("Num of position keys: %d\n", animNode->mNumPositionKeys);
+			printf("Num of rotation keys: %d\n", animNode->mNumRotationKeys);
+			printf("Num of scaling keys: %d\n", animNode->mNumScalingKeys);
+
+		}
+
+		// Mesh
+		for(unsigned int j=0; j<anim->mNumMeshChannels; j++)
+		{
+			printf("This is mesh channel %d\n", j);
+			struct aiMeshAnim* animMesh = anim->mMeshChannels[j];
+			printf("Name of node affected: %s\n", animMesh->mName.data);
+			printf("Num of keys: %d\n", animMesh->mNumKeys);
+			for(unsigned int k=0; k<animMesh->mNumKeys; k++)
+			{
+				struct aiMeshKey mkey = animMesh->mKeys[k];
+				printf("Time of this mesh key: %f\n", mkey.mTime);
+				printf("Index into the mAnimMeshes array: %d\n", mkey.mValue);
+			}
+		}
+	}
+
+	
 	/* For safety, zero out our texture ID map if it is supposed to be empty right now. */
 	if(textureIdMapSize == 0)
 	{
