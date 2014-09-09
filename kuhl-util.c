@@ -2907,7 +2907,8 @@ static void kuhl_private_calc_bbox(const struct aiNode* nd, struct aiMatrix4x4* 
 
 
 
-/** Loads a model (if needed) and returns its index in the sceneMap.
+/** Loads a model (if needed) and returns its index in the sceneMap
+ * array.
  *
  * @param modelFilename The filename of a model to load.
  *
@@ -2956,51 +2957,55 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 		printf("%s: ASSIMP was unable to import the model file.\n", modelFilename);
 		return -1;
 	}
-	if(scene->mNumAnimations > 0)
-		printf("%s: WARNING: This model has %d animations embedded in it that we are ignoring.\n", modelFilename, scene->mNumAnimations);
+
+	/* Print warning messages if the model uses features that our code
+	 * doesn't support (even though ASSIMP might support them. */
 	if(scene->mNumCameras > 0)
 		printf("%s: WARNING: This model has %d cameras embedded in it that we are ignoring.\n", modelFilename, scene->mNumCameras);
 	if(scene->mNumLights > 0)
 		printf("%s: WARNING: This model has %d lights embedded in it that we are ignoring.\n", modelFilename, scene->mNumLights);
-
-	/* Print warning message if model file contains embedded textures or animations since we don't support that (even if ASSIMP might). */
 	if(scene->mNumTextures > 0)
 		printf("%s: WARNING: This model has %d textures embedded in it. This program currently ignores embedded textures.\n", modelFilename, scene->mNumTextures);
 
+	/* Note: Animations are removed from the model if we call
+	 * aiImportFile with aiProcess_PreTransformVertices */
+	if(scene->mNumAnimations > 0)
+		printf("%s: WARNING: This model has %d animations embedded in it that we are ignoring.\n", modelFilename, scene->mNumAnimations);
 
+	/* Iterate through the animation information associated with this model */
 	for(unsigned int i=0; i<scene->mNumAnimations; i++)
 	{
 		struct aiAnimation* anim = scene->mAnimations[i];
-		printf("Animation name (probably blank): %s\n", anim->mName.data);
-		printf("Animation duration in ticks: %f\n", anim->mDuration);
-		printf("Animation ticks per second: %f\n", anim->mTicksPerSecond);
-		printf("Animation number of bone channels: %d\n", anim->mNumChannels);
-		printf("Animation number of mesh channels: %d\n", anim->mNumMeshChannels);
+		printf("%s: Animation #%ud: ===================================", modelFilename, i);
+		printf("%s: Animation #%ud: name (probably blank): %s\n", modelFilename, i, anim->mName.data);
+		printf("%s: Animation #%ud: duration in ticks: %f\n",     modelFilename, i, anim->mDuration);
+		printf("%s: Animation #%ud: ticks per second: %f\n",      modelFilename, i, anim->mTicksPerSecond);
+		printf("%s: Animation #%ud: number of bone channels: %d\n", modelFilename, i, anim->mNumChannels);
+		printf("%s: Animation #%ud: number of mesh channels: %d\n", modelFilename, i, anim->mNumMeshChannels);
 
 		// Bones
 		for(unsigned int j=0; j<anim->mNumChannels; j++)
 		{
-			printf("This is bone channel %d\n", j);
 			struct aiNodeAnim* animNode = anim->mChannels[j];
-			printf("Name of node affected: %s\n", animNode->mNodeName.data);
-			printf("Num of position keys: %d\n", animNode->mNumPositionKeys);
-			printf("Num of rotation keys: %d\n", animNode->mNumRotationKeys);
-			printf("Num of scaling keys: %d\n", animNode->mNumScalingKeys);
-
+			printf("%s: Animation #%ud: Bone channel #%ud: -----------------------------------", modelFilename, i, j);
+			printf("%s: Animation #%ud: Bone channel #%ud: Name of node affected: %s\n", modelFilename, i, j, animNode->mNodeName.data);
+			printf("%s: Animation #%ud: Bone channel #%ud: Num of position keys: %d\n", modelFilename, i, j, animNode->mNumPositionKeys);
+			printf("%s: Animation #%ud: Bone channel #%ud: Num of rotation keys: %d\n", modelFilename, i, j, animNode->mNumRotationKeys);
+			printf("%s: Animation #%ud: Bone channel #%ud: Num of scaling keys: %d\n", modelFilename, i, j, animNode->mNumScalingKeys);
 		}
 
 		// Mesh
 		for(unsigned int j=0; j<anim->mNumMeshChannels; j++)
 		{
-			printf("This is mesh channel %d\n", j);
+			printf("%s: Animation #%ud: Mesh channel #%ud: -----------------------------------", modelFilename, i, j);
 			struct aiMeshAnim* animMesh = anim->mMeshChannels[j];
-			printf("Name of node affected: %s\n", animMesh->mName.data);
-			printf("Num of keys: %d\n", animMesh->mNumKeys);
+			printf("%s: Animation #%ud: Mesh channel #%ud: Name of node affected: %s\n", modelFilename, i, j, animMesh->mName.data);
+			printf("%s: Animation #%ud: Mesh channel #%ud: Num of keys: %d\n", modelFilename, i, j, animMesh->mNumKeys);
 			for(unsigned int k=0; k<animMesh->mNumKeys; k++)
 			{
 				struct aiMeshKey mkey = animMesh->mKeys[k];
-				printf("Time of this mesh key: %f\n", mkey.mTime);
-				printf("Index into the mAnimMeshes array: %d\n", mkey.mValue);
+				printf("%s: Animation #%ud: Mesh channel #%ud: Key #%ud: Time of this mesh key: %f\n", modelFilename, i, j, k, mkey.mTime);
+				printf("%s: Animation #%ud: Mesh channel #%ud: Key #%ud: Index into the mAnimMeshes array: %d\n", modelFilename, i, j, k, mkey.mValue);
 			}
 		}
 	}
