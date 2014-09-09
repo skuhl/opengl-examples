@@ -2174,6 +2174,9 @@ void kuhl_geometry_zero(kuhl_geometry *geom)
 	geom->vertex_count = 0;
 	geom->primitive_type = 0;
 
+	for(int i=0; i<6; i++)
+		geom->aabbox[i] = 0;
+
 	geom->texture = 0;
 	geom->texture_name = NULL;
 	
@@ -2282,13 +2285,112 @@ static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
 	}
 }
 
+
+/** Applies a transformation matrix to an axis-aligned bounding box to
+    produce a new axis aligned bounding box.
+
+
+    @param bbox The bounding box to rotate (xmin, xmax, ymin, ...)
+    @param mat The 4x4 transformation matrix to apply to the bounding box
+*/
+void kuhl_bbox_transform(float bbox[6], float mat[16])
+{
+	if(mat == NULL)
+		return;
+
+	int xmin=0, xmax=1, ymin=2, ymax=3, zmin=4, zmax=5;
+
+	// The 8 vertices of the bounding box
+	float coords[8][3] = { {bbox[xmin], bbox[ymin], bbox[zmin] },
+	                       {bbox[xmin], bbox[ymin], bbox[zmax] },
+	                       {bbox[xmin], bbox[ymax], bbox[zmin] },
+	                       {bbox[xmin], bbox[ymax], bbox[zmax] },
+	                       {bbox[xmax], bbox[ymin], bbox[zmax] },
+	                       {bbox[xmax], bbox[ymax], bbox[zmin] },
+	                       {bbox[xmax], bbox[ymax], bbox[zmax] } };
+	// Transform the 8 vertices of the bounding box
+	for(int i=0; i<8; i++)
+		mat4f_mult_vec4f_new(coords[i], mat, coords[i]);
+	
+	/* Calculate new axis aligned bounding box */
+	for(int i=0; i<6; i=i+2) // set min values to the largest float
+		bbox[i] = FLT_MAX;
+	for(int i=1; i<6; i=i+2) // set max values to the smallest float
+		bbox[i] = -FLT_MAX;
+	for(unsigned int i=0; i<8; i++)
+	{
+		// Check for new min values
+		if(coords[i][0] < bbox[0])
+			bbox[0] = coords[i][0];
+		if(coords[i][1] < bbox[2])
+			bbox[2] = coords[i][1];
+		if(coords[i][2] < bbox[4])
+			bbox[4] = coords[i][2];
+
+		// Check for new max values
+		if(coords[i][0] > bbox[1])
+			bbox[1] = coords[i][0];
+		if(coords[i][1] > bbox[3])
+			bbox[3] = coords[i][1];
+		if(coords[i][2] > bbox[5])
+			bbox[5] = coords[i][2];
+	}
+}
+    
+
+
+/** Checks if the axis-aligned bounding box of two kuhl_geometry objects intersect.
+
+    @return 1 if the bounding boxes intersect; 0 otherwise
+
+    @param geom1 One of the pieces of geometry.
+    @param mat1 A 4x4 transformation matrix to be applied to the bounding box of geom1 prior to checking for collision.
+    @param geom2 The other piece of geometry.
+    @param mat2 A 4x4 transformation matrix to be applied to the bounding box of geom2 prior to checking for collision.
+*/
+int kuhl_geometry_collide(kuhl_geometry *geom1, float mat1[16],
+                          kuhl_geometry *geom2, float mat2[16])
+{
+	float box1[6], box2[6];
+	for(int i=0; i<6; i++)
+	{
+		box1[i] = geom1->aabbox[i];
+		box2[i] = geom2->aabbox[i];
+	}
+	kuhl_bbox_transform(box1, mat1);
+	kuhl_bbox_transform(box2, mat1);
+
+	int xmin=0, xmax=1, ymin=2, ymax=3, zmin=4, zmax=5;
+	// If the smallest x coordinate in geom1 is larger than the
+	// largest x coordinate in geom2, there is no intersection when we
+	// project the bounding boxes onto to the X plane. (geom1 is to
+	// the right of geom2). Repeat for Y and Z planes
+	if(box1[xmin] > box2[xmax]) return 0;
+	if(box1[ymin] > box2[ymax]) return 0;
+	if(box1[zmin] > box2[zmax]) return 0;
+	// If the largest x coordinate of geom1 is smaller than the
+	// largest smallest x coordinate in geom 2, there is no
+	// intersection when we project the bounding boxes onto the X
+	// plane. (geom1 is to the left of geom2). Repeat for Y and Z
+	// planes.
+	if(box1[xmax] < box2[xmin]) return 0;
+	if(box1[ymax] < box2[ymin]) return 0;
+	if(box1[zmax] < box2[zmin]) return 0;
+	return 1;
+}
+
+
+
 /** Creates an OpenGL vertex array object from information in a
     kuhl_geometry struct. When this function successfully completes,
     the arrays of data stored in the kuhl_geometry struct can be freed
     (for example, geom->attrib_pos, geom->attrib_color, geom->indices,
     etc.) because OpenGL has made its own copy of the data. The rest
-    of the information in the struct should be left untouched, since
-    they may be used in kuhl_geometry_draw().
+    of the information in the struct should be left untouched by the
+    caller, since they may be used in kuhl_geometry_draw().
+
+    This function also examines the vertices and calculates an
+    axis-aligned bounding box (in object coordinates).
 
     @param geom A kuhl_geometry struct populated with the information
     necessary to draw some geometry.
@@ -2300,6 +2402,30 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 	glGenVertexArrays(1, &(geom->vao));
 	glBindVertexArray(geom->vao);
 	kuhl_errorcheck();
+
+	/* Calculate the bounding box. */
+	for(int i=0; i<6; i=i+2) // set min values to the largest float
+		geom->aabbox[i] = FLT_MAX;
+	for(int i=1; i<6; i=i+2) // set max values to the smallest float
+		geom->aabbox[i] = -FLT_MAX;
+	for(unsigned int i=0; i<geom->vertex_count; i++)
+	{
+		// Check for new min values
+		if(geom->attrib_pos[i*3+0] < geom->aabbox[0])
+			geom->aabbox[0] = geom->attrib_pos[i*3+0];
+		if(geom->attrib_pos[i*3+1] < geom->aabbox[2])
+			geom->aabbox[2] = geom->attrib_pos[i*3+1];
+		if(geom->attrib_pos[i*3+2] < geom->aabbox[4])
+			geom->aabbox[4] = geom->attrib_pos[i*3+2];
+
+		// Check for new max values
+		if(geom->attrib_pos[i*3+0] > geom->aabbox[1])
+			geom->aabbox[1] = geom->attrib_pos[i*3+0];
+		if(geom->attrib_pos[i*3+1] > geom->aabbox[3])
+			geom->aabbox[3] = geom->attrib_pos[i*3+1];
+		if(geom->attrib_pos[i*3+2] > geom->aabbox[5])
+			geom->aabbox[5] = geom->attrib_pos[i*3+2];
+	}
 
 	/* The position, texcoord, color, normal, etc. can all be
 	 * processed in the same way. Make some arrays so we can just loop

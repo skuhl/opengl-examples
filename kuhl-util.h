@@ -51,6 +51,8 @@ typedef struct
 	GLuint vertex_count; /**< How many vertices are in this geometry? - User should set this. */
 	GLenum primitive_type; /**< GL_TRIANGLES, GL_POINTS, etc. */
 
+	float aabbox[6]; /**< Axis aligned bounding box calculated by kuhl_geometry_init() in object-coordinates. Order: xMin, xMax, yMin, yMax, zMin, zMax - Set by kuhl_geometry_init(). */
+
 	GLuint texture; /**< The OpenGL ID for the texture to be applied to the geometry. Set this to 0 for no texturing */
 	char *texture_name; /**< The name of the name of the sampler2D texture in the GLSL fragment program. */
 	
@@ -1431,7 +1433,11 @@ void kuhl_limitfps(int fps);
 
 float kuhl_getfps(int milliseconds);
 
+void kuhl_bbox_transform(float bbox[6], float mat[16]);
+
 void kuhl_geometry_zero(kuhl_geometry *geom);
+int kuhl_geometry_collide(kuhl_geometry *geom1, float mat1[16],
+                          kuhl_geometry *geom2, float mat2[16]);
 void kuhl_geometry_init(kuhl_geometry *geom);
 void kuhl_geometry_draw(kuhl_geometry *geom);
 void kuhl_geometry_delete(kuhl_geometry *geom);
