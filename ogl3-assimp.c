@@ -64,6 +64,9 @@ void keyboard(unsigned char key, int x, int y)
 			}
 			break;
 	}
+
+	/* Whenever any key is pressed, request that display() get
+	 * called. */ 
 	glutPostRedisplay();
 }
 
@@ -130,22 +133,24 @@ void display()
 	// Clear the screen to black, clear the depth buffer
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST); // turn on depth testing
-
 	kuhl_errorcheck();
-	
 
+	/* Render the scene once for each viewport. Frequently one
+	 * viewport will fill the entire screen. However, this loop will
+	 * run twice for HMDs (once for the left eye and once for the
+	 * right. */
 	for(int viewportID=0; viewportID<viewmat_num_viewports(); viewportID++)
 	{
 		/* Where is the viewport that we are drawing onto and what is its size? */
-		int viewport[4];
+		int viewport[4]; // x,y of lower left corner, width, height
 		viewmat_get_viewport(viewport, viewportID);
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
-		/* Get the view frustum information. */
-		float f[6];
+		/* Get the frustum information which will be later used to generate a perspective projection matrix. */
+		float f[6]; // left, right, top, bottom, near>0, far>0
 		projmat_get_frustum(f, viewport[2], viewport[3]);
 	    
-		/* Get the projection matrix, update view frustum if necessary. */
+		/* Get the view or camera matrix; update the frustum values if needed. */
 		float viewMat[16];
 		viewmat_get(viewMat, f, viewportID);
 
@@ -186,8 +191,10 @@ void display()
 
 		kuhl_draw_model_file_ogl3(modelFilename, modelTexturePath, program);
 		kuhl_errorcheck();
-	}
-	    
+
+		glUseProgram(0); // stop using a GLSL program.
+
+	} // finish viewport loop
 
 	int time = glutGet(GLUT_ELAPSED_TIME);
 	float fps = kuhl_getfps(time);
@@ -204,7 +211,6 @@ void display()
 	
 	/* Display the buffer we just drew (necessary for double buffering). */
 	glutSwapBuffers();
-//	exit(1);
 
 	// kuhl_video_record("videoout", 30);
 	
@@ -268,26 +274,21 @@ int main(int argc, char** argv)
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
 
-	kuhl_errorcheck();
-	/* Set the uniform variable in the shader that is named "red" to the value 1. */
-//	glUniform1i(kuhl_get_uniform(program, "red"), 1);
-	kuhl_errorcheck();
-
+	/* Compile and link a GLSL program composed of a vertex shader and
+	 * a fragment shader. */
 	program = kuhl_create_program("ogl3-assimp.vert", "ogl3-assimp.frag");
 	glUseProgram(program);
-
-
+	kuhl_errorcheck();
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);
 
-	float initPos[3] = {0,0,2};
-	float initLook[3] = {0,0,0};
-	float initUp[3] = {0,1,0};
+	dgr_init();     /* Initialize DGR based on environment variables. */
+	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
 
-	// Initialize DGR
-	dgr_init();
-	projmat_init();
-	viewmat_init(initPos, initLook, initUp);
+	float initCamPos[3]  = {0,0,2}; // location of camera
+	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
+	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
+	viewmat_init(initCamPos, initCamLook, initCamUp);
 
 	// Clear the screen while things might be loading
 	glClearColor(.2,.2,.2,1);
@@ -297,5 +298,10 @@ int main(int argc, char** argv)
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */
 	glutMainLoop();
+    /* // An alternative approach:
+    while(1)
+       glutMainLoopEvent();
+    */
+
 	exit(EXIT_SUCCESS);
 }
