@@ -97,7 +97,7 @@ void display()
 		// Modelview = (viewMatrix * scaleMatrix) * rotationMatrix
 		float modelview[16];
 		mat4f_mult_mat4f_new(modelview, viewMat, scaleMatrix);
-		mat4f_mult_mat4f_new(modelview, modelview, animationMat);
+		mat4f_mult_mat4f_new(modelview, modelview, rotateMat);
 
 		kuhl_errorcheck();
 		glUseProgram(program);
