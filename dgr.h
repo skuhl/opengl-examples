@@ -11,9 +11,20 @@
     @author Scott Kuhl
  */
 
+#ifndef __DGR_H__
+#define __DGR_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void dgr_init();
 void dgr_update();
 void dgr_setget(const char *name, void* buffer, int bufferSize);
 void dgr_print_list();
 int dgr_is_master();
 int dgr_is_enabled();
+
+#ifdef __cplusplus
+} // end extern "C"
+#endif
+#endif // end __DGR_H__

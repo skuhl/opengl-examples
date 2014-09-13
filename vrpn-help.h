@@ -17,6 +17,8 @@
  * VRPN and be published under a different license.
  */
 
+#ifndef __VRPN_HELP_H__
+#define __VRPN_HELP_H__
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,7 +26,7 @@ extern "C" {
 int vrpn_get(const char *object, const char *hostname, float pos[3], float orient[16]);
 
 #ifdef __cplusplus
-}
+} // end extern "C"
 #endif
-
+#endif // end __VRPN_HELP_H__
 

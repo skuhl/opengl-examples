@@ -30,6 +30,11 @@
 #include <string.h>
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #ifndef M_PI
 /** M_PI is an approximation of pi. This variable is often available
  * in C without defining it yourself, but it isn't guaranteed to exist
@@ -1470,4 +1475,7 @@ int kuhl_model_bounding_box(const char *modelFilename, float min[3], float max[3
 
 void kuhl_play_sound(const char *filename);
 
+#ifdef __cplusplus
+} // end extern "C"
+#endif
 #endif // __KUHL_UTIL_H__

@@ -47,8 +47,12 @@
  *
  */
 
-#ifndef __MOUSEMOVE_GLUT_H__
-#define __MOUSEMOVE_GLUT_H__
+#ifndef __MOUSEMOVE_H__
+#define __MOUSEMOVE_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #if !defined(MOUSEMOVE_GLUT) && !defined(MOUSEMOVE_GLFW)
 #error "mousemove requires MOUSEMOVE_GLUT or MOUSEMOVE_GLFW preprocessor variable to be set."
@@ -84,4 +88,7 @@ void mousemove_set(float posX, float posY, float posZ,
 void mousemove_get(float position[3], float lookAt[3], float up[3]);
 void mousemove_speed(float translationSpeed, float rotationSpeed);
 
+#ifdef __cplusplus
+} // end extern "C"
 #endif
+#endif // end __MOUSEMOVE_H__

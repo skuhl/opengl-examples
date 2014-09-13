@@ -25,7 +25,19 @@
     @author Scott Kuhl
  */
 
+#ifndef __VIEWMAT_H__
+#define __VIEWMAT_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 void viewmat_init(float pos[3], float look[3], float up[3]);
 void viewmat_get(float viewmatrix[16], float frustum[6], int viewportNum);
 int viewmat_num_viewports();
 void viewmat_get_viewport(int viewportValue[4], int viewportNum);
+
+#ifdef __cplusplus
+} // end extern "C"
+#endif
+#endif // end __VIEWMAT_H__

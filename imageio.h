@@ -3,8 +3,6 @@
  * the file named "LICENSE" for a full copy of the license.
  */
 
-#ifndef __IMAGEIO_H__
-#define __IMAGEIO_H__
 /** @file
  
 Read and write numerous image file formats via ImageMagick's
@@ -29,6 +27,16 @@ http://www.imagemagick.org/script/license.php
 */
 
 
+#ifndef __IMAGEIO_H__
+#define __IMAGEIO_H__
+
+#include <magick/api.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /** Calculates the appropriate index into the 1D array from a 2D coordinate.
    @param x The x coordinate (0=left)
    @param y The y coordinate (0=bottom)
@@ -48,8 +56,6 @@ http://www.imagemagick.org/script/license.php
  * versions of ImageMagick */
 #define MAGICKCORE_HDRI_ENABLE 0
 #define MAGICKCORE_QUANTUM_DEPTH 16
-
-#include <magick/api.h>
 
 /** The imageio_info struct is used for both writing and reading files with imageio.c. If you are writing an image, the struct provides information about the array of data that you want to write to disk. If you are reading an image file from disk, it provides information about the dimensions of the image. */
 typedef struct {
@@ -127,5 +133,7 @@ void* imagein(imageio_info *iio_info);
 int imageout(const imageio_info *iio_info, void* array);
 char* image_label(const char *label, int *width, int *height, float color[3], float bgcolor[4], double pointsize);
 
-
+#ifdef __cplusplus
+} // end extern "C"
 #endif
+#endif // end __IMAGEIO_H__
