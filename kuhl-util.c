@@ -288,7 +288,7 @@ extern inline void mat3f_from_mat3d(float  dest[ 9], const double src[ 9]);
 extern inline void mat4f_from_mat4d(float  dest[16], const double src[16]);
 
 /** Don't call this function, call kuhl_errorcheck() instead. */
-int kuhl_errorcheckFileLine(char *file, int line)
+int kuhl_errorcheckFileLine(const char *file, int line)
 {
 	GLenum errCode = glGetError();
 	if(errCode != GL_NO_ERROR)

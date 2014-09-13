@@ -103,8 +103,9 @@ typedef struct
  * down the line(s) of code causing an error.
  */
 #define kuhl_errorcheck() kuhl_errorcheckFileLine(__FILE__, __LINE__)
+
 // kuhl_errorcheck() calls this C function:
-int kuhl_errorcheckFileLine(char *file, int line);
+int kuhl_errorcheckFileLine(const char *file, int line);
 
 /* General tips for learning the vector and matrix functions provided by kuhl-util:
 
