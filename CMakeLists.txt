@@ -57,8 +57,8 @@ set(CMAKE_LIBRARY_PATH "/usr/local/glew/1.9.0/lib" ${CMAKE_LIBRARY_PATH})
 set(CMAKE_INCLUDE_PATH "/usr/local/glew/1.9.0/include" ${CMAKE_INCLUDE_PATH})
 
 # Search paths for IVS machine - NOTE: The copy of GLEW in /opt/viz is too old---haven't investigated exactly which version is needed.
-set(CMAKE_LIBRARY_PATH /research/kuhl/public-vrlab/glew/lib ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH /research/kuhl/public-vrlab/glew/include ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH "/research/kuhl/public-vrlab/glew/lib" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "/research/kuhl/public-vrlab/glew/include" ${CMAKE_INCLUDE_PATH})
 
 # Search paths for Rekhi Lab machines
 set(CMAKE_LIBRARY_PATH "/home/campus11/kuhl/public-cs4611/glew/lib" ${CMAKE_LIBRARY_PATH})
@@ -68,7 +68,7 @@ find_package(GLEW REQUIRED)
 include_directories(${GLEW_INCLUDE_DIRS})
 
 # Check for an newer extension that we use for glGetProgram(). If GLEW
-# is too old, it might now know about the extension and we could get
+# is too old, it might not know about the extension and we could get
 # compile errors.
 include(CheckSymbolExists)
 CHECK_SYMBOL_EXISTS(GL_ARB_get_program_binary "${GLEW_INCLUDE_DIRS}/GL/glew.h" GLEW_NEW_ENOUGH)
