@@ -195,6 +195,7 @@ else()
 endif()
 
 # === ogl3-texture ===
+# Demonstrates how to use textures.
 if(ImageMagick_FOUND)
 	add_executable(ogl3-texture ogl3-texture.c kuhl-util.c dgr.c mousemove.c imageio.c projmat.c viewmat.c vrpn-help.cpp)
 	target_link_libraries(ogl3-texture ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ImageMagick_LIBRARIES})
