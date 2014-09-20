@@ -42,8 +42,15 @@ void main()
 	}
 	else if(renderStyle == 5)
 	{
+		/* out_EyeCoord is the position of this fragment in eye
+		 * coordinates. Since the camera is at 0,0,0 in eye
+		 * coordinates, we can interpret it as a vector pointing from
+		 * the camera to the fragment. out_Normal is a normal vector
+		 * on the triangle. If the sign of the dot product is
+		 * negative, the angle between the vectors is greater than 90
+		 * degrees---telling us that they are pointing in "opposite"
+		 * directions. */
 		if(dot(out_Normal, out_EyeCoord) < 0)
-//		if(out_Normal.z > 0)
 			fragColor.xyz = vec3(0,.3,0); // green are front faces
 		else
 			fragColor.xyz = vec3(.3,0,0); // red are back faces
