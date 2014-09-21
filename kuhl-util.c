@@ -1619,9 +1619,9 @@ void mat4f_ortho_new(float result[16], float left, float right, float bottom, fl
 	result[0]  =  2 / (right-left);
 	result[5]  =  2 / (top-bottom);
 	result[10] = -2 / (far-near);
-	result[12] = (right+left)/(right-left);
-	result[13] = (top+bottom)/(top-bottom);
-	result[14] = (far+near)/(far-near);
+	result[12] = -(right+left)/(right-left);
+	result[13] = -(top+bottom)/(top-bottom);
+	result[14] = -(far+near)/(far-near);
 }
 
 /** Creates a orthographic projection matrix (double). This
@@ -1650,9 +1650,9 @@ void mat4d_ortho_new(double result[16], double left, double right, double bottom
 	result[0]  =  2 / (right-left);
 	result[5]  =  2 / (top-bottom);
 	result[10] = -2 / (far-near);
-	result[12] = (right+left)/(right-left);
-	result[13] = (top+bottom)/(top-bottom);
-	result[14] = (far+near)/(far-near);
+	result[12] = -(right+left)/(right-left);
+	result[13] = -(top+bottom)/(top-bottom);
+	result[14] = -(far+near)/(far-near);
 }
 
 /** Creates a perspective projection matrix (float). This creates a matrix
