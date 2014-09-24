@@ -174,14 +174,14 @@ void display()
 		                   0, // transpose
 		                   modelview); // value
 		// Normal matrix = transpose(inverse(modelview))
-		float normalMat[16];
-		mat4f_copy(normalMat, modelview);
-		mat4f_invert(normalMat);
-		mat4f_transpose(normalMat);
-		glUniformMatrix4fv(kuhl_get_uniform(program, "NormalMat"),
+		float normalMat[9];
+		mat3f_from_mat4f(normalMat, modelview);
+		mat3f_invert(normalMat);
+		mat3f_transpose(normalMat);
+		glUniformMatrix3fv(kuhl_get_uniform(program, "NormalMat"),
 		                   1, // count
 		                   0, // transpose
-		                   modelview); // value
+		                   normalMat); // value
 
 		glUniform1i(kuhl_get_uniform(program, "renderStyle"), renderStyle);
 		// Copy far plane value into vertex program so we can render depth buffer.

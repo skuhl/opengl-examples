@@ -20,8 +20,9 @@ void main()
 {
 	vec4 pos = vec4(in_Position.x, in_Position.y, in_Position.z, 1.0);
 	out_TexCoord = in_TexCoord;
-	out_Normal = vec3(NormalMat*vec4(in_Normal, 0)); // object -> eye coordinates
-	out_Normal = normalize(out_Normal);
+	vec3 transformedNormal = normalize(NormalMat * in_Normal);
+	out_Normal = vec4(transformedNormal.x, transformedNormal.y, transformedNormal.z, 0);
+
 	out_Color = in_Color;
 	gl_Position = Projection * ModelView * pos; // object -> unhomogenized NDC
 
