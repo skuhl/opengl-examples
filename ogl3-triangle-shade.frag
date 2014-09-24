@@ -19,7 +19,7 @@ void main()
 	diffuse = diffuse / 2 + .5;  
 
 	if(red > 0)
-		fragColor = diffuse * vec4(1.0,.2,.1,1.0); // Red
+		fragColor = diffuse * vec4(1.0, 0.2, 0.1, 1.0); // Red
 	else
-		fragColor = diffuse * vec4(1.0,1.0,1.0,1.0); // White
+		fragColor = diffuse * vec4(1.0, 1.0, 1.0, 1.0); // White
 }
