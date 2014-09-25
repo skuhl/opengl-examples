@@ -1959,7 +1959,8 @@ void kuhl_print_program_info(GLuint program)
 		printf("[none!]\n");
 	else
 		printf("\n");
-
+	kuhl_errorcheck();
+	
 	numVarsInProg = 0;
 	glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &numVarsInProg);
 	printf("Active uniforms in program %d: ", program);
@@ -1978,6 +1979,8 @@ void kuhl_print_program_info(GLuint program)
 	else
 		printf("\n");
 
+	kuhl_errorcheck();
+	
 	GLint linkStatus=GL_FALSE, validateStatus=GL_FALSE;
 	GLint attachedShaderCount=0;
 	GLint binarySize=0;
@@ -1992,6 +1995,8 @@ void kuhl_print_program_info(GLuint program)
 	       validateStatus == GL_TRUE ? "OK" : "Fail",
 	       attachedShaderCount, binarySize,
 	       deleteStatus   == GL_TRUE ? "DELETED!" : "");
+
+	kuhl_errorcheck();
 
 }
 
@@ -2444,7 +2449,7 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 		glBindBuffer(GL_ARRAY_BUFFER, bo[i]);
 		kuhl_errorcheck();
 
-		/* Copy the our data into the buffer object that is currently bound. */
+		/* Copy our data into the buffer object that is currently bound. */
 		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*geom->vertex_count*components[i], data[i], GL_STATIC_DRAW);
 		kuhl_errorcheck();
 
@@ -2475,6 +2480,7 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 	geom->attrib_texcoord_bufferobject = bo[2];
 	geom->attrib_normal_bufferobject   = bo[3];
 	geom->attrib_custom_bufferobject   = bo[4];
+	
 
 	if(geom->indices != NULL && geom->indices_len > 0)
 	{
@@ -2538,7 +2544,6 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		printf("%s: Not a valid vertex array object: %d\n", __func__, geom->vao);
 		return;
 	}
-
 
 	if(glIsTexture(geom->texture))
 	{
