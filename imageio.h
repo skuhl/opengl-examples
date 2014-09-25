@@ -30,6 +30,12 @@ http://www.imagemagick.org/script/license.php
 #ifndef __IMAGEIO_H__
 #define __IMAGEIO_H__
 
+/* These variables resolve compile-time warning messages recent
+ * versions of ImageMagick */
+#define MAGICKCORE_HDRI_ENABLE 0
+#define MAGICKCORE_QUANTUM_DEPTH 16
+
+
 #include <magick/api.h>
 
 #ifdef __cplusplus
@@ -51,11 +57,6 @@ extern "C" {
 /** Set this variable to 1 to cause imageio.c functions to print
  * diagnostic information. */
 #define IMAGEIO_DEBUG 0
-
-/* These variables resolve compile-time warning messages recent
- * versions of ImageMagick */
-#define MAGICKCORE_HDRI_ENABLE 0
-#define MAGICKCORE_QUANTUM_DEPTH 16
 
 /** The imageio_info struct is used for both writing and reading files with imageio.c. If you are writing an image, the struct provides information about the array of data that you want to write to disk. If you are reading an image file from disk, it provides information about the dimensions of the image. */
 typedef struct {
