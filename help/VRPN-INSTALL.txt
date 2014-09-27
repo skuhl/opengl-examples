@@ -1,4 +1,5 @@
-VRPN is probably not in any common Linux package managers.
+VRPN is probably not in any common Linux package managers. However, it
+is available in homebrew on OSX.
 
 To install, follow these steps:
 
@@ -10,13 +11,19 @@ cd build
 cmake -DVRPN_GPL_SERVER=1 ..
 make
 
-OPTIONAL: If you have root access to the machine and want to install the library and include files into /usr/local so that cmake can easily find them. run:
+OPTIONAL: If you have root access to the machine and want to install
+the library and include files into /usr/local so that cmake can easily
+find them. run:
+
 cd vrpn/build
 sudo make install
 
-If you do NOT follow the optional step above, you must modify CMakeLists.txt to tell it where your copy of VRPN is.
+If you do NOT follow the optional step above, you must modify
+CMakeLists.txt to tell it where your copy of VRPN is.
 
 ----
 
-The exiting CMakeLists.txt should find VRPN on IVS. If VRPN ever needs to be recompiled on IVS, we found that this command works:
+The exiting CMakeLists.txt should find VRPN on IVS. If VRPN ever needs
+to be recompiled on IVS, we found that this command works:
+
 cmake -DCMAKE_CXX_COMPILER=/usr/bin/g++ -DVRPN_BUILD_PYTHON= -DVRPN_BUILD_PYTHON_HANDCODED_2X= .

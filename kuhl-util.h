@@ -1400,6 +1400,10 @@ void mat4f_scale_new(float  result[16], float  x, float  y, float  z);
 void mat4d_scale_new(double result[16], double x, double y, double z);
 void mat4f_scaleVec_new(float  result[16], const float  xyz[3]);
 void mat4d_scaleVec_new(double result[16], const double xyz[3]);
+void mat3f_scale_new(float  result[9], float x, float y, float z);
+void mat3d_scale_new(double result[9], double x, double y, double z);
+void mat3f_scaleVec_new(float  result[9], const float  xyz[3]);
+void mat3d_scaleVec_new(double result[9], const double xyz[3]);
 
 /* Sets dest to the identity and then copies src into the upper-left
  * corner of dest. */

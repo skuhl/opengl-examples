@@ -1,6 +1,12 @@
-Many of the example programs in this directory use GLEW. The GLEW library is commonly available in many Linux distribution package magagers.
+Many of the example programs in this directory use GLEW. The GLEW
+library is commonly available in many Linux distribution package
+magagers, as well as homebrew for OSX.
 
-If you have root access to your machine, check if packages named glew, glew-dev or glew-devel are available in your Linux distribution's package manager. Install any glew related packages that are available. If you don't have root access or can't find the glew package in your package manager.
+If you have root access to your machine, check if packages named glew,
+glew-dev or glew-devel are available in your Linux distribution's
+package manager. Install any glew related packages that are
+available. If you don't have root access or can't find the glew
+package in your package manager.
 
 Download the source for GLEW: http://glew.sourceforge.net/
 
