@@ -126,7 +126,7 @@ printMessage "Connected to IVS."
 # it as an option in the ssh config file.
 SSH_CMD="ssh -q -t -t -x -S ./.temp-dgr-ssh-socket ${IVS_USER}@${IVS_HOSTNAME}"
 
-
+# Skip the directory deletion so that rsync can just update the files at the destination instead of copying everything over each time.
 #printMessage "Deleting contents of $IVS_TEMP_DIR on IVS..."
 #${SSH_CMD} rm -rf "$IVS_TEMP_DIR"
 printMessage "Creating directory $IVS_TEMP_DIR on IVS..."
