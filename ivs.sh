@@ -120,14 +120,14 @@ printMessage "Connected to IVS."
 # repeatedly to run programs on IVS. 
 SSH_CMD="ssh -q -t -t -x -S ./.temp-dgr-ssh-socket ${IVS_USER}@${IVS_HOSTNAME}"
 
-
-printMessage "Deleting contents of $IVS_TEMP_DIR on IVS..."
-${SSH_CMD} rm -rf "$IVS_TEMP_DIR"
+# Skip the directory deletion so that rsync can just update the files at the destination instead of copying everything over each time.
+#printMessage "Deleting contents of $IVS_TEMP_DIR on IVS..."
+#${SSH_CMD} rm -rf "$IVS_TEMP_DIR"
 printMessage "Creating directory $IVS_TEMP_DIR on IVS..."
 ${SSH_CMD} mkdir -p "$IVS_TEMP_DIR"
 
 printMessage "Copying files to $IVS_TEMP_DIR on IVS..."
-rsync -ah -e ssh --exclude=.svn --exclude=.git --exclude=CMakeCache.txt --exclude=CMakeFiles --checksum --partial --no-whole-file --inplace . ${IVS_USER}@${IVS_HOSTNAME}:${IVS_TEMP_DIR}
+rsync -ah -e ssh --exclude=.svn --exclude=.git --exclude=CMakeCache.txt --exclude=CMakeFiles --checksum --partial --no-whole-file --inplace --delete . ${IVS_USER}@${IVS_HOSTNAME}:${IVS_TEMP_DIR}
 
 printMessage "Running sync on IVS..."
 ${SSH_CMD} sync
