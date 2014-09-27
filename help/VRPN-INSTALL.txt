@@ -1,4 +1,4 @@
-VRPN is probably not in any common Linux package managers.
+VRPN is probably not in any common Linux package managers. However, it is available in homebrew on OSX.
 
 To install, follow these steps:
 
