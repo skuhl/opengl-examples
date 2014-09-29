@@ -2537,6 +2537,11 @@ void kuhl_geometry_init(kuhl_geometry *geom)
  @param geom The geometry to draw to the screen. */
 void kuhl_geometry_draw(kuhl_geometry *geom)
 {
+	/* Figure out what program the user has enabled (we'll restore it
+	 * when we are finished drawing). */
+	GLint previouslyUsedProgram = 0;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &previouslyUsedProgram);
+	
 	kuhl_geometry_sanity_check(geom);
 
 	/* Use the program the user wants us to use. */
@@ -2548,6 +2553,7 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	else
 	{
 		fprintf(stderr, "%s: Not a valid GLSL program: %d\n", __func__, geom->program);
+		glUseProgram(previouslyUsedProgram);
 		return;
 	}
 
@@ -2560,6 +2566,7 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	else
 	{
 		fprintf(stderr, "%s: Not a valid vertex array object: %d\n", __func__, geom->vao);
+		glUseProgram(previouslyUsedProgram);		
 		return;
 	}
 
@@ -2599,8 +2606,8 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	if(glIsTexture(geom->texture))
 		glBindTexture(GL_TEXTURE_2D, 0);
 
-	/* Unbind the GLSL program */
-	glUseProgram(0);
+	/* Restore the GLSL program that was used before this function was called. */
+	glUseProgram(previouslyUsedProgram);
 	
 	/* Unbind the VAO */
 	glBindVertexArray(0);
