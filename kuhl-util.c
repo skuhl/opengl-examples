@@ -2235,6 +2235,13 @@ static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
 		exit(EXIT_FAILURE);
 	}
 
+	/* Check if the program is valid (we don't need to enable it here). */
+	if(!glIsProgram(geom->program))
+	{
+		fprintf(stderr, "%s: The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", __func__, geom->program);
+		exit(EXIT_FAILURE);
+	}
+	
 	if(geom->vertex_count < 1)
 	{
 		fprintf(stderr, "%s: vertex_count must be greater than 0.\n", __func__);
@@ -2445,6 +2452,13 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 	char *name[]       = { geom->attrib_pos_name,       geom->attrib_color_name,       geom->attrib_texcoord_name, geom->attrib_normal_name, geom->attrib_custom_name };
 	GLuint bo[]        = { geom->attrib_pos_bufferobject, geom->attrib_color_bufferobject, geom->attrib_texcoord_bufferobject, geom->attrib_normal_bufferobject, geom->attrib_custom_bufferobject };
 
+	/* Check if the program is valid (we don't need to enable it here). */
+	if(!glIsProgram(geom->program))
+	{
+		fprintf(stderr, "%s: The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", __func__, geom->program);
+		exit(EXIT_FAILURE);
+	}
+	
 	for(int i=0; i<5; i++)
 	{
 		if(data[i] == 0 || components[i] == 0 || name[i] == NULL || strlen(name[i]) == 0)
@@ -2520,9 +2534,6 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 		kuhl_errorcheck();
 	}
 	kuhl_geometry_sanity_check(geom);
-
-	/* Turn off GLSL program */
-	glUseProgram(0);
 
     /* Unbind VAO. In the future, we can bind the vertex array object
      * that we created and to easily recall all of the position,
