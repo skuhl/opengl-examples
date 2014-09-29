@@ -2123,17 +2123,23 @@ GLint kuhl_get_uniform(GLuint program, const char *uniformName)
 {
 	if(uniformName == NULL || strlen(uniformName) == 0)
 	{
-		fprintf(stderr, "kuhl_get_uniform(): You asked for the location of an uniform name, but your name was an empty string or a NULL pointer.\n");
+		fprintf(stderr, "%s: You asked for the location of an uniform name, but your name was an empty string or a NULL pointer.\n", __func__);
+	}
+
+	if(!glIsProgram(program))
+	{
+		fprintf(stderr, "%s: The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", __func__, program);
+		exit(EXIT_FAILURE);
 	}
 	
 	GLint loc = glGetUniformLocation(program, uniformName);
 	kuhl_errorcheck();
 	if(loc == -1 && missingUniformCount < 50)
 	{
-		fprintf(stderr, "kuhl_get_uniform(): Uniform variable '%s' is missing or inactive in your GLSL program.\n", uniformName);
+		fprintf(stderr, "%s: Uniform variable '%s' is missing or inactive in your GLSL program.\n", __func__, uniformName);
 		missingUniformCount++;
 		if(missingUniformCount == 50)
-			fprintf(stderr, "kuhl_get_uniform(): Hiding any additional error messages.\n");
+			fprintf(stderr, "%s: Hiding any additional error messages.\n", __func__);
 	}
 	return loc;
 }
