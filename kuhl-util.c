@@ -331,7 +331,8 @@ int mat4f_invert_new(float out[16], const float m[16])
 	det = m[0]*inv[0] + m[1]*inv[4] + m[2]*inv[8] + m[3]*inv[12];
 	if (det == 0)
 	{
-		printf("mat4f_invert_new(): Failed to invert matrix.\n");
+		printf("%s: Failed to invert the following matrix:\n", __func__);
+		mat4f_print(m);
 		return 0;
 	}
 
@@ -374,7 +375,8 @@ int mat4d_invert_new(double out[16], const double m[16])
 	det = m[0]*inv[0] + m[1]*inv[4] + m[2]*inv[8] + m[3]*inv[12];
 	if (det == 0)
 	{
-		printf("mat4d_invert_new(): Failed to invert matrix.\n");
+		printf("%s: Failed to invert the following matrix:\n", __func__);
+		mat4d_print(m);
 		return 0;
 	}
 
@@ -412,7 +414,8 @@ int mat3f_invert_new(float out[9], const float m[9])
 	            m[6] * (m[1] * m[5] - m[4] * m[2]);
 	if (det == 0)
 	{
-		printf("mat3f_invert_new(): Failed to invert matrix.\n");
+		printf("%s: Failed to invert the following matrix:\n", __func__);
+		mat3f_print(m);
 		return 0;
 	}
 
@@ -450,7 +453,8 @@ int mat3d_invert_new(double out[9], const double m[9])
 	            m[6] * (m[1] * m[5] - m[4] * m[2]);
 	if (det == 0)
 	{
-		printf("mat3d_invert_new(): Failed to invert matrix.\n");
+		printf("%s: Failed to invert the following matrix:\n", __func__);
+		mat3d_print(m);
 		return 0;
 	}
 
