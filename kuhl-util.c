@@ -2132,7 +2132,7 @@ GLint kuhl_get_uniform(GLuint program, const char *uniformName)
 
 	if(!glIsProgram(program))
 	{
-		fprintf(stderr, "%s: The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", __func__, program);
+		fprintf(stderr, "%s: The program you specified (%d) is not a valid GLSL program.\n", __func__, program);
 		exit(EXIT_FAILURE);
 	}
 	
@@ -2166,7 +2166,13 @@ GLint kuhl_get_attribute(GLuint program, const char *attributeName)
 	{
 		fprintf(stderr, "kuhl_get_attribute(): You asked for the location of an attribute name, but your name was an empty string or a NULL pointer.\n");
 	}
-		
+
+	if(!glIsProgram(program))
+	{
+		fprintf(stderr, "%s: The program you specified (%d) is not a valid GLSL program.\n", __func__, program);
+		exit(EXIT_FAILURE);
+	}
+	
 	GLint loc = glGetAttribLocation(program, attributeName);
 	kuhl_errorcheck();
 	if(loc == -1)
@@ -2634,6 +2640,7 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	
 	/* Unbind the VAO */
 	glBindVertexArray(previousVAO);
+	kuhl_errorcheck();
 }
 
 /** Deletes kuhl_geometry struct by freeing the OpenGL buffers that
@@ -2889,6 +2896,7 @@ void kuhl_screenshot(const char *outputImageFilename)
 	// Read pixels from the window
 	glReadPixels(0,0,windowWidth,windowHeight,
 	             GL_RGB,GL_UNSIGNED_BYTE, data);
+	kuhl_errorcheck();
 	// Set up image output settings
 	imageio_info info_out;
 	info_out.width    = windowWidth;
@@ -2940,7 +2948,6 @@ void kuhl_video_record(const char *fileLabel, int fps)
 		printf(" - or -\n");
 		printf("avconv -r %d -f image2 -i %s-%%08d.tif -qscale:v 7 output.ogv\n", fps, fileLabel);
 		printf("In either program, the -qscale:v parameter sets the quality: 0 (lowest) to 10 (highest)\n");
-
 	}
 
 	time_t sec       = tv.tv_sec;
