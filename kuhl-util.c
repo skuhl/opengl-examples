@@ -2558,10 +2558,14 @@ void kuhl_geometry_init(kuhl_geometry *geom)
  @param geom The geometry to draw to the screen. */
 void kuhl_geometry_draw(kuhl_geometry *geom)
 {
-	/* Figure out what program the user has enabled (we'll restore it
-	 * when we are finished drawing). */
+	/* Record the OpenGL state so that we can restore it when we have
+	 * finished drawing. */
 	GLint previouslyUsedProgram = 0;
 	glGetIntegerv(GL_CURRENT_PROGRAM, &previouslyUsedProgram);
+	GLint previouslyBoundTexture = 0;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &previouslyBoundTexture);
+	GLint previousVAO=0;
+	glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &previousVAO);
 	
 	kuhl_geometry_sanity_check(geom);
 
@@ -2574,7 +2578,6 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	else
 	{
 		fprintf(stderr, "%s: Not a valid GLSL program: %d\n", __func__, geom->program);
-		glUseProgram(previouslyUsedProgram);
 		return;
 	}
 
@@ -2624,14 +2627,13 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	}
 
 	/* Unbind texture */
-	if(glIsTexture(geom->texture))
-		glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(GL_TEXTURE_2D, previouslyBoundTexture);
 
 	/* Restore the GLSL program that was used before this function was called. */
 	glUseProgram(previouslyUsedProgram);
 	
 	/* Unbind the VAO */
-	glBindVertexArray(0);
+	glBindVertexArray(previousVAO);
 }
 
 /** Deletes kuhl_geometry struct by freeing the OpenGL buffers that
