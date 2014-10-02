@@ -2603,17 +2603,24 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	/* If the user specified a valid OpenGL texture, use it. */
 	if(glIsTexture(geom->texture))
 	{
-		/* Tell OpenGL that the texture that we refer to in our GLSL
-		 * program is going to be in texture unit 0.
-		 */
-		glUniform1i(kuhl_get_uniform(geom->program, geom->texture_name), 0);
-		kuhl_errorcheck();
-		/* Turn on texture unit 0 */
-		glActiveTexture(GL_TEXTURE0); 
-		kuhl_errorcheck();
-		/* Bind the texture that we want to use while the correct texture unit is enabled. */
-		glBindTexture(GL_TEXTURE_2D, geom->texture); 
-		kuhl_errorcheck();
+		/* Check if the sampler variable is available in the GLSL
+		 * program. If not, don't send the texture. */
+		GLint loc = glGetUniformLocation(geom->program, geom->texture_name);
+		if(loc != -1)
+		{
+			/* Tell OpenGL that the texture that we refer to in our GLSL
+			 * program is going to be in texture unit 0.
+			 */
+			
+			glUniform1i(kuhl_get_uniform(geom->program, geom->texture_name), 0);
+			kuhl_errorcheck();
+			/* Turn on texture unit 0 */
+			glActiveTexture(GL_TEXTURE0); 
+			kuhl_errorcheck();
+			/* Bind the texture that we want to use while the correct texture unit is enabled. */
+			glBindTexture(GL_TEXTURE_2D, geom->texture); 
+			kuhl_errorcheck();
+		}
 	}
 
 	/* If the user provided us with indices, use glDrawElements to draw the geometry. */
@@ -2832,6 +2839,7 @@ float kuhl_make_label(const char *label, GLuint *texName, float color[3], float 
  *
  * @param texName A pointer to where the OpenGL texture name should be stored.
  * (Remember that the "texture name" is really just some unsigned int).
+ *
  * @returns The aspect ratio of the image in the file. Since texture
  * coordinates range from 0 to 1, the caller doesn't really need to
  * know how large the image actually is.
