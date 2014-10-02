@@ -11,8 +11,7 @@
 GLuint program = 0; // id value for the GLSL program
 
 kuhl_geometry triangle;
-GLuint texName1 = 0;
-GLuint texName2 = 0;
+
 
 
 /* Called by GLUT whenever a key is pressed. */
@@ -155,10 +154,11 @@ void init_geometryTriangle(GLuint program)
 
 
 	/* Load the texture. It will be bound to texName */
-	kuhl_read_texture_file("images/blue.png", &texName1);
+	GLuint texName = 0;
+	kuhl_read_texture_file("images/blue.png", &texName);
 
 	/* Tell our kuhl_geometry object about the texture */
-	triangle.texture = texName1;
+	triangle.texture = texName;
 	triangle.texture_name = "tex"; // name in GLSL fragment program
 	kuhl_geometry_init(&triangle);
 
