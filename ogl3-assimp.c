@@ -48,6 +48,14 @@ void keyboard(unsigned char key, int x, int y)
 		case 27: // ASCII code for Escape key
 			exit(0);
 			break;
+		case 'r':
+		{
+			int origProgram = program;
+			program = kuhl_create_program("ogl3-assimp.vert", "ogl3-assimp.frag");
+			kuhl_delete_program(origProgram);
+			break;
+		}
+				
 		case ' ':
 			renderStyle++;
 			if(renderStyle > 6)
