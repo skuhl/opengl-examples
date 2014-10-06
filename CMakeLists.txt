@@ -166,6 +166,12 @@ add_executable(ogl3-triangle ogl3-triangle.c kuhl-util.c dgr.c mousemove.c projm
 target_link_libraries(ogl3-triangle ${COMMON_LIBRARIES} ${GLUT_LIBRARIES})
 set_target_properties(ogl3-triangle PROPERTIES COMPILE_DEFINITIONS "MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
 
+# === ogl3-picker ===
+# Demonstrates how to select an object based on screen coordinates
+add_executable(ogl3-picker ogl3-picker.c kuhl-util.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
+target_link_libraries(ogl3-picker ${COMMON_LIBRARIES} ${GLUT_LIBRARIES})
+set_target_properties(ogl3-picker PROPERTIES COMPILE_DEFINITIONS "MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
+
 # === ogl3-triangle-shade ===
 # Demonstrates how to draw geometry; diffuse shading
 add_executable(ogl3-triangle-shade ogl3-triangle-shade.c kuhl-util.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
