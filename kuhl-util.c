@@ -3725,7 +3725,7 @@ int kuhl_draw_model_file_ogl3(const char *modelFilename, const char *textureDirn
 
 	// If we have already loaded the program but we have been asked to
 	// draw the scene with a different program.
-	if(sceneMap[index].geom[0].program != program)
+	if(index >= 0 && sceneMap[index].geom_count > 0 && sceneMap[index].geom[0].program != program)
 	{
 		printf("%s: Reloading model %s since program switched from %d to %d\n", __func__, modelFilename, sceneMap[index].geom[0].program, program);
 		sceneMapStruct *sm = &(sceneMap[index]);
