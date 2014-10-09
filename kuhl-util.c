@@ -2004,6 +2004,29 @@ void kuhl_print_program_info(GLuint program)
 
 }
 
+/** Detaches shaders from the given GLSL program, deletes the program,
+ * and flags the shaders for deletion.
+ *
+ * @param program The GLSL program to delete
+ */
+void kuhl_delete_program(GLuint program)
+{
+	if(!glIsProgram(program))
+	{
+		printf("%s: Tried to delete a program (%d) that does not exist.", __func__, program);
+		return;
+	}
+
+	GLuint shaders[128];
+	GLsizei count = 0;
+	glGetAttachedShaders(program, 128, &count, shaders);
+	for(int i=0; i<count; i++)
+	{
+		glDetachShader(program, shaders[i]);
+		glDeleteShader(shaders[i]);
+	}
+	glDeleteProgram(program);
+}
 
 /** Creates an OpenGL program from pair of files containing a vertex
  * shader and a fragment shader. This code handles checking for
@@ -2094,20 +2117,6 @@ void kuhl_print_program_log(GLuint program)
 		printf("GLSL program log:\n%s\n", logString);
 }
 
-/** Deletes the given program, and also deletes the shaders
- * which were attached to it.
- *
- * @param program The program to delete.
- */
-void kuhl_delete_program(GLuint program)
-{
-	GLuint shaders[256];
-	int count = 0;
-	glGetAttachedShaders(program, 256, &count, shaders);
-	for(int i=0; i<count; i++)
-		glDeleteShader(shaders[i]);
-	glDeleteProgram(program);
-}
 
 
 static int missingUniformCount = 0; /**< Used by kuhl_get_uniform() */
@@ -2280,7 +2289,7 @@ static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
 	if((geom->attrib_pos_components || glIsBuffer(geom->attrib_pos_bufferobject)) &&
 	   !(geom->attrib_pos_components && glIsBuffer(geom->attrib_pos_bufferobject)))
 	{
-		fprintf(stderr, "%s: Position attribute was not fully set.\n", __func__);
+		fprintf(stderr, "%s: Position attribute was not fully set (components=%d bufferobject=%d).\n", __func__, geom->attrib_pos_components, geom->attrib_pos_bufferobject);
 		exit(EXIT_FAILURE);
 	}
 		
@@ -2603,17 +2612,24 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	/* If the user specified a valid OpenGL texture, use it. */
 	if(glIsTexture(geom->texture))
 	{
-		/* Tell OpenGL that the texture that we refer to in our GLSL
-		 * program is going to be in texture unit 0.
-		 */
-		glUniform1i(kuhl_get_uniform(geom->program, geom->texture_name), 0);
-		kuhl_errorcheck();
-		/* Turn on texture unit 0 */
-		glActiveTexture(GL_TEXTURE0); 
-		kuhl_errorcheck();
-		/* Bind the texture that we want to use while the correct texture unit is enabled. */
-		glBindTexture(GL_TEXTURE_2D, geom->texture); 
-		kuhl_errorcheck();
+		/* Check if the sampler variable is available in the GLSL
+		 * program. If not, don't send the texture. */
+		GLint loc = glGetUniformLocation(geom->program, geom->texture_name);
+		if(loc != -1)
+		{
+			/* Tell OpenGL that the texture that we refer to in our GLSL
+			 * program is going to be in texture unit 0.
+			 */
+			
+			glUniform1i(kuhl_get_uniform(geom->program, geom->texture_name), 0);
+			kuhl_errorcheck();
+			/* Turn on texture unit 0 */
+			glActiveTexture(GL_TEXTURE0); 
+			kuhl_errorcheck();
+			/* Bind the texture that we want to use while the correct texture unit is enabled. */
+			glBindTexture(GL_TEXTURE_2D, geom->texture); 
+			kuhl_errorcheck();
+		}
 	}
 
 	/* If the user provided us with indices, use glDrawElements to draw the geometry. */
@@ -2832,6 +2848,7 @@ float kuhl_make_label(const char *label, GLuint *texName, float color[3], float 
  *
  * @param texName A pointer to where the OpenGL texture name should be stored.
  * (Remember that the "texture name" is really just some unsigned int).
+ *
  * @returns The aspect ratio of the image in the file. Since texture
  * coordinates range from 0 to 1, the caller doesn't really need to
  * know how large the image actually is.
@@ -2944,9 +2961,9 @@ void kuhl_video_record(const char *fileLabel, int fps)
 		kuhl_video_record_prev_usec = tv.tv_usec;
 		printf("%s: Recording %d frames per second\n", __func__, fps);
 		printf("Use either of the following commands to assemble Ogg video (Ogg video files are widely supported and not encumbered by patent restrictions):\n");
-		printf("ffmpeg -r %d -f image2 -i %s-%%08d.tif -qscale:v 7 output.ogv\n", fps, fileLabel);
+		printf("ffmpeg -r %d -f image2 -i %s-%%08d.tif -qscale:v 7 %s.ogv\n", fps, fileLabel, fileLabel);
 		printf(" - or -\n");
-		printf("avconv -r %d -f image2 -i %s-%%08d.tif -qscale:v 7 output.ogv\n", fps, fileLabel);
+		printf("avconv -r %d -f image2 -i %s-%%08d.tif -qscale:v 7 %s.ogv\n", fps, fileLabel, fileLabel);
 		printf("In either program, the -qscale:v parameter sets the quality: 0 (lowest) to 10 (highest)\n");
 	}
 
@@ -3640,7 +3657,7 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		sceneMapStruct *sm = &(sceneMap[sceneMapIndex]);
 		if(sm->geom_count >= sceneMapMaxSize)
 		{
-			printf("The model required too many kuhl_geometry structs.\n");
+			printf("%s: The model required too many kuhl_geometry structs.\n", __func__);
 			exit(EXIT_FAILURE);
 		}
 		sm->geom[sm->geom_count] = geom;
@@ -3705,6 +3722,23 @@ int kuhl_draw_model_file_ogl2(const char *modelFilename, const char *textureDirn
 int kuhl_draw_model_file_ogl3(const char *modelFilename, const char *textureDirname, GLuint program)
 {
 	int index = kuhl_private_modelIndex(modelFilename);
+
+	// If we have already loaded the program but we have been asked to
+	// draw the scene with a different program.
+	if(sceneMap[index].geom[0].program != program)
+	{
+		printf("%s: Reloading model %s since program switched from %d to %d\n", __func__, modelFilename, sceneMap[index].geom[0].program, program);
+		sceneMapStruct *sm = &(sceneMap[index]);
+		// Reset and zero out the kuhl_geometry objects previously used with this model.
+		for(int i=0; i<sm->geom_count; i++)
+		{
+			kuhl_geometry_delete(&(sm->geom[i]));
+			kuhl_geometry_zero(&(sm->geom[i]));
+		}
+		sm->geom_count = 0;
+		index = -1;
+	}
+	
 	if(index < 0) // if we need to load the model
 	{
 		// Load the model if necessary and get its index in our sceneMap.
@@ -3712,7 +3746,7 @@ int kuhl_draw_model_file_ogl3(const char *modelFilename, const char *textureDirn
 		kuhl_private_setup_model_ogl3(sceneMap[index].scene, sceneMap[index].scene->mRootNode, program, index);
 	}
 	
-	if(index >= 0)
+	if(index >= 0) // if the model is already loaded
 	{
 		sceneMapStruct *sm = &(sceneMap[index]);
 		for(int i=0; i < sm->geom_count; i++)
