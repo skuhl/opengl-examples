@@ -3175,16 +3175,16 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 	/* Print warning messages if the model uses features that our code
 	 * doesn't support (even though ASSIMP might support them. */
 	if(scene->mNumCameras > 0)
-		printf("%s: WARNING: This model has %d cameras embedded in it that we are ignoring.\n", modelFilename, scene->mNumCameras);
+		printf("%s: WARNING: This model has %d camera(s) embedded in it that we are ignoring.\n", modelFilename, scene->mNumCameras);
 	if(scene->mNumLights > 0)
-		printf("%s: WARNING: This model has %d lights embedded in it that we are ignoring.\n", modelFilename, scene->mNumLights);
+		printf("%s: WARNING: This model has %d light(s) embedded in it that we are ignoring.\n", modelFilename, scene->mNumLights);
 	if(scene->mNumTextures > 0)
-		printf("%s: WARNING: This model has %d textures embedded in it. This program currently ignores embedded textures.\n", modelFilename, scene->mNumTextures);
+		printf("%s: WARNING: This model has %d texture(s) embedded in it. This program currently ignores embedded textures.\n", modelFilename, scene->mNumTextures);
 
 	/* Note: Animations are removed from the model if we call
 	 * aiImportFile with aiProcess_PreTransformVertices */
 	if(scene->mNumAnimations > 0)
-		printf("%s: WARNING: This model has %d animations embedded in it that we are ignoring.\n", modelFilename, scene->mNumAnimations);
+		printf("%s: WARNING: This model has %d animation(s) embedded in it that we are ignoring.\n", modelFilename, scene->mNumAnimations);
 
 	/* Iterate through the animation information associated with this model */
 	for(unsigned int i=0; i<scene->mNumAnimations; i++)
