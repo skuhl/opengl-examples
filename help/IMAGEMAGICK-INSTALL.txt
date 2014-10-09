@@ -3,9 +3,30 @@ your Linux distribution or homebrew for OSX. Simply search for
 packages that include the word "magick" and install any packages that
 look like they are related to the ImageMagick MagickCore library.
 
-
 On Ubuntu 14.04, try installing the following two packages (and the
 packages that they depend on):
 imagemagick
 libmagickcore-dev
 
+If you need to compile ImageMagick yourself:
+
+1) Download the ImageMagick source file and extract the files
+
+2) cd into the ImageMagick directory.
+
+3) Run "./configure"
+
+4) If configure fails, it will probably complain about one or more
+missing libraries. Install those libraries and try running configure
+again.
+
+5) Run "make"
+
+6a) If you are administrator and want to install the library into
+/usr/local/ on your system, run "sudo make install"
+
+6b) If you aren't administrator and/or don't want to install the
+library onto your system, open CMakeLists.txt. Look for where
+CMAKE_LIBRARY_PATH and CMAKE_INCLUDE_PATH are set in the area of the
+file that involves ImageMagick. You can add additional lines to tell
+cmake where your copy of ImageMagick is installed.
