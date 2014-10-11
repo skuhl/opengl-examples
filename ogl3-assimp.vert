@@ -22,7 +22,7 @@ void main()
 	out_TexCoord = in_TexCoord;
 	out_Color = in_Color;
 
-	// Transform normal from object coordinates to camera coordiantes
+	// Transform normal from object coordinates to camera coordinates
 	out_Normal = normalize(NormalMat * in_Normal);
 
 	// Transform vertex from object to unhomogenized Normalized Device
