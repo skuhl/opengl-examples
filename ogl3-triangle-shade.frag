@@ -2,16 +2,20 @@
  
 out vec4 fragColor;
 
-in vec4 out_Normal;
+in vec4 out_VertexPos; // vertex position (camera coordinates)
+in vec4 out_Normal;    // normal vector   (camera coordinates)
 
 uniform int red;
 
 void main() 
 {
-	vec4 camLook = vec4(0,0,-1,0);
-	float diffuse = dot(camLook, out_Normal);
-	// Light front and back of triangle the same way:
-	diffuse = abs(diffuse);
+	// A vector pointing from the position of the fragment to the
+	// camera (both in camera coordinates).
+	vec3 camLook = normalize(vec3(0,0,0) - out_VertexPos.xyz);
+
+	// Calculate diffuse lighting:
+	float diffuse = dot(camLook, out_Normal.xyz);
+	diffuse = abs(diffuse); // Light front and back the same way:
 
 	// Don't let the diffuse term get too small (otherwise object
 	// would be black!). We do this by making the diffuse term range
