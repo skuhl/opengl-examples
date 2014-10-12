@@ -71,8 +71,8 @@ int imageout(const imageio_info *iio_info, void* array)
 		printf("imageout %s: Dimensions: %lu x %lu\n", iio_info->filename, iio_info->width, iio_info->height);
 	}
 
-//	if(!IsMagickCoreInstantiated())
-		MagickCoreGenesis(NULL, MagickTrue);
+	//if(!IsMagickInstantiated())
+	MagickCoreGenesis(NULL, MagickTrue);
 
 	GetExceptionInfo(&exception);
 	image = ConstituteImage(iio_info->width, iio_info->height, iio_info->map,
@@ -129,11 +129,7 @@ int imageout(const imageio_info *iio_info, void* array)
  * imagein returns, the caller should eventually free() it. */
 void* imagein(imageio_info *iio_info)
 {
-	Image *image = NULL;
-	ImageInfo *image_info = CloneImageInfo((ImageInfo*)NULL);
-	ExceptionInfo exception;
 	int bytes_per_pixel   = strlen(iio_info->map) * imageio_type_to_bytes(iio_info->type);
-	void *array = NULL;
 
 	if(IMAGEIO_DEBUG)
 	{
@@ -143,11 +139,20 @@ void* imagein(imageio_info *iio_info)
 	}
 
 	/* read in the image */
-//	if(!IsMagickCoreInstantiated())
-		MagickCoreGenesis(NULL, MagickTrue);
-	strncpy(image_info->filename, iio_info->filename, MaxTextExtent-1);
+	MagickCoreGenesis(NULL, MagickTrue);
+	ExceptionInfo exception;
 	GetExceptionInfo(&exception);
-	image = ReadImage(image_info, &exception);
+	
+	ImageInfo *image_info = CloneImageInfo((ImageInfo*)NULL);
+	strncpy(image_info->filename, iio_info->filename, MaxTextExtent-1);
+	Image *image = ReadImage(image_info, &exception);
+
+	/* Loading a non-transparent texture after one with an alpha
+	   component seems sometimes causes the non-traparent texture to
+	   incorrectly be transparent. The following code attempts to fix
+	   this. */
+	if(GetImageAlphaChannel(image) == MagickFalse)
+		SetImageOpacity(image, 0);
 	if(image == NULL)
 	{
 		fprintf(stderr, "imagein  %s: ERROR %s\n", iio_info->filename, exception.reason);
@@ -188,7 +193,7 @@ void* imagein(imageio_info *iio_info)
 	}
 
 	/* allocate array to copy data into */
-	array = malloc(bytes_per_pixel*image->columns*image->rows);
+	char *array = malloc(bytes_per_pixel*image->columns*image->rows);
 	if(array == NULL)
 	{
 		printf("imagein  %s: Failed to allocate enough memory.\n", iio_info->filename);
@@ -250,7 +255,7 @@ char* image_label(const char *label, int* width, int* height, float color[3], fl
 {
 	*width=0;
 	*height=0;
-//	if(!IsMagickCoreInstantiated())
+//	if(!IsMagickInstantiated())
 		MagickCoreGenesis(NULL, MagickTrue);
 	ExceptionInfo *exception = AcquireExceptionInfo();
 	MagickPixelPacket background;
