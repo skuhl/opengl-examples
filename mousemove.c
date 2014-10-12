@@ -29,12 +29,6 @@
 
 #define EPSILON 0.0001
 
-/** Internal function to move camera along the look at vector
- * @param amount Amount to translate camera down the lookVec
- * @param lookVec Vector pointing where camera is looking
- */
-void flyInOut(int amount, float* lookVec);
-
 /** Current camera lookat point (the lookat vector is created by subtracting the lookat point from the camera position. */
 static float cam_lookat[3];
 /** Current camera position */
@@ -55,6 +49,21 @@ static int last_x; /**< Last X coordinate of the mouse cursor */
 static int last_y; /**< Last Y coordinate of the mouse cursor */
 static float cam_lookat_down[3]; /**< The lookat vector when the mouse button was last pressed down */
 static float cam_position_down[3]; /**< The camera position when the mouse button was last pressed down */
+
+/** Internal function to move camera along the look at vector
+ * @param amount Amount to translate camera down the lookVec
+ * @param lookVec Vector pointing where camera is looking
+ */
+void mousemove_translate_inout(int dy, const float lookVec[3]){
+	// Move the camera and lookat point along the look vector
+	for(int i=0; i<3; i++)
+	{
+		float offset = lookVec[i] * -dy * settings_trans_scale;
+		cam_position[i] = cam_position_down[i] - offset;
+		cam_lookat[i]   = cam_lookat_down[i]   - offset;
+	}
+}
+
 
 /** Set the speed of rotation and translations when mouse movement is used.
  *
@@ -165,31 +174,14 @@ void mousemove_buttonPress(int down, int leftMidRight, int x, int y)
 			// Calculate a new vector pointing from the camera to the
 			// look at point and normalize it.
 			vec3f_sub_new(lookAt,cam_lookat_down,cam_position_down);
-			switch(cur_button)
-			{
-				case 3: // scrollUp (zoom in)
-					flyInOut(2,lookAt);
-				break;
-				case 4: // scrollDown (zoom out)
-					flyInOut(-2,lookAt);
-				break;
-				default: 
-				break;
-			}
+			if(cur_button == 3) // scroll up (zoom in)
+				mousemove_translate_inout(-2,lookAt);
+			else // cur_button = 4
+				mousemove_translate_inout(2,lookAt);
 		}
 	}
 	else
 		cur_button = -1;
-}
-
-void flyInOut(int dy, float* lookVec){
-	// Move the camera and lookat point along the look vector
-	for(int i=0; i<3; i++)
-	{
-		float offset = lookVec[i] * -dy * settings_trans_scale;
-		cam_position[i] = cam_position_down[i] - offset;
-		cam_lookat[i]   = cam_lookat_down[i]   - offset;
-	}
 }
 
 /** This function should be called whenever a mouse cursor motion
@@ -253,7 +245,7 @@ int mousemove_movement(int x, int y)
 			break;
 
 		case 1: // middle mouse button - translate forward and back
-			flyInOut(dy,f);
+			mousemove_translate_inout(dy, f);
 			break;
 
 		case 2: // right mouse button - rotate
@@ -299,9 +291,14 @@ void mousemove_glutMouseFunc(int button, int state, int x, int y)
 		case GLUT_LEFT_BUTTON:   leftMidRight = 0;  break;
 		case GLUT_MIDDLE_BUTTON: leftMidRight = 1;  break;
 		case GLUT_RIGHT_BUTTON:  leftMidRight = 2;  break;
-		// FreeGLUT doesn't define these, which is weird, but they are scroll buttons.
-		case 3:                  leftMidRight = 3;  break; //up
-		case 4:                  leftMidRight = 4;  break; //down
+			/* FreeGLUT doesn't define these, but they are scroll
+			 * buttons. FreeGLUT also apparently provides a
+			 * glutMouseWheelFunc() callback function, but it isn't
+			 * called on all systems. See
+			 * http://stackoverflow.com/questions/14378
+			 */
+		case 3:  /* up */        leftMidRight = 3;  break;
+		case 4:  /* down */      leftMidRight = 4;  break;
 		default:                 leftMidRight = -1; break;
 	}
 	mousemove_buttonPress(state==GLUT_DOWN, leftMidRight, x, y);
