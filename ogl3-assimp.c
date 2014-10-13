@@ -38,6 +38,9 @@ char *modelTexturePath = NULL;
 int renderStyle = 0;
 
 
+#define GLSL_VERT_FILE "ogl3-assimp.vert"
+#define GLSL_FRAG_FILE "ogl3-assimp.frag"
+
 /* Called by GLUT whenever a key is pressed. */
 void keyboard(unsigned char key, int x, int y)
 {
@@ -51,7 +54,7 @@ void keyboard(unsigned char key, int x, int y)
 		case 'r':
 		{
 			int origProgram = program;
-			program = kuhl_create_program("ogl3-assimp.vert", "ogl3-assimp.frag");
+			program = kuhl_create_program(GLSL_VERT_FILE, GLSL_FRAG_FILE);
 			kuhl_delete_program(origProgram);
 			break;
 		}
@@ -284,7 +287,7 @@ int main(int argc, char** argv)
 
 	/* Compile and link a GLSL program composed of a vertex shader and
 	 * a fragment shader. */
-	program = kuhl_create_program("ogl3-assimp.vert", "ogl3-assimp.frag");
+	program = kuhl_create_program(GLSL_VERT_FILE, GLSL_FRAG_FILE);
 	glUseProgram(program);
 	kuhl_errorcheck();
 	/* Good practice: Unbind objects until we really need them. */
