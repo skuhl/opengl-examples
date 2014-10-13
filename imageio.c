@@ -146,6 +146,11 @@ void* imagein(imageio_info *iio_info)
 	ImageInfo *image_info = CloneImageInfo((ImageInfo*)NULL);
 	strncpy(image_info->filename, iio_info->filename, MaxTextExtent-1);
 	Image *image = ReadImage(image_info, &exception);
+	if(image == NULL)
+	{
+		fprintf(stderr, "imagein  %s: ERROR %s\n", iio_info->filename, exception.reason);
+		return NULL;
+	}
 
 	/* Loading a non-transparent texture after one with an alpha
 	   component seems sometimes causes the non-traparent texture to
@@ -153,11 +158,6 @@ void* imagein(imageio_info *iio_info)
 	   this. */
 	if(GetImageAlphaChannel(image) == MagickFalse)
 		SetImageOpacity(image, 0);
-	if(image == NULL)
-	{
-		fprintf(stderr, "imagein  %s: ERROR %s\n", iio_info->filename, exception.reason);
-		return NULL;
-	}
 
 	/* Since ImageMagick 6.7.5-5 (circa 2012), RGB files without a
 	  defined colorspace will be marked as being sRGB under the
