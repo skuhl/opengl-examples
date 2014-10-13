@@ -9,3 +9,4 @@ rm -vrf doxygen-docs
 rm -vf CMakeCache.txt
 rm -vf Makefile
 rm -vf *~
+rm -vf \#*\#
