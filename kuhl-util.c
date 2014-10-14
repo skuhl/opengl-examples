@@ -3811,6 +3811,13 @@ int kuhl_model_bounding_box(const char *modelFilename, float min[3], float max[3
  */
 GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture)
 {
+	GLint origBoundTexture;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &origBoundTexture);
+	GLint origBoundFrameBuffer;
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &origBoundFrameBuffer);
+	GLint origBoundRenderBuffer;
+	glGetIntegerv(GL_RENDERBUFFER_BINDING, &origBoundRenderBuffer);
+	
 	// set up texture
 	glGenTextures(1, texture);
 	glBindTexture(GL_TEXTURE_2D, *texture);
@@ -3850,7 +3857,11 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture)
 		exit(1);
 	}
 	kuhl_errorcheck();
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// Restore binding
+	glBindTexture(GL_TEXTURE_2D, origBoundTexture);
+	glBindFramebuffer(GL_FRAMEBUFFER, origBoundFrameBuffer);
+	glBindRenderbuffer(GL_FRAMEBUFFER, origBoundRenderBuffer);
 	return framebuffer;
 }
 
