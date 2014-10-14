@@ -2134,6 +2134,7 @@ static int missingUniformCount = 0; /**< Used by kuhl_get_uniform() */
  */
 GLint kuhl_get_uniform(GLuint program, const char *uniformName)
 {
+	kuhl_errorcheck();
 	if(uniformName == NULL || strlen(uniformName) == 0)
 	{
 		fprintf(stderr, "%s: You asked for the location of an uniform name, but your name was an empty string or a NULL pointer.\n", __func__);
@@ -2144,7 +2145,7 @@ GLint kuhl_get_uniform(GLuint program, const char *uniformName)
 		fprintf(stderr, "%s: The program you specified (%d) is not a valid GLSL program.\n", __func__, program);
 		exit(EXIT_FAILURE);
 	}
-	
+
 	GLint loc = glGetUniformLocation(program, uniformName);
 	kuhl_errorcheck();
 	if(loc == -1 && missingUniformCount < 50)
@@ -3762,7 +3763,6 @@ int kuhl_draw_model_file_ogl3(const char *modelFilename, const char *textureDirn
 	// aiDetachAllLogStreams();
 }
 
-
 /** Returns the bounding box for a model file.
  *
  * @param modelFilename The 3D model file that you want the bounding box for.
@@ -3795,6 +3795,65 @@ int kuhl_model_bounding_box(const char *modelFilename, float min[3], float max[3
 	return 1;
 }
 #endif // KUHL_UTIL_USE_ASSIMP
+
+/* Creates a new framebuffer object (with a depth buffer) that we can
+ * render to and therefore render directly to a texture.
+ *
+ * @param width The width of the framebuffer to create
+ *
+ * @param height The height of the framebuffer to create
+ *
+ * @param texture To be filled with a texture ID which the framebuffer
+ * will be connected to.
+ *
+ * @return Returns a framebuffer id that can be enabled with
+ * glBindFramebuffer().
+ */
+GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture)
+{
+	// set up texture
+	glGenTextures(1, texture);
+	glBindTexture(GL_TEXTURE_2D, *texture);
+	glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, width, height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	// set up frame buffer object (FBO)
+	GLuint framebuffer = 0;
+	glGenFramebuffers(1, &framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+	// setup depth buffer
+	GLuint depthbuffer = 0;
+	glGenRenderbuffers(1, &depthbuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+
+	// Connect FBO to depth buffer
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+	                          GL_DEPTH_ATTACHMENT,
+	                          GL_RENDERBUFFER,
+	                          depthbuffer);
+
+	// Connect FBO to texture
+	glFramebufferTexture2D(GL_FRAMEBUFFER,
+	                       GL_COLOR_ATTACHMENT0,
+	                       GL_TEXTURE_2D,
+	                       *texture,      // texture id
+	                       0);            // mipmap level
+
+	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		printf("%s: Unable to set up framebuffer\n", __func__);
+		exit(1);
+	}
+	kuhl_errorcheck();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	return framebuffer;
+}
+
 
 
 /** The time at which kuhl_limitfps() was last called. */
