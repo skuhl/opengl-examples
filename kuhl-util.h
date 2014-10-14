@@ -1435,8 +1435,7 @@ GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename)
 void kuhl_delete_program(GLuint program);
 void kuhl_print_program_log(GLuint program);
 void kuhl_print_program_info(GLuint program);
-	
-GLint kuhl_get_uniform(GLuint program, const char *uniformName);
+GLint kuhl_get_uniform(const char *uniformName);
 
 
 void kuhl_limitfps(int fps);

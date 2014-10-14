@@ -169,7 +169,7 @@ void display()
 		/* Communicate matricies to OpenGL */
 		float perspective[16];
 		mat4f_frustum_new(perspective,f[0], f[1], f[2], f[3], f[4], f[5]);
-		glUniformMatrix4fv(kuhl_get_uniform(program, "Projection"),
+		glUniformMatrix4fv(kuhl_get_uniform("Projection"),
 		                   1, // count
 		                   0, // transpose
 		                   perspective); // value
@@ -180,7 +180,7 @@ void display()
 		float modelview[16];
 		mat4f_mult_mat4f_new(modelview, viewMat, modelMat);
 
-		glUniformMatrix4fv(kuhl_get_uniform(program, "ModelView"),
+		glUniformMatrix4fv(kuhl_get_uniform("ModelView"),
 		                   1, // count
 		                   0, // transpose
 		                   modelview); // value
@@ -189,14 +189,14 @@ void display()
 		mat3f_from_mat4f(normalMat, modelview);
 		mat3f_invert(normalMat);
 		mat3f_transpose(normalMat);
-		glUniformMatrix3fv(kuhl_get_uniform(program, "NormalMat"),
+		glUniformMatrix3fv(kuhl_get_uniform("NormalMat"),
 		                   1, // count
 		                   0, // transpose
 		                   normalMat); // value
 
-		glUniform1i(kuhl_get_uniform(program, "renderStyle"), renderStyle);
+		glUniform1i(kuhl_get_uniform("renderStyle"), renderStyle);
 		// Copy far plane value into vertex program so we can render depth buffer.
-		glUniform1f(kuhl_get_uniform(program, "farPlane"), f[5]);
+		glUniform1f(kuhl_get_uniform("farPlane"), f[5]);
 		
 		kuhl_errorcheck();
 

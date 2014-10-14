@@ -2120,40 +2120,52 @@ void kuhl_print_program_log(GLuint program)
 
 
 static int missingUniformCount = 0; /**< Used by kuhl_get_uniform() */
-/** glGetUniformLocation() with error checking. This function behaves
- * the same as glGetUniformLocation() except that when an error
- * occurs, it prints an error message if the uniform variable doesn't
- * exist (or is inactive) in the GLSL program. glGetUniformLocation()
- * only returns -1 when the uniform variable is not found.
- *
- * @param program The OpenGL shader program containing the uniform variable.
+/** Provides functionality similar to glGetUniformLocation() with
+ * error checking. However, unlike glGetUniformLocation(), this
+ * function gets the location of the variable from the active OpenGL
+ * program instead of a specified one. If a problem occurs, an
+ * appropriate error message is printed to the standard error. This
+ * function may exit or return -1 if the uniform location is not
+ * found.
  *
  * @param uniformName The name of the uniform variable.
  *
  * @return The location of the uniform variable.
  */
-GLint kuhl_get_uniform(GLuint program, const char *uniformName)
+GLint kuhl_get_uniform(const char *uniformName)
 {
 	kuhl_errorcheck();
 	if(uniformName == NULL || strlen(uniformName) == 0)
 	{
 		fprintf(stderr, "%s: You asked for the location of an uniform name, but your name was an empty string or a NULL pointer.\n", __func__);
+		return -1;
 	}
 
-	if(!glIsProgram(program))
+	GLint currentProgram = 0;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
+	if(currentProgram == 0)
 	{
-		fprintf(stderr, "%s: The program you specified (%d) is not a valid GLSL program.\n", __func__, program);
-		exit(EXIT_FAILURE);
+		fprintf(stderr, "%s: Can't get the uniform location of %s because no GLSL program is currently being used.\n", __func__, uniformName);
+		return -1;
+	}
+	
+	if(!glIsProgram(currentProgram))
+	{
+		fprintf(stderr, "%s: The current active program (%d) is not a valid GLSL program.\n", __func__, currentProgram);
+		return -1;
 	}
 
-	GLint loc = glGetUniformLocation(program, uniformName);
+	GLint loc = glGetUniformLocation(currentProgram, uniformName);
 	kuhl_errorcheck();
 	if(loc == -1 && missingUniformCount < 50)
 	{
 		fprintf(stderr, "%s: Uniform variable '%s' is missing or inactive in your GLSL program.\n", __func__, uniformName);
 		missingUniformCount++;
 		if(missingUniformCount == 50)
+		{
 			fprintf(stderr, "%s: Hiding any additional error messages.\n", __func__);
+			fprintf(stderr, "%s: Remember that the GLSL variables that do not affect the appearance of your program will be set to inactive by the GLSL compiler\n", __func__);
+		}
 	}
 	return loc;
 }
@@ -2574,6 +2586,8 @@ void kuhl_geometry_init(kuhl_geometry *geom)
  @param geom The geometry to draw to the screen. */
 void kuhl_geometry_draw(kuhl_geometry *geom)
 {
+	kuhl_errorcheck();
+	
 	/* Record the OpenGL state so that we can restore it when we have
 	 * finished drawing. */
 	GLint previouslyUsedProgram = 0;
@@ -2622,7 +2636,7 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 			 * program is going to be in texture unit 0.
 			 */
 			
-			glUniform1i(kuhl_get_uniform(geom->program, geom->texture_name), 0);
+			glUniform1i(kuhl_get_uniform(geom->texture_name), 0);
 			kuhl_errorcheck();
 			/* Turn on texture unit 0 */
 			glActiveTexture(GL_TEXTURE0); 
@@ -3861,7 +3875,8 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture)
 	// Restore binding
 	glBindTexture(GL_TEXTURE_2D, origBoundTexture);
 	glBindFramebuffer(GL_FRAMEBUFFER, origBoundFrameBuffer);
-	glBindRenderbuffer(GL_FRAMEBUFFER, origBoundRenderBuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, origBoundRenderBuffer);
+	kuhl_errorcheck();
 	return framebuffer;
 }
 

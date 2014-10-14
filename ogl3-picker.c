@@ -101,12 +101,12 @@ void display()
 		glUseProgram(program);
 		kuhl_errorcheck();
 		/* Send the perspective projection matrix to the vertex program. */
-		glUniformMatrix4fv(kuhl_get_uniform(program, "Projection"),
+		glUniformMatrix4fv(kuhl_get_uniform("Projection"),
 		                   1, // number of 4x4 float matrices
 		                   0, // transpose
 		                   perspective); // value
 		/* Send the modelview matrix to the vertex program. */
-		glUniformMatrix4fv(kuhl_get_uniform(program, "ModelView"),
+		glUniformMatrix4fv(kuhl_get_uniform("ModelView"),
 		                   1, // number of 4x4 float matrices
 		                   0, // transpose
 		                   modelview); // value
@@ -131,9 +131,9 @@ void display()
 			 * use any matrices. */
 			float identity[16];
 			mat4f_identity(identity);
-			glUniformMatrix4fv(kuhl_get_uniform(program, "Projection"),
+			glUniformMatrix4fv(kuhl_get_uniform("Projection"),
 			                   1, 0, identity);
-			glUniformMatrix4fv(kuhl_get_uniform(program, "ModelView"),
+			glUniformMatrix4fv(kuhl_get_uniform("ModelView"),
 			                   1, 0, identity);
 
 			/* Disable depth testing so the cursor isn't occluded by
@@ -299,7 +299,7 @@ int main(int argc, char** argv)
 	glUseProgram(program);
 	kuhl_errorcheck();
 	/* Set the uniform variable in the shader that is named "red" to the value 1. */
-	glUniform1i(kuhl_get_uniform(program, "red"), 1);
+	glUniform1i(kuhl_get_uniform("red"), 1);
 	kuhl_errorcheck();
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);
