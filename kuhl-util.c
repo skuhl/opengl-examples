@@ -2935,6 +2935,7 @@ void kuhl_screenshot(const char *outputImageFilename)
 	info_out.height   = windowHeight;
 	info_out.depth    = 8; // bits/color in output image
 	info_out.quality  = 85;
+	info_out.colorspace = sRGBColorspace;
 	info_out.filename = strdup(outputImageFilename);
 	info_out.comment  = NULL;
 	info_out.type     = CharPixel;
