@@ -16,29 +16,31 @@ void main()
 	if(renderStyle == 0)
 	{
 		/* Color value from the texture */
-		fragColor.xyz = vec3(texture(tex, out_TexCoord));
+		fragColor = texture(tex, out_TexCoord);
 	}
 	else if(renderStyle == 1)
 	{
 		/* Color value embedded in the file */
 		fragColor.xyz = out_Color;
+		fragColor.a = 1;
 	}
 	else if(renderStyle == 2)
 	{
 		/* Normal coloring: Each component in the normals ranges from -1 to 1. Make them range from 0 to 1. */
 		fragColor.xyz = (out_Normal + 1)/2;
+		fragColor.a = 1;
 	}
 	else if(renderStyle == 3)
 	{
 		/* Color based on texture coordinates */
-		fragColor.xyz = vec3(out_TexCoord, 0);
+		fragColor = vec4(out_TexCoord, 0, 1);
 	}
 	else if(renderStyle == 4)
 	{
 		if(gl_FrontFacing) // based on triangle winding
-			fragColor.xyz = vec3(0,.3,0); // green are front faces
+			fragColor = vec4(0,.3,0,1); // green are front faces
 		else
-			fragColor.xyz = vec3(.3,0,0); // red are back faces
+			fragColor = vec4(.3,0,0,1); // red are back faces
 	}
 	else if(renderStyle == 5)
 	{
@@ -51,13 +53,14 @@ void main()
 		 * degrees---telling us that they are pointing in "opposite"
 		 * directions. */
 		if(dot(out_Normal, out_EyeCoord) < 0)
-			fragColor.xyz = vec3(0,.3,0); // green are front faces
+			fragColor = vec4(0,.3,0,1); // green are front faces
 		else
-			fragColor.xyz = vec3(.3,0,0); // red are back faces
+			fragColor = vec4(.3,0,0,1); // red are back faces
 	}
 	
 	else if(renderStyle == 6)
 	{
-		fragColor.xyz = vec3(out_Depth, out_Depth, out_Depth);
+		fragColor = vec4(out_Depth, out_Depth, out_Depth, 1);
 	}
+
 }
