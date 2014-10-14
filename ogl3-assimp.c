@@ -288,10 +288,6 @@ int main(int argc, char** argv)
 	/* Compile and link a GLSL program composed of a vertex shader and
 	 * a fragment shader. */
 	program = kuhl_create_program(GLSL_VERT_FILE, GLSL_FRAG_FILE);
-	glUseProgram(program);
-	kuhl_errorcheck();
-	/* Good practice: Unbind objects until we really need them. */
-	glUseProgram(0);
 
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
