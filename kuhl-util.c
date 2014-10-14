@@ -3146,7 +3146,8 @@ static void kuhl_private_calc_bbox(const struct aiNode* nd, struct aiMatrix4x4* 
  * stored in. If textureDirname is NULL, we assume that the textures
  * are in the same directory as the model file.
  * 
- * @return Returns the index in the sceneMap array of this model.
+ * @return Returns the index in the sceneMap array of this
+ * model. Prints a message and exits if the model could not be loaded.
  */
 static int kuhl_private_load_model(const char *modelFilename, const char *textureDirname)
 {
@@ -3185,7 +3186,7 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 	if(scene == NULL)
 	{
 		printf("%s: ASSIMP was unable to import the model file.\n", modelFilename);
-		return -1;
+		exit(EXIT_FAILURE);
 	}
 
 	/* Print warning messages if the model uses features that our code
