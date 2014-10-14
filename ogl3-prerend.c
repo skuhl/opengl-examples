@@ -114,29 +114,36 @@ void display()
 		 * framebuffer object for subsequent draw commands). */
 		if(prerenderFrameBuffer == 0)
 		{
-			int windowWidth  = glutGet(GLUT_WINDOW_WIDTH);
-			int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
-			prerenderFrameBuffer = kuhl_gen_framebuffer(windowWidth, windowHeight, &prerenderTexID);
+			prerenderFrameBuffer = kuhl_gen_framebuffer(viewport[2], viewport[3],
+			                                            &prerenderTexID);
 		}
+		/* Switch to framebuffer and set the OpenGL viewport to cover
+		 * the entire framebuffer. */
 		glBindFramebuffer(GL_FRAMEBUFFER, prerenderFrameBuffer);
+		glViewport(0,0,viewport[2], viewport[3]);
 		kuhl_errorcheck();
 
+		/* Clear the framebuffer and the depth buffer. */
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		/* Draw the geometry using the matrices that we sent to the
 		 * vertex programs immediately above */
 		kuhl_geometry_draw(&triangle);
 		kuhl_geometry_draw(&quad);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0); // disable render to texture
-		glUseProgram(0); // stop using a GLSL program.
+		/* Stop rendering to texture */
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glUseProgram(0);
 		kuhl_errorcheck();
 
+		/* Set up the viewport to draw on the screen */
+		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+		/* Apply the texture to our geometry and draw the quad. */
+		prerendQuad.texture = prerenderTexID;
+		prerendQuad.texture_name = "tex";
+		kuhl_geometry_draw(&prerendQuad);
+		
 	} // finish viewport loop
 
-	prerendQuad.texture = prerenderTexID;
-	prerendQuad.texture_name = "tex";
-	kuhl_geometry_draw(&prerendQuad);
-	
 	/* Check for errors. If there are errors, consider adding more
 	 * calls to kuhl_errorcheck() in your code. */
 	kuhl_errorcheck();
