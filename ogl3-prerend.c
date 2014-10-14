@@ -269,7 +269,7 @@ int main(int argc, char** argv)
 	init_geometryTriangle(program);
 	init_geometryQuad(program);
 
-	prerendProgram = kuhl_create_program("prerend.vert", "prerend.frag");
+	prerendProgram = kuhl_create_program("ogl3-prerend.vert", "ogl3-prerend.frag");
 	init_geometryQuadPrerender(prerendProgram);	
 	glActiveTexture(GL_TEXTURE0);
 	glGenTextures(1, &prerenderTexName);
