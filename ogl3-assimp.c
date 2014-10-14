@@ -146,6 +146,13 @@ void display()
 	glEnable(GL_DEPTH_TEST); // turn on depth testing
 	kuhl_errorcheck();
 
+	/* Turn on blending (note, if you are using transparent textures,
+	   the transparency may not look correct unless you draw further
+	   items before closer items.). */
+	glEnable(GL_BLEND);
+	glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+	
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will
 	 * run twice for HMDs (once for the left eye and once for the

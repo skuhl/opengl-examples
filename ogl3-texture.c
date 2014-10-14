@@ -48,7 +48,7 @@ void display()
 	kuhl_errorcheck();
 
 	/* Turn on blending (note, if you are using transparent textures,
-	   the transparency may not look correctly unless you draw further
+	   the transparency may not look correct unless you draw further
 	   items before closer items. This program always draws the
 	   geometry in the same order.). */
 	glEnable(GL_BLEND);
