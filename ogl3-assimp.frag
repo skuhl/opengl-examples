@@ -2,7 +2,7 @@
 
 out vec4 fragColor;
 in vec2 out_TexCoord;
-in vec3 out_Normal;
+in vec3 out_Normal;   // normal vector in eye coordinates
 in vec3 out_Color;
 in float out_Depth;   // Depth of fragment (range 0 through 1)
 in vec3 out_EyeCoord; // position of fragment in eye coordinates
@@ -26,7 +26,7 @@ void main()
 	else if(renderStyle == 2)
 	{
 		/* Normal coloring: Each component in the normals ranges from -1 to 1. Make them range from 0 to 1. */
-		fragColor.xyz = (out_Normal + vec3(1,1,1))/2;
+		fragColor.xyz = (out_Normal + 1)/2;
 	}
 	else if(renderStyle == 3)
 	{
@@ -60,10 +60,4 @@ void main()
 	{
 		fragColor.xyz = vec3(out_Depth, out_Depth, out_Depth);
 	}
-		
-
-	// Change this depending on how you want the image to be rendered.
-//	fragColor.xyz = out_Barycentric;
-	
-	
 }
