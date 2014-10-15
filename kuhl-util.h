@@ -1040,13 +1040,13 @@ static inline void matNd_mult_matNd_new(double result[  ], const double matA[ ],
 	}
 	matNd_copy(result, tempMatrix, n);
 }
-static inline void mat3f_mult_mat3f_new(float  result[3], const float  matA[ 9], const float  matB[9])
+static inline void mat3f_mult_mat3f_new(float  result[9], const float  matA[ 9], const float  matB[9])
 { matNf_mult_matNf_new(result, matA, matB, 3); }
-static inline void mat3d_mult_mat3d_new(double result[3], const double matA[ 9], const double matB[9])
+static inline void mat3d_mult_mat3d_new(double result[9], const double matA[ 9], const double matB[9])
 { matNd_mult_matNd_new(result, matA, matB, 3); }
-static inline void mat4f_mult_mat4f_new(float  result[4], const float  matA[16], const float  matB[16])
+static inline void mat4f_mult_mat4f_new(float  result[16], const float  matA[16], const float  matB[16])
 { matNf_mult_matNf_new(result, matA, matB, 4); }
-static inline void mat4d_mult_mat4d_new(double result[4], const double matA[16], const double matB[16])
+static inline void mat4d_mult_mat4d_new(double result[16], const double matA[16], const double matB[16])
 { matNd_mult_matNd_new(result, matA, matB, 4); }
 
 
