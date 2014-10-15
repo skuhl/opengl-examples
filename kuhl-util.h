@@ -1472,7 +1472,7 @@ int kuhl_draw_model_file_ogl3(const char *modelFilename, const char *textureDirn
 int kuhl_model_bounding_box(const char *modelFilename, float min[3], float max[3], float center[3]);
 #endif // end use assimp
 
-GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture);
+GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depthTexture);
 void kuhl_play_sound(const char *filename);
 
 #ifdef __cplusplus

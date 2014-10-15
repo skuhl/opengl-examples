@@ -3819,13 +3819,18 @@ int kuhl_model_bounding_box(const char *modelFilename, float min[3], float max[3
  *
  * @param height The height of the framebuffer to create
  *
- * @param texture To be filled with a texture ID which the framebuffer
- * will be connected to.
+ * @param texture To be filled with a texture ID which the color 
+ * buffer of the framebuffer will be connected to. Use NULL if you
+ * you do not want the colorbuffer connected to a texture.
+ *
+ * @param depthTexture To be filled with a texture ID which the
+ * depth buffer values of the framebuffer will be connected to. Use
+ * NULL if you do not want the depthbuffer connected to a texture.
  *
  * @return Returns a framebuffer id that can be enabled with
  * glBindFramebuffer().
  */
-GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture)
+GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depthTexture)
 {
 	GLint origBoundTexture;
 	glGetIntegerv(GL_TEXTURE_BINDING_2D, &origBoundTexture);
@@ -3835,13 +3840,26 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture)
 	glGetIntegerv(GL_RENDERBUFFER_BINDING, &origBoundRenderBuffer);
 	
 	// set up texture
-	glGenTextures(1, texture);
-	glBindTexture(GL_TEXTURE_2D, *texture);
-	glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, width, height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	if(texture != NULL)
+	{
+		glGenTextures(1, texture);
+		glBindTexture(GL_TEXTURE_2D, *texture);
+		glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, width, height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
+	if(depthTexture != NULL)
+	{
+		glGenTextures(1, depthTexture);
+		glBindTexture(GL_TEXTURE_2D, *depthTexture);
+		glTexImage2D(GL_TEXTURE_2D, 0,GL_DEPTH_COMPONENT, width, height, 0,GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
 
 	// set up frame buffer object (FBO)
 	GLuint framebuffer = 0;
@@ -3860,12 +3878,26 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture)
 	                          GL_RENDERBUFFER,
 	                          depthbuffer);
 
-	// Connect FBO to texture
-	glFramebufferTexture2D(GL_FRAMEBUFFER,
-	                       GL_COLOR_ATTACHMENT0,
-	                       GL_TEXTURE_2D,
-	                       *texture,      // texture id
-	                       0);            // mipmap level
+	if(texture != NULL)
+	{
+		// Connect FBO to texture
+		glFramebufferTexture2D(GL_FRAMEBUFFER,
+		                       GL_COLOR_ATTACHMENT0,
+		                       GL_TEXTURE_2D,
+		                       *texture,      // texture id
+		                       0);            // mipmap level
+	}
+	kuhl_errorcheck();
+
+	if(depthTexture != NULL)
+	{
+		glFramebufferTexture2D(GL_FRAMEBUFFER,
+		                       GL_DEPTH_ATTACHMENT,
+		                       GL_TEXTURE_2D,
+		                       *depthTexture,      // texture id
+		                       0);            // mipmap level
+	}
+	kuhl_errorcheck();
 
 	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
