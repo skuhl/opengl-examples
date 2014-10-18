@@ -3135,6 +3135,113 @@ static void kuhl_private_calc_bbox(const struct aiNode* nd, struct aiMatrix4x4* 
 }
 
 
+/** Used by kuhl_print_aiScene_info() to print out information about
+ * all of the nodes in the scene.
+ *
+ * @param modelFilename The filename of the model (only used to print filename out)
+ * @param node An ASSIMP scene object to print information out about.
+ * @return Number of nodes underneath and including node.
+ */
+static int kuhl_print_aiNode_info(const char *modelFilename, const struct aiNode *node)
+{
+	/* Repeatedly follow parent pointer up to root node, save a string
+	 * to indicate the path to this node from the root that we can
+	 * print out. */
+	char name[2048];
+	strncpy(name, node->mName.data, 2048);
+	name[2048-1]='\0'; // make sure name is null terminated
+	struct aiNode *parent = node->mParent;
+	while(parent != NULL)
+	{
+		char tmp[2048];
+		snprintf(tmp, 2048, "%s->%s", parent->mName.data, name);
+		strcpy(name, tmp);
+		parent = parent->mParent;
+	}
+
+	printf("%s: Node \"%s\": meshes=%u children=%u\n", modelFilename, name, node->mNumMeshes, node->mNumChildren);
+
+	int returnVal = 1; // count this node
+	
+	for(unsigned int i=0; i<node->mNumChildren; i++)
+		returnVal += kuhl_print_aiNode_info(modelFilename, node->mChildren[i]);
+	
+	return returnVal;
+}
+
+/** Prints out useful debugging information about an aiScene
+ * object. It goes through the array of aiMesh objects and the array
+ * of aiAnimation objects stored in the aiScene. It also calls
+ * kuhl_print_aiNode_info() to recursively traverse all of the nodes
+ * in the scene.
+ *
+ * @param modelFilename The filename of the model (only used to print filename out)
+ * @param scene An ASSIMP scene object to print information out about.
+ */
+static void kuhl_print_aiScene_info(const char *modelFilename, const struct aiScene *scene)
+{
+	/* Iterate through the animation information associated with this model */
+	for(unsigned int i=0; i<scene->mNumAnimations; i++)
+	{
+		struct aiAnimation* anim = scene->mAnimations[i];
+		printf("%s: Animation #%u: ===================================\n", modelFilename, i);
+		printf("%s: Animation #%u: name (probably blank): %s\n", modelFilename, i, anim->mName.data);
+		printf("%s: Animation #%u: duration in ticks: %f\n",     modelFilename, i, anim->mDuration);
+		printf("%s: Animation #%u: ticks per second: %f\n",      modelFilename, i, anim->mTicksPerSecond);
+		printf("%s: Animation #%u: number of bone channels: %d\n", modelFilename, i, anim->mNumChannels);
+		printf("%s: Animation #%u: number of mesh channels: %d\n", modelFilename, i, anim->mNumMeshChannels);
+
+		// Bones
+		for(unsigned int j=0; j<anim->mNumChannels; j++)
+		{
+			struct aiNodeAnim* animNode = anim->mChannels[j];
+			printf("%s: Animation #%u: Bone channel #%u: Name of node affected: %s\n", modelFilename, i, j, animNode->mNodeName.data);
+			printf("%s: Animation #%u: Bone channel #%u: Num of position keys: %d\n", modelFilename, i, j, animNode->mNumPositionKeys);
+			printf("%s: Animation #%u: Bone channel #%u: Num of rotation keys: %d\n", modelFilename, i, j, animNode->mNumRotationKeys);
+			printf("%s: Animation #%u: Bone channel #%u: Num of scaling keys: %d\n", modelFilename, i, j, animNode->mNumScalingKeys);
+		}
+
+		// Mesh
+		for(unsigned int j=0; j<anim->mNumMeshChannels; j++)
+		{
+			struct aiMeshAnim* animMesh = anim->mMeshChannels[j];
+			printf("%s: Animation #%u: Mesh channel #%u: Name of mesh affected: %s\n", modelFilename, i, j, animMesh->mName.data);
+			printf("%s: Animation #%u: Mesh channel #%u: Num of keys: %d\n", modelFilename, i, j, animMesh->mNumKeys);
+			for(unsigned int k=0; k<animMesh->mNumKeys; k++)
+			{
+				struct aiMeshKey mkey = animMesh->mKeys[k];
+				printf("%s: Animation #%ud: Mesh channel #%u: Key #%u: Time of this mesh key: %f\n", modelFilename, i, j, k, mkey.mTime);
+				printf("%s: Animation #%ud: Mesh channel #%u: Key #%u: Index into the mAnimMeshes array: %d\n", modelFilename, i, j, k, mkey.mValue);
+			}
+		}
+	}
+
+
+	for(unsigned int i=0; i<scene->mNumMeshes; i++)
+	{
+		struct aiMesh *mesh = scene->mMeshes[i];
+		printf("%s: Mesh #%03u: vertices=%u faces=%u bones=%u normals=%s tangents=%s bitangents=%s texcoords=%s name=\"%s\"\n",
+		       modelFilename, i, 
+		       mesh->mNumVertices,
+		       mesh->mNumFaces,
+		       mesh->mNumBones,
+		       mesh->mNormals != NULL ? "yes" : "no ",
+		       mesh->mTangents != NULL ? "yes" : "no ",
+		       mesh->mBitangents != NULL ? "yes" : "no ",
+		       mesh->mTextureCoords != NULL ? "yes" : "no ",
+		       mesh->mName.data
+			);
+
+		for(unsigned int j=0; j<mesh->mNumBones; j++)
+		{
+			struct aiBone *bone = mesh->mBones[j];
+			printf("%s: Mesh #%u: Bone #%u: Named \"%s\" and affects %u vertices.\n", modelFilename, i, j, bone->mName.data, bone->mNumWeights);
+		}
+	}
+
+	int numNodes = kuhl_print_aiNode_info(modelFilename, scene->mRootNode);
+	printf("%s: Contains %d node(s) & %u mesh(es)\n", modelFilename, numNodes, scene->mNumMeshes);
+}
 
 /** Loads a model (if needed) and returns its index in the sceneMap
  * array. This function also reads texture files that the model refers
@@ -3179,9 +3286,8 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 	 * aiProcessPreset_TargetRealtime_Fast
 	 * aiProcessPreset_TargetRealtime_Quality
 	 * aiProcessPreset_TargetRealtime_MaxQuality
-	 * aiProcess_PreTransformVertices
 	 */ 
-	const struct aiScene* scene = aiImportFile(modelFilenameVarying, aiProcessPreset_TargetRealtime_Quality|aiProcess_PreTransformVertices);
+	const struct aiScene* scene = aiImportFile(modelFilenameVarying, aiProcessPreset_TargetRealtime_Quality);
 	free(modelFilenameVarying);
 	if(scene == NULL)
 	{
@@ -3192,56 +3298,20 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 	/* Print warning messages if the model uses features that our code
 	 * doesn't support (even though ASSIMP might support them. */
 	if(scene->mNumCameras > 0)
-		printf("%s: WARNING: This model has %d camera(s) embedded in it that we are ignoring.\n", modelFilename, scene->mNumCameras);
+		printf("%s: WARNING: This model has %u camera(s) embedded in it that we are ignoring.\n", modelFilename, scene->mNumCameras);
 	if(scene->mNumLights > 0)
-		printf("%s: WARNING: This model has %d light(s) embedded in it that we are ignoring.\n", modelFilename, scene->mNumLights);
+		printf("%s: WARNING: This model has %u light(s) embedded in it that we are ignoring.\n", modelFilename, scene->mNumLights);
 	if(scene->mNumTextures > 0)
-		printf("%s: WARNING: This model has %d texture(s) embedded in it. This program currently ignores embedded textures.\n", modelFilename, scene->mNumTextures);
+		printf("%s: WARNING: This model has %u texture(s) embedded in it. This program currently ignores embedded textures.\n", modelFilename, scene->mNumTextures);
 
 	/* Note: Animations are removed from the model if we call
 	 * aiImportFile with aiProcess_PreTransformVertices */
 	if(scene->mNumAnimations > 0)
-		printf("%s: WARNING: This model has %d animation(s) embedded in it that we are ignoring.\n", modelFilename, scene->mNumAnimations);
+		printf("%s: WARNING: This model has %u animation(s) embedded in it that we are ignoring.\n", modelFilename, scene->mNumAnimations);
 
-	/* Iterate through the animation information associated with this model */
-	for(unsigned int i=0; i<scene->mNumAnimations; i++)
-	{
-		struct aiAnimation* anim = scene->mAnimations[i];
-		printf("%s: Animation #%u: ===================================\n", modelFilename, i);
-		printf("%s: Animation #%u: name (probably blank): %s\n", modelFilename, i, anim->mName.data);
-		printf("%s: Animation #%u: duration in ticks: %f\n",     modelFilename, i, anim->mDuration);
-		printf("%s: Animation #%u: ticks per second: %f\n",      modelFilename, i, anim->mTicksPerSecond);
-		printf("%s: Animation #%u: number of bone channels: %d\n", modelFilename, i, anim->mNumChannels);
-		printf("%s: Animation #%u: number of mesh channels: %d\n", modelFilename, i, anim->mNumMeshChannels);
+	// Uncomment this line to print additional information about the model:
+	// kuhl_print_aiScene_info(modelFilename, scene);
 
-		// Bones
-		for(unsigned int j=0; j<anim->mNumChannels; j++)
-		{
-			struct aiNodeAnim* animNode = anim->mChannels[j];
-			printf("%s: Animation #%u: Bone channel #%u: -----------------------------------\n", modelFilename, i, j);
-			printf("%s: Animation #%u: Bone channel #%u: Name of node affected: %s\n", modelFilename, i, j, animNode->mNodeName.data);
-			printf("%s: Animation #%u: Bone channel #%u: Num of position keys: %d\n", modelFilename, i, j, animNode->mNumPositionKeys);
-			printf("%s: Animation #%u: Bone channel #%u: Num of rotation keys: %d\n", modelFilename, i, j, animNode->mNumRotationKeys);
-			printf("%s: Animation #%u: Bone channel #%u: Num of scaling keys: %d\n", modelFilename, i, j, animNode->mNumScalingKeys);
-		}
-
-		// Mesh
-		for(unsigned int j=0; j<anim->mNumMeshChannels; j++)
-		{
-			printf("%s: Animation #%u: Mesh channel #%u: -----------------------------------", modelFilename, i, j);
-			struct aiMeshAnim* animMesh = anim->mMeshChannels[j];
-			printf("%s: Animation #%u: Mesh channel #%u: Name of node affected: %s\n", modelFilename, i, j, animMesh->mName.data);
-			printf("%s: Animation #%u: Mesh channel #%u: Num of keys: %d\n", modelFilename, i, j, animMesh->mNumKeys);
-			for(unsigned int k=0; k<animMesh->mNumKeys; k++)
-			{
-				struct aiMeshKey mkey = animMesh->mKeys[k];
-				printf("%s: Animation #%ud: Mesh channel #%u: Key #%u: Time of this mesh key: %f\n", modelFilename, i, j, k, mkey.mTime);
-				printf("%s: Animation #%ud: Mesh channel #%u: Key #%u: Index into the mAnimMeshes array: %d\n", modelFilename, i, j, k, mkey.mValue);
-			}
-		}
-	}
-
-	
 	/* For safety, zero out our texture ID map if it is supposed to be empty right now. */
 	if(textureIdMapSize == 0)
 	{
@@ -3292,8 +3362,7 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 			strncat(fullpath, "/", 1024-strlen(fullpath)); // make sure there is a slash between the directory and the texture's filename
 			strncat(fullpath, path.data, 1024-strlen(fullpath));
 
-			printf("%s: Model refers to a texture: %s\n", modelFilename, path.data);
-			printf("%s: Looking for texture file: %s\n", modelFilename, fullpath);
+			printf("%s: Model refers \"%s\" and we expect to be at \"%s\"\n", modelFilename, path.data, fullpath);
 			kuhl_read_texture_file(fullpath, &texIndex);
 
 			/* Store the texture information in our list structure so
@@ -3520,20 +3589,30 @@ static void kuhl_private_recrend_ogl2(const struct aiScene *sc, const struct aiN
  * @param nd The current node that we are rendering.
  */
 
-static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct aiNode* nd, GLuint program, int sceneMapIndex)
+static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct aiNode* nd, GLuint program, int sceneMapIndex, float currentTransform[16])
 {
-	// TODO: We actually aren't using the transform matrix! We should
-	// do this if we don't use the aiProcess_PreTransformVertices as a
-	// post-process during ASSIMP model loading..
-#if 0
+	/* Each node in the scene has a transform matrix that should
+	 * affect all of the nodes under it. The currentTransform matrix
+	 * is the current matrix based on any nodes above the one that we
+	 * are currently processing. Here, we update the currentTransform
+	 * to include the matrix in the node we are currently on. */
+
+	/* Save our current transform so we can reapply it when we are
+	 * finished processing this node */
+	float origTransform[16];
+	mat4f_copy(origTransform, currentTransform);
+	
+	/* Get this nodes transform matrix and convert it into a plain array. */
 	struct aiMatrix4x4 m = nd->mTransformation;
 	aiTransposeMatrix4(&m);
 	float *tmp = (float*)&m;
-	float transformMat[16];
+	float thisTransform[16];
 	for(int i=0; i<16; i++)
-		transformMat[i] = *(tmp+i);
-#endif
-	
+		thisTransform[i] = *(tmp+i);
+	/* Apply this nodes transformation to our current one. */
+	mat4f_mult_mat4f_new(currentTransform, currentTransform, thisTransform);
+
+
 	// draw all meshes assigned to this node
 	for(unsigned int n=0; n < nd->mNumMeshes; n++)
 	{
@@ -3544,20 +3623,59 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		kuhl_geometry_zero(&geom);
 		geom.program = program;
 		geom.primitive_type = GL_TRIANGLES;
-		printf("%s: Number of vertices: %d\n", __func__, mesh->mNumVertices);
+		printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Number of vertices: %u\n",
+		       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data,
+		       mesh->mNumVertices);
 		geom.vertex_count = mesh->mNumVertices;
 		float *vertexPositions = malloc(sizeof(float)*mesh->mNumVertices*3);
 		for(unsigned int i=0; i<mesh->mNumVertices; i++)
 		{
-			vertexPositions[i*3+0] = (mesh->mVertices)[i].x;
-			vertexPositions[i*3+1] = (mesh->mVertices)[i].y;
-			vertexPositions[i*3+2] = (mesh->mVertices)[i].z;
-		}
+			float vertexPos[4];
+			vec4f_set(vertexPos, (mesh->mVertices)[i].x, (mesh->mVertices)[i].y, (mesh->mVertices)[i].z, 1);
 
+			// TODO: We should be doing this in the vertex program, not here:
+			mat4f_mult_vec4f_new(vertexPos, currentTransform, vertexPos);
+			
+			vertexPositions[i*3+0] = vertexPos[0];
+			vertexPositions[i*3+1] = vertexPos[1];
+			vertexPositions[i*3+2] = vertexPos[2];
+		}
 		geom.attrib_pos = vertexPositions;
 		geom.attrib_pos_components = 3;
 		geom.attrib_pos_name = "in_Position";
 
+		/* Fill a list of normal vectors */
+		if(mesh->mNormals != NULL)
+		{
+			// Transform normals by current matrix---make sure that we
+			// use the inverse transpose to prevent the transformation
+			// from scaling the normals.
+			float normalMat[9];
+			mat3f_from_mat4f(normalMat, currentTransform);
+			mat3f_invert(normalMat);
+			mat3f_transpose(normalMat);
+			
+			float *normals = malloc(sizeof(float)*mesh->mNumVertices*3);
+			for(unsigned int i=0; i<mesh->mNumVertices; i++)
+			{
+				float normalVec[3];
+				vec3f_set(normalVec, (mesh->mNormals)[i].x, (mesh->mNormals)[i].y, (mesh->mNormals)[i].z);
+
+				// TODO: We should be doing this in the vertex program, not here:
+				mat3f_mult_vec3f_new(normalVec, normalMat, normalVec);
+
+				normals[i*3+0] = normalVec[0];
+				normals[i*3+1] = normalVec[1];
+				normals[i*3+2] = normalVec[2];
+			}
+			geom.attrib_normal = normals;
+			geom.attrib_normal_components = 3;
+			geom.attrib_normal_name = "in_Normal";
+			printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Vertices have normals.\n",
+			       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
+		}
+
+		
 		/* Fill a list of colors */
 		if(mesh->mColors != NULL && mesh->mColors[0] != NULL)
 		{
@@ -3572,24 +3690,8 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 			geom.attrib_color = colors;
 			geom.attrib_color_components = 3;
 			geom.attrib_color_name = "in_Color";
-			printf("%s: Vertices have color.\n", __func__);
-		}
-
-		/* Fill a list of normal vectors */
-		if(mesh->mNormals != NULL)
-		{
-			float *normals = malloc(sizeof(float)*mesh->mNumVertices*3);
-			for(unsigned int i=0; i<mesh->mNumVertices; i++)
-			{
-				normals[i*3+0] = (mesh->mNormals)[i].x;
-				normals[i*3+1] = (mesh->mNormals)[i].y;
-				normals[i*3+2] = (mesh->mNormals)[i].z;
-			}
-
-			geom.attrib_normal = normals;
-			geom.attrib_normal_components = 3;
-			geom.attrib_normal_name = "in_Normal";
-			printf("%s: Vertices have normal vectors.\n", __func__);
+			printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Vertices have color.\n",
+			       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
 		}
 		
 		/* Fill a list of texture coordinates */
@@ -3604,7 +3706,8 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 			geom.attrib_texcoord = texCoord;
 			geom.attrib_texcoord_components = 2;
 			geom.attrib_texcoord_name = "in_TexCoord";
-			printf("%s: Vertices have texture coordinates.\n", __func__);
+			printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Vertices have texture coordinates.\n",
+			       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
 		}
 
 		/* Find our texture and tell our kuhl_geometry object about
@@ -3622,11 +3725,16 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 					geom.texture = textureIdMap[i].textureID;
 			if(geom.texture == 0)
 			{
-				fprintf(stderr, "%s: Model uses texture '%s'. This texture should have been loaded earlier, but we can't find it now.\n", __func__, texPath.data);
+				printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Uses texture '%s'. This texture should have been loaded earlier, but we can't find it now.\n",
+				       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data,
+				       texPath.data);
 			}
 			else
 			{
 				// Model uses texture and we found the texture file
+				printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Uses texture %s\n",
+				       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data,
+				       texPath.data);
 
 				/* Make sure we repeat instead of clamp textures */
 				glBindTexture(GL_TEXTURE_2D, geom.texture);
@@ -3644,16 +3752,19 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 			const struct aiFace* face = &mesh->mFaces[t];
 			if(face->mNumIndices != 3)
 			{
-				fprintf(stderr, "%s: We only support drawing triangle meshes. We found a face in this model that only had %d (not 3) indices.\n", __func__, face->mNumIndices);
+				printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): We only support drawing triangle meshes. We found a face in this model that only had %u (not 3) indices.",
+				       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data,
+				       face->mNumIndices);
 				exit(EXIT_FAILURE);
 			}
 			indices[t*3+0] = face->mIndices[0];
 			indices[t*3+1] = face->mIndices[1];
 			indices[t*3+2] = face->mIndices[2];
-
 		}
 		geom.indices = indices;
-		printf("%s: Number of indices: %d\n", __func__, mesh->mNumFaces*3);
+		printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Number of indices: %u\n",
+		       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data,
+		       mesh->mNumFaces*3);
 		
 		/* Initialize this geometry object */
 		kuhl_geometry_init(&geom);
@@ -3683,7 +3794,11 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 
 	// Draw all children nodes too.
 	for (unsigned int i = 0; i < nd->mNumChildren; i++)
-		kuhl_private_setup_model_ogl3(sc, nd->mChildren[i], program, sceneMapIndex);
+		kuhl_private_setup_model_ogl3(sc, nd->mChildren[i], program, sceneMapIndex, currentTransform);
+
+	/* Restore the transform matrix to exactly as it was when this
+	 * function was called by the caller. */
+	mat4f_copy(currentTransform, origTransform);
 }
 
 
@@ -3760,7 +3875,9 @@ int kuhl_draw_model_file_ogl3(const char *modelFilename, const char *textureDirn
 	{
 		// Load the model if necessary and get its index in our sceneMap.
 		index = kuhl_private_load_model(modelFilename, textureDirname);
-		kuhl_private_setup_model_ogl3(sceneMap[index].scene, sceneMap[index].scene->mRootNode, program, index);
+		float transform[16];
+		mat4f_identity(transform);
+		kuhl_private_setup_model_ogl3(sceneMap[index].scene, sceneMap[index].scene->mRootNode, program, index, transform);
 	}
 	
 	if(index >= 0) // if the model is already loaded
