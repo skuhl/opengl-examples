@@ -115,7 +115,8 @@ void display()
 		if(prerenderFrameBuffer == 0)
 		{
 			prerenderFrameBuffer = kuhl_gen_framebuffer(viewport[2], viewport[3],
-			                                            &prerenderTexID);
+			                                            &prerenderTexID,
+			                                            NULL);
 		}
 		/* Switch to framebuffer and set the OpenGL viewport to cover
 		 * the entire framebuffer. */
