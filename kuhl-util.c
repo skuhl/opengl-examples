@@ -1376,7 +1376,7 @@ void quatd_rotateAxisVec_new(double quat[4], double degrees, const double axis[3
 void quatf_slerp_new(float result[4], const float start[4], const float end[4], float t)
 {
 	float copyOfStart[4];
-	mat4f_copy(copyOfStart, start);
+	vec4f_copy(copyOfStart, start);
 	float cosOmega = vec4f_dot(start, end);
 
 	if(cosOmega<0)
@@ -1433,7 +1433,7 @@ void quatf_slerp_new(float result[4], const float start[4], const float end[4], 
 void quatd_slerp_new(double result[4], const double start[4], const double end[4], double t)
 {
 	double copyOfStart[4];
-	mat4d_copy(copyOfStart, start);
+	vec4d_copy(copyOfStart, start);
 	double cosOmega = vec4d_dot(start, end);
 
 	if(cosOmega<0)

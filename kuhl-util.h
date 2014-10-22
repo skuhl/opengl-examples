@@ -526,6 +526,22 @@ static inline void vec4f_normalize_new(float  dest[4], const float  src[4])
 static inline void vec4d_normalize_new(double dest[4], const double src[4])
 { double len = vec4d_norm(src); vec4d_scalarDiv_new(dest, src, len); }
 
+
+/** Normalize a quaternion (float) and store the result in a new location.
+ * @param dest The new normalized quaternion.
+ * @param src The input quaternion.
+ */
+static inline void quatf_normalize_new(float  dest[4], const float  src[4])
+{ vec4f_normalize_new(dest, src); }
+/** Normalize a quaternion (double) and store the result in a new location.
+ * @param dest The new normalized quaternion.
+ * @param src The input quaternion.
+ */
+static inline void quatd_normalize_new(double dest[4], const double src[4])
+{ vec4d_normalize_new(dest, src); }
+
+
+	
 /** Normalize a 3-component float vector in place.
  * @param v The vector that will be normalized in place. */
 static inline void vec3f_normalize(float v[3])
@@ -542,7 +558,16 @@ static inline void vec4f_normalize(float v[4])
  * @param v The vector that will be normalized in place. */
 static inline void vec4d_normalize(double v[4])
 { double len = vec4d_norm(v); vec4d_scalarDiv(v, len); }
+/** Normalize a quaternion in place.
+ * @param v The quaternion to normalize in place. */
+static inline void quatf_normalize(float v[4])
+{ vec4f_normalize(v); }
+/** Normalize a quaternion in place.
+ * @param v The quaternion to normalize in place. */
+static inline void quatd_normalize(double v[4])
+{ vec4d_normalize(v); }
 
+	
 /** Homogenize a 4-element float vector and store the result in a new
  * location. Homogenization divides all elements in the array by the
  * 4th component.
