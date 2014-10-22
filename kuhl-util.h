@@ -1386,6 +1386,8 @@ void quatd_rotateAxis_new(double quat[4], double degrees, double x, double y, do
 void quatf_rotateAxisVec_new(float quat[4], float degrees, const float axis[3]);
 void quatd_rotateAxisVec_new(double quat[4], double degrees, const double axis[3]);
 
+/* Spherical linear interpolation of quaternions. */
+void quatf_slerp_new(float result[4], const float start[4], const float end[4], float t);
 
 /* Create a new translation matrix (rotation part set to
    identity). Any data in the 'result' matrix that you pass to these

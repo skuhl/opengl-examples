@@ -1170,7 +1170,7 @@ void mat4d_rotateQuat_new(double matrix[16], double x, double y, double z, doubl
 
     This code is based on Ken Shoemake's SIGGRAPH Tutorial on Quaternions:
     http://www.cs.ucr.edu/~vbz/resources/quatut.pdf
-    It is also based code in quat.c on VRPN 2.76 (public domain).
+    It is also based code in quat.c on VRPN 7.26 (public domain).
 
     @param matrix The location to store the output matrix.
    
@@ -1270,7 +1270,7 @@ void quatd_from_mat4d(double quat[4], const double matrix[16])
 
 /** Creates a quaternion (x,y,z,w) based on an axis and the number of degrees to rotate around that axis. 
 
-    Based code in quat.c on VRPN 2.76 (public domain).
+    Based code in quat.c on VRPN 7.26 (public domain).
 
     @param quat The location to store the output quaternion. If the axis is a zero vector, the identity quaternion is returned.
     @param x The x-component of a vector representing the axis to rotate around.
@@ -1358,6 +1358,65 @@ void quatd_rotateAxisVec_new(double quat[4], double degrees, const double axis[3
 {
 	quatd_rotateAxis_new(quat, degrees, axis[0], axis[1], axis[2]);
 }
+
+
+/** Spherical linear interpolation of unit quaternion.
+
+ This code is based on Ken Shoemake's code and is in the public
+ domain.
+
+ @param result The interpolated quaternion.
+ @param start The starting quaternion.
+ @param end The ending quaternion.
+ @param t As t goes from 0 to 1, the "result" quaternion goes from the
+ "start" quaternion to the "end" quaternion. The routine should always
+ return a point along the shorter of the two paths between the two
+ (the vector may be negated in the end).
+ */
+void quatf_slerp_new(float result[4], const float start[4], const float end[4], float t)
+{
+	float copyOfStart[4];
+	mat4f_copy(copyOfStart, start);
+	float cosOmega = vec4f_dot(start, end);
+
+	if(cosOmega<0)
+	{
+		cosOmega = -cosOmega;
+		vec4f_scalarMult(copyOfStart, -1);
+	}
+	
+	if(1+cosOmega > 1e-10)
+	{
+		float startScale, endScale;
+		if(1-cosOmega > 1e-10)
+		{
+			float omega = acos(cosOmega);
+			float sinOmega = sin(omega);
+			startScale = sin((1.0-t)*omega / sinOmega);
+			endScale = sin(t*omega)/sinOmega;
+		}
+		else
+		{
+			startScale = 1.0-t;
+			endScale = t;
+		}
+		float scaledStart[4], scaledEnd[4];
+		vec4f_scalarMult_new(scaledStart, start, startScale);
+		vec4f_scalarMult_new(scaledEnd,   end,   endScale);
+		vec4f_add_new(result, scaledStart, scaledEnd);
+	}
+	else
+	{
+		vec4f_set(result, -copyOfStart[1], copyOfStart[0], -copyOfStart[3], copyOfStart[2]);
+		float startScale = sin((0.5-t)*M_PI);
+		float endScale = sin(t*M_PI);
+		float scaledStart[4], scaledEnd[4];
+		vec4f_scalarMult_new(scaledStart, start,  startScale);
+		vec4f_scalarMult_new(scaledEnd,   result, endScale);
+		vec4f_add_new(result, scaledStart, scaledEnd);
+}
+
+
 
 /** Creates a new 4x4 float translation matrix with the rest of the matrix set to the identity.
     @param result The location to store the new translation matrix.
