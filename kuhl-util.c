@@ -1390,10 +1390,10 @@ void quatf_slerp_new(float result[4], const float start[4], const float end[4], 
 		float startScale, endScale;
 		if(1-cosOmega > 1e-10)
 		{
-			float omega = acos(cosOmega);
-			float sinOmega = sin(omega);
-			startScale = sin((1.0-t)*omega / sinOmega);
-			endScale = sin(t*omega)/sinOmega;
+			float omega = acosf(cosOmega);
+			float sinOmega = sinf(omega);
+			startScale = sinf((1.0-t)*omega / sinOmega);
+			endScale = sinf(t*omega)/sinOmega;
 		}
 		else
 		{
@@ -1414,8 +1414,67 @@ void quatf_slerp_new(float result[4], const float start[4], const float end[4], 
 		vec4f_scalarMult_new(scaledStart, start,  startScale);
 		vec4f_scalarMult_new(scaledEnd,   result, endScale);
 		vec4f_add_new(result, scaledStart, scaledEnd);
+	}
 }
 
+/** Spherical linear interpolation of unit quaternion.
+
+ This code is based on Ken Shoemake's code and is in the public
+ domain.
+
+ @param result The interpolated quaternion.
+ @param start The starting quaternion.
+ @param end The ending quaternion.
+ @param t As t goes from 0 to 1, the "result" quaternion goes from the
+ "start" quaternion to the "end" quaternion. The routine should always
+ return a point along the shorter of the two paths between the two
+ (the vector may be negated in the end).
+ */
+void quatd_slerp_new(double result[4], const double start[4], const double end[4], double t)
+{
+	double copyOfStart[4];
+	mat4d_copy(copyOfStart, start);
+	double cosOmega = vec4d_dot(start, end);
+
+	if(cosOmega<0)
+	{
+		cosOmega = -cosOmega;
+		vec4d_scalarMult(copyOfStart, -1);
+	}
+	
+	if(1+cosOmega > 1e-10)
+	{
+		double startScale, endScale;
+		if(1-cosOmega > 1e-10)
+		{
+			double omega = acos(cosOmega);
+			double sinOmega = sin(omega);
+			startScale = sin((1.0-t)*omega / sinOmega);
+			endScale = sin(t*omega)/sinOmega;
+		}
+		else
+		{
+			startScale = 1.0-t;
+			endScale = t;
+		}
+		double scaledStart[4], scaledEnd[4];
+		vec4d_scalarMult_new(scaledStart, start, startScale);
+		vec4d_scalarMult_new(scaledEnd,   end,   endScale);
+		vec4d_add_new(result, scaledStart, scaledEnd);
+	}
+	else
+	{
+		vec4d_set(result, -copyOfStart[1], copyOfStart[0], -copyOfStart[3], copyOfStart[2]);
+		double startScale = sin((0.5-t)*M_PI);
+		double endScale = sin(t*M_PI);
+		double scaledStart[4], scaledEnd[4];
+		vec4d_scalarMult_new(scaledStart, start,  startScale);
+		vec4d_scalarMult_new(scaledEnd,   result, endScale);
+		vec4d_add_new(result, scaledStart, scaledEnd);
+	}
+}
+
+	
 
 
 /** Creates a new 4x4 float translation matrix with the rest of the matrix set to the identity.
