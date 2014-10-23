@@ -1401,8 +1401,8 @@ void quatf_slerp_new(float result[4], const float start[4], const float end[4], 
 			endScale = t;
 		}
 		float scaledStart[4], scaledEnd[4];
-		vec4f_scalarMult_new(scaledStart, start, startScale);
-		vec4f_scalarMult_new(scaledEnd,   end,   endScale);
+		vec4f_scalarMult_new(scaledStart, copyOfStart, startScale);
+		vec4f_scalarMult_new(scaledEnd,   end,         endScale);
 		vec4f_add_new(result, scaledStart, scaledEnd);
 	}
 	else
@@ -1411,10 +1411,11 @@ void quatf_slerp_new(float result[4], const float start[4], const float end[4], 
 		float startScale = sin((0.5-t)*M_PI);
 		float endScale = sin(t*M_PI);
 		float scaledStart[4], scaledEnd[4];
-		vec4f_scalarMult_new(scaledStart, start,  startScale);
-		vec4f_scalarMult_new(scaledEnd,   result, endScale);
+		vec4f_scalarMult_new(scaledStart, copyOfStart,  startScale);
+		vec4f_scalarMult_new(scaledEnd,   result,       endScale);
 		vec4f_add_new(result, scaledStart, scaledEnd);
 	}
+	vec4f_normalize(result);
 }
 
 /** Spherical linear interpolation of unit quaternion.
@@ -1458,8 +1459,8 @@ void quatd_slerp_new(double result[4], const double start[4], const double end[4
 			endScale = t;
 		}
 		double scaledStart[4], scaledEnd[4];
-		vec4d_scalarMult_new(scaledStart, start, startScale);
-		vec4d_scalarMult_new(scaledEnd,   end,   endScale);
+		vec4d_scalarMult_new(scaledStart, copyOfStart, startScale);
+		vec4d_scalarMult_new(scaledEnd,   end,         endScale);
 		vec4d_add_new(result, scaledStart, scaledEnd);
 	}
 	else
@@ -1468,10 +1469,11 @@ void quatd_slerp_new(double result[4], const double start[4], const double end[4
 		double startScale = sin((0.5-t)*M_PI);
 		double endScale = sin(t*M_PI);
 		double scaledStart[4], scaledEnd[4];
-		vec4d_scalarMult_new(scaledStart, start,  startScale);
-		vec4d_scalarMult_new(scaledEnd,   result, endScale);
+		vec4d_scalarMult_new(scaledStart, copyOfStart, startScale);
+		vec4d_scalarMult_new(scaledEnd,   result,      endScale);
 		vec4d_add_new(result, scaledStart, scaledEnd);
 	}
+	vec4d_normalize(result);
 }
 
 	
