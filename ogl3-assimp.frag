@@ -1,4 +1,4 @@
-#version 130 // Specify which version of GLSL we are using.
+#version 150 // Specify which version of GLSL we are using.
 
 out vec4 fragColor;
 in vec2 out_TexCoord;
@@ -27,7 +27,7 @@ void main()
 	else if(renderStyle == 2)
 	{
 		/* Normal coloring: Each component in the normals ranges from -1 to 1. Make them range from 0 to 1. */
-		fragColor.xyz = (out_Normal + 1)/2;
+		fragColor.xyz = (normalize(out_Normal) + 1)/2;
 		fragColor.a = 1;
 	}
 	else if(renderStyle == 3)

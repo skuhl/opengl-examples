@@ -43,6 +43,16 @@ extern "C" {
 #define M_PI 3.14159265358979323846
 #endif
 
+#if KUHL_UTIL_USE_ASSIMP
+typedef struct
+{
+	int count; /**< Number of bones in this struct */
+	unsigned int mesh; /**< The bones in this struct are associated with this matrix index */
+	char names[512][256]; /**< bone names */
+	float matrices[512][16]; /**< Transformation matrices for each bone */
+} kuhl_bonemat;
+#endif
+	
 /** The kuhl_geometry struct is used to quickly draw 3D objects in
  * OpenGL 3.0. For more information, see the example programs and the
  * documentation for kuhl_geometry_zero(), kuhl_geometry_init(), and
@@ -85,12 +95,31 @@ typedef struct
 	GLuint   attrib_normal_components; /**< Typically 3 (x, y, z) - User should set this. */
 	GLuint   attrib_normal_bufferobject; /**< The OpenGL buffer object storing the normal information - Set by kuhl_geometry_init(). */
 
+	GLfloat* attrib_boneWeight;
+	char*    attrib_boneWeight_name;
+	GLuint   attrib_boneWeight_components;
+	GLuint   attrib_boneWeight_bufferobject;
+
+	GLfloat* attrib_boneIndex;
+	char*    attrib_boneIndex_name;
+	GLuint   attrib_boneIndex_components;
+	GLuint   attrib_boneIndex_bufferobject;
+	
 	GLfloat* attrib_custom; /**< A list of some custom attribute each vertex - User should set this if geometry has information not specified in this struct. The list should contain attrib_custom_components * vertex_count floats.*/
 	char*    attrib_custom_name; /**< The GLSL variable that the custom data should be sent to. - User should set this. */
 	GLuint   attrib_custom_components; /**< How many components does the custom data have for each vertex? - User should set this. */
 	GLuint   attrib_custom_bufferobject; /**< The OpenGL buffer object storing the custom information - Set by kuhl_geometry_init(). */
+
+	float matrix[16]; /**< A matrix that all of this geometry should be transformed by */
+	
+#if KUHL_UTIL_USE_ASSIMP
+	struct aiNode *assimp_node; /**< Assimp node that this kuhl_geometry object was created from. */
+	struct aiScene *assimp_scene; /**< Assimp scene that this kuhl_geometry object is a part of. */
+	kuhl_bonemat *bones;
+#endif
 	
 } kuhl_geometry;
+
 
 /** Call kuhl_errorcheck() with no parameters frequently for easy
  * OpenGL error checking. OpenGL doesn't report errors by
@@ -1496,6 +1525,7 @@ void kuhl_video_record(const char *fileLabel, int fps);
 
 #ifdef KUHL_UTIL_USE_ASSIMP
 int kuhl_draw_model_file_ogl2(const char *modelFilename, const char *textureDirname);
+void kuhl_update_model_file_ogl3(const char *modelFilename, unsigned int animationNum, float t);
 int kuhl_draw_model_file_ogl3(const char *modelFilename, const char *textureDirname, GLuint program);
 int kuhl_model_bounding_box(const char *modelFilename, float min[3], float max[3], float center[3]);
 #endif // end use assimp

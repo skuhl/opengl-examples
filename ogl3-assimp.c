@@ -107,9 +107,8 @@ void get_model_matrix(float result[16])
 	
 	/* Change angle for animation. */
 	int count = glutGet(GLUT_ELAPSED_TIME) % 10000; // get a counter that repeats every 10 seconds
-	float angle = count / 10000.0 * 360;
-	dgr_setget("angle", &angle, sizeof(GLfloat));
-	// angle = 0; // Don't spin the model
+	/* Animate the model if there is animation information available. */
+	kuhl_update_model_file_ogl3(modelFilename, 0, count/1000.0);
 
 	/* Calculate the width/height/depth of the bounding box and
 	 * determine which one of the three is the largest. Then, scale
@@ -124,16 +123,14 @@ void get_model_matrix(float result[16])
 	tmp = mymax(bb_max[2] - bb_min[2], tmp);
 	tmp = 1.f / tmp;
 #undef mymax
-	float rotateAnimate[16], scaleBoundBox[16], moveToOrigin[16], moveToLookPoint[16];
+	float scaleBoundBox[16], moveToOrigin[16], moveToLookPoint[16];
 	mat4f_translate_new(moveToOrigin, -bb_center[0], -bb_center[1], -bb_center[2]); // move to origin
 //	printf("Scaling by factor %f\n", tmp); 
 	mat4f_scale_new(scaleBoundBox, tmp, tmp, tmp); // scale model based on bounding box size
-	mat4f_rotateAxis_new(rotateAnimate, angle, 0, 1, 0); // rotate the object
 	mat4f_translateVec_new(moveToLookPoint, placeToPutModel);
 
 	mat4f_mult_mat4f_new(result, moveToOrigin, result);
 	mat4f_mult_mat4f_new(result, scaleBoundBox, result);
-	mat4f_mult_mat4f_new(result, rotateAnimate, result);
 	mat4f_mult_mat4f_new(result, moveToLookPoint, result);
 }
 
@@ -191,15 +188,6 @@ void display()
 		                   1, // count
 		                   0, // transpose
 		                   modelview); // value
-		// Normal matrix = transpose(inverse(modelview))
-		float normalMat[9];
-		mat3f_from_mat4f(normalMat, modelview);
-		mat3f_invert(normalMat);
-		mat3f_transpose(normalMat);
-		glUniformMatrix3fv(kuhl_get_uniform("NormalMat"),
-		                   1, // count
-		                   0, // transpose
-		                   normalMat); // value
 
 		glUniform1i(kuhl_get_uniform("renderStyle"), renderStyle);
 		// Copy far plane value into vertex program so we can render depth buffer.

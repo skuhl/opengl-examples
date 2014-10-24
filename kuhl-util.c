@@ -1075,17 +1075,17 @@ void mat3f_rotateQuatVec_new(float matrix[9], const float quat[4])
 
    // first row
    matrix[0] = 1.0 - (yy + zz);
-   matrix[3] = xy + wz;
-   matrix[6] = xz - wy;
+   matrix[3] = xy - wz;
+   matrix[6] = xz + wy;
 
    // second row
-   matrix[1] = xy - wz;
+   matrix[1] = xy + wz;
    matrix[4] = 1.0 - (xx + zz);
-   matrix[7] = yz + wx;
+   matrix[7] = yz - wx;
 
    // third row
-   matrix[2] = xz + wy;
-   matrix[5] = yz - wx;
+   matrix[2] = xz - wy;
+   matrix[5] = yz + wx;
    matrix[8] = 1.0 - (xx + yy);
 }
 
@@ -1108,17 +1108,17 @@ void mat3d_rotateQuatVec_new(double matrix[9], const double quat[4])
 
    // first row
    matrix[0] = 1.0 - (yy + zz);
-   matrix[3] = xy + wz;
-   matrix[6] = xz - wy;
+   matrix[3] = xy - wz;
+   matrix[6] = xz + wy;
 
    // second row
-   matrix[1] = xy - wz;
+   matrix[1] = xy + wz;
    matrix[4] = 1.0 - (xx + zz);
-   matrix[7] = yz + wx;
+   matrix[7] = yz - wx;
 
    // third row
-   matrix[2] = xz + wy;
-   matrix[5] = yz - wx;
+   matrix[2] = xz - wy;
+   matrix[5] = yz + wx;
    matrix[8] = 1.0 - (xx + yy);
 }
 /** Creates a 4x4 rotation matrix from a quaternion (x,y,z,w). For
@@ -2367,11 +2367,27 @@ void kuhl_geometry_zero(kuhl_geometry *geom)
 	geom->attrib_normal_name = NULL;
 	geom->attrib_normal_bufferobject = 0;
 
+	geom->attrib_boneWeight = NULL;
+	geom->attrib_boneWeight_components = 0;
+	geom->attrib_boneWeight_name = NULL;
+	geom->attrib_boneWeight_bufferobject = 0;
+
+	geom->attrib_boneIndex = NULL;
+	geom->attrib_boneIndex_components = 0;
+	geom->attrib_boneIndex_name = NULL;
+	geom->attrib_boneIndex_bufferobject = 0;
+
 	geom->attrib_custom = NULL;
 	geom->attrib_custom_components = 0;
 	geom->attrib_custom_name = NULL;
 	geom->attrib_custom_bufferobject = 0;
 
+	mat4f_identity(geom->matrix);
+#ifdef KUHL_UTIL_USE_ASSIMP
+	geom->assimp_node = NULL;
+	geom->assimp_scene = NULL;
+	geom->bones = NULL;
+#endif
 }
 
 /** Checks a kuhl_geometry struct to ensure the values are
@@ -2447,6 +2463,20 @@ static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
 		exit(EXIT_FAILURE);
 	}
 
+	if((geom->attrib_boneWeight_components || glIsBuffer(geom->attrib_boneWeight_bufferobject)) &&
+	   !(geom->attrib_boneWeight_components && glIsBuffer(geom->attrib_boneWeight_bufferobject)))
+	{
+			fprintf(stderr, "%s: BoneWeight attribute was not fully set.\n", __func__);
+			exit(EXIT_FAILURE);
+	}
+	
+	if((geom->attrib_boneIndex_components || glIsBuffer(geom->attrib_boneIndex_bufferobject)) &&
+	   !(geom->attrib_boneIndex_components && glIsBuffer(geom->attrib_boneIndex_bufferobject)))
+	{
+			fprintf(stderr, "%s: BoneIndex attribute was not fully set.\n", __func__);
+			exit(EXIT_FAILURE);
+	}
+	
 	if((geom->attrib_custom_components || glIsBuffer(geom->attrib_custom_bufferobject)) &&
 	   !(geom->attrib_custom_components && glIsBuffer(geom->attrib_custom_bufferobject)))
 	{
@@ -2605,10 +2635,34 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 	/* The position, texcoord, color, normal, etc. can all be
 	 * processed in the same way. Make some arrays so we can just loop
 	 * through them. */
-	GLfloat *data[] =    { geom->attrib_pos,            geom->attrib_color,            geom->attrib_texcoord, geom->attrib_normal, geom->attrib_custom };
-	GLint components[] = { geom->attrib_pos_components, geom->attrib_color_components, geom->attrib_texcoord_components, geom->attrib_normal_components, geom->attrib_custom_components };
-	char *name[]       = { geom->attrib_pos_name,       geom->attrib_color_name,       geom->attrib_texcoord_name, geom->attrib_normal_name, geom->attrib_custom_name };
-	GLuint bo[]        = { geom->attrib_pos_bufferobject, geom->attrib_color_bufferobject, geom->attrib_texcoord_bufferobject, geom->attrib_normal_bufferobject, geom->attrib_custom_bufferobject };
+	GLfloat *data[] =    { geom->attrib_pos,
+	                       geom->attrib_color,
+	                       geom->attrib_texcoord,
+	                       geom->attrib_normal,
+	                       geom->attrib_boneWeight,
+	                       geom->attrib_boneIndex,
+	                       geom->attrib_custom };
+	GLint components[] = { geom->attrib_pos_components,
+	                       geom->attrib_color_components,
+	                       geom->attrib_texcoord_components,
+	                       geom->attrib_normal_components,
+	                       geom->attrib_boneWeight_components,
+	                       geom->attrib_boneIndex_components,
+	                       geom->attrib_custom_components };
+	char *name[]       = { geom->attrib_pos_name,
+	                       geom->attrib_color_name,
+	                       geom->attrib_texcoord_name,
+	                       geom->attrib_normal_name,
+	                       geom->attrib_boneWeight_name,
+	                       geom->attrib_boneIndex_name,
+	                       geom->attrib_custom_name };
+	GLuint bo[]        = { geom->attrib_pos_bufferobject,
+	                       geom->attrib_color_bufferobject,
+	                       geom->attrib_texcoord_bufferobject,
+	                       geom->attrib_normal_bufferobject,
+	                       geom->attrib_boneWeight_bufferobject,
+	                       geom->attrib_boneIndex_bufferobject,
+	                       geom->attrib_custom_bufferobject };
 
 	/* Check if the program is valid (we don't need to enable it here). */
 	if(!glIsProgram(geom->program))
@@ -2617,7 +2671,7 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 		exit(EXIT_FAILURE);
 	}
 	
-	for(int i=0; i<5; i++)
+	for(int i=0; i<7; i++)
 	{
 		if(data[i] == 0 || components[i] == 0 || name[i] == NULL || strlen(name[i]) == 0)
 			continue;
@@ -2663,12 +2717,13 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 
 	/* Make sure that the bufferobject names get copied back into the
 	 * struct that the user passed in to this function. */
-	geom->attrib_pos_bufferobject      = bo[0];
-	geom->attrib_color_bufferobject    = bo[1];
-	geom->attrib_texcoord_bufferobject = bo[2];
-	geom->attrib_normal_bufferobject   = bo[3];
-	geom->attrib_custom_bufferobject   = bo[4];
-	
+	geom->attrib_pos_bufferobject       = bo[0];
+	geom->attrib_color_bufferobject     = bo[1];
+	geom->attrib_texcoord_bufferobject  = bo[2];
+	geom->attrib_normal_bufferobject    = bo[3];
+	geom->attrib_boneWeight_bufferobject= bo[4];
+	geom->attrib_boneIndex_bufferobject = bo[5];
+	geom->attrib_custom_bufferobject    = bo[6];
 
 	if(geom->indices != NULL && geom->indices_len > 0)
 	{
@@ -2767,6 +2822,20 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		}
 	}
 
+	int hasBones = 0;
+#ifdef KUHL_UTIL_USE_ASSIMP
+	if(geom->bones)
+	{
+		glUniformMatrix4fv(kuhl_get_uniform("BoneMat"), 32, 0, geom->bones->matrices[0]);
+		hasBones = 1;
+	}
+#endif
+	
+	glUniform1i(kuhl_get_uniform("HasBones"), hasBones);
+
+	glUniformMatrix4fv(kuhl_get_uniform("GeomTransform"),
+	                   1, 0, geom->matrix);
+	
 	/* If the user provided us with indices, use glDrawElements to draw the geometry. */
 	if(geom->indices_len > 0 && glIsBuffer(geom->indices_bufferobject))
 	{
@@ -2795,14 +2864,15 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 }
 
 /** Deletes kuhl_geometry struct by freeing the OpenGL buffers that
- * kuhl_geometry_init() created. Call kuhl_geometry_zero() to zero out all elements within kuhl_geometry.
+ * kuhl_geometry_init() created. Call kuhl_geometry_zero() to zero out
+ * all elements within kuhl_geometry.
  *
  * Important note: kuhl_geometry_init() does not allocate space for
  * textures---so kuhl_geometry_delete() does not delete textures! This
  * behavior is useful in the event that a single texture is shared
  * among several kuhl_geometry structs.
  *
- * @param geom The geometry to draw to free.
+ * @param geom The geometry to free.
 */
 void kuhl_geometry_delete(kuhl_geometry *geom)
 {
@@ -3255,6 +3325,39 @@ static void kuhl_private_calc_bbox(const struct aiNode* nd, struct aiMatrix4x4* 
 }
 
 
+/* Searches a tree of aiNode* structs for a node that matches a given
+ * name.
+ *
+ * @param nodeName Name of the node to look for.
+ * @param node Search this node and all children for a node that has the specified name.
+ * @return If a matching node is found, this function returns the matching node. Otherwise, returns NULL.
+ */
+const struct aiNode* kuhl_assimp_find_node(const char *nodeName, const struct aiNode *node)
+{
+	if(strcmp(node->mName.data, nodeName) == 0)
+		return node;
+	for(unsigned int i=0; i<node->mNumChildren; i++)
+	{
+		struct aiNode *child = node->mChildren[i];
+		const struct aiNode *foundNode = kuhl_assimp_find_node(nodeName, child);
+		if(foundNode != NULL)
+			return foundNode;
+	}
+	return NULL;
+}
+
+const struct aiBone* kuhl_assimp_find_bone(const char *nodeName, const struct aiMesh *mesh)
+{
+	for(unsigned int i=0; i<mesh->mNumBones; i++)
+	{
+		if(strcmp(mesh->mBones[i]->mName.data, nodeName) == 0)
+			return mesh->mBones[i];
+	}
+	return NULL;
+}
+
+
+
 /** Used by kuhl_print_aiScene_info() to print out information about
  * all of the nodes in the scene.
  *
@@ -3308,6 +3411,8 @@ static void kuhl_print_aiScene_info(const char *modelFilename, const struct aiSc
 		printf("%s: Animation #%u: name (probably blank): %s\n", modelFilename, i, anim->mName.data);
 		printf("%s: Animation #%u: duration in ticks: %f\n",     modelFilename, i, anim->mDuration);
 		printf("%s: Animation #%u: ticks per second: %f\n",      modelFilename, i, anim->mTicksPerSecond);
+		printf("%s: Animation #%u: duration in seconds: %f\n",   modelFilename, i, anim->mDuration/anim->mTicksPerSecond);
+				
 		printf("%s: Animation #%u: number of bone channels: %d\n", modelFilename, i, anim->mNumChannels);
 		printf("%s: Animation #%u: number of mesh channels: %d\n", modelFilename, i, anim->mNumMeshChannels);
 
@@ -3315,10 +3420,41 @@ static void kuhl_print_aiScene_info(const char *modelFilename, const struct aiSc
 		for(unsigned int j=0; j<anim->mNumChannels; j++)
 		{
 			struct aiNodeAnim* animNode = anim->mChannels[j];
-			printf("%s: Animation #%u: Bone channel #%u: Name of node affected: %s\n", modelFilename, i, j, animNode->mNodeName.data);
-			printf("%s: Animation #%u: Bone channel #%u: Num of position keys: %d\n", modelFilename, i, j, animNode->mNumPositionKeys);
-			printf("%s: Animation #%u: Bone channel #%u: Num of rotation keys: %d\n", modelFilename, i, j, animNode->mNumRotationKeys);
-			printf("%s: Animation #%u: Bone channel #%u: Num of scaling keys: %d\n", modelFilename, i, j, animNode->mNumScalingKeys);
+			printf("%s: Animation #%u: Bone channel #%u: AffectedNodeName=%s posKeys=%d, rotKeys=%d, scaleKeys=%d\n", modelFilename, i, j,
+			       animNode->mNodeName.data,
+			       animNode->mNumPositionKeys,
+			       animNode->mNumRotationKeys,
+			       animNode->mNumScalingKeys);
+
+#if 0
+			for(unsigned int i=0; i<animNode->mNumPositionKeys; i++)
+			{
+				printf("Position %d: %f %f %f time=%f\n", i,
+				       animNode->mPositionKeys[i].mValue.x,
+				       animNode->mPositionKeys[i].mValue.y,
+				       animNode->mPositionKeys[i].mValue.z,
+				       animNode->mPositionKeys[i].mTime);
+			}
+
+			for(unsigned int i=0; i<animNode->mNumScalingKeys; i++)
+			{
+				printf("Scale    %d: %f %f %f time=%f\n", i,
+				       animNode->mScalingKeys[i].mValue.x,
+				       animNode->mScalingKeys[i].mValue.y,
+				       animNode->mScalingKeys[i].mValue.z,
+				       animNode->mScalingKeys[i].mTime);
+			}
+
+			for(unsigned int i=0; i<animNode->mNumRotationKeys; i++)
+			{
+				printf("Quat     %d: %f %f %f %f (wxyz) time=%f\n", i,
+				       animNode->mRotationKeys[i].mValue.w,
+				       animNode->mRotationKeys[i].mValue.x,
+				       animNode->mRotationKeys[i].mValue.y,
+				       animNode->mRotationKeys[i].mValue.z,
+				       animNode->mRotationKeys[i].mTime);
+			}
+#endif
 		}
 
 		// Mesh
@@ -3406,7 +3542,7 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 	 * aiProcessPreset_TargetRealtime_Fast
 	 * aiProcessPreset_TargetRealtime_Quality
 	 * aiProcessPreset_TargetRealtime_MaxQuality
-	 */ 
+	 */
 	const struct aiScene* scene = aiImportFile(modelFilenameVarying, aiProcessPreset_TargetRealtime_Quality);
 	free(modelFilenameVarying);
 	if(scene == NULL)
@@ -3702,13 +3838,175 @@ static void kuhl_private_recrend_ogl2(const struct aiScene *sc, const struct aiN
 	glPopMatrix();
 }
 
+/** Given a aiNodeAnim object and a time, return an appropriate
+ * transformation matrix.
+ *
+ * @param transformResult The resulting transformation matrix.
+ * @param na The aiNodeAnim to generate the matrix form.
+ * @param t The time of the animation in TICKS (not seconds!)
+ */
+static void kuhl_private_anim_matrix(float transformResult[16], const struct aiNodeAnim *na, double ticks)
+{
+
+	/* Find indices of start and stop position keys */
+	unsigned int positionStart = 0;
+	for(unsigned int j=0; j<na->mNumPositionKeys-1; j++)
+		if(ticks < na->mPositionKeys[j+1].mTime)
+		{
+			positionStart = j;
+			break;
+		}
+	unsigned int positionEnd = positionStart+1;
+	if(positionEnd >= na->mNumPositionKeys)
+		positionEnd = positionStart;
+	/* Determine where we are in relation to the two nearest keys */
+	float deltaTime = na->mPositionKeys[positionEnd].mTime - na->mPositionKeys[positionStart].mTime;
+	float factor;
+	if(deltaTime != 0)
+		factor = (ticks - na->mPositionKeys[positionStart].mTime)/deltaTime;
+	else
+		factor = 0;
+	
+	/* Interpolate between two nearest keys */
+	float positionValStart[3] = { na->mPositionKeys[positionStart].mValue.x,
+	                              na->mPositionKeys[positionStart].mValue.y,
+	                              na->mPositionKeys[positionStart].mValue.z };
+	float positionValEnd[3] = { na->mPositionKeys[positionEnd].mValue.x,
+	                            na->mPositionKeys[positionEnd].mValue.y,
+	                            na->mPositionKeys[positionEnd].mValue.z };
+	float positionValMid[3];
+	vec3f_scalarMult(positionValStart, (1-factor));
+	vec3f_scalarMult(positionValEnd, factor);
+	vec3f_add_new(positionValMid, positionValStart, positionValEnd);
+	float positionMatrix[16];
+	mat4f_translateVec_new(positionMatrix, positionValMid);
+
+	/* Find indices of start and stop rotation keys */
+	unsigned int rotationStart = 0;
+	for(unsigned int j=0; j<na->mNumRotationKeys-1; j++)
+		if(ticks < na->mRotationKeys[j+1].mTime)
+		{
+			rotationStart = j;
+			break;
+		}
+	unsigned int rotationEnd = rotationStart+1;
+	if(rotationEnd >= na->mNumRotationKeys)
+		rotationEnd = rotationStart;
+	/* Determine where we are in relation to the two nearest keys */
+	deltaTime = na->mRotationKeys[rotationEnd].mTime - na->mRotationKeys[rotationStart].mTime;
+	if(deltaTime != 0)
+		factor = (ticks - na->mRotationKeys[rotationStart].mTime)/deltaTime;
+	else
+		factor = 0;
+	/* Interpolate between two nearest keys */
+	float rotationValStart[4] = { na->mRotationKeys[rotationStart].mValue.x,
+	                              na->mRotationKeys[rotationStart].mValue.y,
+	                              na->mRotationKeys[rotationStart].mValue.z,
+	                              na->mRotationKeys[rotationStart].mValue.w };
+	float rotationValEnd[4] = { na->mRotationKeys[rotationEnd].mValue.x,
+	                            na->mRotationKeys[rotationEnd].mValue.y,
+	                            na->mRotationKeys[rotationEnd].mValue.z,
+	                            na->mRotationKeys[rotationEnd].mValue.w };
+	float rotationValMid[4];
+	vec4f_normalize(rotationValStart);
+	vec4f_normalize(rotationValEnd);
+	quatf_slerp_new(rotationValMid, rotationValStart, rotationValEnd, factor);
+	float rotationMatrix[16];
+	mat4f_rotateQuatVec_new(rotationMatrix, rotationValMid);
+
+	/* Find indices of start and stop scaling keys */
+	unsigned int scalingStart = 0;
+	for(unsigned int j=0; j<na->mNumScalingKeys-1; j++)
+		if(ticks < na->mScalingKeys[j+1].mTime)
+		{
+			scalingStart = j;
+			break;
+		}
+	unsigned int scalingEnd = scalingStart+1;
+	if(scalingEnd >= na->mNumScalingKeys)
+		scalingEnd = scalingStart;
+	/* Determine where we are in relation to the two nearest keys */
+	deltaTime = na->mScalingKeys[scalingEnd].mTime - na->mScalingKeys[scalingStart].mTime;
+	if(deltaTime != 0)
+		factor = (ticks - na->mScalingKeys[scalingStart].mTime)/deltaTime;
+	else
+		factor = 0;
+	/* Interpolate between two nearest keys */
+	float scalingValStart[3] = { na->mScalingKeys[scalingStart].mValue.x,
+	                             na->mScalingKeys[scalingStart].mValue.y,
+	                             na->mScalingKeys[scalingStart].mValue.z };
+	float scalingValEnd[3] = { na->mScalingKeys[scalingEnd].mValue.x,
+	                           na->mScalingKeys[scalingEnd].mValue.y,
+	                           na->mScalingKeys[scalingEnd].mValue.z };
+	float scalingValMid[3];
+	vec3f_scalarMult(scalingValStart, (1-factor));
+	vec3f_scalarMult(scalingValEnd, factor);
+	vec3f_add_new(scalingValMid, scalingValStart, scalingValEnd);
+	float scalingMatrix[16];
+	mat4f_scaleVec_new(scalingMatrix, scalingValMid);
+	
+	// translation * rotation * scaling
+//	mat4f_mult_mat4f_new(transformResult, rotationMatrix, positionMatrix);
+	mat4f_mult_mat4f_new(transformResult, positionMatrix, rotationMatrix);
+	mat4f_mult_mat4f_new(transformResult, transformResult, scalingMatrix);
+}
+
+/* Returns the transformation matrix for a node (without considering
+ * the transformations of the parent node). If there is no animation
+ * information, the matrix is stored in the node itself. If there is
+ * animation information, we ignore the matrix in the node and instead
+ * calculate a matrix based on the animation information.
+ *
+ * @param transformResult To be filled in with the matrix for the requested node.
+ * @param scene The ASSIMP scene object containing the node.
+ * @param node The ASSIMP node object that we want animation information about.
+ * @param animationNum If the file contains more than one animation, indicates which animation to use. If you don't know, set this to 0.
+ * @param t The time that you want the animation matrix for.
+ * @return Returns 1 if we successfully returned a matrix based on animation information. Returns 0 if we simply returned the transformation matrix in the node itself.
+ */
+static int kuhl_private_node_matrix(float transformResult[16], const struct aiScene *scene, const struct aiNode *node, unsigned int animationNum, double t)
+{
+	/* Copy the transform matrix from the node itself. This is the
+	 * matrix that the user will see if we are unable to find the
+	 * requested animation matrix for this node. */
+	struct aiMatrix4x4 m = node->mTransformation;
+	aiTransposeMatrix4(&m);
+	float *tmp = (float*)&m;
+	for(int i=0; i<16; i++)
+		transformResult[i] = *(tmp+i);
+	
+	/* If the user requested an animation number that is too large
+	 * based on the number of the animations in the file, return use
+	 * the transformation matrix from the node. */
+	if(animationNum >= scene->mNumAnimations)
+		return 0;
+
+	/* Find the channel corresponding to the node name passed in as
+	 * parameter. */
+	struct aiAnimation *anim = scene->mAnimations[animationNum];
+	int channel = -1;
+	for(unsigned int i=0; i<anim->mNumChannels; i++)
+	{
+		if(strcmp(anim->mChannels[i]->mNodeName.data, node->mName.data) == 0)
+			channel = (int) i;
+	}
+	/* If we can't find a corresponding animation channel or if the
+	 * caller requested a time that was out of range, then return the
+	 * transformation matrix from the node. */
+	if(channel < 0 || t > anim->mDuration / anim->mTicksPerSecond)
+		return 0;
+	
+	struct aiNodeAnim *na = anim->mChannels[channel];
+	kuhl_private_anim_matrix(transformResult, na, t*anim->mTicksPerSecond);
+	return 1;
+}
+
 /** Recursively calls itself to create one or more kuhl_geometry structs for all of the nodes in the scene.
  *
  * @param sc The scene that we want to render.
  *
  * @param nd The current node that we are rendering.
  */
-
 static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct aiNode* nd, GLuint program, int sceneMapIndex, float currentTransform[16])
 {
 	/* Each node in the scene has a transform matrix that should
@@ -3723,15 +4021,15 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 	mat4f_copy(origTransform, currentTransform);
 	
 	/* Get this nodes transform matrix and convert it into a plain array. */
+	float thisTransform[16];
 	struct aiMatrix4x4 m = nd->mTransformation;
 	aiTransposeMatrix4(&m);
 	float *tmp = (float*)&m;
-	float thisTransform[16];
 	for(int i=0; i<16; i++)
 		thisTransform[i] = *(tmp+i);
-	/* Apply this nodes transformation to our current one. */
-	mat4f_mult_mat4f_new(currentTransform, currentTransform, thisTransform);
 
+	/* Apply this node's transformation to our current transform. */
+	mat4f_mult_mat4f_new(currentTransform, currentTransform, thisTransform);
 
 	// draw all meshes assigned to this node
 	for(unsigned int n=0; n < nd->mNumMeshes; n++)
@@ -3741,8 +4039,12 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		/* Fill in a list of our vertices. */
 		kuhl_geometry geom;
 		kuhl_geometry_zero(&geom);
+		geom.assimp_node = (struct aiNode*) nd;
+		geom.assimp_scene = (struct aiScene*) sc;
 		geom.program = program;
 		geom.primitive_type = GL_TRIANGLES;
+		mat4f_copy(geom.matrix, currentTransform);
+
 		printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Number of vertices: %u\n",
 		       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data,
 		       mesh->mNumVertices);
@@ -3750,15 +4052,9 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		float *vertexPositions = malloc(sizeof(float)*mesh->mNumVertices*3);
 		for(unsigned int i=0; i<mesh->mNumVertices; i++)
 		{
-			float vertexPos[4];
-			vec4f_set(vertexPos, (mesh->mVertices)[i].x, (mesh->mVertices)[i].y, (mesh->mVertices)[i].z, 1);
-
-			// TODO: We should be doing this in the vertex program, not here:
-			mat4f_mult_vec4f_new(vertexPos, currentTransform, vertexPos);
-			
-			vertexPositions[i*3+0] = vertexPos[0];
-			vertexPositions[i*3+1] = vertexPos[1];
-			vertexPositions[i*3+2] = vertexPos[2];
+			vertexPositions[i*3+0] = (mesh->mVertices)[i].x;
+			vertexPositions[i*3+1] = (mesh->mVertices)[i].y;
+			vertexPositions[i*3+2] = (mesh->mVertices)[i].z;
 		}
 		geom.attrib_pos = vertexPositions;
 		geom.attrib_pos_components = 3;
@@ -3767,26 +4063,12 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		/* Fill a list of normal vectors */
 		if(mesh->mNormals != NULL)
 		{
-			// Transform normals by current matrix---make sure that we
-			// use the inverse transpose to prevent the transformation
-			// from scaling the normals.
-			float normalMat[9];
-			mat3f_from_mat4f(normalMat, currentTransform);
-			mat3f_invert(normalMat);
-			mat3f_transpose(normalMat);
-			
 			float *normals = malloc(sizeof(float)*mesh->mNumVertices*3);
 			for(unsigned int i=0; i<mesh->mNumVertices; i++)
 			{
-				float normalVec[3];
-				vec3f_set(normalVec, (mesh->mNormals)[i].x, (mesh->mNormals)[i].y, (mesh->mNormals)[i].z);
-
-				// TODO: We should be doing this in the vertex program, not here:
-				mat3f_mult_vec3f_new(normalVec, normalMat, normalVec);
-
-				normals[i*3+0] = normalVec[0];
-				normals[i*3+1] = normalVec[1];
-				normals[i*3+2] = normalVec[2];
+				normals[i*3+0] = (mesh->mNormals)[i].x;
+				normals[i*3+1] = (mesh->mNormals)[i].y;
+				normals[i*3+2] = (mesh->mNormals)[i].z;
 			}
 			geom.attrib_normal = normals;
 			geom.attrib_normal_components = 3;
@@ -3795,12 +4077,10 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 			       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
 		}
 
-		
 		/* Fill a list of colors */
 		if(mesh->mColors != NULL && mesh->mColors[0] != NULL)
 		{
 			float *colors = malloc(sizeof(float)*mesh->mNumVertices*3);
-			
 			for(unsigned int i=0; i<mesh->mNumVertices; i++)
 			{
 				colors[i*3+0] = mesh->mColors[0][i].r;
@@ -3830,6 +4110,66 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 			       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
 		}
 
+		/* Fill in bone information */
+		if(mesh->mBones != NULL && mesh->mNumBones > 0)
+		{
+			float *indices = malloc(sizeof(float)*mesh->mNumVertices*4);
+			float *weights = malloc(sizeof(float)*mesh->mNumVertices*4);
+			for(unsigned int i=0; i<mesh->mNumVertices; i++)
+			{
+				/* Zero out weights */
+				int count = 0;
+				for(int j=0; j<4; j++)
+				{
+					// If weight is zero, it doesn't matter what the index
+					// is as long as it isn't out of bounds.
+					indices[i*4+j] = 0;
+					weights[i*4+j] = 0;
+				}
+					
+				/* For each bone */
+				for(unsigned int j=0; j<mesh->mNumBones; j++)
+				{
+					/* Each vertex that this bone refers to. */
+					for(unsigned int k=0; k<mesh->mBones[j]->mNumWeights; k++)
+					{
+						/* If this bone refers to a vertex that matches the one
+						   that we are on, use the data and send it to the vertex program.
+						 */
+						unsigned int idx = mesh->mBones[j]->mWeights[k].mVertexId;
+						float wght       = mesh->mBones[j]->mWeights[k].mWeight;
+						if(idx == i)
+						{
+							indices[i*4+count] = (float) j;
+							weights[i*4+count] = wght;
+							count++;
+						} // end if vertices match
+					} // end for each vertex the bone refers to
+				} // end for each bone
+			} // end for each vertex in mesh
+
+			for(unsigned int i=0; i<mesh->mNumVertices; i++)
+			{
+				if(weights[i*4+0] == 0)
+				{
+					printf("Vertex lacks any weights!\n");
+					exit(EXIT_FAILURE);
+				}
+				//printf("%f %f %f %f\n", weights[i*4+0],
+				//     weights[i*4+1], weights[i*4+2], weights[i*4+3]);
+			}
+
+			geom.attrib_boneIndex = indices;
+			geom.attrib_boneIndex_components = 4;
+			geom.attrib_boneIndex_name = "in_BoneIndex";
+			geom.attrib_boneWeight = weights;
+			geom.attrib_boneWeight_components = 4;
+			geom.attrib_boneWeight_name = "in_BoneWeight";
+
+			printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Mesh has %d bone(s).\n",
+			       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data, mesh->mNumBones);
+		} // end if there are bones 
+		
 		/* Find our texture and tell our kuhl_geometry object about
 		 * it. */
 		struct aiString texPath;	//contains filename of texture
@@ -3885,7 +4225,22 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Number of indices: %u\n",
 		       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data,
 		       mesh->mNumFaces*3);
-		
+
+		/* Initialize bone information if this mesh has bones. */
+		if(mesh->mNumBones > 0)
+		{
+			kuhl_bonemat *bones = (kuhl_bonemat*) malloc(sizeof(kuhl_bonemat));
+			bones->count = mesh->mNumBones;
+			bones->mesh = n;
+			for(unsigned int b=0; b < mesh->mNumBones; b++)
+			{
+				strncpy(bones->names[b], mesh->mBones[b]->mName.data, 256);
+				bones->names[b][255]='\0';
+				mat4f_identity(&(bones->matrices[b][0]));
+			}
+			geom.bones = bones;
+		}
+
 		/* Initialize this geometry object */
 		kuhl_geometry_init(&geom);
 
@@ -3928,7 +4283,9 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
  *
  * @param modelFilename The filename of the model.
  *
- * @param textureDirname The directory that the model's textures are saved in. If set to NULL, the textures are assumed to be in the same directory as the model is in.
+ * @param textureDirname The directory that the model's textures are
+ * saved in. If set to NULL, the textures are assumed to be in the
+ * same directory as the model is in.
  *
  * @return Returns 1 if successful and 0 if we failed to load the model.
  */
@@ -3956,6 +4313,103 @@ int kuhl_draw_model_file_ogl2(const char *modelFilename, const char *textureDirn
 	// aiDetachAllLogStreams();
 }
 
+
+void kuhl_update_model_file_ogl3(const char *modelFilename, unsigned int animationNum, float t)
+{
+	int index = kuhl_private_modelIndex(modelFilename);
+	if(index < 0)
+		return;
+
+	sceneMapStruct *sm = &(sceneMap[index]);
+	for(int i=0; i<sm->geom_count; i++)
+	{
+		kuhl_geometry *g = &(sm->geom[i]);
+		struct aiScene *scene = g->assimp_scene;
+		struct aiNode *node = g->assimp_node;
+
+		if(scene == NULL || node == NULL)
+		{
+			printf("scene or node was NULL\n");
+			continue;
+		}
+
+		/* Traverse up the node tree and apply all of the matrices as
+		 * we go up. */
+		float result[16];
+		mat4f_identity(result);
+		do
+		{
+			float transform[16];
+			mat4f_identity(transform);
+			kuhl_private_node_matrix(transform, scene, node, animationNum, t);
+			mat4f_mult_mat4f_new(result, transform, result);
+			node = node->mParent;
+		} while(node != NULL);
+
+		/* Apply the transform matrix to this geometry object. */
+		mat4f_copy(g->matrix, result);
+
+		/* If there are no bones, we are done with this kuhl_geometry */
+		if(g->bones == NULL)
+			continue;
+
+		float globalinversetransform[16];
+		struct aiMatrix4x4 m = scene->mRootNode->mTransformation;
+		aiTransposeMatrix4(&m);
+		float *tmp = (float*)&m;
+		for(int i=0; i<16; i++)
+			globalinversetransform[i] = *(tmp+i);
+		mat4f_invert(globalinversetransform);
+//		printf("git:\n");
+//		mat4f_print(globalinversetransform);
+
+		/* For each bone */
+		for(int b=0; b < g->bones->count; b++)
+		{
+			mat4f_identity(result);
+
+			// Find the bone node
+			const struct aiNode *node = kuhl_assimp_find_node(g->bones->names[b], scene->mRootNode);
+			const struct aiBone* bone = kuhl_assimp_find_bone(node->mName.data, scene->mMeshes[g->bones->mesh]);
+
+			/* Get the transformation information for the given node (ignoring parent nodes). */
+			float transform[16];
+			mat4f_identity(transform);
+			kuhl_private_node_matrix(transform, scene, node, animationNum, t);
+//			printf("node transform\n");
+//			mat4f_print(transform);
+
+			/* Get bone office from the aiBone struct */
+			float offset[16];
+			mat4f_identity(offset);
+			struct aiMatrix4x4 m = bone->mOffsetMatrix;
+			aiTransposeMatrix4(&m);
+			float *tmp = (float*)&m;
+			for(int i=0; i<16; i++)
+				offset[i] = *(tmp+i);
+//		printf("offset\n");
+//		mat4f_print(offset);
+
+			/* Update our transform matrix based on the matrices in the parent nodes. */
+			node = node->mParent;
+			while(node != NULL)
+			{
+				float nodeTrans[16];
+				kuhl_private_node_matrix(nodeTrans, scene, node, animationNum, t);
+				mat4f_mult_mat4f_new(transform, nodeTrans, transform);
+				node = node->mParent; // move to next node up
+			}
+
+			mat4f_identity(result);
+			mat4f_mult_mat4f_new(result, offset, result);
+			mat4f_mult_mat4f_new(result, transform, result);
+
+			mat4f_copy(g->bones->matrices[b], result);
+//			printf("final combined:\n");
+//			mat4f_print(result);
+		} // end for each bone
+	} // end for each geometry
+}
 
 /** Given a model file, load the model (if it hasn't been loaded
  * already) and render that file using OpenGL 3. The preprocessor
