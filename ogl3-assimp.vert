@@ -7,7 +7,7 @@ in vec3 in_Color;
 
 in vec4 in_BoneIndex;
 in vec4 in_BoneWeight;
-uniform mat4 BoneMat[32];
+uniform mat4 BoneMat[128];
 uniform int HasBones;
 
 uniform float farPlane;
