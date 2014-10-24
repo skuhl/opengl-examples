@@ -38,6 +38,10 @@
 #include "imageio.h"
 #endif
 
+/** Maximum number of bones that can be sent to GLSL program */
+#define MAX_BONES 128
+
+
 #define EPSILON 0.0001
 
 extern inline void vec3f_set(float  v[3], float  a, float  b, float  c);
@@ -1068,25 +1072,25 @@ void mat3f_rotateQuatVec_new(float matrix[9], const float quat[4])
 	      xx, xy, xz,
 	      yy, yz, zz;
 
-   xs = quat[X] * s;   ys = quat[Y] * s;   zs = quat[Z] * s;
-   wx = quat[W] * xs;  wy = quat[W] * ys;  wz = quat[W] * zs;
-   xx = quat[X] * xs;  xy = quat[X] * ys;  xz = quat[X] * zs;
-   yy = quat[Y] * ys;  yz = quat[Y] * zs;  zz = quat[Z] * zs;
+	xs = quat[X] * s;   ys = quat[Y] * s;   zs = quat[Z] * s;
+	wx = quat[W] * xs;  wy = quat[W] * ys;  wz = quat[W] * zs;
+	xx = quat[X] * xs;  xy = quat[X] * ys;  xz = quat[X] * zs;
+	yy = quat[Y] * ys;  yz = quat[Y] * zs;  zz = quat[Z] * zs;
 
-   // first row
-   matrix[0] = 1.0 - (yy + zz);
-   matrix[3] = xy - wz;
-   matrix[6] = xz + wy;
+	// first row
+	matrix[0] = 1.0 - (yy + zz);
+	matrix[3] = xy - wz;
+	matrix[6] = xz + wy;
 
-   // second row
-   matrix[1] = xy + wz;
-   matrix[4] = 1.0 - (xx + zz);
-   matrix[7] = yz - wx;
+	// second row
+	matrix[1] = xy + wz;
+	matrix[4] = 1.0 - (xx + zz);
+	matrix[7] = yz - wx;
 
-   // third row
-   matrix[2] = xz - wy;
-   matrix[5] = yz + wx;
-   matrix[8] = 1.0 - (xx + yy);
+	// third row
+	matrix[2] = xz - wy;
+	matrix[5] = yz + wx;
+	matrix[8] = 1.0 - (xx + yy);
 }
 
 /** Creates a 3x3 rotation matrix from a quaternion (x,y,z,w). For
@@ -1101,25 +1105,25 @@ void mat3d_rotateQuatVec_new(double matrix[9], const double quat[4])
 	       xx, xy, xz,
 	       yy, yz, zz;
 
-   xs = quat[X] * s;   ys = quat[Y] * s;   zs = quat[Z] * s;
-   wx = quat[W] * xs;  wy = quat[W] * ys;  wz = quat[W] * zs;
-   xx = quat[X] * xs;  xy = quat[X] * ys;  xz = quat[X] * zs;
-   yy = quat[Y] * ys;  yz = quat[Y] * zs;  zz = quat[Z] * zs;
+	xs = quat[X] * s;   ys = quat[Y] * s;   zs = quat[Z] * s;
+	wx = quat[W] * xs;  wy = quat[W] * ys;  wz = quat[W] * zs;
+	xx = quat[X] * xs;  xy = quat[X] * ys;  xz = quat[X] * zs;
+	yy = quat[Y] * ys;  yz = quat[Y] * zs;  zz = quat[Z] * zs;
 
-   // first row
-   matrix[0] = 1.0 - (yy + zz);
-   matrix[3] = xy - wz;
-   matrix[6] = xz + wy;
+	// first row
+	matrix[0] = 1.0 - (yy + zz);
+	matrix[3] = xy - wz;
+	matrix[6] = xz + wy;
 
-   // second row
-   matrix[1] = xy + wz;
-   matrix[4] = 1.0 - (xx + zz);
-   matrix[7] = yz - wx;
+	// second row
+	matrix[1] = xy + wz;
+	matrix[4] = 1.0 - (xx + zz);
+	matrix[7] = yz - wx;
 
-   // third row
-   matrix[2] = xz - wy;
-   matrix[5] = yz + wx;
-   matrix[8] = 1.0 - (xx + yy);
+	// third row
+	matrix[2] = xz - wy;
+	matrix[5] = yz + wx;
+	matrix[8] = 1.0 - (xx + yy);
 }
 /** Creates a 4x4 rotation matrix from a quaternion (x,y,z,w). For
  * full documentation, see mat4f_rotateQuatVec_new() */
@@ -2826,7 +2830,7 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 #ifdef KUHL_UTIL_USE_ASSIMP
 	if(geom->bones)
 	{
-		glUniformMatrix4fv(kuhl_get_uniform("BoneMat"), 32, 0, geom->bones->matrices[0]);
+		glUniformMatrix4fv(kuhl_get_uniform("BoneMat"), MAX_BONES, 0, geom->bones->matrices[0]);
 		hasBones = 1;
 	}
 #endif
@@ -3560,11 +3564,6 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 	if(scene->mNumTextures > 0)
 		printf("%s: WARNING: This model has %u texture(s) embedded in it. This program currently ignores embedded textures.\n", modelFilename, scene->mNumTextures);
 
-	/* Note: Animations are removed from the model if we call
-	 * aiImportFile with aiProcess_PreTransformVertices */
-	if(scene->mNumAnimations > 0)
-		printf("%s: WARNING: This model has %u animation(s) embedded in it that we are ignoring.\n", modelFilename, scene->mNumAnimations);
-
 	// Uncomment this line to print additional information about the model:
 	// kuhl_print_aiScene_info(modelFilename, scene);
 
@@ -4001,7 +4000,8 @@ static int kuhl_private_node_matrix(float transformResult[16], const struct aiSc
 	return 1;
 }
 
-/** Recursively calls itself to create one or more kuhl_geometry structs for all of the nodes in the scene.
+/** Recursively calls itself to create one or more kuhl_geometry
+ * structs for all of the nodes in the scene.
  *
  * @param sc The scene that we want to render.
  *
@@ -4031,12 +4031,13 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 	/* Apply this node's transformation to our current transform. */
 	mat4f_mult_mat4f_new(currentTransform, currentTransform, thisTransform);
 
-	// draw all meshes assigned to this node
+	/* Create a kuhl_geometry object for each of the meshes assigned
+	 * to this ASSIMP node. */
 	for(unsigned int n=0; n < nd->mNumMeshes; n++)
 	{
 		const struct aiMesh* mesh = sc->mMeshes[nd->mMeshes[n]];
 
-		/* Fill in a list of our vertices. */
+		/* Create a kuhl_geometry object for this mesh. */
 		kuhl_geometry geom;
 		kuhl_geometry_zero(&geom);
 		geom.assimp_node = (struct aiNode*) nd;
@@ -4045,9 +4046,7 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		geom.primitive_type = GL_TRIANGLES;
 		mat4f_copy(geom.matrix, currentTransform);
 
-		printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Number of vertices: %u\n",
-		       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data,
-		       mesh->mNumVertices);
+		/* Store the vertex position attribute into the kuhl_geometry struct */
 		geom.vertex_count = mesh->mNumVertices;
 		float *vertexPositions = malloc(sizeof(float)*mesh->mNumVertices*3);
 		for(unsigned int i=0; i<mesh->mNumVertices; i++)
@@ -4059,8 +4058,11 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		geom.attrib_pos = vertexPositions;
 		geom.attrib_pos_components = 3;
 		geom.attrib_pos_name = "in_Position";
+		printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Number of vertices: %u\n",
+		       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data,
+		       mesh->mNumVertices);
 
-		/* Fill a list of normal vectors */
+		/* Store the normal vectors in the kuhl_geometry struct */
 		if(mesh->mNormals != NULL)
 		{
 			float *normals = malloc(sizeof(float)*mesh->mNumVertices*3);
@@ -4077,7 +4079,7 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 			       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
 		}
 
-		/* Fill a list of colors */
+		/* Store the vertex color attribute */
 		if(mesh->mColors != NULL && mesh->mColors[0] != NULL)
 		{
 			float *colors = malloc(sizeof(float)*mesh->mNumVertices*3);
@@ -4094,7 +4096,7 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 			       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
 		}
 		
-		/* Fill a list of texture coordinates */
+		/* Store the texture coordinate attribute */
 		if(mesh->mTextureCoords != NULL && mesh->mTextureCoords[0] != NULL)
 		{
 			float *texCoord = malloc(sizeof(float)*mesh->mNumVertices*2);
@@ -4113,6 +4115,12 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		/* Fill in bone information */
 		if(mesh->mBones != NULL && mesh->mNumBones > 0)
 		{
+			if(mesh->mNumBones > MAX_BONES)
+			{
+				printf("%s: This mesh has %d bones but we only support %d\n", __func__, mesh->mNumBones, MAX_BONES);
+				exit(EXIT_FAILURE);
+			}
+			
 			float *indices = malloc(sizeof(float)*mesh->mNumVertices*4);
 			float *weights = malloc(sizeof(float)*mesh->mNumVertices*4);
 			for(unsigned int i=0; i<mesh->mNumVertices; i++)
