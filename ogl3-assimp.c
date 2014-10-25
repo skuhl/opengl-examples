@@ -61,17 +61,18 @@ void keyboard(unsigned char key, int x, int y)
 				
 		case ' ':
 			renderStyle++;
-			if(renderStyle > 6)
+			if(renderStyle > 7)
 				renderStyle = 0;
 			switch(renderStyle)
 			{
-				case 0: printf("Render style: Texture\n"); break;
-				case 1: printf("Render style: Vertex color\n"); break;
-				case 2: printf("Render style: Normals\n"); break;
-				case 3: printf("Render style: Texture coordinates\n"); break;
-				case 4: printf("Render style: Front (green) and black (red) faces based on winding\n"); break;
-				case 5: printf("Render style: Front (green) and black (red) based on normals\n"); break;
-				case 6: printf("Render style: Depth (white=far; black=close)\n"); break;
+				case 0: printf("Render style: Diffuse (headlamp light)\n"); break;
+				case 1: printf("Render style: Texture\n"); break;
+				case 2: printf("Render style: Vertex color\n"); break;
+				case 3: printf("Render style: Normals\n"); break;
+				case 4: printf("Render style: Texture coordinates\n"); break;
+				case 5: printf("Render style: Front (green) and black (red) faces based on winding\n"); break;
+				case 6: printf("Render style: Front (green) and black (red) based on normals\n"); break;
+				case 7: printf("Render style: Depth (white=far; black=close)\n"); break;
 			}
 			break;
 	}

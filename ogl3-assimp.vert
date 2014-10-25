@@ -54,8 +54,8 @@ void main()
 	// the far plane, it will be white. When it is at the camera (it
 	// will be black). This calculation doesn't account for the near
 	// plane.
-	out_Depth = ((ModelView*vec4(in_Position.xyz, 1)).z)/-farPlane ;
+	out_Depth = ((actualModelView*vec4(in_Position.xyz, 1)).z)/-farPlane ;
 
 	// Calculate the position of the vertex in eye coordinates:
-	out_EyeCoord = vec3(ModelView * vec4(in_Position.xyz, 1));
+	out_EyeCoord = vec3(actualModelView * vec4(in_Position.xyz, 1));
 }
