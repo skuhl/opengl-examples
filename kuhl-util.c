@@ -38,8 +38,6 @@
 #include "imageio.h"
 #endif
 
-/** Maximum number of bones that can be sent to GLSL program */
-#define MAX_BONES 128
 
 
 #define EPSILON 0.0001

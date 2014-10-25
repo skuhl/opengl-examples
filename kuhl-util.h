@@ -43,13 +43,16 @@ extern "C" {
 #define M_PI 3.14159265358979323846
 #endif
 
+/** Maximum number of bones that can be sent to GLSL program */
+#define MAX_BONES 128
+	
 #if KUHL_UTIL_USE_ASSIMP
 typedef struct
 {
 	int count; /**< Number of bones in this struct */
 	unsigned int mesh; /**< The bones in this struct are associated with this matrix index */
-	char names[512][256]; /**< bone names */
-	float matrices[512][16]; /**< Transformation matrices for each bone */
+	char names[MAX_BONES][256]; /**< bone names */
+	float matrices[MAX_BONES][16]; /**< Transformation matrices for each bone */
 } kuhl_bonemat;
 #endif
 	
