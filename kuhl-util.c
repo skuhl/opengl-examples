@@ -2772,6 +2772,8 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	glGetIntegerv(GL_CURRENT_PROGRAM, &previouslyUsedProgram);
 	GLint previouslyBoundTexture = 0;
 	glGetIntegerv(GL_TEXTURE_BINDING_2D, &previouslyBoundTexture);
+	GLint previouslyActiveTexture = 0;
+	glGetIntegerv(GL_ACTIVE_TEXTURE, &previouslyActiveTexture);
 	GLint previousVAO=0;
 	glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &previousVAO);
 	
@@ -2798,7 +2800,7 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	else
 	{
 		fprintf(stderr, "%s: Not a valid vertex array object: %d\n", __func__, geom->vao);
-		glUseProgram(previouslyUsedProgram);		
+		glUseProgram(previouslyUsedProgram);
 		return;
 	}
 
@@ -2824,6 +2826,13 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 			kuhl_errorcheck();
 		}
 	}
+	else
+		/* Make sure that we don't draw a texture if there wasn't one
+		 * specified in kuhl_geometry. Without this, it is possible
+		 * that there is some texture that is currently bound that we
+		 * would use. */
+		glBindTexture(GL_TEXTURE_2D, 0);
+
 
 	int hasBones = 0;
 #ifdef KUHL_UTIL_USE_ASSIMP
@@ -2882,6 +2891,9 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 
 	/* Indicate in the struct that we have successfully drawn this geom once. */
 	geom->has_been_drawn = 1;
+
+	/* Restore previously active texture */
+	glActiveTexture(previouslyActiveTexture);
 	
 	/* Unbind texture */
 	glBindTexture(GL_TEXTURE_2D, previouslyBoundTexture);
