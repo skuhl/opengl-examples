@@ -2832,11 +2832,16 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		hasBones = 1;
 	}
 #endif
-	
-	glUniform1i(kuhl_get_uniform("HasBones"), hasBones);
-
-	glUniformMatrix4fv(kuhl_get_uniform("GeomTransform"),
-	                   1, 0, geom->matrix);
+	/* Check if the uniform variable is there ourselves instead to
+	 * prevent kuhl_get_uniform() from printing warning messages to
+	 * the user. */
+	GLint loc = glGetUniformLocation(geom->program, "HasBones");
+	if(loc != -1)
+		glUniform1i(kuhl_get_uniform("HasBones"), hasBones);
+	loc = glGetUniformLocation(geom->program, "GeomTransform");
+	if(loc != -1)
+		glUniformMatrix4fv(kuhl_get_uniform("GeomTransform"),
+		                   1, 0, geom->matrix);
 	
 	/* If the user provided us with indices, use glDrawElements to draw the geometry. */
 	if(geom->indices_len > 0 && glIsBuffer(geom->indices_bufferobject))
