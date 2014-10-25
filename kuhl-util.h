@@ -114,6 +114,8 @@ typedef struct
 	GLuint   attrib_custom_bufferobject; /**< The OpenGL buffer object storing the custom information - Set by kuhl_geometry_init(). */
 
 	float matrix[16]; /**< A matrix that all of this geometry should be transformed by */
+
+	int has_been_drawn;
 	
 #if KUHL_UTIL_USE_ASSIMP
 	struct aiNode *assimp_node; /**< Assimp node that this kuhl_geometry object was created from. */

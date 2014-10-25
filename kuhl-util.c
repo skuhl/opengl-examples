@@ -2385,6 +2385,7 @@ void kuhl_geometry_zero(kuhl_geometry *geom)
 	geom->attrib_custom_bufferobject = 0;
 
 	mat4f_identity(geom->matrix);
+	geom->has_been_drawn = 0;
 #ifdef KUHL_UTIL_USE_ASSIMP
 	geom->assimp_node = NULL;
 	geom->assimp_scene = NULL;
@@ -2839,9 +2840,29 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	if(loc != -1)
 		glUniform1i(kuhl_get_uniform("HasBones"), hasBones);
 	loc = glGetUniformLocation(geom->program, "GeomTransform");
+
 	if(loc != -1)
 		glUniformMatrix4fv(kuhl_get_uniform("GeomTransform"),
 		                   1, 0, geom->matrix);
+	else
+	{ /* If the geom->matrix was not the identity and if it is not in
+	   * the GLSL shader program, print a helpful warning message. */
+		float identity[16];
+		mat4f_identity(identity);
+		float sum = 0;
+		for(int i=0; i<16; i++)
+			sum += fabsf(identity[i] - (geom->matrix)[i]);
+		if(sum > 0.00001 && geom->has_been_drawn == 0)
+		{
+			printf("\n\n");
+			printf("ERROR: You must include a 'uniform mat4 GeomTransform' variable in your GLSL shader when you load/display a model with kuhl-util. This matrix should be applied to the vertices in your model before you multiply by your modelview matrix in the vertex program. For example:\n\ngl_Position = Projection * ModelView * GeomTransform * in_Position\n\n");
+			printf("This matrix is required to correctly translate/rotate/scale your geometry and is also used by some models to implement animation. This matrix is stored inside of a variable called 'matrix' in kuhl_geometry and is set to the identity matrix by default. This message only gets printed if you are using something that actually sets the matrix to something other than the identity. Earlier versions of this software simply transformed the vertices as the file was being loaded instead of doing it in the vertex program.\n");
+			printf("\n");
+			printf("This program will resume running in 2 seconds...\n");
+			sleep(2);
+			printf("...continuing despite the missing variable.\n");
+		}
+	}
 	
 	/* If the user provided us with indices, use glDrawElements to draw the geometry. */
 	if(geom->indices_len > 0 && glIsBuffer(geom->indices_bufferobject))
@@ -2859,6 +2880,9 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		kuhl_errorcheck();
 	}
 
+	/* Indicate in the struct that we have successfully drawn this geom once. */
+	geom->has_been_drawn = 1;
+	
 	/* Unbind texture */
 	glBindTexture(GL_TEXTURE_2D, previouslyBoundTexture);
 
