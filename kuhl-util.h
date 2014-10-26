@@ -1530,7 +1530,9 @@ void kuhl_video_record(const char *fileLabel, int fps);
 #ifdef KUHL_UTIL_USE_ASSIMP
 int kuhl_draw_model_file_ogl2(const char *modelFilename, const char *textureDirname);
 void kuhl_update_model_file_ogl3(const char *modelFilename, unsigned int animationNum, float t);
+int kuhl_load_model_file_ogl3(const char *modelFilename, const char *textureDirname, GLuint program);
 int kuhl_draw_model_file_ogl3(const char *modelFilename, const char *textureDirname, GLuint program);
+const struct aiScene* kuhl_model_file_aiScene(const char *modelFilename);
 int kuhl_model_bounding_box(const char *modelFilename, float min[3], float max[3], float center[3]);
 #endif // end use assimp
 

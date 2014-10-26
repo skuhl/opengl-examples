@@ -3557,9 +3557,10 @@ static void kuhl_print_aiScene_info(const char *modelFilename, const struct aiSc
 	printf("%s: Contains %d node(s) & %u mesh(es)\n", modelFilename, numNodes, scene->mNumMeshes);
 }
 
-/** Loads a model (if needed) and returns its index in the sceneMap
- * array. This function also reads texture files that the model refers
- * too.
+/** Uses ASSIMP to load model (if needed) and returns its index in the
+ * sceneMap array. This function also reads texture files that the
+ * model refers to. This function does not create any kuhl_geometry
+ * structs for the model.
  *
  * @param modelFilename The filename of a model to load.
  *
@@ -3570,7 +3571,7 @@ static void kuhl_print_aiScene_info(const char *modelFilename, const struct aiSc
  * @return Returns the index in the sceneMap array of this
  * model. Prints a message and exits if the model could not be loaded.
  */
-static int kuhl_private_load_model(const char *modelFilename, const char *textureDirname)
+static int kuhl_private_assimp_load(const char *modelFilename, const char *textureDirname)
 {
 	int index = kuhl_private_modelIndex(modelFilename);
 	if(index >= 0)
@@ -3690,8 +3691,6 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 			textureIdMapSize++;
 		}
 	}
-
-
 
 	/* Store the scene information in our list structure so we can
 	 * find the scene from the model filename again in the future. */
@@ -4367,7 +4366,7 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc,
 int kuhl_draw_model_file_ogl2(const char *modelFilename, const char *textureDirname)
 {
 	// Load the model if necessary and get its index in our sceneMap.
-	int index = kuhl_private_load_model(modelFilename, textureDirname);
+	int index = kuhl_private_assimp_load(modelFilename, textureDirname);
 	if(index >= 0)
 	{
 		/* Save and restore OpenGL state so that any state that we set
@@ -4470,6 +4469,56 @@ void kuhl_update_model_file_ogl3(const char *modelFilename, unsigned int animati
 	} // end for each geometry
 }
 
+/** Loads a model without drawing it. This function is automatically
+ * called by kuhl_draw_model_file_ogl3().
+ *
+ * @param modelFilename The filename of the model.
+ *
+ * @param textureDirname The directory that the model's textures are
+ * saved in. If set to NULL, the textures are assumed to be in the
+ * same directory as the model is in.
+ *
+ * @param program The GLSL program to draw the model with.
+ *
+ * @return Returns 1 if successful and 0 if we failed to load the model.
+ */
+int kuhl_load_model_file_ogl3(const char *modelFilename, const char *textureDirname, GLuint program)
+{
+	int index = kuhl_private_modelIndex(modelFilename);
+	
+	// If we have already loaded the program but we have been asked to
+	// draw the scene with a different program.
+	if(index >= 0 && sceneMap[index].geom_count > 0 && sceneMap[index].geom[0].program != program)
+	{
+		printf("%s: Reloading model %s since program switched from %d to %d\n",
+		       __func__, modelFilename, sceneMap[index].geom[0].program, program);
+		sceneMapStruct *sm = &(sceneMap[index]);
+		// Reset and zero out the kuhl_geometry objects previously used with this model.
+		for(int i=0; i<sm->geom_count; i++)
+		{
+			kuhl_geometry_delete(&(sm->geom[i]));
+			kuhl_geometry_zero(&(sm->geom[i]));
+		}
+		sm->geom_count = 0;
+		index = -1;
+	}
+	
+	if(index < 0) // if we need to load the model
+	{
+		// Load the model if necessary and get its index in our sceneMap.
+		index = kuhl_private_assimp_load(modelFilename, textureDirname);
+		float transform[16];
+		mat4f_identity(transform);
+		kuhl_private_setup_model_ogl3(sceneMap[index].scene, sceneMap[index].scene->mRootNode, program, index, transform);
+	}
+
+	if(index >= 0)
+		return 1; // model is loaded
+	else
+		return 0; // model is NOT loaded
+}
+
+
 /** Given a model file, load the model (if it hasn't been loaded
  * already) and render that file using OpenGL 3. The preprocessor
  * variable KUHL_UTIL_USE_ASSIMP must be defined to use this function.
@@ -4486,48 +4535,41 @@ void kuhl_update_model_file_ogl3(const char *modelFilename, unsigned int animati
  */
 int kuhl_draw_model_file_ogl3(const char *modelFilename, const char *textureDirname, GLuint program)
 {
-	int index = kuhl_private_modelIndex(modelFilename);
+	/* Try to load the model. */
+	if(kuhl_load_model_file_ogl3(modelFilename, textureDirname, program))
+	{
+		int index = kuhl_private_modelIndex(modelFilename);
+		if(index < 0) /* This shouldn't happen because we should have successfully loaded the model */
+			return 0;
 
-	// If we have already loaded the program but we have been asked to
-	// draw the scene with a different program.
-	if(index >= 0 && sceneMap[index].geom_count > 0 && sceneMap[index].geom[0].program != program)
-	{
-		printf("%s: Reloading model %s since program switched from %d to %d\n", __func__, modelFilename, sceneMap[index].geom[0].program, program);
-		sceneMapStruct *sm = &(sceneMap[index]);
-		// Reset and zero out the kuhl_geometry objects previously used with this model.
-		for(int i=0; i<sm->geom_count; i++)
-		{
-			kuhl_geometry_delete(&(sm->geom[i]));
-			kuhl_geometry_zero(&(sm->geom[i]));
-		}
-		sm->geom_count = 0;
-		index = -1;
-	}
-	
-	if(index < 0) // if we need to load the model
-	{
-		// Load the model if necessary and get its index in our sceneMap.
-		index = kuhl_private_load_model(modelFilename, textureDirname);
-		float transform[16];
-		mat4f_identity(transform);
-		kuhl_private_setup_model_ogl3(sceneMap[index].scene, sceneMap[index].scene->mRootNode, program, index, transform);
-	}
-	
-	if(index >= 0) // if the model is already loaded
-	{
 		sceneMapStruct *sm = &(sceneMap[index]);
 		for(int i=0; i < sm->geom_count; i++)
 			kuhl_geometry_draw(&(sm->geom[i]));
-		return 1;
+		
+		return 1; /* Successfully loaded and drew model */
 	}
 	else
-		return 0;
+		return 0; /* Failed to load the model */
 	
 	/* TODO: Think about proving a way for a user to cleanup models
 	   appropriately. We would call these two functions: */
 	// aiReleaseImport(scene);
 	// aiDetachAllLogStreams();
 }
+
+/** Get an aiScene struct so the developer can inspect the information
+ * in the struct (such as the number of animations, animation length,
+ * etc).
+ */
+const struct aiScene* kuhl_model_file_aiScene(const char *modelFilename)
+{
+	int index = kuhl_private_modelIndex(modelFilename);
+	if(index < 0)
+		return NULL;
+	sceneMapStruct *sm = &(sceneMap[index]);
+	return sm->scene;
+}
+
 
 /** Returns the bounding box for a model file.
  *
