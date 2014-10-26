@@ -3548,7 +3548,8 @@ static void kuhl_print_aiScene_info(const char *modelFilename, const struct aiSc
 		for(unsigned int j=0; j<mesh->mNumBones; j++)
 		{
 			struct aiBone *bone = mesh->mBones[j];
-			printf("%s: Mesh #%u: Bone #%u: Named \"%s\" and affects %u vertices.\n", modelFilename, i, j, bone->mName.data, bone->mNumWeights);
+			printf("%s: Mesh #%u: Bone #%u: Named \"%s\" and affects %u vertices.\n",
+			       modelFilename, i, j, bone->mName.data, bone->mNumWeights);
 		}
 	}
 
@@ -3611,11 +3612,14 @@ static int kuhl_private_load_model(const char *modelFilename, const char *textur
 	/* Print warning messages if the model uses features that our code
 	 * doesn't support (even though ASSIMP might support them. */
 	if(scene->mNumCameras > 0)
-		printf("%s: WARNING: This model has %u camera(s) embedded in it that we are ignoring.\n", modelFilename, scene->mNumCameras);
+		printf("%s: WARNING: This model has %u camera(s) embedded in it that we are ignoring.\n",
+		       modelFilename, scene->mNumCameras);
 	if(scene->mNumLights > 0)
-		printf("%s: WARNING: This model has %u light(s) embedded in it that we are ignoring.\n", modelFilename, scene->mNumLights);
+		printf("%s: WARNING: This model has %u light(s) embedded in it that we are ignoring.\n",
+		       modelFilename, scene->mNumLights);
 	if(scene->mNumTextures > 0)
-		printf("%s: WARNING: This model has %u texture(s) embedded in it. This program currently ignores embedded textures.\n", modelFilename, scene->mNumTextures);
+		printf("%s: WARNING: This model has %u texture(s) embedded in it. This program currently ignores embedded textures.\n",
+		       modelFilename, scene->mNumTextures);
 
 	// Uncomment this line to print additional information about the model:
 	// kuhl_print_aiScene_info(modelFilename, scene);
@@ -3998,7 +4002,6 @@ static void kuhl_private_anim_matrix(float transformResult[16], const struct aiN
 	mat4f_scaleVec_new(scalingMatrix, scalingValMid);
 	
 	// translation * rotation * scaling
-//	mat4f_mult_mat4f_new(transformResult, rotationMatrix, positionMatrix);
 	mat4f_mult_mat4f_new(transformResult, positionMatrix, rotationMatrix);
 	mat4f_mult_mat4f_new(transformResult, transformResult, scalingMatrix);
 }
@@ -4009,14 +4012,27 @@ static void kuhl_private_anim_matrix(float transformResult[16], const struct aiN
  * animation information, we ignore the matrix in the node and instead
  * calculate a matrix based on the animation information.
  *
- * @param transformResult To be filled in with the matrix for the requested node.
+ * @param transformResult To be filled in with the matrix for the
+ * requested node.
+ *
  * @param scene The ASSIMP scene object containing the node.
- * @param node The ASSIMP node object that we want animation information about.
- * @param animationNum If the file contains more than one animation, indicates which animation to use. If you don't know, set this to 0.
+ *
+ * @param node The ASSIMP node object that we want animation
+ * information about.
+ *
+ * @param animationNum If the file contains more than one animation,
+ * indicates which animation to use. If you don't know, set this to 0.
+ *
  * @param t The time in seconds that you want the animation matrix for.
- * @return Returns 1 if we successfully returned a matrix based on animation information. Returns 0 if we simply returned the transformation matrix in the node itself.
+ *
+ * @return Returns 1 if we successfully returned a matrix based on
+ * animation information. Returns 0 if we simply returned the
+ * transformation matrix in the node itself.
  */
-static int kuhl_private_node_matrix(float transformResult[16], const struct aiScene *scene, const struct aiNode *node, unsigned int animationNum, double t)
+static int kuhl_private_node_matrix(float transformResult[16],
+                                    const struct aiScene *scene,
+                                    const struct aiNode *node,
+                                    unsigned int animationNum, double t)
 {
 	/* Copy the transform matrix from the node itself. This is the
 	 * matrix that the user will see if we are unable to find the
@@ -4056,7 +4072,10 @@ static int kuhl_private_node_matrix(float transformResult[16], const struct aiSc
  *
  * @param nd The current node that we are rendering.
  */
-static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct aiNode* nd, GLuint program, int sceneMapIndex, float currentTransform[16])
+static void kuhl_private_setup_model_ogl3(const struct aiScene *sc,
+                                          const struct aiNode* nd,
+                                          GLuint program, int sceneMapIndex,
+                                          float currentTransform[16])
 {
 	/* Each node in the scene has a transform matrix that should
 	 * affect all of the nodes under it. The currentTransform matrix
@@ -4162,7 +4181,8 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		{
 			if(mesh->mNumBones > MAX_BONES)
 			{
-				printf("%s: This mesh has %d bones but we only support %d\n", __func__, mesh->mNumBones, MAX_BONES);
+				printf("%s: This mesh has %d bones but we only support %d\n",
+				       __func__, mesh->mNumBones, MAX_BONES);
 				exit(EXIT_FAILURE);
 			}
 			
@@ -4307,6 +4327,8 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 		if(geom.attrib_color) free(geom.attrib_color);
 		if(geom.attrib_normal) free(geom.attrib_normal);
 		if(geom.attrib_texcoord) free(geom.attrib_texcoord);
+		if(geom.attrib_boneIndex) free(geom.attrib_boneIndex);
+		if(geom.attrib_boneWeight) free(geom.attrib_boneWeight);
 		if(geom.indices) free(geom.indices);
 		
 		/* Save this geometry object so we can draw it later */
