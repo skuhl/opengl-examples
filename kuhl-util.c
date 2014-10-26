@@ -288,6 +288,20 @@ extern inline void mat3d_from_mat3f(double dest[ 9], const float  src[ 9]);
 extern inline void mat4d_from_mat4f(double dest[16], const float  src[16]);
 extern inline void mat3f_from_mat3d(float  dest[ 9], const double src[ 9]);
 extern inline void mat4f_from_mat4d(float  dest[16], const double src[16]);
+#ifdef KUHL_UTIL_USE_ASSIMP
+/** Create a 4x4 float matrix from an ASSIMP 4x4 matrix structure.
+    @param dest The location to store new matrix.
+    @param src The location of the original matrix.
+*/
+void mat4f_from_aiMatrix4x4(float  dest[16], struct aiMatrix4x4 src)
+{
+	float *tmp = (float*) (&src);
+	for(int i=0; i<16; i++)
+		dest[i] = *(tmp+i);
+	mat4f_transpose(dest);
+}
+#endif
+
 
 /** Don't call this function, call kuhl_errorcheck() instead. */
 int kuhl_errorcheckFileLine(const char *file, int line)
@@ -3999,7 +4013,7 @@ static void kuhl_private_anim_matrix(float transformResult[16], const struct aiN
  * @param scene The ASSIMP scene object containing the node.
  * @param node The ASSIMP node object that we want animation information about.
  * @param animationNum If the file contains more than one animation, indicates which animation to use. If you don't know, set this to 0.
- * @param t The time that you want the animation matrix for.
+ * @param t The time in seconds that you want the animation matrix for.
  * @return Returns 1 if we successfully returned a matrix based on animation information. Returns 0 if we simply returned the transformation matrix in the node itself.
  */
 static int kuhl_private_node_matrix(float transformResult[16], const struct aiScene *scene, const struct aiNode *node, unsigned int animationNum, double t)
@@ -4007,11 +4021,7 @@ static int kuhl_private_node_matrix(float transformResult[16], const struct aiSc
 	/* Copy the transform matrix from the node itself. This is the
 	 * matrix that the user will see if we are unable to find the
 	 * requested animation matrix for this node. */
-	struct aiMatrix4x4 m = node->mTransformation;
-	aiTransposeMatrix4(&m);
-	float *tmp = (float*)&m;
-	for(int i=0; i<16; i++)
-		transformResult[i] = *(tmp+i);
+	mat4f_from_aiMatrix4x4(transformResult, node->mTransformation);
 	
 	/* If the user requested an animation number that is too large
 	 * based on the number of the animations in the file, return use
@@ -4059,13 +4069,9 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc, const struct
 	float origTransform[16];
 	mat4f_copy(origTransform, currentTransform);
 	
-	/* Get this nodes transform matrix and convert it into a plain array. */
+	/* Get this node's transform matrix and convert it into a plain array. */
 	float thisTransform[16];
-	struct aiMatrix4x4 m = nd->mTransformation;
-	aiTransposeMatrix4(&m);
-	float *tmp = (float*)&m;
-	for(int i=0; i<16; i++)
-		thisTransform[i] = *(tmp+i);
+	mat4f_from_aiMatrix4x4(thisTransform, nd->mTransformation);
 
 	/* Apply this node's transformation to our current transform. */
 	mat4f_mult_mat4f_new(currentTransform, currentTransform, thisTransform);
@@ -4413,23 +4419,16 @@ void kuhl_update_model_file_ogl3(const char *modelFilename, unsigned int animati
 		/* Update the list of bone matrices. */
 		for(int b=0; b < g->bones->count; b++) // For each bone
 		{
-			mat4f_identity(result);
-
 			// Find the bone node and the bone itself.
 			const struct aiNode *node = kuhl_assimp_find_node(g->bones->names[b], scene->mRootNode);
 			const struct aiBone* bone = kuhl_assimp_find_bone(node->mName.data, scene->mMeshes[g->bones->mesh]);
 
 			/* Get bone offset from the aiBone struct */
 			float offset[16];
-			mat4f_identity(offset);
-			struct aiMatrix4x4 m = bone->mOffsetMatrix;
-			aiTransposeMatrix4(&m);
-			float *tmp = (float*)&m;
-			for(int i=0; i<16; i++)
-				offset[i] = *(tmp+i);
+			mat4f_from_aiMatrix4x4(offset, bone->mOffsetMatrix);
 
 			/* Traverse the graph up from the bone node and construct
-			 * a transformation matrix.. */
+			 * a single transformation matrix for this bone. */
 			float transform[16];
 			mat4f_identity(transform);
 			while(node != NULL)
@@ -4440,7 +4439,9 @@ void kuhl_update_model_file_ogl3(const char *modelFilename, unsigned int animati
 				node = node->mParent; // move to next node up
 			}
 
-			/* Update the bone matrix for this bone */
+			/* Update the bone matrix for this bone:
+			   boneMatrix = transform * offset
+			*/
 			mat4f_mult_mat4f_new(g->bones->matrices[b], transform, offset);
 
 		} // end for each bone

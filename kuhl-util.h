@@ -1348,30 +1348,29 @@ static inline void mat4d_print(const double m[16])
 { matNd_print(m, 4); }
 
 /** Create a 3x3 double matrix from a 3x3 float matrix.
-    @param dest Location to store now matrix.
+    @param dest Location to store new matrix.
     @param src Location of the original matrix.
 */
 static inline void mat3d_from_mat3f(double dest[ 9], const float  src[ 9])
 { for(int i=0; i<9; i++) dest[i] = (double) src[i]; }
 /** Create a 4x4 double matrix from a 4x4 float matrix.
-    @param dest Location to store now matrix.
+    @param dest Location to store new matrix.
     @param src Location of the original matrix.
 */
 static inline void mat4d_from_mat4f(double dest[16], const float  src[16])
 { for(int i=0; i<16; i++) dest[i] = (double) src[i]; }
 /** Create a 3x3 float matrix from a 3x3 double matrix.
-    @param dest Location to store now matrix.
+    @param dest Location to store new matrix.
     @param src Location of the original matrix.
 */
 static inline void mat3f_from_mat3d(float  dest[ 9], const double src[ 9])
 { for(int i=0; i<9; i++) dest[i] = (float) src[i]; }
 /** Create a 4x4 float matrix from a 4x4 double matrix.
-    @param dest Location to store now matrix.
+    @param dest Location to store new matrix.
     @param src Location of the original matrix.
 */
 static inline void mat4f_from_mat4d(float  dest[16], const double src[16])
 { for(int i=0; i<16; i++) dest[i] = (float) src[i]; }
-
 
 
 /* mat[43][df]_invert_new() will invert a matrix and store the
