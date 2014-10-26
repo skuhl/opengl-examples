@@ -4359,7 +4359,8 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc,
  *
  * @param textureDirname The directory that the model's textures are
  * saved in. If set to NULL, the textures are assumed to be in the
- * same directory as the model is in.
+ * same directory as the model is in. If the model has already been
+ * drawn/loaded, this parameter is unused.
  *
  * @return Returns 1 if successful and 0 if we failed to load the model.
  */
@@ -4476,7 +4477,8 @@ void kuhl_update_model_file_ogl3(const char *modelFilename, unsigned int animati
  *
  * @param textureDirname The directory that the model's textures are
  * saved in. If set to NULL, the textures are assumed to be in the
- * same directory as the model is in.
+ * same directory as the model is in. If the model has already been
+ * drawn/loaded, this parameter is unused.
  *
  * @param program The GLSL program to draw the model with.
  *
