@@ -1002,9 +1002,9 @@ void mat4d_rotateAxisVec_new(double result[16], double degrees, const double axi
  *
  * @param result The location to store the resulting matrix.
  * @param degrees The number of degrees to rotate around the axis.
- * @param x The x-component of the axis to rotate around.
- * @param y The y-component of the axis to rotate around.
- * @param z The z-component of the axis to rotate around.
+ * @param axisX The x-component of the axis to rotate around.
+ * @param axisY The y-component of the axis to rotate around.
+ * @param axisZ The z-component of the axis to rotate around.
  */
 void mat3f_rotateAxis_new(float  result[ 9], float  degrees, float axisX, float axisY, float axisZ)
 {
@@ -1017,9 +1017,9 @@ void mat3f_rotateAxis_new(float  result[ 9], float  degrees, float axisX, float 
  *
  * @param result The location to store the resulting matrix.
  * @param degrees The number of degrees to rotate around the axis.
- * @param x The x-component of the axis to rotate around.
- * @param y The y-component of the axis to rotate around.
- * @param z The z-component of the axis to rotate around.
+ * @param axisZ The x-component of the axis to rotate around.
+ * @param axisY The y-component of the axis to rotate around.
+ * @param axisZ The z-component of the axis to rotate around.
  */
 void mat3d_rotateAxis_new(double result[ 9], double degrees, double axisX, double axisY, double axisZ)
 {
@@ -1032,9 +1032,9 @@ void mat3d_rotateAxis_new(double result[ 9], double degrees, double axisX, doubl
  *
  * @param result The location to store the resulting matrix.
  * @param degrees The number of degrees to rotate around the axis.
- * @param x The x-component of the axis to rotate around.
- * @param y The y-component of the axis to rotate around.
- * @param z The z-component of the axis to rotate around.
+ * @param axisX The x-component of the axis to rotate around.
+ * @param axisY The y-component of the axis to rotate around.
+ * @param axisZ The z-component of the axis to rotate around.
  */
 void mat4f_rotateAxis_new(float  result[16], float  degrees, float axisX, float axisY, float axisZ)
 {
@@ -1047,9 +1047,9 @@ void mat4f_rotateAxis_new(float  result[16], float  degrees, float axisX, float 
  *
  * @param result The location to store the resulting matrix.
  * @param degrees The number of degrees to rotate around the axis.
- * @param x The x-component of the axis to rotate around.
- * @param y The y-component of the axis to rotate around.
- * @param z The z-component of the axis to rotate around.
+ * @param axisX The x-component of the axis to rotate around.
+ * @param axisY The y-component of the axis to rotate around.
+ * @param axisZ The z-component of the axis to rotate around.
  */
 void mat4d_rotateAxis_new(double result[16], double degrees, double axisX, double axisY, double axisZ)
 {
@@ -3898,7 +3898,7 @@ static void kuhl_private_recrend_ogl2(const struct aiScene *sc, const struct aiN
  *
  * @param transformResult The resulting transformation matrix.
  * @param na The aiNodeAnim to generate the matrix form.
- * @param t The time of the animation in TICKS (not seconds!)
+ * @param ticks The time of the animation in TICKS (not seconds!)
  */
 static void kuhl_private_anim_matrix(float transformResult[16], const struct aiNodeAnim *na, double ticks)
 {

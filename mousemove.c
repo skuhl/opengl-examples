@@ -51,7 +51,7 @@ static float cam_lookat_down[3]; /**< The lookat vector when the mouse button wa
 static float cam_position_down[3]; /**< The camera position when the mouse button was last pressed down */
 
 /** Internal function to move camera along the look at vector
- * @param amount Amount to translate camera down the lookVec
+ * @param dy Amount to translate camera down the lookVec
  * @param lookVec Vector pointing where camera is looking
  */
 void mousemove_translate_inout(int dy, const float lookVec[3]){
@@ -80,7 +80,7 @@ void mousemove_speed(float translationSpeed, float rotationSpeed)
  *
  * @param position To be filled with the viewpoint position.
  * @param lookAt To be filled with a point that the viewer is looking at.
- * @param lookAt To be filled with an up vector.
+ * @param up To be filled with an up vector.
  */
 void mousemove_get(float position[3], float lookAt[3], float up[3])
 {
@@ -106,14 +106,22 @@ void mousemove_setVec(const float position[3], const float lookAt[3], const floa
 }
 
 /** Sets the currently used camera position, look at point, and up
- * vector. This function is typically called at the beginning of a
- * program to initialize the location that the camera should be at.
+ * vector. Note that the look variables are not a vector---but are a
+ * point that the camera should be pointing at. This function is
+ * typically called at the beginning of a program to initialize the
+ * location that the camera should be at.
  *
- * @param position The position to place the camera.
- * @param lookAt The point that the camera is pointing at.
- * @param up The camera's up vector.
+ * @param posX The X position to place the camera.
+ * @param posY The Y position to place the camera.
+ * @param posZ The Z position to place the camera.
+ * @param lookX The X component of a point that the camera is looking at.
+ * @param lookY The Y component of a point that the camera is looking at.
+ * @param lookZ The Z component of a point that the camera is looking at.
+ * @param upX The X component of the camera up vector.
+ * @param upY The Y component of the camera up vector.
+ * @param upZ The Z component of the camera up vector.
  * @see mousemove_setVec()
- */    
+ */
 void mousemove_set(float posX, float posY, float posZ,
                    float lookX, float lookY, float lookZ,
                    float upX, float upY, float upZ)
