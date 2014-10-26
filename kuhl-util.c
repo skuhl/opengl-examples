@@ -4360,35 +4360,45 @@ int kuhl_draw_model_file_ogl2(const char *modelFilename, const char *textureDirn
 	// aiDetachAllLogStreams();
 }
 
+/** Setup a model to draw at a specific time.
 
-void kuhl_update_model_file_ogl3(const char *modelFilename, unsigned int animationNum, float t)
+    @param modelFilename Name of model file to update.
+    @param animationNum The animation to use. If the file only contains one animation, set it to 0.
+    @param time The time in seconds to set the animation to.
+*/
+void kuhl_update_model_file_ogl3(const char *modelFilename, unsigned int animationNum, float time)
 {
+	/* Find the model in our scenemap. */
 	int index = kuhl_private_modelIndex(modelFilename);
 	if(index < 0)
 		return;
 
 	sceneMapStruct *sm = &(sceneMap[index]);
+	
+	/* For each kuhl_geometry object in this model. */
 	for(int i=0; i<sm->geom_count; i++)
 	{
 		kuhl_geometry *g = &(sm->geom[i]);
+		/* The aiScene object that this kuhl_geometry refers to. */
 		struct aiScene *scene = g->assimp_scene;
+		/* The aiNode object that this kuhl_geometry refers to. */
 		struct aiNode *node = g->assimp_node;
 
 		if(scene == NULL || node == NULL)
 		{
-			printf("scene or node was NULL\n");
+			printf("%s: Scene or node was NULL for %s\n", __func__, modelFilename);
 			continue;
 		}
 
-		/* Traverse up the node tree and apply all of the matrices as
-		 * we go up. */
+		/* Start at our current node and traverse up. Apply all of the
+		 * transformation matrices as we traverse up. */
 		float result[16];
 		mat4f_identity(result);
 		do
 		{
 			float transform[16];
 			mat4f_identity(transform);
-			kuhl_private_node_matrix(transform, scene, node, animationNum, t);
+			kuhl_private_node_matrix(transform, scene, node, animationNum, time);
 			mat4f_mult_mat4f_new(result, transform, result);
 			node = node->mParent;
 		} while(node != NULL);
@@ -4400,33 +4410,16 @@ void kuhl_update_model_file_ogl3(const char *modelFilename, unsigned int animati
 		if(g->bones == NULL)
 			continue;
 
-		float globalinversetransform[16];
-		struct aiMatrix4x4 m = scene->mRootNode->mTransformation;
-		aiTransposeMatrix4(&m);
-		float *tmp = (float*)&m;
-		for(int i=0; i<16; i++)
-			globalinversetransform[i] = *(tmp+i);
-		mat4f_invert(globalinversetransform);
-//		printf("git:\n");
-//		mat4f_print(globalinversetransform);
-
-		/* For each bone */
-		for(int b=0; b < g->bones->count; b++)
+		/* Update the list of bone matrices. */
+		for(int b=0; b < g->bones->count; b++) // For each bone
 		{
 			mat4f_identity(result);
 
-			// Find the bone node
+			// Find the bone node and the bone itself.
 			const struct aiNode *node = kuhl_assimp_find_node(g->bones->names[b], scene->mRootNode);
 			const struct aiBone* bone = kuhl_assimp_find_bone(node->mName.data, scene->mMeshes[g->bones->mesh]);
 
-			/* Get the transformation information for the given node (ignoring parent nodes). */
-			float transform[16];
-			mat4f_identity(transform);
-			kuhl_private_node_matrix(transform, scene, node, animationNum, t);
-//			printf("node transform\n");
-//			mat4f_print(transform);
-
-			/* Get bone office from the aiBone struct */
+			/* Get bone offset from the aiBone struct */
 			float offset[16];
 			mat4f_identity(offset);
 			struct aiMatrix4x4 m = bone->mOffsetMatrix;
@@ -4434,26 +4427,22 @@ void kuhl_update_model_file_ogl3(const char *modelFilename, unsigned int animati
 			float *tmp = (float*)&m;
 			for(int i=0; i<16; i++)
 				offset[i] = *(tmp+i);
-//		printf("offset\n");
-//		mat4f_print(offset);
 
-			/* Update our transform matrix based on the matrices in the parent nodes. */
-			node = node->mParent;
+			/* Traverse the graph up from the bone node and construct
+			 * a transformation matrix.. */
+			float transform[16];
+			mat4f_identity(transform);
 			while(node != NULL)
 			{
 				float nodeTrans[16];
-				kuhl_private_node_matrix(nodeTrans, scene, node, animationNum, t);
+				kuhl_private_node_matrix(nodeTrans, scene, node, animationNum, time);
 				mat4f_mult_mat4f_new(transform, nodeTrans, transform);
 				node = node->mParent; // move to next node up
 			}
 
-			mat4f_identity(result);
-			mat4f_mult_mat4f_new(result, offset, result);
-			mat4f_mult_mat4f_new(result, transform, result);
+			/* Update the bone matrix for this bone */
+			mat4f_mult_mat4f_new(g->bones->matrices[b], transform, offset);
 
-			mat4f_copy(g->bones->matrices[b], result);
-//			printf("final combined:\n");
-//			mat4f_print(result);
 		} // end for each bone
 	} // end for each geometry
 }
