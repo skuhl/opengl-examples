@@ -118,7 +118,9 @@ fi
 printMessage "Connected to IVS."
 
 # Create an ssh command with appropriate arguments that we can use
-# repeatedly to run programs on IVS. 
+# repeatedly to run programs on IVS. Use -x to explicitly disable X
+# forwarding since we don't need it (and the user might have specified
+# it as an option in the ssh config file).
 SSH_CMD="ssh -q -t -t -x -S ./.temp-dgr-ssh-socket ${IVS_USER}@${IVS_HOSTNAME}"
 
 # Skip the directory deletion so that rsync can just update the files at the destination instead of copying everything over each time.
@@ -129,7 +131,6 @@ ${SSH_CMD} mkdir -p "$IVS_TEMP_DIR"
 
 printMessage "Copying files to $IVS_TEMP_DIR on IVS..."
 rsync -ah -e ssh --exclude=.svn --exclude=.git --exclude=CMakeCache.txt --exclude=CMakeFiles --checksum --partial --no-whole-file --inplace --delete . ${IVS_USER}@${IVS_HOSTNAME}:${IVS_TEMP_DIR}
-
 
 # This check adds about a second to our startup time and usually works
 # successfully. However, it is a helpful in the unlikely case where a
@@ -146,11 +147,8 @@ for i in ${ALL_TILES}; do
 done
 
 
-printMessage "Running sync on IVS..."
-${SSH_CMD} sync
-
 printMessage "Running cmake on IVS..."
-${SSH_CMD} "cd \"${IVS_TEMP_DIR}\" && /export/apps/src/cmake/2.8.9/cmake-2.8.9/bin/cmake ."
+${SSH_CMD} "cd \"${IVS_TEMP_DIR}\" && rm -rf CMakeCache.txt CMakeFiles && /export/apps/src/cmake/2.8.9/cmake-2.8.9/bin/cmake ."
 printMessage "Compiling $1 and dgr-relay IVS..."
 ${SSH_CMD} make --quiet --jobs=3 -C "${IVS_TEMP_DIR}" "$1" dgr-relay
 
@@ -182,7 +180,7 @@ export DGR_MODE="master"
 export DGR_MASTER_DEST_PORT=${RELAY_LISTEN_PORT}
 export DGR_MASTER_DEST_IP=${IVS_HOSTNAME}
 export PROJMAT_FRUSTUM="${HORIZ_LEFT} ${HORIZ_RIGHT} ${VERT_BOT} ${VERT_TOP} ${NEAR} ${FAR}"
-export PROJMAT_MASTER_FRUSTUM="$PROJMAT_FRUSTUM"
+export PROJMAT_MASTER_FRUSTUM="${PROJMAT_FRUSTUM}"
 export PROJMAT_WINDOW_SIZE="1152 432"
 printMessage "Starting DGR master on `hostname`"
 printMessage "DGR master is sending packets to ${DGR_MASTER_DEST_IP}:${DGR_MASTER_DEST_PORT}"
@@ -278,7 +276,7 @@ while [[ ! -r $1 ]]; do
    echo ${tile} does not have $1 yet, waiting...
    sleep .5
    cd ${IVS_TEMP_DIR}
-done
+done # end while loop waiting for updated files
 \"${@}\""
     ${SSH_CMD} "ssh -t ${tile} \"${RUN_ON_TILE}\"" &
 done
