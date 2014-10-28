@@ -94,7 +94,7 @@ fi
 # Create a persistant ssh connection that we will reuse. This will
 # just make it so we have to SSH into ivs once (might be slow, might
 # prompt for a password) but then subsequent ssh calls are nearly
-# instantanious.
+# instantaneous.
 #  Use -x to explicitly disable X forwarding since we don't need it (and the user might have specified it as an option in their own ssh config file)
 # Use -S to create/specify an ssh control socket.
 # Use -t to force tty allocation.
@@ -128,6 +128,15 @@ ${SSH_CMD} mkdir -p "$IVS_TEMP_DIR"
 
 printMessage "Copying files to $IVS_TEMP_DIR on IVS..."
 rsync -ah -e ssh --exclude=.svn --exclude=.git --exclude=CMakeCache.txt --exclude=CMakeFiles --checksum --partial --no-whole-file --inplace --delete . ${IVS_USER}@${IVS_HOSTNAME}:${IVS_TEMP_DIR}
+
+printMessage "Checking that tile nodes are accessible from IVS..."
+for i in tile-0-1 tile-0-2 tile-0-3 tile-0-4 tile-0-5 tile-0-6 tile-0-7; do
+	if [[ `${SSH_CMD} ssh $i 'echo test'` != "test" ]]; then
+		echo "$i is down"
+		exit 1
+	fi
+done
+
 
 printMessage "Running sync on IVS..."
 ${SSH_CMD} sync
