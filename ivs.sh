@@ -13,6 +13,7 @@ RELAY_LISTEN_PORT=${MASTER_SEND_PORT}
 RELAY_SEND_TO_IP=10.1.255.255     # This is a broadcast address to send packets to all tiles
 RELAY_SEND_PORT=${SLAVE_LISTEN_PORT}
 
+ALL_TILES="tile-0-0.local tile-0-1.local tile-0-2.local tile-0-3.local tile-0-4.local tile-0-5.local tile-0-6.local tile-0-7.local"
 
 # If we exit unexpectedly, kill all of the background processes.
 trap 'cleanup' ERR   # process exits with non-zero exit code
@@ -49,7 +50,7 @@ function printMessage()
 }
 
 # Make sure the user isn't running this on a host that it isn't supposed to run on.
-for i in ivs.research.mtu.edu tile-0-0.local tile-0-1.local tile-0-2.local tile-0-3.local tile-0-4.local tile-0-5.local tile-0-6.local tile-0-7.local; do
+for i in ivs.research.mtu.edu ${ALL_TILES}; do
     denyHostname "$i"
 done
 
@@ -129,10 +130,17 @@ ${SSH_CMD} mkdir -p "$IVS_TEMP_DIR"
 printMessage "Copying files to $IVS_TEMP_DIR on IVS..."
 rsync -ah -e ssh --exclude=.svn --exclude=.git --exclude=CMakeCache.txt --exclude=CMakeFiles --checksum --partial --no-whole-file --inplace --delete . ${IVS_USER}@${IVS_HOSTNAME}:${IVS_TEMP_DIR}
 
+
+# This check adds about a second to our startup time and usually works
+# successfully. However, it is a helpful in the unlikely case where a
+# tile goes down.
 printMessage "Checking that tile nodes are accessible from IVS..."
-for i in tile-0-1 tile-0-2 tile-0-3 tile-0-4 tile-0-5 tile-0-6 tile-0-7; do
-	if [[ `${SSH_CMD} ssh $i 'echo test'` != "test" ]]; then
-		echo "$i is down"
+for i in ${ALL_TILES}; do
+	echo "Testing connection to tile $i"
+	if ! ${SSH_CMD} ssh $i 'exit'; then
+		echo "ERROR: Unable to establish an ssh connection with tile: $i"
+		echo "Perhaps the tile is turned off or you can't ssh to it?"
+		echo "To run without a specific tile, remove the tile from the ALL_TILES variable."
 		exit 1
 	fi
 done
@@ -239,7 +247,7 @@ function getFrustum() {
 }
 
 
-for tile in tile-0-0.local tile-0-1.local tile-0-2.local tile-0-3.local tile-0-4.local tile-0-5.local tile-0-6.local tile-0-7.local; do
+for tile in ${ALL_TILES}; do
     printMessage "Starting DGR slave on tile ${tile}, listening on port ${SLAVE_LISTEN_PORT}"
 	FRUSTUM=`getFrustum ${tile}`
 	echo ${FRUSTUM}
