@@ -110,6 +110,7 @@ void get_model_matrix(float result[16])
 	int count = glutGet(GLUT_ELAPSED_TIME) % 10000; // get a counter that repeats every 10 seconds
 	/* Animate the model if there is animation information available. */
 	kuhl_update_model_file_ogl3(modelFilename, 0, count/1000.0);
+	dgr_setget("count", &count, sizeof(int));
 
 	/* Calculate the width/height/depth of the bounding box and
 	 * determine which one of the three is the largest. Then, scale
@@ -138,6 +139,8 @@ void get_model_matrix(float result[16])
 void display()
 {
 	dgr_update();
+
+	dgr_setget("style", &renderStyle, sizeof(int));
 
 	// Clear the screen to black, clear the depth buffer
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
