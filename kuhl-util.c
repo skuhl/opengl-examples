@@ -1204,9 +1204,9 @@ void quatf_from_mat3f(float quat[4], const float matrix[9])
 	   quat[W] = s * 0.5;
 	   s = 0.5 / s;
 
-	   quat[X] = (matrix[mat3_getIndex(Y,Z)] - matrix[mat3_getIndex(Z,Y)]) * s;
-	   quat[Y] = (matrix[mat3_getIndex(Z,X)] - matrix[mat3_getIndex(X,Z)]) * s;
-	   quat[Z] = (matrix[mat3_getIndex(X,Y)] - matrix[mat3_getIndex(Y,X)]) * s;
+	   quat[X] = (matrix[mat3_getIndex(Z,Y)] - matrix[mat3_getIndex(Y,Z)]) * s;
+	   quat[Y] = (matrix[mat3_getIndex(X,Z)] - matrix[mat3_getIndex(Z,X)]) * s;
+	   quat[Z] = (matrix[mat3_getIndex(Y,Z)] - matrix[mat3_getIndex(X,Y)]) * s;
    }
 
    else
@@ -1225,9 +1225,9 @@ void quatf_from_mat3f(float quat[4], const float matrix[9])
 	   
 	   s = 0.5 / s;
 	   
-	   quat[W] = (matrix[mat3_getIndex(j,k)] - matrix[mat3_getIndex(k,j)]) * s;
-	   quat[j] = (matrix[mat3_getIndex(i,j)] + matrix[mat3_getIndex(j,i)]) * s;
-	   quat[k] = (matrix[mat3_getIndex(i,k)] + matrix[mat3_getIndex(k,i)]) * s;
+	   quat[W] = (matrix[mat3_getIndex(k,j)] - matrix[mat3_getIndex(j,k)]) * s;
+	   quat[j] = (matrix[mat3_getIndex(j,i)] + matrix[mat3_getIndex(i,j)]) * s;
+	   quat[k] = (matrix[mat3_getIndex(k,i)] + matrix[mat3_getIndex(i,k)]) * s;
    }
 }
 /** Creates a unit quaternion (x,y,z,w) from a rotation matrix. For full documentation, see quatf_from_mat3f() */
@@ -1242,9 +1242,9 @@ void quatd_from_mat3d(double quat[4], const double matrix[9])
 	   quat[W] = s * 0.5;
 	   s = 0.5 / s;
 
-	   quat[X] = (matrix[mat3_getIndex(Y,Z)] - matrix[mat3_getIndex(Z,Y)]) * s;
-	   quat[Y] = (matrix[mat3_getIndex(Z,X)] - matrix[mat3_getIndex(X,Z)]) * s;
-	   quat[Z] = (matrix[mat3_getIndex(X,Y)] - matrix[mat3_getIndex(Y,X)]) * s;
+	   quat[X] = (matrix[mat3_getIndex(Z,Y)] - matrix[mat3_getIndex(Y,Z)]) * s;
+	   quat[Y] = (matrix[mat3_getIndex(X,Z)] - matrix[mat3_getIndex(Z,X)]) * s;
+	   quat[Z] = (matrix[mat3_getIndex(Y,Z)] - matrix[mat3_getIndex(X,Y)]) * s;
    }
 
    else
@@ -1262,10 +1262,10 @@ void quatd_from_mat3d(double quat[4], const double matrix[9])
 	   quat[i] = s * 0.5;
 	   
 	   s = 0.5 / s;
-	   
-	   quat[W] = (matrix[mat3_getIndex(j,k)] - matrix[mat3_getIndex(k,j)]) * s;
-	   quat[j] = (matrix[mat3_getIndex(i,j)] + matrix[mat3_getIndex(j,i)]) * s;
-	   quat[k] = (matrix[mat3_getIndex(i,k)] + matrix[mat3_getIndex(k,i)]) * s;
+
+	   quat[W] = (matrix[mat3_getIndex(k,j)] - matrix[mat3_getIndex(j,k)]) * s;
+	   quat[j] = (matrix[mat3_getIndex(j,i)] + matrix[mat3_getIndex(i,j)]) * s;
+	   quat[k] = (matrix[mat3_getIndex(k,i)] + matrix[mat3_getIndex(i,k)]) * s;
    }
 }
 
