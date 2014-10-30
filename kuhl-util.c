@@ -4056,7 +4056,7 @@ static int kuhl_private_node_matrix(float transformResult[16],
 	/* If we can't find a corresponding animation channel or if the
 	 * caller requested a time that was out of range, then return the
 	 * transformation matrix from the node. */
-	if(channel < 0 || t > anim->mDuration / anim->mTicksPerSecond)
+	if(channel < 0 || t > anim->mDuration / anim->mTicksPerSecond || t < 0)
 		return 0;
 	
 	struct aiNodeAnim *na = anim->mChannels[channel];
@@ -4391,8 +4391,13 @@ int kuhl_draw_model_file_ogl2(const char *modelFilename, const char *textureDirn
 /** Setup a model to draw at a specific time.
 
     @param modelFilename Name of model file to update.
-    @param animationNum The animation to use. If the file only contains one animation, set it to 0.
-    @param time The time in seconds to set the animation to.
+
+    @param animationNum The animation to use. If the file only
+    contains one animation, set it to 0.
+
+    @param time The time in seconds to set the animation to. Setting
+    time to a negative can ensure that the model displays in its bind
+    pose.
 */
 void kuhl_update_model_file_ogl3(const char *modelFilename, unsigned int animationNum, float time)
 {
@@ -4512,6 +4517,10 @@ int kuhl_load_model_file_ogl3(const char *modelFilename, const char *textureDirn
 		float transform[16];
 		mat4f_identity(transform);
 		kuhl_private_setup_model_ogl3(sceneMap[index].scene, sceneMap[index].scene->mRootNode, program, index, transform);
+
+		/* Ensure model shows up in bind pose if the caller doesn't
+		 * also call kuhl_update_model_file_ogl3(). */
+		kuhl_update_model_file_ogl3(modelFilename, 0, -1);
 	}
 
 	if(index >= 0)
