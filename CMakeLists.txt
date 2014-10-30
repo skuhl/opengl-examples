@@ -249,6 +249,19 @@ else()
 	endif()
 endif()
 
+# === ogl3-slerp ===
+if(ASSIMP_FOUND AND ImageMagick_FOUND)
+	add_executable(ogl3-slerp ogl3-slerp.c kuhl-util.c imageio.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
+	target_link_libraries(ogl3-slerp ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES})
+	set_target_properties(ogl3-slerp PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_ASSIMP;KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
+else()
+	if(NOT ASSIMP_FOUND)
+		message("Not compiling ogl3-slerp because ASSIMP library was not found on this system.")
+	endif()
+	if(NOT ImageMagick_FOUND)
+		message("Not compiling ogl3-slerp because ImageMagick library was not found on this system.")
+	endif()
+endif()
 	
 
 
