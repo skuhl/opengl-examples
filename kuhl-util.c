@@ -2335,7 +2335,7 @@ GLint kuhl_get_attribute(GLuint program, const char *attributeName)
 	kuhl_errorcheck();
 	if(loc == -1)
 	{
-		fprintf(stderr, "kuhl_get_attribute(): Attribute variable '%s' is missing or inactive in your GLSL program.\n", attributeName);
+		fprintf(stderr, "kuhl_get_attribute(): Attribute variable '%s' is missing or inactive in GLSL program %d.\n", attributeName, program);
 	}
 	return loc;
 }
