@@ -3675,7 +3675,7 @@ static int kuhl_private_assimp_load(const char *modelFilename, const char *textu
 			strncat(fullpath, "/", 1024-strlen(fullpath)); // make sure there is a slash between the directory and the texture's filename
 			strncat(fullpath, path.data, 1024-strlen(fullpath));
 
-			printf("%s: Model refers \"%s\" and we expect to be at \"%s\"\n", modelFilename, path.data, fullpath);
+			printf("%s: Model refers to \"%s\"; we expect to find it at \"%s\"\n", modelFilename, path.data, fullpath);
 			kuhl_read_texture_file(fullpath, &texIndex);
 
 			/* Store the texture information in our list structure so
