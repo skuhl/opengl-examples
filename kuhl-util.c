@@ -2181,7 +2181,7 @@ GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename)
 {
 	if(vertexFilename == NULL || fragFilename == NULL)
 	{
-		fprintf(stderr, "kuhl_create_program(): One or more of the parameters were NULL\n");
+		fprintf(stderr, "%s: One or more of the parameters were NULL\n", __func__);
 		return 0;
 	}
 
@@ -2189,7 +2189,7 @@ GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename)
 	GLuint program = glCreateProgram();
 	if(program == 0)
 	{
-		fprintf(stderr, "kuhl_create_program(): ERROR: Failed to create program.\n");
+		fprintf(stderr, "%s: ERROR: Failed to create program.\n", __func__);
 		exit(1);
 	}
 	printf("Creating program %d from vertex shader (%s) and fragment shader (%s).\n",
@@ -2217,25 +2217,14 @@ GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename)
 	if(linked == GL_FALSE)
 	{
 		kuhl_print_program_log(program);
-		fprintf(stderr, "kuhl_create_program(): ERROR: Failed to link GLSL program.\n");
+		fprintf(stderr, "%s: ERROR: Failed to link GLSL program.\n", __func__);
 		exit(1);
 	}
 
-	glValidateProgram(program);
-	kuhl_errorcheck();
-
-	/* Check if program validation was successful. */
-	GLint validated;
-	glGetProgramiv((GLuint)program, GL_VALIDATE_STATUS, &validated);
-	kuhl_errorcheck();
-
-	if(validated == GL_FALSE)
-	{
-		kuhl_print_program_log(program);
-		fprintf(stderr, "kuhl_create_program(): ERROR: Failed to validate GLSL program.\n");
-		exit(1);
-	}
-
+	/* We used to call glValidateProgram() here. However, some drivers
+	 * assume that you only call glValidateProgram() when you are
+	 * ready to draw (i.e., have a vertex array object set up, etc). */
+	
 	kuhl_print_program_info(program);
 	printf("GLSL program %d created successfully.\n", program);
 	return program;
@@ -2766,6 +2755,21 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 	}
 	kuhl_geometry_sanity_check(geom);
 
+	/* Try to validate the GLSL program for debugging purposes. */
+	glValidateProgram(geom->program);
+	kuhl_errorcheck();
+	GLint validated;
+	glGetProgramiv(geom->program, GL_VALIDATE_STATUS, &validated);
+	kuhl_errorcheck();
+
+	if(validated == GL_FALSE)
+	{
+		kuhl_print_program_log(geom->program);
+		fprintf(stderr, "%s: ERROR: Failed to validate GLSL program %d.\n",
+		        __func__, geom->program);
+		exit(EXIT_FAILURE);
+	}
+	
     /* Unbind VAO. In the future, we can bind the vertex array object
      * that we created and to easily recall all of the position,
      * normal, color, texture coordinate, etc. information. */
