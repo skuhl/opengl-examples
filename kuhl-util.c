@@ -4305,11 +4305,12 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc,
 			kuhl_bonemat *bones = (kuhl_bonemat*) malloc(sizeof(kuhl_bonemat));
 			bones->count = mesh->mNumBones;
 			bones->mesh = n;
+			for(unsigned int b=0; b < MAX_BONES; b++)
+				mat4f_identity(bones->matrices[b]);
 			for(unsigned int b=0; b < mesh->mNumBones; b++)
 			{
 				strncpy(bones->names[b], mesh->mBones[b]->mName.data, 256);
 				bones->names[b][255]='\0';
-				mat4f_identity(&(bones->matrices[b][0]));
 			}
 			geom.bones = bones;
 		}
