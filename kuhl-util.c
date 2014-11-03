@@ -2841,19 +2841,19 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	/* Try to set uniform variables if they are active in the current
 	 * GLSL program. If they are not active, don't print any warning
 	 * messages. */
-	int hasBones = 0;
+	int numBones = 0;
 	GLint loc;
 #ifdef KUHL_UTIL_USE_ASSIMP
 	loc = glGetUniformLocation(geom->program, "BoneMat");
 	if(loc != -1 && geom->bones)
 	{
 		glUniformMatrix4fv(loc, MAX_BONES, 0, geom->bones->matrices[0]);
-		hasBones = 1;
+		numBones = geom->bones->count;
 	}
 #endif
-	loc = glGetUniformLocation(geom->program, "HasBones");
+	loc = glGetUniformLocation(geom->program, "NumBones");
 	if(loc != -1)
-		glUniform1i(loc, hasBones);
+	    glUniform1i(loc, numBones);
 
 	loc = glGetUniformLocation(geom->program, "GeomTransform");
 	if(loc != -1)
