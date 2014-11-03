@@ -2112,7 +2112,8 @@ void kuhl_print_program_info(GLuint program)
 		GLsizei actualLength = 0;
 
 		glGetActiveUniform(program, i, 1024, &actualLength, &arraySize, &type, buf);
-		printf("%s@%d ", buf, i);
+		GLint location = glGetUniformLocation(program, buf);
+		printf("%s@%d ", buf, location);
 	}
 	if(numVarsInProg == 0)
 		printf("[none!]\n");
@@ -2793,30 +2794,20 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	
 	kuhl_geometry_sanity_check(geom);
 
-	/* Use the program the user wants us to use. */
-	if(glIsProgram(geom->program))
+	/* Check that there is a valid program and VAO object for us to use. */
+	if(glIsProgram(geom->program) == 0 || glIsVertexArray(geom->vao) == 0)
 	{
-		glUseProgram(geom->program);
+		fprintf(stderr, "%s: Program (%d) or vertex array object (%d) were invalid\n",
+		        __func__, geom->program, geom->vao);
+		// restore GLSL program and VAO
+		glUseProgram(previouslyUsedProgram);
+		glBindVertexArray(previousVAO);
 		kuhl_errorcheck();
-	}
-	else
-	{
-		fprintf(stderr, "%s: Not a valid GLSL program: %d\n", __func__, geom->program);
 		return;
 	}
 
-	/* Use the vertex array object for this geometry */
-	if(glIsVertexArray(geom->vao))
-	{
-		glBindVertexArray(geom->vao);
-		kuhl_errorcheck();
-	}
-	else
-	{
-		fprintf(stderr, "%s: Not a valid vertex array object: %d\n", __func__, geom->vao);
-		glUseProgram(previouslyUsedProgram);
-		return;
-	}
+	glUseProgram(geom->program);
+	kuhl_errorcheck();
 
 	/* If the user specified a valid OpenGL texture, use it. */
 	if(glIsTexture(geom->texture))
@@ -2826,16 +2817,16 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		GLint loc = glGetUniformLocation(geom->program, geom->texture_name);
 		if(loc != -1)
 		{
-			/* Tell OpenGL that the texture that we refer to in our GLSL
-			 * program is going to be in texture unit 0.
+			/* Tell OpenGL that the texture that we refer to in our
+			 * GLSL program is going to be in texture unit 0.
 			 */
-			
 			glUniform1i(kuhl_get_uniform(geom->texture_name), 0);
 			kuhl_errorcheck();
 			/* Turn on texture unit 0 */
 			glActiveTexture(GL_TEXTURE0); 
 			kuhl_errorcheck();
-			/* Bind the texture that we want to use while the correct texture unit is enabled. */
+			/* Bind the texture that we want to use while the correct
+			 * texture unit is enabled. */
 			glBindTexture(GL_TEXTURE_2D, geom->texture); 
 			kuhl_errorcheck();
 		}
@@ -2847,26 +2838,26 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		 * would use. */
 		glBindTexture(GL_TEXTURE_2D, 0);
 
-
+	/* Try to set uniform variables if they are active in the current
+	 * GLSL program. If they are not active, don't print any warning
+	 * messages. */
 	int hasBones = 0;
+	GLint loc;
 #ifdef KUHL_UTIL_USE_ASSIMP
-	if(geom->bones)
+	loc = glGetUniformLocation(geom->program, "BoneMat");
+	if(loc != -1 && geom->bones)
 	{
-		glUniformMatrix4fv(kuhl_get_uniform("BoneMat"), MAX_BONES, 0, geom->bones->matrices[0]);
+		glUniformMatrix4fv(loc, MAX_BONES, 0, geom->bones->matrices[0]);
 		hasBones = 1;
 	}
 #endif
-	/* Check if the uniform variable is there ourselves instead to
-	 * prevent kuhl_get_uniform() from printing warning messages to
-	 * the user. */
-	GLint loc = glGetUniformLocation(geom->program, "HasBones");
+	loc = glGetUniformLocation(geom->program, "HasBones");
 	if(loc != -1)
-		glUniform1i(kuhl_get_uniform("HasBones"), hasBones);
-	loc = glGetUniformLocation(geom->program, "GeomTransform");
+		glUniform1i(loc, hasBones);
 
+	loc = glGetUniformLocation(geom->program, "GeomTransform");
 	if(loc != -1)
-		glUniformMatrix4fv(kuhl_get_uniform("GeomTransform"),
-		                   1, 0, geom->matrix);
+		glUniformMatrix4fv(loc, 1, 0, geom->matrix);
 	else
 	{ /* If the geom->matrix was not the identity and if it is not in
 	   * the GLSL shader program, print a helpful warning message. */
@@ -2886,8 +2877,13 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 			printf("...continuing despite the missing variable.\n");
 		}
 	}
-	
-	/* If the user provided us with indices, use glDrawElements to draw the geometry. */
+
+	/* Use the vertex array object for this geometry */
+	glBindVertexArray(geom->vao);
+	kuhl_errorcheck();
+
+	/* If the user provided us with indices, use glDrawElements() to
+	 * draw the geometry. */
 	if(geom->indices_len > 0 && glIsBuffer(geom->indices_bufferobject))
 	{
 		glDrawElements(geom->primitive_type,
@@ -2898,12 +2894,14 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	}
 	else
 	{
-		/* If the user didn't provide us with indices, just draw the vertices in order. */
+		/* If the user didn't provide us with indices, just draw the
+		 * vertices in order. */
 		glDrawArrays(geom->primitive_type, 0, geom->vertex_count);
 		kuhl_errorcheck();
 	}
 
-	/* Indicate in the struct that we have successfully drawn this geom once. */
+	/* Indicate in the struct that we have successfully drawn this
+	 * geom once. */
 	geom->has_been_drawn = 1;
 
 	/* Restore previously active texture */
@@ -2912,7 +2910,8 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	/* Unbind texture */
 	glBindTexture(GL_TEXTURE_2D, previouslyBoundTexture);
 
-	/* Restore the GLSL program that was used before this function was called. */
+	/* Restore the GLSL program that was used before this function was
+	 * called. */
 	glUseProgram(previouslyUsedProgram);
 	
 	/* Unbind the VAO */
@@ -4187,10 +4186,10 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc,
 			
 			float *indices = malloc(sizeof(float)*mesh->mNumVertices*4);
 			float *weights = malloc(sizeof(float)*mesh->mNumVertices*4);
+			/* For each vertex */
 			for(unsigned int i=0; i<mesh->mNumVertices; i++)
 			{
 				/* Zero out weights */
-				int count = 0;
 				for(int j=0; j<4; j++)
 				{
 					// If weight is zero, it doesn't matter what the index
@@ -4198,6 +4197,8 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc,
 					indices[i*4+j] = 0;
 					weights[i*4+j] = 0;
 				}
+
+				int count = 0; /* How many bones refer to this vertex? */
 					
 				/* For each bone */
 				for(unsigned int j=0; j<mesh->mNumBones; j++)
