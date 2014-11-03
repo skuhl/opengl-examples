@@ -8,7 +8,7 @@ in vec3 in_Color;
 in vec4 in_BoneIndex;
 in vec4 in_BoneWeight;
 uniform mat4 BoneMat[128];
-uniform int HasBones;
+uniform int NumBones;
 
 uniform float farPlane;
 uniform mat4 ModelView;
@@ -52,7 +52,7 @@ void main()
 	out_Color = in_Color;
 
 	mat4 actualModelView;
-	if(bool(HasBones))
+	if(NumBones > 0)
 	{
 		mat4 m = in_BoneWeight.x * BoneMat[int(in_BoneIndex.x)] +
 			in_BoneWeight.y * BoneMat[int(in_BoneIndex.y)] +
