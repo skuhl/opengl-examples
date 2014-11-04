@@ -73,8 +73,13 @@ extern "C" {
  */
 int vrpn_get(const char *object, const char *hostname, float pos[3], float orient[16])
 {
-
-#ifndef MISSING_VRPN
+	/* Set to default values */
+	vec3f_set(pos, 10000,10000,10000);
+	mat4f_identity(orient);
+#ifdef MISSING_VRPN
+	printf("You are missing VRPN support.\n");
+	return 0;
+#else
 	/* Construct an object@hostname string. */
 	std::string hostnamecpp;
 	std::string objectcpp;
@@ -133,14 +138,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 			mat4f_mult_mat4f_new(orient, zUpToYUp, orient);
 			mat4f_mult_vec4f_new(pos4, zUpToYUp, pos4);
 			vec3f_copy(pos,pos4);
-			return 1;
-		}
-		else
-		{
-			/* If we don't have any data yet, return a position far from the origin. */
-			vec3f_set(pos, 10000,10000,10000);
-			mat4f_identity(orient);
-			return 0;
+			return 1; // we successfully collected some data
 		}
 	}
 	else
@@ -150,12 +148,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 		vrpn_Tracker_Remote *tkr = new vrpn_Tracker_Remote(fullname.c_str());
 		nameToTracker[fullname] = tkr;
 		tkr->register_change_handler((void*) fullname.c_str(), handle_tracker);
-		return 0; // If we connected successfully, the next time this is called we'll return 1
 	}
-#else
-	printf("You are missing VRPN support.\n");
-	mat4f_identity(orient);
-	vec3f_set(pos, 0,0,0);
 	return 0;
 #endif
 }
