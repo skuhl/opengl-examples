@@ -8,7 +8,12 @@
 #include <stdio.h>
 #include <math.h>
 #include <GL/glew.h>
+
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#else
 #include <GL/freeglut.h>
+#endif
 
 #include "kuhl-util.h"
 #include "dgr.h"
@@ -257,13 +262,17 @@ int main(int argc, char** argv)
 	glutInitWindowSize(512, 512);
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
+#ifdef __APPLE__
+	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
+#else
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
-	glEnable(GL_MULTISAMPLE);
 	glutInitContextVersion(3,0);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE); // Don't allow deprecated OpenGL calls.
 	glutCreateWindow(argv[0]); // set window title to executable name
-
+#endif
+	glEnable(GL_MULTISAMPLE);
+	
 	/* Initialize GLEW */
 	glewExperimental = GL_TRUE;
 	GLenum glewError = glewInit();
