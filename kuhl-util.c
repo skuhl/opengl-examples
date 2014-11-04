@@ -2312,20 +2312,29 @@ GLint kuhl_get_attribute(GLuint program, const char *attributeName)
 {
 	if(attributeName == NULL || strlen(attributeName) == 0)
 	{
-		fprintf(stderr, "kuhl_get_attribute(): You asked for the location of an attribute name, but your name was an empty string or a NULL pointer.\n");
+		fprintf(stderr, "%s: You asked for the location of an attribute name in program %d, but your name was an empty string or a NULL pointer.\n", __func__, program);
 	}
 
 	if(!glIsProgram(program))
 	{
-		fprintf(stderr, "%s: The program you specified (%d) is not a valid GLSL program.\n", __func__, program);
+		fprintf(stderr, "%s: Program %d is not a valid GLSL program.\n",
+		        __func__, program);
 		exit(EXIT_FAILURE);
+	}
+
+	int linkStatus;
+	glGetProgramiv(program, GL_LINK_STATUS, &linkStatus);
+	if(linkStatus == GL_FALSE)
+	{
+		fprintf(stderr, "%s: Cannot get attribute '%s' from program %d because the program is not linked.\n", __func__, attributeName, program);
 	}
 	
 	GLint loc = glGetAttribLocation(program, attributeName);
 	kuhl_errorcheck();
 	if(loc == -1)
 	{
-		fprintf(stderr, "kuhl_get_attribute(): Attribute variable '%s' is missing or inactive in GLSL program %d.\n", attributeName, program);
+		fprintf(stderr, "%s: Attribute variable '%s' is missing or inactive in GLSL program %d.\n",
+		        __func__, attributeName, program);
 	}
 	return loc;
 }
@@ -2397,14 +2406,50 @@ void kuhl_geometry_zero(kuhl_geometry *geom)
 #endif
 }
 
+
+static void kuhl_geometry_sanity_check_attribute(int components, GLuint bufferobject, const char *attributeName, GLuint program)
+{
+
+	GLint attribLoc = -1;
+	if(attributeName != NULL)
+		attribLoc = glGetAttribLocation(program, attributeName);
+
+	if(attribLoc != -1) /* If the attribute is actually in the GLSL program */
+	{
+		/* If some part of this attribute is set in kuhl_geometry... */
+		if(attributeName != NULL || bufferobject != 0 || components != 0)
+		{
+			/* All parts of this attribute should be set */
+			if(attributeName == NULL || bufferobject == 0 || components == 0)
+			{
+				fprintf(stderr, "%s: Only part of the attribute was set: Name=%s bufferobject=%d components=%d\n",
+				        __func__, attributeName, bufferobject, components);
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+	else /* If the attribute is not in the GLSL program */
+	{
+		/* In this case, we don't care what information is in
+		 * kuhl_geometry for this attribute. However, we do
+		 * double-check that we didn't unnecessarily create a
+		 * bufferobject for the attribute. */
+		if(glIsBuffer(bufferobject))
+		{
+			fprintf(stderr, "%s: We created a buffer object for attribute %s even though it isn't in the GLSL program %d\n", __func__, attributeName, program);
+			exit(EXIT_FAILURE);
+		}
+	}
+}
+
+
 /** Checks a kuhl_geometry struct to ensure the values are
- * reasonable. Can be called any time after kuhl_geometry_init() is
- * called on the struct. When an error occurs, a message is printed to
- * stderr and exit() is called. Important note: This does not check
- * that the data arrays are non-NULL or look at values in the
- * arrays. This is because after the kuhl_geometry information is
- * copied into OpenGL, the caller can free() that information. For a
- * similar reason, we do not check if the GLSL names are set.
+ * reasonable. This should be called from kuhl_geometry_init() only to
+ * double-check that everything was set up properly. When an error
+ * occurs, a message is printed to stderr and exit() is called. After
+ * kuhl_geometry_init(), some data such as the content in the arrays
+ * and the strings representing the attribute names may no longer be
+ * accessible.
 
  @param geom The kuhl_geometry object to check.
 */
@@ -2412,20 +2457,36 @@ static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
 {
 	if(geom->program == 0)
 	{
-		fprintf(stderr, "%s: The program element was not set in your kuhl_geometry struct. You must specify which GLSL program will be used with this geometry.\n", __func__);
+		fprintf(stderr, "%s: ERROR: The program element was not set in your kuhl_geometry struct. You must specify which GLSL program will be used with this geometry.\n", __func__);
 		exit(EXIT_FAILURE);
 	}
 
 	/* Check if the program is valid (we don't need to enable it here). */
 	if(!glIsProgram(geom->program))
 	{
-		fprintf(stderr, "%s: The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", __func__, geom->program);
+		fprintf(stderr, "%s: ERROR: The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", __func__, geom->program);
 		exit(EXIT_FAILURE);
 	}
+
+	/* Try to validate the GLSL program for debugging purposes. */
+	glValidateProgram(geom->program);
+	kuhl_errorcheck();
+	GLint validated;
+	glGetProgramiv(geom->program, GL_VALIDATE_STATUS, &validated);
+	kuhl_errorcheck();
+
+	if(validated == GL_FALSE)
+	{
+		kuhl_print_program_log(geom->program);
+		fprintf(stderr, "%s: ERROR: Failed to validate GLSL program %d.\n",
+		        __func__, geom->program);
+		exit(EXIT_FAILURE);
+	}
+
 	
 	if(geom->vertex_count < 1)
 	{
-		fprintf(stderr, "%s: vertex_count must be greater than 0.\n", __func__);
+		fprintf(stderr, "%s: ERROR: vertex_count must be greater than 0.\n", __func__);
 		exit(EXIT_FAILURE);
 	}
 
@@ -2441,55 +2502,34 @@ static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
 		exit(EXIT_FAILURE);
 	}
 
-	/* If one part of the attribute is set but both parts are not set, print a message */
-	if((geom->attrib_pos_components || glIsBuffer(geom->attrib_pos_bufferobject)) &&
-	   !(geom->attrib_pos_components && glIsBuffer(geom->attrib_pos_bufferobject)))
-	{
-		fprintf(stderr, "%s: Position attribute was not fully set (components=%d bufferobject=%d).\n", __func__, geom->attrib_pos_components, geom->attrib_pos_bufferobject);
-		exit(EXIT_FAILURE);
-	}
-		
-	if((geom->attrib_color_components || glIsBuffer(geom->attrib_color_bufferobject)) &&
-		!(geom->attrib_color_components && glIsBuffer(geom->attrib_color_bufferobject)))
-	{
-		fprintf(stderr, "%s: Color attribute was not fully set.\n", __func__);
-		exit(EXIT_FAILURE);
-	}
-
-	if((geom->attrib_texcoord_components || glIsBuffer(geom->attrib_texcoord_bufferobject)) &&
-	   !(geom->attrib_texcoord_components && glIsBuffer(geom->attrib_texcoord_bufferobject)))
-	{
-		fprintf(stderr, "%s: Texcoord attribute was not fully set.\n", __func__);
-		exit(EXIT_FAILURE);
-	}
-
-	if((geom->attrib_normal_components || glIsBuffer(geom->attrib_normal_bufferobject)) &&
-	   !(geom->attrib_normal_components && glIsBuffer(geom->attrib_normal_bufferobject)))
-	{
-		fprintf(stderr, "%s: Normal attribute was not fully set.\n", __func__);
-		exit(EXIT_FAILURE);
-	}
-
-	if((geom->attrib_boneWeight_components || glIsBuffer(geom->attrib_boneWeight_bufferobject)) &&
-	   !(geom->attrib_boneWeight_components && glIsBuffer(geom->attrib_boneWeight_bufferobject)))
-	{
-			fprintf(stderr, "%s: BoneWeight attribute was not fully set.\n", __func__);
-			exit(EXIT_FAILURE);
-	}
-	
-	if((geom->attrib_boneIndex_components || glIsBuffer(geom->attrib_boneIndex_bufferobject)) &&
-	   !(geom->attrib_boneIndex_components && glIsBuffer(geom->attrib_boneIndex_bufferobject)))
-	{
-			fprintf(stderr, "%s: BoneIndex attribute was not fully set.\n", __func__);
-			exit(EXIT_FAILURE);
-	}
-	
-	if((geom->attrib_custom_components || glIsBuffer(geom->attrib_custom_bufferobject)) &&
-	   !(geom->attrib_custom_components && glIsBuffer(geom->attrib_custom_bufferobject)))
-	{
-			fprintf(stderr, "%s: Custom attribute was not fully set.\n", __func__);
-			exit(EXIT_FAILURE);
-	}
+	kuhl_geometry_sanity_check_attribute(geom->attrib_pos_components,
+	                                     geom->attrib_pos_bufferobject,
+	                                     geom->attrib_pos_name,
+	                                     geom->program);
+	kuhl_geometry_sanity_check_attribute(geom->attrib_color_components,
+	                                     geom->attrib_color_bufferobject,
+	                                     geom->attrib_color_name,
+	                                     geom->program);
+	kuhl_geometry_sanity_check_attribute(geom->attrib_texcoord_components,
+	                                     geom->attrib_texcoord_bufferobject,
+	                                     geom->attrib_texcoord_name,
+	                                     geom->program);
+	kuhl_geometry_sanity_check_attribute(geom->attrib_normal_components,
+	                                     geom->attrib_normal_bufferobject,
+	                                     geom->attrib_normal_name,
+	                                     geom->program);
+	kuhl_geometry_sanity_check_attribute(geom->attrib_boneWeight_components,
+	                                     geom->attrib_boneWeight_bufferobject,
+	                                     geom->attrib_boneWeight_name,
+	                                     geom->program);
+	kuhl_geometry_sanity_check_attribute(geom->attrib_boneIndex_components,
+	                                     geom->attrib_boneIndex_bufferobject,
+	                                     geom->attrib_boneIndex_name,
+	                                     geom->program);
+	kuhl_geometry_sanity_check_attribute(geom->attrib_custom_components,
+	                                     geom->attrib_custom_bufferobject,
+	                                     geom->attrib_custom_name,
+	                                     geom->program);
 }
 
 
@@ -2677,17 +2717,28 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 		fprintf(stderr, "%s: The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", __func__, geom->program);
 		exit(EXIT_FAILURE);
 	}
-	
+
+	/* A vertex array object consists of multiple buffers that contain
+	 * per-vertex information like positions, colors, normals, texture
+	 * coordinates, etc. A group of buffers can be associated with a
+	 * single VAO. Here, we iterate through all of the possible vertex
+	 * attributes in kuhl_geometry and create VAO buffers for them. */
 	for(int i=0; i<7; i++)
 	{
+		/* If this attribute doesn't contain any meaningful data, move
+		 * on to the next one. */
 		if(data[i] == 0 || components[i] == 0 || name[i] == NULL || strlen(name[i]) == 0)
 			continue;
 
-		/* A vertex array object consists of multiple buffers that
-		 * contain per-vertex information like positions, colors,
-		 * normals, texture coordinates, etc. A group of buffers can
-		 * be associated with a single VAO. */
+		/* If this attribute isn't available in the GLSL program, move
+		 * on to the next one. */
+		GLint attribLocation = kuhl_get_attribute(geom->program, name[i]);
+		if(attribLocation == -1)
+			continue;
 
+		/* Enable this attribute location */
+		glEnableVertexAttribArray(attribLocation);
+		
 		/* Ask OpenGL for one new buffer "name" (or ID number). */
 		glGenBuffers(1, &(bo[i]));
 		/* Tell OpenGL that we are going to use this buffer until we
@@ -2697,30 +2748,28 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 		glBindBuffer(GL_ARRAY_BUFFER, bo[i]);
 		kuhl_errorcheck();
 
-
 		/* Copy our data into the buffer object that is currently bound. */
-		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*geom->vertex_count*components[i], data[i], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER,
+		             sizeof(GLfloat)*geom->vertex_count*components[i],
+		             data[i], GL_STATIC_DRAW);
 		kuhl_errorcheck();
 
-		/* Get attribute location */
-		GLint attribLocation = kuhl_get_attribute(geom->program, name[i]);
-		if(attribLocation >= 0)
-		{
-			/* Tell OpenGL some information about the data that is in the
-			 * buffer. Among other things, we need to tell OpenGL which
-			 * attribute number (i.e., variable) the data should correspond to
-			 * in the vertex program. */
-			glEnableVertexAttribArray(attribLocation); // turn on attribute location
-			glVertexAttribPointer(
-				attribLocation, // attribute location in glsl program
-				components[i], // number of elements (x,y,z)
-				GL_FLOAT, // type of each element
-				GL_FALSE, // should OpenGL normalize values?
-				0,        // no extra data between each position
-				0 );      // offset of first element
-			kuhl_errorcheck();
-		}
-	}
+		/* Tell OpenGL some information about the data that is in the
+		 * buffer. Among other things, we need to tell OpenGL which
+		 * attribute number (i.e., variable) the data should correspond to
+		 * in the vertex program. */
+
+		glVertexAttribPointer(
+			attribLocation, // attribute location in glsl program
+			components[i], // number of elements (x,y,z)
+			GL_FLOAT, // type of each element
+			GL_FALSE, // should OpenGL normalize values?
+			0,        // no extra data between each position
+			0 );      // offset of first element
+		kuhl_errorcheck();
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+	} /* end for each vertex attribute in kuhl_geometry */
 
 	/* Make sure that the bufferobject names get copied back into the
 	 * struct that the user passed in to this function. */
@@ -2752,23 +2801,9 @@ void kuhl_geometry_init(kuhl_geometry *geom)
 		/* Copy the indices data into the currently bound buffer. */
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*geom->indices_len, geom->indices, GL_STATIC_DRAW);
 		kuhl_errorcheck();
+		// Don't unbind GL_ELEMENT_ARRAY_BUFFER since the VAO keeps track of this for us.
 	}
 	kuhl_geometry_sanity_check(geom);
-
-	/* Try to validate the GLSL program for debugging purposes. */
-	glValidateProgram(geom->program);
-	kuhl_errorcheck();
-	GLint validated;
-	glGetProgramiv(geom->program, GL_VALIDATE_STATUS, &validated);
-	kuhl_errorcheck();
-
-	if(validated == GL_FALSE)
-	{
-		kuhl_print_program_log(geom->program);
-		fprintf(stderr, "%s: ERROR: Failed to validate GLSL program %d.\n",
-		        __func__, geom->program);
-		exit(EXIT_FAILURE);
-	}
 	
     /* Unbind VAO. In the future, we can bind the vertex array object
      * that we created and to easily recall all of the position,
@@ -2796,7 +2831,6 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	GLint previousVAO=0;
 	glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &previousVAO);
 	
-	kuhl_geometry_sanity_check(geom);
 
 	/* Check that there is a valid program and VAO object for us to use. */
 	if(glIsProgram(geom->program) == 0 || glIsVertexArray(geom->vao) == 0)
