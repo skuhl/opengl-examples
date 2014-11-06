@@ -2992,7 +2992,9 @@ void kuhl_geometry_delete(kuhl_geometry *geom)
 
 /** Converts an array containing RGBA image data into an OpenGL texture.
  *
- * @param array Contains a row-major list of pixels in R, G, B, A format starting from the bottom left corner of the image. Each pixel is a value form 0 to 255.
+ * @param array Contains a row-major list of pixels in R, G, B, A
+ * format starting from the bottom left corner of the image. Each
+ * pixel is a value form 0 to 255.
  *
  * @param width The width of the image represented by the array in pixels.
  *
@@ -3001,7 +3003,8 @@ void kuhl_geometry_delete(kuhl_geometry *geom)
  * @return The texture name that you can use with glBindTexture() to
  * enable this particular texture when drawing. When you are done with
  * the texture, use glDeleteTextures(1, &textureName) where
- * textureName is set to the value returned by this function.
+ * textureName is set to the value returned by this function. Returns
+ * 0 on error.
  */
 GLuint kuhl_read_texture_rgba_array(const char* array, int width, int height)
 {
@@ -3150,7 +3153,8 @@ float kuhl_make_label(const char *label, GLuint *texName, float color[3], float 
  *
  * @returns The aspect ratio of the image in the file. Since texture
  * coordinates range from 0 to 1, the caller doesn't really need to
- * know how large the image actually is.
+ * know how large the image actually is. Returns a negative number on
+ * error.
  */
 float kuhl_read_texture_file(const char *filename, GLuint *texName)
 {
@@ -3170,7 +3174,7 @@ float kuhl_read_texture_file(const char *filename, GLuint *texName)
 	free(iioinfo.filename);
 	if(image == NULL)
 	{
-		fprintf(stderr, "\n%s: Unable to read image.\n", filename);
+		fprintf(stderr, "%s: ERROR: Unable to read '%s'.\n", __func__, filename);
 		return -1;
 	}
 
@@ -3190,8 +3194,8 @@ float kuhl_read_texture_file(const char *filename, GLuint *texName)
 	
 	if(*texName == 0)
 	{
-		fprintf(stderr, "%s: Failed to read image.\n", filename);
-		exit(EXIT_FAILURE);
+		fprintf(stderr, "%s: ERROR: Failed to create OpenGL texture from %s\n", __func__, filename);
+		return -1;
 	}
 
 	return aspectRatio;
@@ -3712,15 +3716,17 @@ static int kuhl_private_assimp_load(const char *modelFilename, const char *textu
 			strncat(fullpath, "/", 1024-strlen(fullpath)); // make sure there is a slash between the directory and the texture's filename
 			strncat(fullpath, path.data, 1024-strlen(fullpath));
 
-			printf("%s: Model refers to \"%s\"; we expect to find it at \"%s\"\n", modelFilename, path.data, fullpath);
-			kuhl_read_texture_file(fullpath, &texIndex);
+			if(kuhl_read_texture_file(fullpath, &texIndex) < 0)
+			{
+				printf("%s: WARNING: %s refers to texture %s which we could not find at %s\n", __func__, modelFilename, path.data, fullpath);
+			}
 
 			/* Store the texture information in our list structure so
 			 * we can find the textureID from the filename when we
 			 * render the scene. */
 			if(textureIdMapSize >= textureIdMapMaxSize)
 			{
-				printf("You have loaded more textures than the hardcoded limit. Exiting.\n");
+				fprintf(stderr, "%s: You have loaded more textures than the hardcoded limit. Exiting.\n", __func__);
 				exit(EXIT_FAILURE);
 			}
 			textureIdMap[textureIdMapSize].textureFileName = strdup(path.data);
@@ -4158,9 +4164,6 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc,
 		geom.attrib_pos = vertexPositions;
 		geom.attrib_pos_components = 3;
 		geom.attrib_pos_name = "in_Position";
-		printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Number of vertices: %u\n",
-		       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data,
-		       mesh->mNumVertices);
 
 		/* Store the normal vectors in the kuhl_geometry struct */
 		if(mesh->mNormals != NULL)
@@ -4175,8 +4178,6 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc,
 			geom.attrib_normal = normals;
 			geom.attrib_normal_components = 3;
 			geom.attrib_normal_name = "in_Normal";
-			printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Vertices have normals.\n",
-			       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
 		}
 
 		/* Store the vertex color attribute */
@@ -4192,8 +4193,6 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc,
 			geom.attrib_color = colors;
 			geom.attrib_color_components = 3;
 			geom.attrib_color_name = "in_Color";
-			printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Vertices have color.\n",
-			       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
 		}
 		
 		/* Store the texture coordinate attribute */
@@ -4208,8 +4207,6 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc,
 			geom.attrib_texcoord = texCoord;
 			geom.attrib_texcoord_components = 2;
 			geom.attrib_texcoord_name = "in_TexCoord";
-			printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Vertices have texture coordinates.\n",
-			       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
 		}
 
 		/* Fill in bone information */
@@ -4276,9 +4273,6 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc,
 			geom.attrib_boneWeight = weights;
 			geom.attrib_boneWeight_components = 4;
 			geom.attrib_boneWeight_name = "in_BoneWeight";
-
-			printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Mesh has %d bone(s).\n",
-			       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data, mesh->mNumBones);
 		} // end if there are bones 
 		
 		/* Find our texture and tell our kuhl_geometry object about
@@ -4296,17 +4290,13 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc,
 					geom.texture = textureIdMap[i].textureID;
 			if(geom.texture == 0)
 			{
-				printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Uses texture '%s'. This texture should have been loaded earlier, but we can't find it now.\n",
-				       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data,
-				       texPath.data);
+				printf("%s: WARNING: Mesh %u uses texture '%s'. This texture should have been loaded earlier, but we can't find it now.\n",
+				       __func__, nd->mMeshes[n], texPath.data);
 			}
 			else
 			{
-				// Model uses texture and we found the texture file
-				printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Uses texture %s\n",
-				       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data,
-				       texPath.data);
-
+				// If Model uses texture and we found the texture file
+				
 				/* Make sure we repeat instead of clamp textures */
 				glBindTexture(GL_TEXTURE_2D, geom.texture);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -4333,11 +4323,8 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc,
 			indices[t*3+2] = face->mIndices[2];
 		}
 		geom.indices = indices;
-		printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): Number of indices: %u\n",
-		       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data,
-		       mesh->mNumFaces*3);
 
-		/* Initialize bone information if this mesh has bones. */
+		/* Initialize list of bone matrices if this mesh has bones. */
 		if(mesh->mNumBones > 0)
 		{
 			kuhl_bonemat *bones = (kuhl_bonemat*) malloc(sizeof(kuhl_bonemat));
@@ -4352,6 +4339,16 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc,
 			}
 			geom.bones = bones;
 		}
+
+		printf("%s: Mesh #%03u is one of %u meshes in node \"%s\": numVertices=%d numIndices=%d hasNormals=%s hasColors=%s hasTexCoords=%s numBones=%d texture=%s\n",
+		       __func__, nd->mMeshes[n], nd->mNumMeshes, nd->mName.data,
+		       mesh->mNumVertices,
+		       mesh->mNumFaces*3,
+		       mesh->mNormals       == NULL ? "no" : "yes",
+		       mesh->mColors        == NULL ? "no" : "yes",
+		       mesh->mTextureCoords == NULL ? "no" : "yes",
+		       mesh->mNumBones,
+		       geom.texture         == 0    ? "(null)" : texPath.data);
 
 		/* Initialize this geometry object */
 		kuhl_geometry_init(&geom);
