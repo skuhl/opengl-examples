@@ -1,4 +1,4 @@
-#version 130 // Specify which version of GLSL we are using.
+#version 150 // GLSL 150 = OpenGL 3.2
 
 in vec3 in_Position;
 in vec2 in_TexCoord;

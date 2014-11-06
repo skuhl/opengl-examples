@@ -1,4 +1,4 @@
-#version 130 // Specify which version of GLSL we are using.
+#version 150 // GLSL 150 = OpenGL 3.2
 
 // in_Position was bound to attribute index 0("shaderAttribute")
 in vec3 in_Position;

@@ -210,9 +210,8 @@ int main(int argc, char** argv)
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	glutInitContextVersion(3,0);
+	glutInitContextVersion(3,2);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
-	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE); // Don't allow deprecated OpenGL calls.
 	glutCreateWindow(argv[0]); // set window title to executable name
 
 	/* Initialize GLEW */

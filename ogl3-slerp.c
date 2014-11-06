@@ -299,9 +299,8 @@ int main(int argc, char** argv)
 	 * includes a depth buffer */
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
 	glEnable(GL_MULTISAMPLE);
-	glutInitContextVersion(3,0);
+	glutInitContextVersion(3,2);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
-	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE); // Don't allow deprecated OpenGL calls.
 	glutCreateWindow(argv[0]); // set window title to executable name
 
 	/* Initialize GLEW */

@@ -266,9 +266,8 @@ int main(int argc, char** argv)
 	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
 #else
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
-	glutInitContextVersion(3,0);
+	glutInitContextVersion(3,2);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
-	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE); // Don't allow deprecated OpenGL calls.
 	glutCreateWindow(argv[0]); // set window title to executable name
 #endif
 	glEnable(GL_MULTISAMPLE);

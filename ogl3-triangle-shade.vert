@@ -1,4 +1,4 @@
-#version 130 // Specify which version of GLSL we are using.
+#version 150 // GLSL 150 = OpenGL 3.2
 
 in vec3 in_Position; // vertex position (object coordinates)
 in vec3 in_Normal;   // normal vector   (object coordinates)
