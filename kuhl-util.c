@@ -3697,24 +3697,17 @@ static int kuhl_private_assimp_load(const char *modelFilename, const char *textu
 
 		if(aiGetMaterialTexture(scene->mMaterials[m], aiTextureType_DIFFUSE, texIndex, &path, NULL, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS)
 		{
+			/* Construct a string with the directory that should contain the texture. */
 			char fullpath[1024];
 			if(textureDirname == NULL)
 			{
-				// Copy the directory that the model file is in into the fullpath variable
-				char *filenameCopy = strdup(modelFilename);
-				strncpy(fullpath, dirname(filenameCopy), 1024);
-				fullpath[1023] = '\0'; // make sure it is null terminated
-				free(filenameCopy);
+				char *editable = strdup(modelFilename);
+				char *dname = dirname(editable);
+				snprintf(fullpath, 1024, "%s/%s", dname, path.data);
+				free(editable);
 			}
 			else
-			{
-				// Copy the user-specified texture directory into fullpath variable
-				strncpy(fullpath, textureDirname, 1024);
-				fullpath[1023] = '\0'; // make sure it is null terminated
-			}
-
-			strncat(fullpath, "/", 1024-strlen(fullpath)); // make sure there is a slash between the directory and the texture's filename
-			strncat(fullpath, path.data, 1024-strlen(fullpath));
+				snprintf(fullpath, 1024, "%s/%s", textureDirname, path.data);
 
 			if(kuhl_read_texture_file(fullpath, &texIndex) < 0)
 			{
