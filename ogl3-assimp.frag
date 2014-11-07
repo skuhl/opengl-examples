@@ -15,8 +15,12 @@ void main()
 {
 	if(renderStyle == 0)
 	{
-		// head-lamp style diffuse shading
+		/* Head-lamp style diffuse shading. The camera is at 0,0,0 in
+		 * eye coordinates, so a vector that points at the camera from
+		 * the fragment is (0,0,0)-out_EyeCoord = out_EyeCoord */
 		vec3 camLook = normalize(-out_EyeCoord.xyz);
+		// Generate a diffuse value, clamp it to between 0 and 1,
+		// divide+add to get it to range from .5 to 1.
 		float diffuse = clamp(dot(camLook, normalize(out_Normal.xyz)), 0,1) / 2+.5;
 		fragColor = vec4(diffuse,diffuse,diffuse, 1);
 	}
