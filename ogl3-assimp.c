@@ -58,13 +58,113 @@ void keyboard(unsigned char key, int x, int y)
 			break;
 		case 'r':
 		{
+			// Reload GLSL program from disk
 			int origProgram = program;
 			program = kuhl_create_program(GLSL_VERT_FILE, GLSL_FRAG_FILE);
 			kuhl_delete_program(origProgram);
 			break;
 		}
-				
-		case ' ':
+		case 'w':
+		{
+			// Toggle between wireframe and solid
+			int polygonMode;
+			glGetIntegerv(GL_POLYGON_MODE, &polygonMode);
+			if(polygonMode == GL_LINE)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			else
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			break;
+		}
+		case 'p':
+		{
+			// Toggle between points and solid
+			int polygonMode;
+			glGetIntegerv(GL_POLYGON_MODE, &polygonMode);
+			if(polygonMode == GL_POINT)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			else
+				glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+			break;
+		}
+		case 'c':
+		{
+			// Toggle front, back, and no culling
+			int cullMode;
+			glGetIntegerv(GL_CULL_FACE_MODE, &cullMode);
+			if(glIsEnabled(GL_CULL_FACE))
+			{
+				if(cullMode == GL_FRONT)
+				{
+					glCullFace(GL_BACK);
+					printf("Culling: Culling back faces; drawing front faces\n");
+				}
+				else
+				{
+					glDisable(GL_CULL_FACE);
+					printf("Culling: No culling; drawing all faces.\n");
+				}
+			}
+			else
+			{
+				glEnable(GL_CULL_FACE);
+				glCullFace(GL_FRONT);
+				printf("Culling: Culling front faces; drawing back faces\n");
+			}
+			kuhl_errorcheck();
+			break;
+		}
+		case '+': // increase size of points and width of lines
+		{
+			GLfloat currentPtSize;
+			GLfloat sizeRange[2];
+			glGetFloatv(GL_POINT_SIZE, &currentPtSize);
+			glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, sizeRange);
+			GLfloat temp = currentPtSize+1;
+			if(temp > sizeRange[1])
+				temp = sizeRange[1];
+			glPointSize(temp);
+			printf("Point size is %f (can be between %f and %f)\n", temp, sizeRange[0], sizeRange[1]);
+			kuhl_errorcheck();
+
+			GLfloat currentLineWidth;
+			GLfloat widthRange[2];
+			glGetFloatv(GL_LINE_WIDTH, &currentLineWidth);
+			glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, widthRange);
+			temp = currentLineWidth+1;
+			if(temp > widthRange[1])
+				temp = widthRange[1];
+			glLineWidth(temp);
+			printf("Line width is %f (can be between is %f and %f)\n", temp, widthRange[0], widthRange[1]);
+			kuhl_errorcheck();
+			break;
+		}
+		case '-': // decrease size of points and width of lines
+		{
+			GLfloat currentPtSize;
+			GLfloat sizeRange[2];
+			glGetFloatv(GL_POINT_SIZE, &currentPtSize);
+			glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, sizeRange);
+			GLfloat temp = currentPtSize-1;
+			if(temp < sizeRange[0])
+				temp = sizeRange[0];
+			glPointSize(temp);
+			printf("Point size is %f (can be between %f and %f)\n", temp, sizeRange[0], sizeRange[1]);
+			kuhl_errorcheck();
+
+			GLfloat currentLineWidth;
+			GLfloat widthRange[2];
+			glGetFloatv(GL_LINE_WIDTH, &currentLineWidth);
+			glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, widthRange);
+			temp = currentLineWidth-1;
+			if(temp < widthRange[0])
+				temp = widthRange[0];
+			glLineWidth(temp);
+			printf("Line width is %f (can be between is %f and %f)\n", temp, widthRange[0], widthRange[1]);
+			kuhl_errorcheck();
+			break;
+		}
+		
+		case ' ': // Toggle different sections of the GLSL fragment shader
 			renderStyle++;
 			if(renderStyle > 7)
 				renderStyle = 0;
