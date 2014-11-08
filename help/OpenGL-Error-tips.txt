@@ -1,0 +1,27 @@
+This file describes how you can resolve error messages like the following one:
+
+!!!!! OpenGL Error !!!!! invalid enumerant - occurred before /path/to/file.c:lineNumber
+
+kuhl_errorcheck() prints these messages whenever there is an OpenGL
+error somewhere earlier in the program. The file and line number in
+the message correspond to the exact kuhl_errorcheck() call where the
+error was detected.
+
+Here are the steps for resolving these errors:
+
+1) Call kuhl_errorcheck() more frequently in your program so that you
+eventually have:
+
+    kuhl_errorcheck(); // <-- doesn't print an error
+    glSomething();
+    kuhl_errorcheck(); // <-- does print an error
+
+2) Find documentation for the glSomething() function that must be
+causing the error. Look for a section labeled "Errors" in the document
+to find a list of one or more things that could cause the error that
+you are encountering
+
+IMPORTANT: It isn't necessarily the case that the error is in the same
+filename that is in the error message. The filename and line number in
+the message just mean that the error occurred sometime before that
+line of code.
