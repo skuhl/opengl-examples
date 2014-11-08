@@ -4,7 +4,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <GL/glew.h>
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#else
 #include <GL/freeglut.h>
+#endif
 
 #include "kuhl-util.h"
 #include "imageio.h"

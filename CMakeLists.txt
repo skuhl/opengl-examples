@@ -46,9 +46,11 @@ include_directories(${GLUT_INCLUDE_DIR})
 
 # Make sure freeglut installation is new enough!
 include(CheckSymbolExists)
-CHECK_SYMBOL_EXISTS(GLUT_CORE_PROFILE "${GLUT_INCLUDE_DIR}/GL/freeglut.h;${GLUT_INCLUDE_DIR}/GL/freeglut_ext.h" FREEGLUT_NEW_ENOUGH)
-if(NOT FREEGLUT_NEW_ENOUGH)
-  message(FATAL_ERROR "freeglut version 2.6 or higher is required.")
+if(NOT APPLE)
+  CHECK_SYMBOL_EXISTS(GLUT_CORE_PROFILE "${GLUT_INCLUDE_DIR}/GL/freeglut.h;${GLUT_INCLUDE_DIR}/GL/freeglut_ext.h" FREEGLUT_NEW_ENOUGH)
+  if(NOT FREEGLUT_NEW_ENOUGH)
+    message(FATAL_ERROR "freeglut version 2.6 or higher is required.")
+  endif()
 endif()
 
 # --- GLEW ---

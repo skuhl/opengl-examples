@@ -59,7 +59,11 @@ extern "C" {
 #endif
 
 #ifdef MOUSEMOVE_GLUT
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#else
 #include <GL/freeglut.h>
+#endif
 #endif
 
 #ifdef MOUSEMOVE_GLFW
