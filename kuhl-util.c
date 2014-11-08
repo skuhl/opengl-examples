@@ -3631,12 +3631,13 @@ static int kuhl_private_assimp_load(const char *modelFilename, const char *textu
 
 	/* We will load the file and do significant processing (split
 	 * large meshes into smaller ones, triangulate polygons in meshes,
-	 * apply transformation matrices. For more information about model loading options, see:
+	 * apply transformation matrices. For more information about model
+	 * loading options, see:
 	 * http://assimp.sourceforge.net/lib_html/postprocess_8h.html
 	 *
 	 * The postprocess procedures can greatly influence how long it
 	 * takes to load a model. If you are trying to load a large model,
-	 * try setting the post-process settings to NULL.
+	 * try setting the post-process settings to 0.
 	 *
 	 * Other options:
 	 * aiProcessPreset_TargetRealtime_Fast
