@@ -5,11 +5,8 @@ easy option before trying to download and compile the latest version.
 
 If you are encountering problems are loading lots of 3D models,
 getting the latest version (3.1.1, at the current time of writing) may
-be useful. I have run across at least two issues in ASSIMIP 3.0 that
-is resolved in ASSIMP 3.1.1. One of the problems that is unresolved in
-3.0 but resolved in 3.1 is that models created in Sketchup in meters
-are actually in inches when loaded by ASSIMP. The newest version
-correctly loads these models with units in meters.
+be useful. The most noticeable change in ASSIMP 3.1.1 is that it
+improves how models are scaled when they are loaded.
 
 To compile it yourself, download a copy:
 http://assimp.sourceforge.net/
