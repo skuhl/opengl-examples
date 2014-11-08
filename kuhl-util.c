@@ -4338,7 +4338,7 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc,
 		       mesh->mNumVertices,
 		       mesh->mNumFaces*3,
 		       mesh->mNormals       == NULL ? "no" : "yes",
-		       mesh->mColors        == NULL ? "no" : "yes",
+		       mesh->mColors==NULL || mesh->mColors[0]==NULL ? "no" : "yes",
 		       mesh->mTextureCoords == NULL ? "no" : "yes",
 		       mesh->mNumBones,
 		       geom.texture         == 0    ? "(null)" : texPath.data);

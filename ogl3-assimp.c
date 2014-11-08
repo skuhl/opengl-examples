@@ -134,7 +134,7 @@ void keyboard(unsigned char key, int x, int y)
 			if(temp > widthRange[1])
 				temp = widthRange[1];
 			glLineWidth(temp);
-			printf("Line width is %f (can be between is %f and %f)\n", temp, widthRange[0], widthRange[1]);
+			printf("Line width is %f (can be between %f and %f)\n", temp, widthRange[0], widthRange[1]);
 			kuhl_errorcheck();
 			break;
 		}
@@ -159,7 +159,7 @@ void keyboard(unsigned char key, int x, int y)
 			if(temp < widthRange[0])
 				temp = widthRange[0];
 			glLineWidth(temp);
-			printf("Line width is %f (can be between is %f and %f)\n", temp, widthRange[0], widthRange[1]);
+			printf("Line width is %f (can be between %f and %f)\n", temp, widthRange[0], widthRange[1]);
 			kuhl_errorcheck();
 			break;
 		}
