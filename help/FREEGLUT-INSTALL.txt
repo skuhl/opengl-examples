@@ -7,6 +7,4 @@ libxmu-dev
 libxi-dev
 freeglut3-dev
 
-On OSX, XQuartz needs to be installed
-(http://xquartz.macosforge.org/landing/) before freeglut will install
-in homebrew.
+On OSX, the glut included with XCode should be sufficient.

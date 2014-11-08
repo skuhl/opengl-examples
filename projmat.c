@@ -7,8 +7,13 @@
  * @author Scott Kuhl
  */
 
+#include <stdlib.h>
 #include <stdio.h>
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#else
 #include <GL/freeglut.h>
+#endif
 #include "kuhl-util.h"
 
 float projmat_frustum[6];

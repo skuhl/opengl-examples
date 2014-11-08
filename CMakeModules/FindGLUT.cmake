@@ -74,8 +74,6 @@
 # 
 #  * Kitware, Inc.
 
-include(FindPackageHandleStandardArgs)
-
 if (WIN32)
   find_path( GLUT_INCLUDE_DIR NAMES GL/glut.h
     PATHS  ${GLUT_ROOT_PATH}/include )
@@ -86,53 +84,57 @@ if (WIN32)
     )
 else ()
 
-  if (BEOS)
-
-    set(_GLUT_INC_DIR /boot/develop/headers/os/opengl)
-    set(_GLUT_glut_LIB_DIR /boot/develop/lib/x86)
-
-  else()
-
-    find_library( GLUT_Xi_LIBRARY Xi
-      /usr/openwin/lib
-      )
-
-    find_library( GLUT_Xmu_LIBRARY Xmu
-      /usr/openwin/lib
-      )
-
-  endif ()
-
-  find_path( GLUT_INCLUDE_DIR GL/glut.h
-	/usr/local/include
-    /usr/include/GL
-    /usr/openwin/share/include
-    /usr/openwin/include
-    /opt/graphics/OpenGL/include
-    /opt/graphics/OpenGL/contrib/libglut
-    ${_GLUT_INC_DIR}
-    )
-
-  find_library( GLUT_glut_LIBRARY glut
-	/usr/local/lib
-    /usr/openwin/lib
-    ${_GLUT_glut_LIB_DIR}
-    )
-
-  if (APPLE AND NOT GLUT_INCLUDE_DIR)
+  if (APPLE)
+    # These values for Apple could probably do with improvement.
     find_path( GLUT_INCLUDE_DIR glut.h
       /System/Library/Frameworks/GLUT.framework/Versions/A/Headers
       ${OPENGL_LIBRARY_DIR}
       )
     set(GLUT_glut_LIBRARY "-framework GLUT" CACHE STRING "GLUT library for OSX")
     set(GLUT_cocoa_LIBRARY "-framework Cocoa" CACHE STRING "Cocoa framework for OSX")
-  endif()
+  else ()
 
-  unset(_GLUT_INC_DIR)
-  unset(_GLUT_glut_LIB_DIR)
+    if (BEOS)
+
+      set(_GLUT_INC_DIR /boot/develop/headers/os/opengl)
+      set(_GLUT_glut_LIB_DIR /boot/develop/lib/x86)
+
+    else()
+
+      find_library( GLUT_Xi_LIBRARY Xi
+        /usr/openwin/lib
+        )
+
+      find_library( GLUT_Xmu_LIBRARY Xmu
+        /usr/openwin/lib
+        )
+
+    endif ()
+
+    find_path( GLUT_INCLUDE_DIR GL/glut.h
+      /usr/local/include
+      /usr/include/GL
+      /usr/openwin/share/include
+      /usr/openwin/include
+      /opt/graphics/OpenGL/include
+      /opt/graphics/OpenGL/contrib/libglut
+      ${_GLUT_INC_DIR}
+      )
+
+    find_library( GLUT_glut_LIBRARY glut
+      /usr/local/lib
+      /usr/openwin/lib
+      ${_GLUT_glut_LIB_DIR}
+      )
+
+    unset(_GLUT_INC_DIR)
+    unset(_GLUT_glut_LIB_DIR)
+
+  endif ()
 
 endif ()
 
+include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(GLUT REQUIRED_VARS GLUT_glut_LIBRARY GLUT_INCLUDE_DIR)
 
 if (GLUT_FOUND)
