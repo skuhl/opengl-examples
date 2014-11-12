@@ -1985,6 +1985,7 @@ char* kuhl_text_read(const char *filename)
 	FILE *fp = fopen(filename,"rt");
 	int readChars;
 
+#ifdef __linux
 	if(fp == NULL)
 	{
 		/* If we can't open the filename directly, then try opening it
@@ -2005,6 +2006,7 @@ char* kuhl_text_read(const char *filename)
 			printf("NOTE: %s was not found; using %s\n", filename, newfilename);
 		}
 	}
+#endif
 
 	if(fp == NULL)
 	{
