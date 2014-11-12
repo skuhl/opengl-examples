@@ -1985,7 +1985,28 @@ char* kuhl_text_read(const char *filename)
 	FILE *fp = fopen(filename,"rt");
 	int readChars;
 
-	if( fp == NULL)
+	if(fp == NULL)
+	{
+		/* If we can't open the filename directly, then try opening it
+		   with the full path based on the path to the
+		   executable. This allows us to more easily run programs from
+		   outside of the same directory that the executable that the
+		   executable resides without having to specify an absolute
+		   path to our shader programs. */
+		char exe[1024];
+		ssize_t len = readlink("/proc/self/exe", exe, 1023);
+		exe[len]='\0';
+		char *dir = dirname(exe);
+		char newfilename[1024];
+		snprintf(newfilename, 1024, "%s/%s", dir, filename);
+		fp = fopen(newfilename,"rt");
+		if(fp != NULL)
+		{
+			printf("NOTE: %s was not found; using %s\n", filename, newfilename);
+		}
+	}
+
+	if(fp == NULL)
 	{
 		fprintf(stderr, "ERROR: Can't open %s\n", filename);
 		exit(1);
@@ -2005,7 +2026,7 @@ char* kuhl_text_read(const char *filename)
 	if(feof(fp) == 0)
 	{
 		fprintf(stderr, "ERROR: Can't read %s\n", filename);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	fclose(fp);
@@ -2028,7 +2049,7 @@ GLuint kuhl_create_shader(const char *filename, GLuint shader_type)
 	    shader_type != GL_VERTEX_SHADER ) ||
 	   filename == NULL)
 	{
-		fprintf(stderr, "kuhl_create_shader(): ERROR: You passed inappropriate information into this function.\n");
+		fprintf(stderr, "%s: ERROR: You passed inappropriate information into this function.\n", __func__);
 		return 0;
 	}
 
@@ -2037,13 +2058,13 @@ GLuint kuhl_create_shader(const char *filename, GLuint shader_type)
 	 * OpenGL to be guaranteed that the functions exist. */
 	if(shader_type == GL_FRAGMENT_SHADER && !glewIsSupported("GL_ARB_fragment_shader") && !glewIsSupported("GL_VERSION_2_0"))
 	{
-		fprintf(stderr, "kuhl_create_shader(): ERROR: glew said fragment shaders are not supported on this machine.\n");
-		exit(1);
+		fprintf(stderr, "%s: ERROR: glew said fragment shaders are not supported on this machine.\n", __func__);
+		exit(EXIT_FAILURE);
 	}
 	if(shader_type == GL_VERTEX_SHADER && !glewIsSupported("GL_ARB_vertex_shader") && !glewIsSupported("GL_VERSION_2_0"))
 	{
-		fprintf(stderr, "kuhl_create_shader(): ERROR: glew said vertex shaders are not supported on this machine.\n");
-		exit(1);
+		fprintf(stderr, "%s: ERROR: glew said vertex shaders are not supported on this machine.\n", __func__);
+		exit(EXIT_FAILURE);
 	}
 
 	/* read in program from the text file */
@@ -2070,7 +2091,7 @@ GLuint kuhl_create_shader(const char *filename, GLuint shader_type)
 	GLint shaderCompileStatus = GL_FALSE;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &shaderCompileStatus);
 	if(shaderCompileStatus == GL_FALSE)
-		exit(1);
+		exit(EXIT_FAILURE);
 
 	return shader;
 }
@@ -2200,7 +2221,7 @@ GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename)
 	       program, vertexFilename, fragFilename);
 	
 	/* Create the shaders */
-	GLuint fragShader = kuhl_create_shader(fragFilename, GL_FRAGMENT_SHADER);
+	GLuint fragShader   = kuhl_create_shader(fragFilename, GL_FRAGMENT_SHADER);
 	GLuint vertexShader = kuhl_create_shader(vertexFilename, GL_VERTEX_SHADER);
 
 	/* Attach shaders, check for errors. */
