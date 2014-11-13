@@ -3666,10 +3666,19 @@ static int kuhl_private_assimp_load(const char *modelFilename, const char *textu
 	 * takes to load a model. If you are trying to load a large model,
 	 * try setting the post-process settings to 0.
 	 *
-	 * Other options:
+	 * Other options which trigger multiple other options:
 	 * aiProcessPreset_TargetRealtime_Fast
 	 * aiProcessPreset_TargetRealtime_Quality
 	 * aiProcessPreset_TargetRealtime_MaxQuality
+	 *
+	 * Individual options:
+	 * 0                     - do nothing
+	 * aiProcess_Triangulate - Triangulate polygons into triangles
+	 * aiProcess_SortByPType - Put each primitive type into its own mesh
+	 * aiProcess_GenNormals  - Generate flat normals if normals aren't present in file
+	 * aiProcess_GenSmoothNormals - Generate smooth normals if normals aren't present in file
+	 * aiProcess_LimitBoneWeights - Limits bone weights per vertex to 4
+	 * aiProcess_JoinIdenticalVertices - Ensures that the model uses an index buffer.
 	 */
 	const struct aiScene* scene = aiImportFile(modelFilenameVarying, aiProcessPreset_TargetRealtime_Quality);
 	free(modelFilenameVarying);
@@ -4214,6 +4223,30 @@ static void kuhl_private_setup_model_ogl3(const struct aiScene *sc,
 			geom.attrib_color = colors;
 			geom.attrib_color_components = 3;
 			geom.attrib_color_name = "in_Color";
+		}
+		/* If there are no vertex colors, try to use material colors instead */
+		else
+		{
+			/* It would be more efficient to send material colors as a
+			 * uniform variable. However, by using this approach, we
+			 * don't need to use both a material color uniform and a
+			 * vertex color attribute in a GLSL program that displays
+			 * a model. */
+			const struct aiMaterial *mtl = sc->mMaterials[mesh->mMaterialIndex];
+			struct aiColor4D diffuse;
+			if(AI_SUCCESS == aiGetMaterialColor(mtl, AI_MATKEY_COLOR_DIFFUSE, &diffuse))
+			{
+				float *colors = malloc(sizeof(float)*mesh->mNumVertices*3);
+				for(unsigned int i=0; i<mesh->mNumVertices; i++)
+				{
+					colors[i*3+0] = diffuse.r;
+					colors[i*3+1] = diffuse.g;
+					colors[i*3+2] = diffuse.b;
+				}
+				geom.attrib_color = colors;
+				geom.attrib_color_components = 3;
+				geom.attrib_color_name = "in_Color";
+			}
 		}
 		
 		/* Store the texture coordinate attribute */

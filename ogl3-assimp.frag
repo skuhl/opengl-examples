@@ -37,23 +37,30 @@ void main()
 	}
 	else if(renderStyle == 3)
 	{
+		/* Diffuse (headlamp style) with vertex colors */
+		vec3 camLook = normalize(-out_EyeCoord.xyz);
+		float diffuse = clamp(dot(camLook, normalize(out_Normal.xyz)), 0,1) / 2+.5;
+		fragColor = vec4(out_Color * diffuse, 1);
+	}
+	else if(renderStyle == 4)
+	{
 		/* Normal coloring: Each component in the normals ranges from -1 to 1. Make them range from 0 to 1. */
 		fragColor.xyz = (normalize(out_Normal) + 1)/2;
 		fragColor.a = 1;
 	}
-	else if(renderStyle == 4)
+	else if(renderStyle == 5)
 	{
 		/* Color based on texture coordinates */
 		fragColor = vec4(out_TexCoord, 0, 1);
 	}
-	else if(renderStyle == 5)
+	else if(renderStyle == 6)
 	{
 		if(gl_FrontFacing) // based on triangle winding
 			fragColor = vec4(0,.3,0,1); // green are front faces
 		else
 			fragColor = vec4(.3,0,0,1); // red are back faces
 	}
-	else if(renderStyle == 6)
+	else if(renderStyle == 7)
 	{
 		/* out_EyeCoord is the position of this fragment in eye
 		 * coordinates. Since the camera is at 0,0,0 in eye
@@ -69,7 +76,7 @@ void main()
 			fragColor = vec4(.3,0,0,1); // red are back faces
 	}
 	
-	else if(renderStyle == 7)
+	else if(renderStyle == 8)
 	{
 		fragColor = vec4(out_Depth, out_Depth, out_Depth, 1);
 	}
