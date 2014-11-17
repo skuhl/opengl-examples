@@ -5,10 +5,8 @@
 
 /** @file
  * @author Scott Kuhl
- */
-
-
-/* General tips for learning the vector and matrix functions provided by this file:
+ 
+General tips for learning the vector and matrix functions provided by this file:
 
    Matrices are assumed to be column-major (like most OpenGL manuals do).
 
@@ -21,8 +19,14 @@
    Some functions end with "_new" to make it clear that the first argument is not part of the calculation and is simply the place where the result of the calculation is stored. For example, mat4f_invert_new(destMatrix, sourceMatrix) will invert sourceMatrix and store it in destMatrix. However, mat4f_invert(matrix) will invert matrix in place.
 
    Some functions include the "Vec" in their names such as: mat4f_translate_new() and mat4f_translateVec_new(). Both of these functions do the same thing but the first version takes a list of numbers as a parameter and the second one takes an array of numbers.
-
+ 
 */
+
+#ifndef __VECMAT_H__
+#define __VECMAT_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 /** Set the values in a 3-component float vector */
@@ -1361,3 +1365,9 @@ void mat4f_lookat_new(float result[16], float eyeX, float eyeY, float eyeZ, floa
 void mat4d_lookat_new(double result[16], double eyeX, double eyeY, double eyeZ, double centerX, double centerY, double centerZ, double upX, double upY, double upZ);
 void mat4f_lookatVec_new(float  result[16], const float  eye[3], const float  center[3], const float  up[3]);
 void mat4d_lookatVec_new(double result[16], const double eye[3], const double center[3], const double up[3]);
+
+#ifdef __cplusplus
+} // end extern "C"
+#endif
+#endif // end __VECMAT_H__
+
