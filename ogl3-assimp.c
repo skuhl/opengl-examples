@@ -21,9 +21,12 @@
 #include "viewmat.h"
 GLuint program = 0; // id value for the GLSL program
 
+GLuint fpsLabel = 0;
+float fpsLabelAspectRatio = 0;
+kuhl_geometry labelQuad;
+
 kuhl_geometry *modelgeom = NULL;
 float bbox[6];
-
 
 /** Set this variable to 1 to force this program to scale the entire
  * model and translate it so that we can see the entire model. This is
@@ -227,10 +230,39 @@ void get_model_matrix(float result[16])
 	mat4f_mult_mat4f_new(result, moveToLookPoint, fitMatrix);
 }
 
+
+static int framesTillFpsUpdate = 0;
+
 void display()
 {
 	dgr_update();
 
+	/* Get current frames per second calculations. */
+	int time = glutGet(GLUT_ELAPSED_TIME);
+	float fps = kuhl_getfps(time);
+
+	if(framesTillFpsUpdate == 0)
+	{
+		framesTillFpsUpdate = 30;
+		char label[1024];
+		snprintf(label, 1024, "FPS: %0.1f", fps);
+		
+		/* Delete old label if it exists */
+		if(fpsLabel != 0) 
+			glDeleteTextures(1, &fpsLabel);
+
+		/* Make a new label */
+		float labelColor[3] = { 1,1,1 };
+		float labelBg[4] = { 0,0,0,.3 };
+		fpsLabelAspectRatio = kuhl_make_label(label,
+		                                      &fpsLabel,
+		                                      labelColor, labelBg, 128);
+		kuhl_geometry_texture(&labelQuad, fpsLabel, "tex", 1);
+	}
+	framesTillFpsUpdate--;
+
+	/* Ensure the slaves use the same render style as the master
+	 * process. */
 	dgr_setget("style", &renderStyle, sizeof(int));
 
 	// Clear the screen to black, clear the depth buffer
@@ -289,18 +321,41 @@ void display()
 		glUniform1f(kuhl_get_uniform("farPlane"), f[5]);
 		
 		kuhl_errorcheck();
-		kuhl_geometry_draw(modelgeom);
+		kuhl_geometry_draw(modelgeom); /* Draw the model */
 		kuhl_errorcheck();
 
+		/* The shape of the frames per second quad depends on the
+		 * aspect ratio of the label texture and the aspect ratio of
+		 * the window (because we are placing the quad in normalized
+		 * device coordinates). */
+		float windowAspect  = glutGet(GLUT_WINDOW_WIDTH) /(float) glutGet(GLUT_WINDOW_HEIGHT);
+		float stretchLabel[16];
+		mat4f_scale_new(stretchLabel, 1/8.0 * fpsLabelAspectRatio / windowAspect, 1/8.0, 1);
+
+		/* Position label in the upper left corner of the screen */
+		float transLabel[16];
+		mat4f_translate_new(transLabel, -.9, .8, 0);
+		mat4f_mult_mat4f_new(modelview, transLabel, stretchLabel);
+		glUniformMatrix4fv(kuhl_get_uniform("ModelView"), 1, 0, modelview);
+
+		/* Make sure we don't use a projection matrix */
+		float identity[16];
+		mat4f_identity(identity);
+		glUniformMatrix4fv(kuhl_get_uniform("Projection"), 1, 0, identity);
+
+		/* Don't use depth testing and make sure we use the texture
+		 * rendering style */
+		glDisable(GL_DEPTH_TEST);
+		glUniform1i(kuhl_get_uniform("renderStyle"), 1);
+		kuhl_geometry_draw(&labelQuad); /* Draw the quad */
+		glEnable(GL_DEPTH_TEST);
+		kuhl_errorcheck();
+		
 		glUseProgram(0); // stop using a GLSL program.
 
 	} // finish viewport loop
 
-	/* Print fames per second statistics occasionally. */
-	int time = glutGet(GLUT_ELAPSED_TIME);
-	float fps = kuhl_getfps(time);
-	if(time % 1000 == 0)
-		printf("Frames per second: %0.1f\n", fps);
+
 	
 	/* Update the model for the next frame based on the time. We
 	 * convert the time to seconds and then use mod to cause the
@@ -327,6 +382,43 @@ void display()
 	 * window is resized, etc. */
 	glutPostRedisplay();
 }
+
+/* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
+void init_geometryQuad(kuhl_geometry *geom, GLuint program)
+{
+	kuhl_geometry_new(geom, program,
+	                  4, // number of vertices
+	                  GL_TRIANGLES); // type of thing to draw
+
+	/* The data that we want to draw */
+	GLfloat vertexPositions[] = {0, 0, 0,
+	                             1, 0, 0,
+	                             1, 1, 0,
+	                             0, 1, 0 };
+	kuhl_geometry_attrib(geom, vertexPositions,
+	                     3, // number of components x,y,z
+	                     "in_Position", // GLSL variable
+	                     1); // warn if attribute is missing in GLSL program?
+
+	GLfloat texcoord[] = {0, 0,
+	                      1, 0,
+	                      1, 1,
+	                      0, 1};
+	kuhl_geometry_attrib(geom, texcoord,
+	                     2, // number of components x,y,z
+	                     "in_TexCoord", // GLSL variable
+	                     1); // warn if attribute is missing in GLSL program?
+
+
+	
+
+	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
+	                       0, 2, 3 }; // indices of second triangle.
+	kuhl_geometry_indices(geom, indexData, 6);
+
+	kuhl_errorcheck();
+}
+
 
 int main(int argc, char** argv)
 {
@@ -403,6 +495,7 @@ int main(int argc, char** argv)
 
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
+	init_geometryQuad(&labelQuad, program);
 	
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */
