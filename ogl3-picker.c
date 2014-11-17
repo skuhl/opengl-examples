@@ -51,7 +51,7 @@ void display()
 	 * processes/computers synchronized. */
 	dgr_update();
 
-	glClearColor(0,0,0,0); // set clear color to black
+	glClearColor(.2,.2,.2,0); // set clear color to grey
 	glClearStencil(0); // set the stencil value to zero
 	// Clear the screen to black, clear the depth buffer, clear the stencil buffer
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
@@ -164,7 +164,6 @@ void display()
 		
 	} // finish viewport loop
 
-
 	/* Check for errors. If there are errors, consider adding more
 	 * calls to kuhl_errorcheck() in your code. */
 	kuhl_errorcheck();
@@ -181,52 +180,39 @@ void display()
 
 void init_geometryTriangle(GLuint program)
 {
-	kuhl_geometry_zero(&triangle);
-	triangle.program = program;
-	triangle.primitive_type = GL_TRIANGLES;
+	kuhl_geometry_new(&triangle, program, 3, GL_TRIANGLES);
 
 	/* The data that we want to draw */
-	GLfloat vertexData[] = {0, 0, 0,
-	                        1, 0, 0,
-	                        1, 1, 0};
-	triangle.vertex_count = 3; // 3 vertices
-	triangle.attrib_pos = vertexData;
-	triangle.attrib_pos_components = 3; // each vertex has X, Y, Z
-	triangle.attrib_pos_name = "in_Position";
+	GLfloat vertexPositions[] = {0, 0, 0,
+	                             1, 0, 0,
+	                             1, 1, 0};
+	kuhl_geometry_attrib(&triangle, vertexPositions, // data
+	                     3, // number of components (x,y,z)
+	                     "in_Position", // GLSL variable
+	                     1); // warn if attribute is missing in GLSL program?
+
 	GLfloat colorData[] = { 1,0,0,
 	                        0,1,0,
 	                        0,0,1 };
-	triangle.attrib_color = colorData;
-	triangle.attrib_color_components = 3; // each vertex has X, Y, Z
-	triangle.attrib_color_name = "in_Color";
-
-	kuhl_geometry_init(&triangle);
+	kuhl_geometry_attrib(&triangle, colorData, 3, "in_Color", 1);
 }
 
 void init_geometryCursor(GLuint program)
 {
-	kuhl_geometry_zero(&cursor);
-	cursor.program = program;
-	cursor.primitive_type = GL_LINES;
+	kuhl_geometry_new(&cursor, program, 4, GL_LINES);
 
 	/* The data that we want to draw */
 	GLfloat vertexData[] = {-.04, 0, 0,
 	                         .04, 0, 0,
 	                        0, -.04, 0,
 	                        0,  .04, 0 };
-	cursor.vertex_count = 4;
-	cursor.attrib_pos = vertexData;
-	cursor.attrib_pos_components = 3; // each vertex has X, Y, Z
-	cursor.attrib_pos_name = "in_Position";
+	kuhl_geometry_attrib(&cursor, vertexData, 3, "in_Position", 1);
+
 	GLfloat colorData[] = { 1,1,1,
 	                        1,1,1,
 	                        1,1,1,
 	                        1,1,1 };
-	cursor.attrib_color = colorData;
-	cursor.attrib_color_components = 3; // each vertex has X, Y, Z
-	cursor.attrib_color_name = "in_Color";
-	
-	kuhl_geometry_init(&cursor);
+	kuhl_geometry_attrib(&cursor, colorData, 3, "in_Color", 1);
 }
 
 
@@ -234,34 +220,30 @@ void init_geometryCursor(GLuint program)
 /* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
 void init_geometryQuad(GLuint program)
 {
-	kuhl_geometry_zero(&quad);
-	quad.program = program;
-	quad.primitive_type = GL_TRIANGLES;
+	kuhl_geometry_new(&quad, program,
+	                  4, // number of vertices
+	                  GL_TRIANGLES); // type of thing to draw
 
 
 	/* The data that we want to draw */
-	GLfloat vertexData[] = {0+1.1, 0, 0,
-	                        1+1.1, 0, 0,
-	                        1+1.1, 1, 0,
-	                        0+1.1, 1, 0 };
-	quad.vertex_count = 4;  // 4 vertices
-	quad.attrib_pos_components = 3; // each vertex has X, Y, Z
-	quad.attrib_pos = vertexData;
-	quad.attrib_pos_name = "in_Position";
-
+	GLfloat vertexPositions[] = {0+1.1, 0, 0,
+	                       1+1.1, 0, 0,
+	                       1+1.1, 1, 0,
+	                       0+1.1, 1, 0 };
+	kuhl_geometry_attrib(&quad, vertexPositions,
+	                     3, // number of components x,y,z
+	                     "in_Position", // GLSL variable
+	                     1); // warn if attribute is missing in GLSL program?
 	GLfloat colorData[] = { 1,0,0,
 	                        0,1,0,
 	                        0,0,1,
 	                        0,1,1 };
-	quad.attrib_color_components = 3;
-	quad.attrib_color_name = "in_Color";
-	quad.attrib_color = colorData;
-
+	kuhl_geometry_attrib(&quad, colorData, 3, "in_Color", 1);
 	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
 	                       0, 2, 3 }; // indices of second triangle.
-	quad.indices = indexData;
-	quad.indices_len = 6;
-	kuhl_geometry_init(&quad);
+	kuhl_geometry_indices(&quad, indexData, 6);
+
+	kuhl_errorcheck();
 }
 
 int main(int argc, char** argv)
