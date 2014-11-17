@@ -20,6 +20,8 @@
 #include "viewmat.h"
 GLuint program = 0; // id value for the GLSL program
 
+kuhl_geometry *modelgeom = NULL;
+
 /** Set this variable to 1 to force this program to scale the entire
  * model and translate it so that we can see the entire model. This is
  * a useful setting to use when you are loading a new model that you
@@ -104,9 +106,9 @@ void get_model_matrix(float result[16])
 	}
 	
 	/* Change angle for animation. */
-	int count = glutGet(GLUT_ELAPSED_TIME) % 4000; // get a counter that repeats every 10 seconds
+	int count = glutGet(GLUT_ELAPSED_TIME) % 4000; // get a counter that repeats every 4 seconds
 	/* Animate the model if there is animation information available. */
-//	kuhl_update_model_file_ogl3(modelFilename, 0, count/1000.0);
+//	kuhl_update_model(modelgeom, 0, count/1000.0);
 	dgr_setget("count", &count, sizeof(int));
 
 	float rotateAnimate[16];
@@ -247,8 +249,7 @@ void display()
 		glUniform1f(kuhl_get_uniform("farPlane"), f[5]);
 		
 		kuhl_errorcheck();
-
-		kuhl_draw_model_file_ogl3(modelFilename, modelTexturePath, program);
+		kuhl_geometry_draw(modelgeom);
 		kuhl_errorcheck();
 
 		glUseProgram(0); // stop using a GLSL program.
@@ -347,6 +348,9 @@ int main(int argc, char** argv)
 	glClearColor(.2,.2,.2,1);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glutSwapBuffers();
+
+	// Load the model from the file
+	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program);
 	
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */

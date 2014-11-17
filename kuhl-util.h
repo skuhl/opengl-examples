@@ -45,6 +45,8 @@ extern "C" {
 
 /** Maximum number of bones that can be sent to GLSL program */
 #define MAX_BONES 128
+#define MAX_ATTRIBUTES 16
+#define MAX_TEXTURES 8
 	
 #if KUHL_UTIL_USE_ASSIMP
 typedef struct
@@ -55,6 +57,20 @@ typedef struct
 	float matrices[MAX_BONES][16]; /**< Transformation matrices for each bone */
 } kuhl_bonemat;
 #endif
+
+typedef struct
+{
+//	GLfloat* array;
+//	GLuint   components;
+	char*    name;
+	GLuint   bufferobject;
+} kuhl_attrib;
+
+typedef struct
+{
+	char* name;
+	GLuint textureId;
+} kuhl_texture;
 	
 /** The kuhl_geometry struct is used to quickly draw 3D objects in
  * OpenGL 3.0. For more information, see the example programs and the
@@ -62,59 +78,27 @@ typedef struct
  * kuhl_geometry_draw(). The functions provide error checking and uses
  * reasonable defaults. They also provide significantly less
  * flexibility than what OpenGL provides. */
-typedef struct
+typedef struct _kuhl_geometry_
 {
-	GLuint vao;  /**< OpenGL Vertex Array Object - filled in by kuhl_geometry_init() */
-	GLuint program; /**< OpenGL program object to use with this geometry - User should set this. */
-	GLuint vertex_count; /**< How many vertices are in this geometry? - User should set this. */
-	GLenum primitive_type; /**< GL_TRIANGLES, GL_POINTS, etc. */
+	GLuint vao;  /**< OpenGL Vertex Array Object - created by kuhl_geometry_new() */
+	GLuint program; /**< OpenGL program object to use with this geometry - filled in by kuhl_geometry_new(). */
+	GLuint vertex_count; /**< How many vertices are in this geometry? - Filled in by kuhl_geometry_new(). */
+	GLenum primitive_type; /**< GL_TRIANGLES, GL_POINTS, etc. - Filled in by kuhl_geometry_new() */
 
 	float aabbox[6]; /**< Axis aligned bounding box calculated by kuhl_geometry_init() in object-coordinates. Order: xMin, xMax, yMin, yMax, zMin, zMax - Set by kuhl_geometry_init(). */
 
-	GLuint texture; /**< The OpenGL ID for the texture to be applied to the geometry. Set this to 0 for no texturing */
-	char *texture_name; /**< The name of the name of the sampler2D texture in the GLSL fragment program. */
-	
+	kuhl_attrib attribs[MAX_ATTRIBUTES]; /**< A list of attributes, to add or modify an attribute, use kuhl_geometry_attrib(). */
+	unsigned int attrib_count; /**< Number of attributes in this geometry */
+
+	kuhl_texture textures[MAX_TEXTURES];
+	unsigned int texture_count;
+
 	GLuint *indices; /**< Allows you to specify which vertices are a part of a primitive. This is useful if a single vertex is shared by multiple primitives. If this is set to NULL, the vertices are drawn in order. - User should set this. */
 	GLuint indices_len; /**< How many indices are there? - User should set this. */
 	GLuint indices_bufferobject; /**< What is the OpenGL buffer object that holds the indices? - Set by kuhl_geometry_init(). */
 
-	GLfloat* attrib_pos; /**< A list of vertex positions - User should set this; The list should contain attrib_pos_components * vertex_count floats. */
-	char*    attrib_pos_name; /**< The GLSL variable that the positions should be sent to. - User should set this. */
-	GLuint      attrib_pos_components; /**< Are the positions 2D or 3D? - User should set this. */
-	GLuint   attrib_pos_bufferobject; /**< The OpenGL buffer object storing the vertex positions - Set by kuhl_geometry_init(). */
-
-	GLfloat* attrib_color; /**< A list of colors for each vertex - User should set this if geometry has color information. The list should contain attrib_color_components * vertex_count floats. */
-	char*    attrib_color_name; /**< The GLSL variable that the color information should be sent to. - User should set this. */
-	GLuint   attrib_color_components; /**< Typically 3 (red, green, blue) - User should set this. */
-	GLuint   attrib_color_bufferobject; /**< The OpenGL buffer object storing the color information - Set by kuhl_geometry_init(). */
-
-	GLfloat* attrib_texcoord; /**< A list of texture coordinates for each vertex - User should set this if geometry has texture coordinates. The list should contain attrib_texcoord_components * vertex_count floats.*/
-	char*    attrib_texcoord_name; /**< The GLSL variable that the texture coordinate data should be sent to. - User should set this. */
-	GLuint   attrib_texcoord_components; /**< Typically 2 (u, v) - User should set this. */
-	GLuint   attrib_texcoord_bufferobject; /**< The OpenGL buffer object storing the texture coordinate information - Set by kuhl_geometry_init(). */
-
-	GLfloat* attrib_normal; /**< A list of normals for each vertex - User should set this if geometry has normals. The list should contain attrib_normal_components * vertex_count floats.*/
-	char*    attrib_normal_name; /**< The GLSL variable that the normal data should be sent to. - User should set this. */
-	GLuint   attrib_normal_components; /**< Typically 3 (x, y, z) - User should set this. */
-	GLuint   attrib_normal_bufferobject; /**< The OpenGL buffer object storing the normal information - Set by kuhl_geometry_init(). */
-
-	GLfloat* attrib_boneWeight;
-	char*    attrib_boneWeight_name;
-	GLuint   attrib_boneWeight_components;
-	GLuint   attrib_boneWeight_bufferobject;
-
-	GLfloat* attrib_boneIndex;
-	char*    attrib_boneIndex_name;
-	GLuint   attrib_boneIndex_components;
-	GLuint   attrib_boneIndex_bufferobject;
 	
-	GLfloat* attrib_custom; /**< A list of some custom attribute each vertex - User should set this if geometry has information not specified in this struct. The list should contain attrib_custom_components * vertex_count floats.*/
-	char*    attrib_custom_name; /**< The GLSL variable that the custom data should be sent to. - User should set this. */
-	GLuint   attrib_custom_components; /**< How many components does the custom data have for each vertex? - User should set this. */
-	GLuint   attrib_custom_bufferobject; /**< The OpenGL buffer object storing the custom information - Set by kuhl_geometry_init(). */
-
 	float matrix[16]; /**< A matrix that all of this geometry should be transformed by */
-
 	int has_been_drawn;
 	
 #if KUHL_UTIL_USE_ASSIMP
@@ -122,6 +106,8 @@ typedef struct
 	struct aiScene *assimp_scene; /**< Assimp scene that this kuhl_geometry object is a part of. */
 	kuhl_bonemat *bones;
 #endif
+
+	struct _kuhl_geometry_ *next; /**< A kuhl_geometry object can be a linked list. */
 	
 } kuhl_geometry;
 
@@ -1505,12 +1491,17 @@ float kuhl_getfps(int milliseconds);
 
 void kuhl_bbox_transform(float bbox[6], float mat[16]);
 
-void kuhl_geometry_zero(kuhl_geometry *geom);
 int kuhl_geometry_collide(kuhl_geometry *geom1, float mat1[16],
                           kuhl_geometry *geom2, float mat2[16]);
-void kuhl_geometry_init(kuhl_geometry *geom);
+
 void kuhl_geometry_draw(kuhl_geometry *geom);
 void kuhl_geometry_delete(kuhl_geometry *geom);
+
+void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint components, const char* name, int warnIfAttribMissing);
+void kuhl_geometry_indices(kuhl_geometry *geom, GLuint *indices, GLuint indexCount);
+void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name, int warnIfSamplerMissing);
+
+void kuhl_geometry_new(kuhl_geometry *geom, GLuint program, unsigned int vertexCount, GLint primitive_type);
 
 
 
@@ -1528,11 +1519,12 @@ void kuhl_video_record(const char *fileLabel, int fps);
 #endif // end use imagemagick
 
 #ifdef KUHL_UTIL_USE_ASSIMP
+void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, float time);
+kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDirname, GLuint program);
+
+	
 int kuhl_draw_model_file_ogl2(const char *modelFilename, const char *textureDirname);
-void kuhl_update_model_file_ogl3(const char *modelFilename, unsigned int animationNum, float t);
-int kuhl_load_model_file_ogl3(const char *modelFilename, const char *textureDirname, GLuint program);
 int kuhl_draw_model_file_ogl3(const char *modelFilename, const char *textureDirname, GLuint program);
-const struct aiScene* kuhl_model_file_aiScene(const char *modelFilename);
 int kuhl_model_bounding_box(const char *modelFilename, float min[3], float max[3], float center[3]);
 #endif // end use assimp
 

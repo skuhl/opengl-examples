@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <math.h>
 #include <GL/glew.h>
-
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
@@ -20,6 +19,8 @@
 #include "projmat.h"
 #include "viewmat.h"
 GLuint program = 0; // id value for the GLSL program
+
+kuhl_geometry *modelgeom = NULL;
 
 /** Set this variable to 1 to force this program to scale the entire
  * model and translate it so that we can see the entire model. This is
@@ -207,15 +208,13 @@ void get_model_matrix(float result[16])
 			mat4f_scale_new(scale, inchesToMeters, inchesToMeters, inchesToMeters);
 		}
 		mat4f_mult_mat4f_new(result, translate, scale);
-		
-		
 		return;
 	}
 	
 	/* Change angle for animation. */
 	int count = glutGet(GLUT_ELAPSED_TIME) % 10000; // get a counter that repeats every 10 seconds
 	/* Animate the model if there is animation information available. */
-	kuhl_update_model_file_ogl3(modelFilename, 0, count/1000.0);
+	kuhl_update_model(modelgeom, 0, count/1000.0);
 	dgr_setget("count", &count, sizeof(int));
 
 	/* Calculate the width/height/depth of the bounding box and
@@ -304,8 +303,7 @@ void display()
 		glUniform1f(kuhl_get_uniform("farPlane"), f[5]);
 		
 		kuhl_errorcheck();
-
-		kuhl_draw_model_file_ogl3(modelFilename, modelTexturePath, program);
+		kuhl_geometry_draw(modelgeom);
 		kuhl_errorcheck();
 
 		glUseProgram(0); // stop using a GLSL program.
@@ -372,7 +370,7 @@ int main(int argc, char** argv)
 #endif
 	glutCreateWindow(argv[0]); // set window title to executable name
 	glEnable(GL_MULTISAMPLE);
-	
+
 	/* Initialize GLEW */
 	glewExperimental = GL_TRUE;
 	GLenum glewError = glewInit();
@@ -409,6 +407,9 @@ int main(int argc, char** argv)
 	glClearColor(.2,.2,.2,1);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glutSwapBuffers();
+
+	// Load the model from the file
+	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program);
 	
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */

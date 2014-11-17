@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <math.h>
 #include <GL/glew.h>
-
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
@@ -46,7 +45,7 @@ void display()
 	 * processes/computers synchronized. */
 	dgr_update();
 
-	glClearColor(0,0,0,0); // set clear color to black
+	glClearColor(.2,.2,.2,0); // set clear color to black
 	// Clear the screen to black, clear the depth buffer
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST); // turn on depth testing
@@ -134,46 +133,44 @@ void display()
 
 void init_geometryTriangle(GLuint program)
 {
-	kuhl_geometry_zero(&triangle);
-	triangle.program = program;
-	triangle.primitive_type = GL_TRIANGLES;
-
+	kuhl_geometry_new(&triangle, program, 3, // num vertices
+	                  GL_TRIANGLES); // primitive type
+	
 	/* The data that we want to draw */
-	GLfloat vertexData[] = {0, 0, 0,
-	                        1, 0, 0,
-	                        1, 1, 0};
-	triangle.vertex_count = 3; // 3 vertices
-	triangle.attrib_pos = vertexData;
-	triangle.attrib_pos_components = 3; // each vertex has X, Y, Z
-	triangle.attrib_pos_name = "in_Position";
+	GLfloat vertexPositions[] = {0, 0, 0,
+	                             1, 0, 0,
+	                             1, 1, 0};
+	kuhl_geometry_attrib(&triangle, vertexPositions, // data
+	                     3, // number of components (x,y,z)
+	                     "in_Position", // GLSL variable
+	                     1); // warn if attribute is missing in GLSL program?
 
-	kuhl_geometry_init(&triangle);
 }
 
 
 /* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
 void init_geometryQuad(GLuint program)
 {
-	kuhl_geometry_zero(&quad);
-	quad.program = program;
-	quad.primitive_type = GL_TRIANGLES;
+	kuhl_geometry_new(&quad, program,
+	                  4, // number of vertices
+	                  GL_TRIANGLES); // type of thing to draw
 
 
 	/* The data that we want to draw */
-	GLfloat vertexData[] = {0+1.1, 0, 0,
-	                        1+1.1, 0, 0,
-	                        1+1.1, 1, 0,
-	                        0+1.1, 1, 0 };
-	quad.attrib_pos = vertexData;
-	quad.vertex_count = 4;  // 4 vertices
-	quad.attrib_pos_components = 3; // each vertex has X, Y, Z
-	quad.attrib_pos_name = "in_Position";
+	GLfloat vertexPositions[] = {0+1.1, 0, 0,
+	                       1+1.1, 0, 0,
+	                       1+1.1, 1, 0,
+	                       0+1.1, 1, 0 };
+	kuhl_geometry_attrib(&quad, vertexPositions,
+	                     3, // number of components x,y,z
+	                     "in_Position", // GLSL variable
+	                     1); // warn if attribute is missing in GLSL program?
 
 	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
 	                       0, 2, 3 }; // indices of second triangle.
-	quad.indices = indexData;
-	quad.indices_len = 6;
-	kuhl_geometry_init(&quad);
+	kuhl_geometry_indices(&quad, indexData, 6);
+
+	kuhl_errorcheck();
 }
 
 int main(int argc, char** argv)
