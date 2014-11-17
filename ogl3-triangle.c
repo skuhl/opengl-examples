@@ -155,7 +155,6 @@ void init_geometryQuad(GLuint program)
 	                  4, // number of vertices
 	                  GL_TRIANGLES); // type of thing to draw
 
-
 	/* The data that we want to draw */
 	GLfloat vertexPositions[] = {0+1.1, 0, 0,
 	                       1+1.1, 0, 0,

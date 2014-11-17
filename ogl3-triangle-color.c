@@ -43,7 +43,7 @@ void display()
 	 * processes/computers synchronized. */
 	dgr_update();
 
-	glClearColor(0,0,0,0); // set clear color to black
+	glClearColor(.2,.2,.2,0); // set clear color to grey
 	// Clear the screen to black, clear the depth buffer
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST); // turn on depth testing
@@ -79,8 +79,9 @@ void display()
 		float angle = count / 10000.0 * 360; // rotate 360 degrees every 10 seconds
 		/* Make sure all computers/processes use the same angle */
 		dgr_setget("angle", &angle, sizeof(GLfloat));
-		float animationMat[16];
-		mat4f_rotateAxis_new(animationMat, angle, 0,1,0);
+		/* Create a 4x4 rotation matrix based on the angle we computed. */
+		float rotateMat[16];
+		mat4f_rotateAxis_new(rotateMat, angle, 0,1,0);
 
 		/* Create a scale matrix. */
 		float scaleMatrix[16];
@@ -89,7 +90,7 @@ void display()
 		// Modelview = (viewMatrix * scaleMatrix) * rotationMatrix
 		float modelview[16];
 		mat4f_mult_mat4f_new(modelview, viewMat, scaleMatrix);
-		mat4f_mult_mat4f_new(modelview, modelview, animationMat);
+		mat4f_mult_mat4f_new(modelview, modelview, rotateMat);
 
 		kuhl_errorcheck();
 		glUseProgram(program);
@@ -129,27 +130,22 @@ void display()
 
 void init_geometryTriangle(GLuint program)
 {
-	kuhl_geometry_zero(&triangle);
-	triangle.program = program;
-	triangle.primitive_type = GL_TRIANGLES;
+		kuhl_geometry_new(&triangle, program, 3, // num vertices
+	                  GL_TRIANGLES); // primitive type
 
 	/* The data that we want to draw */
-	GLfloat vertexData[] = {0, 0, 0,
-	                        1, 0, 0,
-	                        1, 1, 0};
-	triangle.vertex_count = 3; // 3 vertices
-	triangle.attrib_pos = vertexData;
-	triangle.attrib_pos_components = 3; // each vertex has X, Y, Z
-	triangle.attrib_pos_name = "in_Position";
+	GLfloat vertexPositions[] = {0, 0, 0,
+	                             1, 0, 0,
+	                             1, 1, 0};
+	kuhl_geometry_attrib(&triangle, vertexPositions, // data
+	                     3, // number of components (x,y,z)
+	                     "in_Position", // GLSL variable
+	                     1); // warn if attribute is missing in GLSL program?
 
 	GLfloat colorData[] = {1,0,0,
 	                       0,1,0,
 	                       0,0,1 };
-	triangle.attrib_color = colorData;
-	triangle.attrib_color_components = 3; // r, g, b
-	triangle.attrib_color_name = "in_Color";
-
-	kuhl_geometry_init(&triangle);
+	kuhl_geometry_attrib(&triangle, colorData, 3, "in_Color", 1);
 }
 
 
