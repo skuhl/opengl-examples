@@ -143,8 +143,8 @@ void display()
 		/* Set up the viewport to draw on the screen */
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 		/* Apply the texture to our geometry and draw the quad. */
-		prerendQuad.texture = prerenderTexID;
-		prerendQuad.texture_name = "tex";
+		kuhl_geometry_texture(&prerendQuad, prerenderTexID, "tex", 1);
+
 		kuhl_geometry_draw(&prerendQuad);
 		
 	} // finish viewport loop
@@ -165,78 +165,70 @@ void display()
 
 void init_geometryTriangle(GLuint program)
 {
-	kuhl_geometry_zero(&triangle);
-	triangle.program = program;
-	triangle.primitive_type = GL_TRIANGLES;
-
+	kuhl_geometry_new(&triangle, program, 3, // num vertices
+	                  GL_TRIANGLES); // primitive type
+	
 	/* The data that we want to draw */
-	GLfloat vertexData[] = {0, 0, 0,
-	                        1, 0, 0,
-	                        1, 1, 0};
-	triangle.vertex_count = 3; // 3 vertices
-	triangle.attrib_pos = vertexData;
-	triangle.attrib_pos_components = 3; // each vertex has X, Y, Z
-	triangle.attrib_pos_name = "in_Position";
+	GLfloat vertexPositions[] = {0, 0, 0,
+	                             1, 0, 0,
+	                             1, 1, 0};
+	kuhl_geometry_attrib(&triangle, vertexPositions, // data
+	                     3, // number of components (x,y,z)
+	                     "in_Position", // GLSL variable
+	                     1); // warn if attribute is missing in GLSL program?
 
-	kuhl_geometry_init(&triangle);
 }
 
 
 /* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
 void init_geometryQuad(GLuint program)
 {
-	kuhl_geometry_zero(&quad);
-	quad.program = program;
-	quad.primitive_type = GL_TRIANGLES;
-
+	kuhl_geometry_new(&quad, program,
+	                  4, // number of vertices
+	                  GL_TRIANGLES); // type of thing to draw
 
 	/* The data that we want to draw */
-	GLfloat vertexData[] = {0+1.1, 0, 0,
-	                        1+1.1, 0, 0,
-	                        1+1.1, 1, 0,
-	                        0+1.1, 1, 0 };
-	quad.attrib_pos = vertexData;
-	quad.vertex_count = 4;  // 4 vertices
-	quad.attrib_pos_components = 3; // each vertex has X, Y, Z
-	quad.attrib_pos_name = "in_Position";
+	GLfloat vertexPositions[] = {0+1.1, 0, 0,
+	                       1+1.1, 0, 0,
+	                       1+1.1, 1, 0,
+	                       0+1.1, 1, 0 };
+	kuhl_geometry_attrib(&quad, vertexPositions,
+	                     3, // number of components x,y,z
+	                     "in_Position", // GLSL variable
+	                     1); // warn if attribute is missing in GLSL program?
 
 	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
 	                       0, 2, 3 }; // indices of second triangle.
-	quad.indices = indexData;
-	quad.indices_len = 6;
-	kuhl_geometry_init(&quad);
+	kuhl_geometry_indices(&quad, indexData, 6);
+
+	kuhl_errorcheck();
 }
 
 /* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
 void init_geometryQuadPrerender(GLuint program)
 {
-	kuhl_geometry_zero(&prerendQuad);
-	prerendQuad.program = program;
-	prerendQuad.primitive_type = GL_TRIANGLES;
+	kuhl_geometry_new(&prerendQuad, program, 4, GL_TRIANGLES);
+
 
 	/* The data that we want to draw */
-	GLfloat vertexData[] = {-1, -1, 0,
+	GLfloat vertexPositions[] = {-1, -1, 0,
 	                        1, -1, 0,
 	                        1, 1, 0,
 	                        -1, 1, 0 };
-	prerendQuad.vertex_count = 4;  // 4 vertices
-	prerendQuad.attrib_pos = vertexData;
-	prerendQuad.attrib_pos_components = 3; // each vertex has X, Y, Z
-	prerendQuad.attrib_pos_name = "in_Position";
+	kuhl_geometry_attrib(&prerendQuad, vertexPositions,
+	                     3, // number of components x,y,z
+	                     "in_Position", // GLSL variable
+	                     1); // warn if attribute is missing in GLSL program?
+
+	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
+	                       0, 2, 3 }; // indices of second triangle.
+	kuhl_geometry_indices(&prerendQuad, indexData, 6);
 
 	GLfloat texcoordData[] = {0, 0,
 	                          1, 0,
 	                          1, 1,
 	                          0, 1};
-	prerendQuad.attrib_texcoord = texcoordData;
-	prerendQuad.attrib_texcoord_components = 2;
-	prerendQuad.attrib_texcoord_name = "in_TexCoord";
-
-	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
-	                       0, 2, 3 }; // indices of second triangle.
-	prerendQuad.indices = indexData;
-	prerendQuad.indices_len = 6;
-	kuhl_geometry_init(&prerendQuad);
+	kuhl_geometry_attrib(&prerendQuad, texcoordData, 2, "in_TexCoord", 1);
 }
 
 
