@@ -84,6 +84,58 @@ static inline void vec4d_copy(double result[4], const double a[4])
 { vecNd_copy(result, a, 4); }
 
 
+
+/** Print an N-component float vector to stdout (all on one line).
+    @param v The N-component vector to print.
+    @param n The number of components in the vector.
+*/
+static inline void vecNf_print(const float v[ ], const int n)
+{
+	// use temporary variable since arguments to printf are not const.
+	float tmp[n]; 
+	vecNf_copy(tmp, v, n);
+	printf("vec%df(",n);
+	for(int i=0; i<n; i++)
+		printf("%10.3f ",tmp[i]);
+	printf(")\n");
+}
+/** Print an N-component double vector to stdout (all on one line).
+    @param v The N-component vector to print.
+    @param n The number of components in the vector.
+*/
+static inline void vecNd_print(const double v[ ], const int n)
+{
+	// use temporary variable since arguments to printf are not const.
+	double tmp[n];
+	vecNd_copy(tmp, v, n);
+	printf("vec%dd(",n);
+	for(int i=0; i<n; i++)
+		printf("%10.3f ",tmp[i]);
+	printf(")\n");
+}
+
+/** Print a vec3f vector to stdout (all on one line).
+    @param v The vector to print.
+*/
+static inline void vec3f_print(const float v[3])
+{ vecNf_print(v, 3); }
+/** Print a vec3d vector to stdout (all on one line).
+    @param v The vector to print.
+*/
+static inline void vec3d_print(const double v[3])
+{ vecNd_print(v, 3); }
+/** Print a vec4f vector to stdout (all on one line).
+    @param v The vector to print.
+*/
+static inline void vec4f_print(const float v[4])
+{ vecNf_print(v, 4); }
+/** Print a vec4d vector to stdout (all on one line).
+    @param v The vector to print.
+*/
+static inline void vec4d_print(const double v[4])
+{ vecNd_print(v, 4); }
+
+
 /** Cross product of two 3-component float vectors.
  * @param result An array to store the resulting calculations. It is OK if result points to the same location as A or B.
  * @param A The vector for the left side of the cross product.
@@ -232,6 +284,11 @@ static inline void vecNf_scalarDiv_new(float result[], const float v[], const fl
 {
 	for(int i=0; i<n; i++)
 		result[i] = v[i]/scalar;
+	if(!isfinite(result[0]))
+	{
+		printf("%s: WARNING: Divided the following vector by 0:\n", __func__);
+		vecNf_print(v, n);
+	}
 }
 /** Divide each element in a double vector by a scalar.
  * @param result Resulting vector
@@ -242,6 +299,11 @@ static inline void vecNd_scalarDiv_new(double result[], const double v[], const 
 {
 	for(int i=0; i<n; i++)
 		result[i] = v[i]/scalar;
+	if(!isfinite(result[0]))
+	{
+		printf("%s: WARNING: Divided the following vector by 0:\n", __func__);
+		vecNd_print(v, n);
+	}
 }
 /** Divide each element in a 3-component float vector by a scalar.
  * @param result Resulting vector
@@ -606,57 +668,6 @@ static inline void vec4f_sub_new(float result[4], const float a[4], const float 
 { vecNf_sub_new(result, a, b, 4); }
 static inline void vec4d_sub_new(double result[4], const double a[4], const double b[4])
 { vecNd_sub_new(result, a, b, 4); }
-
-
-/** Print an N-component float vector to stdout (all on one line).
-    @param v The N-component vector to print.
-    @param n The number of components in the vector.
-*/
-static inline void vecNf_print(const float v[ ], const int n)
-{
-	// use temporary variable since arguments to printf are not const.
-	float tmp[n]; 
-	vecNf_copy(tmp, v, n);
-	printf("vec%df(",n);
-	for(int i=0; i<n; i++)
-		printf("%10.3f ",tmp[i]);
-	printf(")\n");
-}
-/** Print an N-component double vector to stdout (all on one line).
-    @param v The N-component vector to print.
-    @param n The number of components in the vector.
-*/
-static inline void vecNd_print(const double v[ ], const int n)
-{
-	// use temporary variable since arguments to printf are not const.
-	double tmp[n];
-	vecNd_copy(tmp, v, n);
-	printf("vec%dd(",n);
-	for(int i=0; i<n; i++)
-		printf("%10.3f ",tmp[i]);
-	printf(")\n");
-}
-
-/** Print a vec3f vector to stdout (all on one line).
-    @param v The vector to print.
-*/
-static inline void vec3f_print(const float v[3])
-{ vecNf_print(v, 3); }
-/** Print a vec3d vector to stdout (all on one line).
-    @param v The vector to print.
-*/
-static inline void vec3d_print(const double v[3])
-{ vecNd_print(v, 3); }
-/** Print a vec4f vector to stdout (all on one line).
-    @param v The vector to print.
-*/
-static inline void vec4f_print(const float v[4])
-{ vecNf_print(v, 4); }
-/** Print a vec4d vector to stdout (all on one line).
-    @param v The vector to print.
-*/
-static inline void vec4d_print(const double v[4])
-{ vecNd_print(v, 4); }
 
 /** Get the index of the value at a specific row and column in an NxN matrix.
     @param row The row that the value is at in the matrix (0=first row).
