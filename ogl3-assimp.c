@@ -213,37 +213,17 @@ void get_model_matrix(float result[16])
 		return;
 	}
 	
-	/* Change angle for animation. */
-	int count = glutGet(GLUT_ELAPSED_TIME) % 10000; // get a counter that repeats every 10 seconds
-	/* Animate the model if there is animation information available. */
-	kuhl_update_model(modelgeom, 0, count/1000.0);
-	dgr_setget("count", &count, sizeof(int));
+	/* Get a matrix to scale+translate the model based on the bounding
+	 * box */
+	float fitMatrix[16];
+	kuhl_bbox_fit(fitMatrix, bbox, 1);
 
-	/* Calculate the width/height/depth of the bounding box and
-	 * determine which one of the three is the largest. Then, scale
-	 * the scene by 1/(largest value) to ensure that it fits in our
-	 * view frustum. */
-	float bb_min[3], bb_max[3], bb_center[3];
-	vec3f_set(bb_min, bbox[0], bbox[2], bbox[4]);
-	vec3f_set(bb_max, bbox[1], bbox[3], bbox[5]);
-	vec3f_add_new(bb_center, bb_min, bb_max);
-	vec3f_scalarDiv(bb_center, 2);
-#define mymax(a,b) (a>b?a:b)
-	float tmp;
-	tmp = bb_max[0] - bb_min[0];
-	tmp = mymax(bb_max[1] - bb_min[1], tmp);
-	tmp = mymax(bb_max[2] - bb_min[2], tmp);
-	tmp = 1.f / tmp;
-#undef mymax
-	float scaleBoundBox[16], moveToOrigin[16], moveToLookPoint[16];
-	mat4f_translate_new(moveToOrigin, -bb_center[0], -bb_center[1], -bb_center[2]); // move to origin
-//	printf("Scaling by factor %f\n", tmp); 
-	mat4f_scale_new(scaleBoundBox, tmp, tmp, tmp); // scale model based on bounding box size
+	/* Get a matrix that moves the model to the correct location. */
+	float moveToLookPoint[16];
 	mat4f_translateVec_new(moveToLookPoint, placeToPutModel);
 
-	mat4f_mult_mat4f_new(result, moveToOrigin, result);
-	mat4f_mult_mat4f_new(result, scaleBoundBox, result);
-	mat4f_mult_mat4f_new(result, moveToLookPoint, result);
+	/* Create a single model matrix. */
+	mat4f_mult_mat4f_new(result, moveToLookPoint, fitMatrix);
 }
 
 void display()
@@ -315,11 +295,18 @@ void display()
 
 	} // finish viewport loop
 
+	/* Print fames per second statistics occasionally. */
 	int time = glutGet(GLUT_ELAPSED_TIME);
 	float fps = kuhl_getfps(time);
 	if(time % 1000 == 0)
 		printf("Frames per second: %0.1f\n", fps);
-		
+	
+	/* Update the model for the next frame based on the time. We
+	 * convert the time to seconds and then use mod to cause the
+	 * animation to repeat. */
+	dgr_setget("time", &time, sizeof(int));
+	kuhl_update_model(modelgeom, 0, ((time%10000)/1000.0));
+
 	
 	/* Check for errors. If there are errors, consider adding more
 	 * calls to kuhl_errorcheck() in your code. */
@@ -403,7 +390,7 @@ int main(int argc, char** argv)
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
 
-	float initCamPos[3]  = {0,0,2}; // location of camera
+	float initCamPos[3]  = {0,1,2}; // location of camera
 	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
 	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
 	viewmat_init(initCamPos, initCamLook, initCamUp);

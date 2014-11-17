@@ -4327,9 +4327,16 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
  *
  * @param program The GLSL program to draw the model with.
  *
- * @return Returns a kuhl_geometry object that can be later drawn.
+ * @param bbox To be filled in with the bounding box of the model
+ * (xmin, xmax, ymin, etc). The bounding box may be incorrect if the
+ * model includes animation.
+ *
+ * @return Returns a kuhl_geometry object that can be later drawn. If
+ * the model contains multiple meshes, kuhl_geometry will be a linked
+ * list (i.e., geom->next will not be NULL).
  */
-kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDirname, GLuint program, float bbox[6])
+kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDirname,
+                               GLuint program, float bbox[6])
 {
 	// Loads the model from the file and reads in all of the textures:
 	const struct aiScene *scene = kuhl_private_assimp_load(modelFilename, textureDirname);
@@ -4349,23 +4356,25 @@ kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDir
 	 * also call kuhl_update_model(). */
 	kuhl_update_model(ret, 0, -1);
 
+	/* Calculate bounding box information for the model */
 	float bboxLocal[6];
 	kuhl_private_calc_bbox(scene->mRootNode, NULL, scene, bboxLocal);
-	float min[3];
+	float min[3],max[3],ctr[3];
 	vec3f_set(min, bboxLocal[0], bboxLocal[2], bboxLocal[4]);
-	printf("%s: Bounding box min: ", modelFilename);
-	vec3f_print(min);
-	float max[3];
 	vec3f_set(max, bboxLocal[1], bboxLocal[3], bboxLocal[5]);
-	printf("%s: Bounding box max: ", modelFilename);
-	vec3f_print(max);
-	float ctr[3];
 	vec3f_add_new(ctr, min, max);
 	vec3f_scalarDiv(ctr, 2);
+
+	/* Print bounding box information to stdout */
+	printf("%s: Bounding box min: ", modelFilename);
+	vec3f_print(min);
+	printf("%s: Bounding box max: ", modelFilename);
+	vec3f_print(max);
 	printf("%s: Bounding box ctr: ", modelFilename);
 	vec3f_print(ctr);
 
-
+	/* If the user requested bounding box information, give it to
+	 * them. */
 	if(bbox != NULL)
 	{
 		for(int i=0; i<6; i++)
@@ -4374,6 +4383,55 @@ kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDir
 	return ret;
 }
 #endif // KUHL_UTIL_USE_ASSIMP
+
+
+/* Create a matrix scale+translation matrix which shrinks the model to
+ * fit into a 1x1x1 box.
+ *
+ * @param result The resulting transformation matrix.
+ *
+ * @param bbox The bounding box information (xmin, xmax, ymin, etc.)
+ *
+ * @param sitOnXZPlane If 1, the box will be translated so that the
+ * model sits on the XZ plane.
+ */
+void kuhl_bbox_fit(float result[16], const float bbox[6], int sitOnXZPlane)
+{
+	/* Calculate the width/height/depth of the bounding box and
+	 * determine which one of the three is the largest. Then, scale
+	 * the scene by 1/(largest value) to ensure that it fits in our
+	 * view frustum. */
+	float min[3], max[3], ctr[3];
+	vec3f_set(min, bbox[0], bbox[2], bbox[4]);
+	vec3f_set(max, bbox[1], bbox[3], bbox[5]);
+	vec3f_add_new(ctr, min, max);
+	vec3f_scalarDiv(ctr, 2);
+
+	/* Figure out which dimension is the biggest part of the box */
+	float width  = max[0]-min[0];
+	float height = max[1]-min[1];
+	float depth  = max[2]-min[2];
+	float biggestSize = width;
+	if(height > biggestSize)
+		biggestSize = height;
+	if(depth > biggestSize)
+		biggestSize = depth;
+
+	float scaleBoundBox[16], moveToOrigin[16];
+	/* Scale matrix */
+	mat4f_scale_new(scaleBoundBox, 1.0f/biggestSize, 1.0f/biggestSize, 1.0f/biggestSize);
+	//printf("Scaling by factor %f\n", 1.0/biggestSize); 
+
+	/* Translate matrix */
+	if(sitOnXZPlane == 0)
+		mat4f_translate_new(moveToOrigin, -ctr[0], -ctr[1], -ctr[2]); // move to origin
+	else
+		/* Place the bounding box on top of the origin */
+		mat4f_translate_new(moveToOrigin, -ctr[0], -ctr[1]+height/2.0f, -ctr[2]);
+
+	mat4f_mult_mat4f_new(result, scaleBoundBox, moveToOrigin);
+}
+
 
 /* Creates a new framebuffer object (with a depth buffer) that we can
  * render to and therefore render directly to a texture.

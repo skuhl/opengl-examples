@@ -21,6 +21,8 @@
 GLuint program = 0; // id value for the GLSL program
 
 kuhl_geometry *modelgeom = NULL;
+float bbox[6];
+
 
 /** Set this variable to 1 to force this program to scale the entire
  * model and translate it so that we can see the entire model. This is
@@ -58,6 +60,7 @@ void keyboard(unsigned char key, int x, int y)
 			break;
 		case 'r':
 		{
+			// Reload GLSL program from disk
 			int origProgram = program;
 			program = kuhl_create_program(GLSL_VERT_FILE, GLSL_FRAG_FILE);
 			kuhl_delete_program(origProgram);
@@ -104,16 +107,9 @@ void get_model_matrix(float result[16])
 		mat4f_mult_mat4f_new(result, translate, scale);
 		return;
 	}
-	
-	/* Change angle for animation. */
-	int count = glutGet(GLUT_ELAPSED_TIME) % 4000; // get a counter that repeats every 4 seconds
-	/* Animate the model if there is animation information available. */
-//	kuhl_update_model(modelgeom, 0, count/1000.0);
-	dgr_setget("count", &count, sizeof(int));
-
 	float rotateAnimate[16];
 	mat4f_identity(rotateAnimate);
-	float percentComplete = count/4000.0;
+	float percentComplete = (glutGet(GLUT_ELAPSED_TIME)%4000)/4000.0;
 //	printf("percent complete %f\n", percentComplete);
 	
 	float startEuler[3] = { 0, 90, 0 };
@@ -163,29 +159,17 @@ void get_model_matrix(float result[16])
 		mat4f_rotateQuatVec_new(rotateAnimate, interpQuat);
 	}
 	
-	
-	/* Calculate the width/height/depth of the bounding box and
-	 * determine which one of the three is the largest. Then, scale
-	 * the scene by 1/(largest value) to ensure that it fits in our
-	 * view frustum. */
-	float bb_min[3], bb_max[3], bb_center[3];
-	kuhl_model_bounding_box(modelFilename, bb_min, bb_max, bb_center);
-#define mymax(a,b) (a>b?a:b)
-	float tmp;
-	tmp = bb_max[0] - bb_min[0];
-	tmp = mymax(bb_max[1] - bb_min[1], tmp);
-	tmp = mymax(bb_max[2] - bb_min[2], tmp);
-	tmp = 1.f / tmp;
-#undef mymax
-	float scaleBoundBox[16], moveToOrigin[16], moveToLookPoint[16];
-	mat4f_translate_new(moveToOrigin, -bb_center[0], -bb_center[1], -bb_center[2]); // move to origin
-//	printf("Scaling by factor %f\n", tmp); 
-	mat4f_scale_new(scaleBoundBox, tmp, tmp, tmp); // scale model based on bounding box size
+	/* Get a matrix to scale+translate the model based on the bounding
+	 * box */
+	float fitMatrix[16];
+	kuhl_bbox_fit(fitMatrix, bbox, 1);
+
+	/* Get a matrix that moves the model to the correct location. */
+	float moveToLookPoint[16];
 	mat4f_translateVec_new(moveToLookPoint, placeToPutModel);
 
-	mat4f_mult_mat4f_new(result, moveToOrigin, result);
-	mat4f_mult_mat4f_new(result, scaleBoundBox, result);
-	mat4f_mult_mat4f_new(result, rotateAnimate, result);
+	/* Create a single model matrix. */
+	mat4f_mult_mat4f_new(result, rotateAnimate, fitMatrix);
 	mat4f_mult_mat4f_new(result, moveToLookPoint, result);
 }
 
@@ -339,7 +323,7 @@ int main(int argc, char** argv)
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
 
-	float initCamPos[3]  = {0,0,2}; // location of camera
+	float initCamPos[3]  = {0,1,2}; // location of camera
 	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
 	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
 	viewmat_init(initCamPos, initCamLook, initCamUp);
@@ -350,7 +334,7 @@ int main(int argc, char** argv)
 	glutSwapBuffers();
 
 	// Load the model from the file
-	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program);
+	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
 	
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */

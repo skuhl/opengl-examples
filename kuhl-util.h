@@ -1521,12 +1521,10 @@ void kuhl_video_record(const char *fileLabel, int fps);
 #ifdef KUHL_UTIL_USE_ASSIMP
 void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, float time);
 kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDirname, GLuint program, float bbox[6]);
-
-	
-int kuhl_draw_model_file_ogl2(const char *modelFilename, const char *textureDirname);
-int kuhl_draw_model_file_ogl3(const char *modelFilename, const char *textureDirname, GLuint program);
 #endif // end use assimp
 
+void kuhl_bbox_fit(float result[16], const float bbox[6], int sitOnXZPlane);
+	
 GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depthTexture);
 void kuhl_play_sound(const char *filename);
 
