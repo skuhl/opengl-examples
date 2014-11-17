@@ -2951,7 +2951,10 @@ GLuint kuhl_read_texture_rgba_array(const char* array, int width, int height)
  *
  * @param label The text that you want to render.
  *
- * @param texName A pointer that will be filled with the OpenGL texture name for the new texture.
+ * @param texName A pointer that will be filled with the OpenGL
+ * texture name for the new texture. When you are done with this
+ * label, you are responsible for telling OpenGL to delete it with
+ * glDeleteTextures(1, &texName).
  *
  * @param color The color of the text.
  *
