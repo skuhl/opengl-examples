@@ -3395,45 +3395,9 @@ typedef struct {
 static textureIdMapStruct textureIdMap[textureIdMapMaxSize]; /**<List of textures for the models */
 static int textureIdMapSize = 0; /**< Number of items in textureIdMap */
 
-#define sceneMapMaxSize 1024 /**< Maximum number of kuhl_geometrys in sceneMap */
-/** This struct is used internally by kuhl_util.c to keep track of all
- * of the models that we have loaded. */
-typedef struct {
-	char *modelFilename; /**< The filename of the loaded model */
-	const struct aiScene *scene; /**< The scene information for the model */
-	float bb_min[3]; /**< Smallest X,Y,Z coordinates out of all vertices */
-	float bb_max[3]; /**< Largest X,Y,Z coordinates out of all vertices */
-	float bb_center[3]; /**< Average of smallest and largest vertex coordinates */
-	kuhl_geometry geom[sceneMapMaxSize]; /**< list of kuhl_geometry structs. Used for OpenGL 3.0 rendering */
-	int geom_count; /**< Number of kuhl_geometry structs in geom array. Used for OpenGL 3.0 rendering */
-} sceneMapStruct;
-
-static sceneMapStruct sceneMap[sceneMapMaxSize]; /**< A list of scenes */
-static int sceneMapSize = 0; /**< Number of items in the sceneMap list */
-
-
-/** Looks for a model in the sceneMap list based on its filename.
- *
- * @param modelFilename The filename for the model.
- *
- * @return The index of the model in the sceneMap list or -1 if the
- * model does not exist in the sceneMap.
- */
-static int kuhl_private_modelIndex(const char *modelFilename)
-{
-	for(int i=0; i<sceneMapSize; i++)
-	{
-		if(strcmp(modelFilename, sceneMap[i].modelFilename) == 0)
-			return i;
-	}
-	return -1;
-}
-
-
 
 /** Recursively traverse a tree of ASSIMP nodes and updates the
- * bounding box information stored in our sceneMap list for that
- * model.
+ * bounding box information.
  *
  * @param nd A pointer to an ASSIMP aiNode struct.
  *
@@ -3441,23 +3405,20 @@ static int kuhl_private_modelIndex(const char *modelFilename)
  *
  * @param scene An ASSIMP scene struct.
  *
- * @param modelIndex The index of the model in our sceneMap list.
+ * @param bbox The calculated bounding box information (xmin, xmax, ymin, ymax, etc).
  */
-static void kuhl_private_calc_bbox(const struct aiNode* nd, struct aiMatrix4x4* transform, const struct aiScene *scene, const int modelIndex)
+static void kuhl_private_calc_bbox(const struct aiNode* nd, struct aiMatrix4x4* transform, const struct aiScene *scene, float bbox[6])
 {
-	// Get shorter names for our current min/max/center vectors.
-	float *min = sceneMap[modelIndex].bb_min;
-	float *max = sceneMap[modelIndex].bb_max;
-	float *ctr = sceneMap[modelIndex].bb_center;
-	
 	/* When this method is called on the root node, the trafo matrix should be set to NULL. */
 	if(transform == NULL)
 	{
-		// Reset our bounding box variables
-		vec3f_set(min,  FLT_MAX,  FLT_MAX,  FLT_MAX);
-		vec3f_set(max, -FLT_MAX, -FLT_MAX, -FLT_MAX);
-		vec3f_set(ctr, 0,0,0);
-
+		bbox[0]=FLT_MAX;
+		bbox[1]=-FLT_MAX;
+		bbox[2]=FLT_MAX;
+		bbox[3]=-FLT_MAX;
+		bbox[4]=FLT_MAX;
+		bbox[5]=-FLT_MAX;
+		
 		// Set transform matrix to identity
 		struct aiMatrix4x4 ident;
 		aiIdentityMatrix4(&ident); 
@@ -3483,22 +3444,24 @@ static void kuhl_private_calc_bbox(const struct aiNode* nd, struct aiMatrix4x4* 
 			// Update our bounding box
 			float coord[3];
 			vec3f_set(coord, tmp.x, tmp.y, tmp.z);
-			for(int i=0; i<3; i++)
-			{
-				if(coord[i] > max[i]) // found new max
-					max[i] = coord[i];
-				if(coord[i] < min[i]) // found new min
-					min[i] = coord[i];
-			}
-			// Calculate new box center
-			vec3f_add_new(ctr, min, max);
-			vec3f_scalarDiv(ctr, 2);
+			if(tmp.x < bbox[0])
+				bbox[0] = tmp.x;
+			if(tmp.x > bbox[1])
+				bbox[1] = tmp.x;
+			if(tmp.y < bbox[2])
+				bbox[2] = tmp.y;
+			if(tmp.y > bbox[3])
+				bbox[3] = tmp.y;
+			if(tmp.z < bbox[4])
+				bbox[4] = tmp.z;
+			if(tmp.z > bbox[5])
+				bbox[5] = tmp.z;
 		}
 	}
 	
 	/* Process the children nodes using the current transformation. */
 	for (unsigned int n=0; n < nd->mNumChildren; n++)
-		kuhl_private_calc_bbox(nd->mChildren[n], transform, scene, modelIndex);
+		kuhl_private_calc_bbox(nd->mChildren[n], transform, scene, bbox);
 
 	/* Since we are done processing this node, we need to restore the
 	* transformation matrix to whatever it was before we started
@@ -3681,26 +3644,22 @@ static void kuhl_print_aiScene_info(const char *modelFilename, const struct aiSc
 	printf("%s: Contains %d node(s) & %u mesh(es)\n", modelFilename, numNodes, scene->mNumMeshes);
 }
 
-/** Uses ASSIMP to load model (if needed) and returns its index in the
- * sceneMap array. This function also reads texture files that the
- * model refers to. This function does not create any kuhl_geometry
- * structs for the model.
+/** Uses ASSIMP to load model (if needed) and returns ASSIMP aiScene
+ * object. This function also reads texture files that the model
+ * refers to. This function does not create any kuhl_geometry structs
+ * for the model.
  *
  * @param modelFilename The filename of a model to load.
  *
  * @param textureDirname The directory the textures for the model are
  * stored in. If textureDirname is NULL, we assume that the textures
  * are in the same directory as the model file.
- * 
- * @return Returns the index in the sceneMap array of this
- * model. Prints a message and exits if the model could not be loaded.
+ *
+ * @return An ASSIMP aiScene object for the requested model. Returns
+ * NULL on error.
  */
-static int kuhl_private_assimp_load(const char *modelFilename, const char *textureDirname)
+static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename, const char *textureDirname)
 {
-	int index = kuhl_private_modelIndex(modelFilename);
-	if(index >= 0)
-		return index;
-
 	/* If we get here, we need to add the file to the sceneMap. */
 
 	/* Write assimp messages to command line */
@@ -3740,10 +3699,7 @@ static int kuhl_private_assimp_load(const char *modelFilename, const char *textu
 	const struct aiScene* scene = aiImportFile(modelFilenameVarying, aiProcessPreset_TargetRealtime_Quality);
 	free(modelFilenameVarying);
 	if(scene == NULL)
-	{
-		printf("%s: ASSIMP was unable to import the model file.\n", modelFilename);
-		exit(EXIT_FAILURE);
-	}
+		return NULL;
 
 	/* Print warning messages if the model uses features that our code
 	 * doesn't support (even though ASSIMP might support them. */
@@ -3767,19 +3723,6 @@ static int kuhl_private_assimp_load(const char *modelFilename, const char *textu
 		{
 			textureIdMap[i].textureFileName = NULL;
 			textureIdMap[i].textureID = 0;
-		}
-	}
-
-	/* For safety, zero our our sceneMap if it is supposed to be empty right now. */
-	if(sceneMapSize == 0)
-	{
-		for(int i=0; i<sceneMapMaxSize; i++)
-		{
-			sceneMap[i].modelFilename = NULL;
-			sceneMap[i].scene = NULL;
-//			for(int j=0; j<sceneMapMaxSize; j++)
-//				kuhl_geometry_zero(&(sceneMap[i].geom[j]));
-			sceneMap[i].geom_count = 0;
 		}
 	}
 
@@ -3822,28 +3765,7 @@ static int kuhl_private_assimp_load(const char *modelFilename, const char *textu
 		}
 	}
 
-	/* Store the scene information in our list structure so we can
-	 * find the scene from the model filename again in the future. */
-	if(sceneMapSize >= sceneMapMaxSize)
-	{	
-		fprintf(stderr, "%s: You have loaded more scenes than the hardcoded limit. Exiting.\n", __func__);
-		exit(EXIT_FAILURE);
-	}
-
-	index = sceneMapSize;
-	sceneMapSize++;
-
-	sceneMap[index].modelFilename = strdup(modelFilename);
-	sceneMap[index].scene = scene;
-	kuhl_private_calc_bbox(scene->mRootNode, NULL, scene, index);
-
-	printf("%s: Bounding box min: ", modelFilename);
-	vec3f_print(sceneMap[index].bb_min);
-	printf("%s: Bounding box max: ", modelFilename);
-	vec3f_print(sceneMap[index].bb_max);
-	printf("%s: Bounding box ctr: ", modelFilename);
-	vec3f_print(sceneMap[index].bb_center);
-	return index;
+	return scene;
 }
 
 /** Given a aiNodeAnim object and a time, return an appropriate
@@ -4026,7 +3948,7 @@ static int kuhl_private_node_matrix(float transformResult[16],
  */
 static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
                                               const struct aiNode* nd,
-                                              GLuint program, int sceneMapIndex,
+                                              GLuint program,
                                               float currentTransform[16])
 {
 	/* Each node in the scene has a transform matrix that should
@@ -4293,7 +4215,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 	/* Process all of the meshes in the aiNode's children too */
 	for (unsigned int i = 0; i < nd->mNumChildren; i++)
 	{
-		kuhl_geometry *child_geom = kuhl_private_load_model(sc, nd->mChildren[i], program, sceneMapIndex, currentTransform);
+		kuhl_geometry *child_geom = kuhl_private_load_model(sc, nd->mChildren[i], program, currentTransform);
 		if(child_geom != NULL)
 		{
 			/* Attach the children geometry on the end of our list, or at
@@ -4407,53 +4329,49 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
  *
  * @return Returns a kuhl_geometry object that can be later drawn.
  */
-kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDirname, GLuint program)
+kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDirname, GLuint program, float bbox[6])
 {
-	// Load the model if necessary and get its index in our sceneMap.
-	int index = kuhl_private_assimp_load(modelFilename, textureDirname);
+	// Loads the model from the file and reads in all of the textures:
+	const struct aiScene *scene = kuhl_private_assimp_load(modelFilename, textureDirname);
+	if(scene == NULL)
+	{
+		printf("%s: ASSIMP was unable to import the model file.\n", modelFilename);
+		return NULL;
+	}
+
+	// Convert the information in aiScene into a kuhl_geometry object.
 	float transform[16];
 	mat4f_identity(transform);
-	kuhl_geometry *ret = kuhl_private_load_model(sceneMap[index].scene,
-	                                             sceneMap[index].scene->mRootNode,
-	                                             program, index, transform);
+	kuhl_geometry *ret = kuhl_private_load_model(scene, scene->mRootNode,
+	                                             program, transform);
 
 	/* Ensure model shows up in bind pose if the caller doesn't
 	 * also call kuhl_update_model(). */
 	kuhl_update_model(ret, 0, -1);
-	return ret;
-}
+
+	float bboxLocal[6];
+	kuhl_private_calc_bbox(scene->mRootNode, NULL, scene, bboxLocal);
+	float min[3];
+	vec3f_set(min, bboxLocal[0], bboxLocal[2], bboxLocal[4]);
+	printf("%s: Bounding box min: ", modelFilename);
+	vec3f_print(min);
+	float max[3];
+	vec3f_set(max, bboxLocal[1], bboxLocal[3], bboxLocal[5]);
+	printf("%s: Bounding box max: ", modelFilename);
+	vec3f_print(max);
+	float ctr[3];
+	vec3f_add_new(ctr, min, max);
+	vec3f_scalarDiv(ctr, 2);
+	printf("%s: Bounding box ctr: ", modelFilename);
+	vec3f_print(ctr);
 
 
-/** Returns the bounding box for a model file.
- *
- * @param modelFilename The 3D model file that you want the bounding box for.
- *
- * @param min An array to be filled with the smallest X,Y,Z values in the model.
- *
- * @param max An array to be filled with the largest X,Y,Z values in the model.
- *
- * @param center An array to be filled with the center coordinate of the bounding box.
- *
- * @return Returns 1 if successful or 0 if the model hasn't yet been loaded or drawn.
- */
-int kuhl_model_bounding_box(const char *modelFilename, float min[3], float max[3], float center[3])
-{
-	int index = kuhl_private_modelIndex(modelFilename);
-	if(index < 0)
+	if(bbox != NULL)
 	{
-		/* Set the values to 0 if the model hasn't been loaded
-		 * yet. This helps prevent a user from using uninitialized
-		 * variables in his or her calculations. */
-		vec3f_set(min, 0,0,0);
-		vec3f_set(max, 0,0,0);
-		vec3f_set(center, 0,0,0);
-		return 0;
+		for(int i=0; i<6; i++)
+			bbox[i] = bboxLocal[i];
 	}
-
-	vec3f_copy(min,    sceneMap[index].bb_min);
-	vec3f_copy(max,    sceneMap[index].bb_max);
-	vec3f_copy(center, sceneMap[index].bb_center);
-	return 1;
+	return ret;
 }
 #endif // KUHL_UTIL_USE_ASSIMP
 

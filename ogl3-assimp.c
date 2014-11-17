@@ -21,6 +21,8 @@
 GLuint program = 0; // id value for the GLSL program
 
 kuhl_geometry *modelgeom = NULL;
+float bbox[6];
+
 
 /** Set this variable to 1 to force this program to scale the entire
  * model and translate it so that we can see the entire model. This is
@@ -222,7 +224,10 @@ void get_model_matrix(float result[16])
 	 * the scene by 1/(largest value) to ensure that it fits in our
 	 * view frustum. */
 	float bb_min[3], bb_max[3], bb_center[3];
-	kuhl_model_bounding_box(modelFilename, bb_min, bb_max, bb_center);
+	vec3f_set(bb_min, bbox[0], bbox[2], bbox[4]);
+	vec3f_set(bb_max, bbox[1], bbox[3], bbox[5]);
+	vec3f_add_new(bb_center, bb_min, bb_max);
+	vec3f_scalarDiv(bb_center, 2);
 #define mymax(a,b) (a>b?a:b)
 	float tmp;
 	tmp = bb_max[0] - bb_min[0];
@@ -409,7 +414,7 @@ int main(int argc, char** argv)
 	glutSwapBuffers();
 
 	// Load the model from the file
-	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program);
+	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
 	
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */

@@ -1520,12 +1520,11 @@ void kuhl_video_record(const char *fileLabel, int fps);
 
 #ifdef KUHL_UTIL_USE_ASSIMP
 void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, float time);
-kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDirname, GLuint program);
+kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDirname, GLuint program, float bbox[6]);
 
 	
 int kuhl_draw_model_file_ogl2(const char *modelFilename, const char *textureDirname);
 int kuhl_draw_model_file_ogl3(const char *modelFilename, const char *textureDirname, GLuint program);
-int kuhl_model_bounding_box(const char *modelFilename, float min[3], float max[3], float center[3]);
 #endif // end use assimp
 
 GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depthTexture);
