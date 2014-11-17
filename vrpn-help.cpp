@@ -23,6 +23,7 @@
 #endif
 
 #include "kuhl-util.h"
+#include "vecmat.h"
 
 #ifndef MISSING_VRPN
 

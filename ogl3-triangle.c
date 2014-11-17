@@ -9,6 +9,7 @@
 #endif
 
 #include "kuhl-util.h"
+#include "vecmat.h"
 #include "dgr.h"
 #include "projmat.h"
 #include "viewmat.h"

@@ -29,6 +29,7 @@
 #include <stdio.h>
 
 #include "kuhl-util.h"
+#include "vecmat.h"
 #include "mousemove.h"
 
 #define EPSILON 0.0001

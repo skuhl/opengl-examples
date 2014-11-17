@@ -14,6 +14,7 @@
 #include <GL/freeglut.h>
 #endif
 #include "kuhl-util.h"
+#include "vecmat.h"
 #include "mousemove.h"
 #include "vrpn-help.h"
 #include "dgr.h"
