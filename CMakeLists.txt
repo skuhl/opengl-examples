@@ -157,115 +157,46 @@ if(VRPN_FOUND)
 	set(COMMON_LIBRARIES ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES}  ${VRPN_LIBRARIES} ${M_LIB})
 endif()
 
-# === ogl2-triangle ===
-add_executable(ogl2-triangle ogl2-triangle.c kuhl-util.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
-target_link_libraries(ogl2-triangle ${COMMON_LIBRARIES} ${GLUT_LIBRARIES})
-set_target_properties(ogl2-triangle PROPERTIES COMPILE_DEFINITIONS "MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
-	
-# === ogl3-triangle ===
-# Demonstrates how to draw geometry; flat shading
-add_executable(ogl3-triangle ogl3-triangle.c kuhl-util.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
-target_link_libraries(ogl3-triangle ${COMMON_LIBRARIES} ${GLUT_LIBRARIES})
-set_target_properties(ogl3-triangle PROPERTIES COMPILE_DEFINITIONS "MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
 
-# === ogl3-picker ===
-# Demonstrates how to select an object based on screen coordinates
-add_executable(ogl3-picker ogl3-picker.c kuhl-util.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
-target_link_libraries(ogl3-picker ${COMMON_LIBRARIES} ${GLUT_LIBRARIES})
-set_target_properties(ogl3-picker PROPERTIES COMPILE_DEFINITIONS "MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
+# Programs that need ASSIMP and ImageMagick
+set(NEED_ASSIMP_AND_IM  ogl3-assimp ogl3-slerp)
+# Programs that only need ImageMagick
+set(NEED_IM ogl2-slideshow ogl2-texture ogl3-texture)
+# Programs that don't rely on libraries
+set(NEED_NOTHING ogl3-triangle-color ogl3-prerend ogl3-triangle-shade ogl3-picker ogl3-triangle ogl2-triangle)
 
-# === ogl3-triangle-shade ===
-# Demonstrates how to draw geometry; diffuse shading
-add_executable(ogl3-triangle-shade ogl3-triangle-shade.c kuhl-util.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
-target_link_libraries(ogl3-triangle-shade ${COMMON_LIBRARIES} ${GLUT_LIBRARIES})
-set_target_properties(ogl3-triangle-shade PROPERTIES COMPILE_DEFINITIONS "MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
-
-		
-# === ogl3-prerend ===
-add_executable(ogl3-prerend ogl3-prerend.c kuhl-util.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
-target_link_libraries(ogl3-prerend ${COMMON_LIBRARIES} ${GLUT_LIBRARIES})
-set_target_properties(ogl3-prerend PROPERTIES COMPILE_DEFINITIONS "MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
-
-
-# === ogl3-triangle-color ===
-# Demonstrates how to draw geometry and assign colors to vertices
-add_executable(ogl3-triangle-color ogl3-triangle-color.c kuhl-util.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
-target_link_libraries(ogl3-triangle-color ${COMMON_LIBRARIES} ${GLUT_LIBRARIES})
-set_target_properties(ogl3-triangle-color PROPERTIES COMPILE_DEFINITIONS "MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
-
-# === ogl2-texture ===
-if(ImageMagick_FOUND)
-	add_executable(ogl2-texture ogl2-texture.c kuhl-util.c dgr.c mousemove.c imageio.c projmat.c viewmat.c vrpn-help.cpp)
-	target_link_libraries(ogl2-texture ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ImageMagick_LIBRARIES})
-	set_target_properties(ogl2-texture PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
-else()
-	message("Not compiling ogl2-texture because ImageMagick library was not found on this system.")
-endif()
-
-# === ogl3-texture ===
-# Demonstrates how to use textures.
-if(ImageMagick_FOUND)
-	add_executable(ogl3-texture ogl3-texture.c kuhl-util.c dgr.c mousemove.c imageio.c projmat.c viewmat.c vrpn-help.cpp)
-	target_link_libraries(ogl3-texture ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ImageMagick_LIBRARIES})
-	set_target_properties(ogl3-texture PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
-else()
-	message("Not compiling ogl3-texture because ImageMagick library was not found on this system.")
-endif()
-
-
-# === ogl2-slideshow ===
-if(ImageMagick_FOUND)
-	add_executable(ogl2-slideshow ogl2-slideshow.c dgr.c imageio.c kuhl-util.c projmat.c)
-	target_link_libraries(ogl2-slideshow ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ImageMagick_LIBRARIES})
-	set_target_properties(ogl2-slideshow PROPERTIES COMPILE_DEFINITIONS "${MISSING_VRPN_DEFINITION}")
-else()
-	message("Not compiling ogl2-slideshow because ImageMagick library was not found on this system.")
-endif()
-
-
-# === ogl2-assimp ===
+# make compilation rule for all programs that need ASSIMP and ImageMagick
 if(ASSIMP_FOUND AND ImageMagick_FOUND)
-	add_executable(ogl2-assimp ogl2-assimp.c kuhl-util.c imageio.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
-	target_link_libraries(ogl2-assimp ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES})
-	set_target_properties(ogl2-assimp PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_ASSIMP;KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
+	foreach(arg ${NEED_ASSIMP_AND_IM})
+		add_executable(${arg} ${arg}.c  kuhl-util.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp imageio.c)
+		target_link_libraries(${arg} ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES})
+		set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_ASSIMP;KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
+	endforeach()
 else()
 	if(NOT ASSIMP_FOUND)
-		message("Not compiling ogl2-assimp because ASSIMP library was not found on this system.")
+		message("ASSIMP library not found, not compiling: ${NEED_ASSIMP_AND_IM}")
 	endif()
 	if(NOT ImageMagick_FOUND)
-		message("Not compiling ogl2-assimp because ImageMagick library was not found on this system.")
+		message("ImageMagick library not found, not compiling: ${NEED_ASSIMP_AND_IM}")	
 	endif()
 endif()
 
-# === ogl3-assimp ===
-if(ASSIMP_FOUND AND ImageMagick_FOUND)
-	add_executable(ogl3-assimp ogl3-assimp.c kuhl-util.c imageio.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
-	target_link_libraries(ogl3-assimp ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES})
-	set_target_properties(ogl3-assimp PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_ASSIMP;KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
+# Make compilatoin rule for all programs that only need ImageMagick
+if(ImageMagick_FOUND)
+	foreach(arg ${NEED_IM})
+		add_executable(${arg} ${arg}.c kuhl-util.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp imageio.c)
+		target_link_libraries(${arg} ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ImageMagick_LIBRARIES})
+		set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
+	endforeach()
 else()
-	if(NOT ASSIMP_FOUND)
-		message("Not compiling ogl3-assimp because ASSIMP library was not found on this system.")
-	endif()
-	if(NOT ImageMagick_FOUND)
-		message("Not compiling ogl3-assimp because ImageMagick library was not found on this system.")
-	endif()
+	message("ImageMagick library not found, not compiling: ${NEED_IM}")
 endif()
 
-# === ogl3-slerp ===
-if(ASSIMP_FOUND AND ImageMagick_FOUND)
-	add_executable(ogl3-slerp ogl3-slerp.c kuhl-util.c imageio.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
-	target_link_libraries(ogl3-slerp ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES})
-	set_target_properties(ogl3-slerp PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_ASSIMP;KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
-else()
-	if(NOT ASSIMP_FOUND)
-		message("Not compiling ogl3-slerp because ASSIMP library was not found on this system.")
-	endif()
-	if(NOT ImageMagick_FOUND)
-		message("Not compiling ogl3-slerp because ImageMagick library was not found on this system.")
-	endif()
-endif()
-	
-
+foreach(arg ${NEED_NOTHING})
+	add_executable(${arg} ${arg}.c kuhl-util.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
+	target_link_libraries(${arg} ${COMMON_LIBRARIES} ${GLUT_LIBRARIES})
+	set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
+endforeach()
 
 if(Threads_FOUND)
 	# === dgr-relay ===
@@ -274,5 +205,3 @@ if(Threads_FOUND)
 else()
 	message("Not compiling dgr-relay because pthreads was not found on this system.")
 endif()
-
-
