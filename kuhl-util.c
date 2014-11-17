@@ -3735,6 +3735,7 @@ static int kuhl_private_assimp_load(const char *modelFilename, const char *textu
 	 * aiProcess_GenSmoothNormals - Generate smooth normals if normals aren't present in file
 	 * aiProcess_LimitBoneWeights - Limits bone weights per vertex to 4
 	 * aiProcess_JoinIdenticalVertices - Ensures that the model uses an index buffer.
+	 * aiProcess_PreTransformVertices - Pretransforms all vertices according to matrices in the model file
 	 */
 	const struct aiScene* scene = aiImportFile(modelFilenameVarying, aiProcessPreset_TargetRealtime_Quality);
 	free(modelFilenameVarying);
