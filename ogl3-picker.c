@@ -178,15 +178,16 @@ void display()
 	glutPostRedisplay();
 }
 
-void init_geometryTriangle(GLuint program)
+void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
 {
-	kuhl_geometry_new(&triangle, program, 3, GL_TRIANGLES);
+	kuhl_geometry_new(geom, program, 3, // num vertices
+	                  GL_TRIANGLES); // primitive type
 
 	/* The data that we want to draw */
 	GLfloat vertexPositions[] = {0, 0, 0,
 	                             1, 0, 0,
 	                             1, 1, 0};
-	kuhl_geometry_attrib(&triangle, vertexPositions, // data
+	kuhl_geometry_attrib(geom, vertexPositions, // data
 	                     3, // number of components (x,y,z)
 	                     "in_Position", // GLSL variable
 	                     1); // warn if attribute is missing in GLSL program?
@@ -194,43 +195,42 @@ void init_geometryTriangle(GLuint program)
 	GLfloat colorData[] = { 1,0,0,
 	                        0,1,0,
 	                        0,0,1 };
-	kuhl_geometry_attrib(&triangle, colorData, 3, "in_Color", 1);
+	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", 1);
 }
 
-void init_geometryCursor(GLuint program)
+void init_geometryCursor(kuhl_geometry *geom, GLuint program)
 {
-	kuhl_geometry_new(&cursor, program, 4, GL_LINES);
+	kuhl_geometry_new(geom, program, 4, GL_LINES);
 
 	/* The data that we want to draw */
 	GLfloat vertexData[] = {-.04, 0, 0,
 	                         .04, 0, 0,
 	                        0, -.04, 0,
 	                        0,  .04, 0 };
-	kuhl_geometry_attrib(&cursor, vertexData, 3, "in_Position", 1);
+	kuhl_geometry_attrib(geom, vertexData, 3, "in_Position", 1);
 
 	GLfloat colorData[] = { 1,1,1,
 	                        1,1,1,
 	                        1,1,1,
 	                        1,1,1 };
-	kuhl_geometry_attrib(&cursor, colorData, 3, "in_Color", 1);
+	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", 1);
 }
 
 
 
 /* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
-void init_geometryQuad(GLuint program)
+void init_geometryQuad(kuhl_geometry *geom, GLuint program)
 {
-	kuhl_geometry_new(&quad, program,
+	kuhl_geometry_new(geom, program,
 	                  4, // number of vertices
 	                  GL_TRIANGLES); // type of thing to draw
-
 
 	/* The data that we want to draw */
 	GLfloat vertexPositions[] = {0+1.1, 0, 0,
 	                       1+1.1, 0, 0,
 	                       1+1.1, 1, 0,
 	                       0+1.1, 1, 0 };
-	kuhl_geometry_attrib(&quad, vertexPositions,
+	kuhl_geometry_attrib(geom, vertexPositions,
 	                     3, // number of components x,y,z
 	                     "in_Position", // GLSL variable
 	                     1); // warn if attribute is missing in GLSL program?
@@ -238,10 +238,10 @@ void init_geometryQuad(GLuint program)
 	                        0,1,0,
 	                        0,0,1,
 	                        0,1,1 };
-	kuhl_geometry_attrib(&quad, colorData, 3, "in_Color", 1);
+	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", 1);
 	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
 	                       0, 2, 3 }; // indices of second triangle.
-	kuhl_geometry_indices(&quad, indexData, 6);
+	kuhl_geometry_indices(geom, indexData, 6);
 
 	kuhl_errorcheck();
 }
@@ -254,7 +254,7 @@ int main(int argc, char** argv)
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
 #ifdef __APPLE__
-	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_STENCIL);
+	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
 #else
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
 	glutInitContextVersion(3,2);
@@ -295,9 +295,9 @@ int main(int argc, char** argv)
 
 	/* Create kuhl_geometry structs for the objects that we want to
 	 * draw. */
-	init_geometryCursor(program);
-	init_geometryTriangle(program);
-	init_geometryQuad(program);
+	init_geometryCursor(&cursor, program);
+	init_geometryTriangle(&triangle, program);
+	init_geometryQuad(&quad, program);
 
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */

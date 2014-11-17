@@ -128,16 +128,16 @@ void display()
 	glutPostRedisplay();
 }
 
-void init_geometryTriangle(GLuint program)
+void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
 {
-		kuhl_geometry_new(&triangle, program, 3, // num vertices
+	kuhl_geometry_new(geom, program, 3, // num vertices
 	                  GL_TRIANGLES); // primitive type
 
 	/* The data that we want to draw */
 	GLfloat vertexPositions[] = {0, 0, 0,
 	                             1, 0, 0,
 	                             1, 1, 0};
-	kuhl_geometry_attrib(&triangle, vertexPositions, // data
+	kuhl_geometry_attrib(geom, vertexPositions, // data
 	                     3, // number of components (x,y,z)
 	                     "in_Position", // GLSL variable
 	                     1); // warn if attribute is missing in GLSL program?
@@ -145,7 +145,7 @@ void init_geometryTriangle(GLuint program)
 	GLfloat colorData[] = {1,0,0,
 	                       0,1,0,
 	                       0,0,1 };
-	kuhl_geometry_attrib(&triangle, colorData, 3, "in_Color", 1);
+	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", 1);
 }
 
 
@@ -194,7 +194,7 @@ int main(int argc, char** argv)
 
 	/* Create kuhl_geometry structs for the objects that we want to
 	 * draw. */
-	init_geometryTriangle(program);
+	init_geometryTriangle(&triangle, program);
 
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
