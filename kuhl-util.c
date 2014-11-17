@@ -3338,7 +3338,7 @@ typedef struct {
 static textureIdMapStruct textureIdMap[textureIdMapMaxSize]; /**<List of textures for the models */
 static int textureIdMapSize = 0; /**< Number of items in textureIdMap */
 
-#define sceneMapMaxSize 1024 /**< Maximum number of scenes in sceneMap */
+#define sceneMapMaxSize 1024 /**< Maximum number of kuhl_geometrys in sceneMap */
 /** This struct is used internally by kuhl_util.c to keep track of all
  * of the models that we have loaded. */
 typedef struct {
@@ -3597,7 +3597,6 @@ static void kuhl_print_aiScene_info(const char *modelFilename, const struct aiSc
 		}
 	}
 
-
 	for(unsigned int i=0; i<scene->mNumMeshes; i++)
 	{
 		struct aiMesh *mesh = scene->mMeshes[i];
@@ -3679,6 +3678,7 @@ static int kuhl_private_assimp_load(const char *modelFilename, const char *textu
 	 * aiProcess_GenSmoothNormals - Generate smooth normals if normals aren't present in file
 	 * aiProcess_LimitBoneWeights - Limits bone weights per vertex to 4
 	 * aiProcess_JoinIdenticalVertices - Ensures that the model uses an index buffer.
+	 * aiProcess_PreTransformVertices - Pretransforms all vertices according to matrices in the model file
 	 */
 	const struct aiScene* scene = aiImportFile(modelFilenameVarying, aiProcessPreset_TargetRealtime_Quality);
 	free(modelFilenameVarying);
