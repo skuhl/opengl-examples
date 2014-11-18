@@ -106,6 +106,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 			printf("%s: Can't read %s to get VRPN server information.\n", __func__, path);
 			exit(EXIT_FAILURE);
 		}
+		fclose(f);
 		// printf("%s: Found in %s: %s\n", __func__, path, vrpnString);
 		hostnamecpp = vrpnString;
 	}
