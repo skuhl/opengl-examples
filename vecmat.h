@@ -28,7 +28,8 @@ General tips for learning the vector and matrix functions provided by this file:
 extern "C" {
 #endif
 
-
+#include <math.h>
+	
 /** Set the values in a 3-component float vector */
 static inline void   vec3f_set(float  v[3], float  a, float  b, float  c)
 { v[0]=a; v[1]=b; v[2]=c; }
