@@ -39,7 +39,7 @@ std::map<std::string, vrpn_TRACKERCB> nameToCallbackData;
  * point moves. */
 static void VRPN_CALLBACK handle_tracker(void *name, const vrpn_TRACKERCB t)
 {
-    // Store the data in our map so that someone can use it later.
+	// Store the data in our map so that someone can use it later.
 	std::string s = (char*)name;
 	nameToCallbackData[s] = t;
 }
@@ -85,7 +85,32 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 	std::string hostnamecpp;
 	std::string objectcpp;
 	if(hostname == NULL)
-		hostnamecpp = "tcp://VRPN-SERVER-IP-ADDRESS";
+	{
+		/* Try reading VRPN server information from ~/.vrpn-server
+
+		   This file should contain a single line that says something like:
+		   tcp://VRPN.SERVER.IP.ADDR
+		 */
+		const char *homedir = getenv("HOME");
+		char path[1024];
+		snprintf(path, 1024, "%s/.vrpn-server", homedir);
+		FILE *f = fopen(path, "r");
+		if(f == NULL)
+		{
+			printf("%s: Can't open file %s to get VRPN server information.\n", __func__, path);
+			exit(EXIT_FAILURE);
+		}
+		char vrpnString[1024];
+		if(fscanf(f, "%1023s", vrpnString) != 1)
+		{
+			printf("%s: Can't read %s to get VRPN server information.\n", __func__, path);
+			exit(EXIT_FAILURE);
+		}
+		// printf("%s: Found in %s: %s\n", __func__, path, vrpnString);
+		hostnamecpp = vrpnString;
+		exit(EXIT_FAILURE);
+	}
+
 	objectcpp = object;
 	std::string fullname = objectcpp + "@" + hostnamecpp;
 
