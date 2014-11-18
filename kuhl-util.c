@@ -2092,15 +2092,48 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 	{
 		const struct aiMesh* mesh = sc->mMeshes[nd->mMeshes[n]];
 
-		/* Allocate a kuhl_geometry object we need, one per mesh. We
+		/* TODO: Perhaps double-check that the model was loaded with
+		 * the aiProcess_SortByPType flag. This function relies on
+		 * this assumption. */
+
+		/* We assume that each mesh has its own primitive type. Here
+		 * we identify that type by number and by the OpenGL name.. */
+		unsigned int meshPrimitiveType;
+		int meshPrimitiveTypeGL;
+		if(mesh->mPrimitiveTypes & aiPrimitiveType_POINT)
+		{
+			meshPrimitiveType = 1;
+			meshPrimitiveTypeGL = GL_POINTS;
+		}
+		else if(mesh->mPrimitiveTypes & aiPrimitiveType_LINE)
+		{
+			meshPrimitiveType = 2;
+			meshPrimitiveTypeGL = GL_LINES;
+		}
+		else if(mesh->mPrimitiveTypes & aiPrimitiveType_TRIANGLE)
+		{
+			meshPrimitiveType = 3;
+			meshPrimitiveTypeGL = GL_TRIANGLES;
+		}
+		else
+		{ /* We should not hit this case unless the model contains
+		   * polygons and the file was not loaded with the
+		   * aiProcess_Triangulate flag. */
+			printf("%s: WARNING: Mesh %u (%u/%u meshes in node \"%s\"): We only"
+			       "support drawing triangle, line, or point meshes."
+			       "This mesh contained something else, and we are skipping it.",
+			       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
+			continue;
+		}
+		
+		/* Allocate space and initialize kuhl_geometry. One kuhl_geometry
+		 * will be used per mesh. We
 		 * allocate each one individually (instead of malloc()'ing one
 		 * large space for all of the meshes in this node so each of
 		 * the objects can be free()'d) */
 		kuhl_geometry *geom = (kuhl_geometry*) malloc(sizeof(kuhl_geometry));
-		
-		/* Initialize the kuhl_geometry object */
-		kuhl_geometry_new(geom, program, 3, // num vertices
-		                  GL_TRIANGLES); // primitive type
+		kuhl_geometry_new(geom, program, mesh->mNumVertices,
+		                  meshPrimitiveTypeGL);
 
 		/* Set up kuhl_geometry linked list */
 		if(prev_geom != NULL)
@@ -2114,7 +2147,6 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		mat4f_copy(geom->matrix, currentTransform);
 
 		/* Store the vertex position attribute into the kuhl_geometry struct */
-		geom->vertex_count = mesh->mNumVertices;
 		float *vertexPositions = malloc(sizeof(float)*mesh->mNumVertices*3);
 		for(unsigned int i=0; i<mesh->mNumVertices; i++)
 		{
@@ -2279,25 +2311,21 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 			}
 		}
 
-		/* Get indices to draw with */
-		geom->indices_len = mesh->mNumFaces * 3;
-		GLuint *indices = malloc(sizeof(GLuint)*geom->indices_len);
-		for(unsigned int t = 0; t<mesh->mNumFaces; t++)
+		if(mesh->mNumFaces > 0)
 		{
-			const struct aiFace* face = &mesh->mFaces[t];
-			if(face->mNumIndices != 3)
+			/* Get indices to draw with */
+			geom->indices_len = mesh->mNumFaces * meshPrimitiveType;
+			GLuint *indices = malloc(sizeof(GLuint)*geom->indices_len);
+			for(unsigned int t = 0; t<mesh->mNumFaces; t++) // for each face
 			{
-				printf("%s: Mesh %u (%u/%u meshes in node \"%s\"): We only support drawing triangle meshes. We found a face in this model that only had %u (not 3) indices.",
-				       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data,
-				       face->mNumIndices);
-				exit(EXIT_FAILURE);
+				const struct aiFace* face = &mesh->mFaces[t];
+				for(unsigned int x = 0; x < meshPrimitiveType; x++) // for each index
+					indices[t*3+x] = face->mIndices[x];
 			}
-			indices[t*3+0] = face->mIndices[0];
-			indices[t*3+1] = face->mIndices[1];
-			indices[t*3+2] = face->mIndices[2];
+			kuhl_geometry_indices(geom, indices, mesh->mNumFaces*3);
+			free(indices);
 		}
-		kuhl_geometry_indices(geom, indices, mesh->mNumFaces*3);
-		free(indices);
+
 
 		/* Initialize list of bone matrices if this mesh has bones. */
 		if(mesh->mNumBones > 0)
