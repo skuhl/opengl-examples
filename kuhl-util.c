@@ -868,7 +868,7 @@ void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint compo
 
     @param vertexCount The number of vertices in this piece of geometry.
 
-    @param primitive_type GL
+    @param primitive_type OpenGL primitive type of the geometry.
 */
 void kuhl_geometry_new(kuhl_geometry *geom, GLuint program, unsigned int vertexCount, GLint primitive_type)
 {
@@ -2092,9 +2092,20 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 	{
 		const struct aiMesh* mesh = sc->mMeshes[nd->mMeshes[n]];
 
-		/* TODO: Perhaps double-check that the model was loaded with
-		 * the aiProcess_SortByPType flag. This function relies on
-		 * this assumption. */
+		/* Confirm that the mesh has only one primitive type. */
+		if(mesh->mPrimitiveTypes == 0)
+		{
+			printf("%s: ERROR: Primitive type not set by ASSIMP in mesh.\n", __func__);
+			continue;
+		}
+		// Check if more than one bit (i.e., primitive type) is in this mesh.
+		if((mesh->mPrimitiveTypes & (mesh->mPrimitiveTypes-1)) != 0) 
+		{
+			printf("%s: ERROR: This mesh has more than one primitive "
+			       "type in it. The model should be loaded with the "
+			       "aiProcess_SortByPType flag set.\n", __func__);
+			continue;
+		}
 
 		/* We assume that each mesh has its own primitive type. Here
 		 * we identify that type by number and by the OpenGL name.. */
@@ -2115,14 +2126,20 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 			meshPrimitiveType = 3;
 			meshPrimitiveTypeGL = GL_TRIANGLES;
 		}
-		else
-		{ /* We should not hit this case unless the model contains
-		   * polygons and the file was not loaded with the
-		   * aiProcess_Triangulate flag. */
-			printf("%s: WARNING: Mesh %u (%u/%u meshes in node \"%s\"): We only"
-			       "support drawing triangle, line, or point meshes."
-			       "This mesh contained something else, and we are skipping it.",
+		else if(mesh->mPrimitiveTypes & aiPrimitiveType_POLYGON)
+		{
+			printf("%s: WARNING: Mesh %u (%u/%u meshes in node \"%s\"): We only "
+			       "support drawing triangle, line, or point meshes. "
+			       "This mesh contained polygons, and we are skipping it. "
+			       "To resolve this problem, ensure that the file is loaded "
+			       "with aiProcess_Triangulage to force ASSIMP to triangulate "
+			       "the model",
 			       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
+			continue;
+		}
+		else
+		{
+			printf("%s: ERROR: Unknown primitive type in mesh.\n", __func__);
 			continue;
 		}
 		
@@ -2343,10 +2360,11 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 			geom->bones = bones;
 		}
 
-		printf("%s: Mesh #%03u is one of %u meshes in node \"%s\": numVertices=%d numIndices=%d hasNormals=%s hasColors=%s hasTexCoords=%s numBones=%d texture=%s\n",
+		printf("%s: Mesh #%03u is one of %u meshes in node \"%s\": numVertices=%d numIndices=%d primitiveType=%d hasNormals=%s hasColors=%s hasTexCoords=%s numBones=%d texture=%s\n",
 		       __func__, nd->mMeshes[n], nd->mNumMeshes, nd->mName.data,
 		       mesh->mNumVertices,
-		       mesh->mNumFaces*3,
+		       mesh->mNumFaces*meshPrimitiveType,
+		       meshPrimitiveType,
 		       mesh->mNormals       == NULL ? "no" : "yes",
 		       mesh->mColors==NULL || mesh->mColors[0]==NULL ? "no" : "yes",
 		       mesh->mTextureCoords == NULL ? "no" : "yes",
