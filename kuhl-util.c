@@ -631,7 +631,7 @@ void kuhl_bbox_transform(float bbox[6], float mat[16])
 }
     
 
-
+#if 0
 /** Checks if the axis-aligned bounding box of two kuhl_geometry objects intersect.
 
     @return 1 if the bounding boxes intersect; 0 otherwise
@@ -671,6 +671,7 @@ int kuhl_geometry_collide(kuhl_geometry *geom1, float mat1[16],
 	if(box1[zmax] < box2[zmin]) return 0;
 	return 1;
 }
+#endif
 
 void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name, int warnIfSamplerMissing)
 {
@@ -2033,7 +2034,9 @@ static void kuhl_private_anim_matrix(float transformResult[16], const struct aiN
  * @param animationNum If the file contains more than one animation,
  * indicates which animation to use. If you don't know, set this to 0.
  *
- * @param t The time in seconds that you want the animation matrix for.
+ * @param t The time in seconds that you want the animation matrix
+ * for. If time is negative, this function is guaranteed to return the
+ * transformation matrix in the node.
  *
  * @return Returns 1 if we successfully returned a matrix based on
  * animation information. Returns 0 if we simply returned the
@@ -2069,7 +2072,9 @@ static int kuhl_private_node_matrix(float transformResult[16],
 	 * transformation matrix from the node. */
 	if(channel < 0 || t > anim->mDuration / anim->mTicksPerSecond || t < 0)
 		return 0;
-	
+
+	/* Get this nodes matrix according to the animation
+	 * information. */
 	struct aiNodeAnim *na = anim->mChannels[channel];
 	kuhl_private_anim_matrix(transformResult, na, t*anim->mTicksPerSecond);
 	return 1;
@@ -2155,7 +2160,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 			       "This mesh contained polygons, and we are skipping it. "
 			       "To resolve this problem, ensure that the file is loaded "
 			       "with aiProcess_Triangulage to force ASSIMP to triangulate "
-			       "the model",
+			       "the model.\n",
 			       __func__, nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
 			continue;
 		}
@@ -2635,11 +2640,9 @@ void kuhl_bbox_fit(float result[16], const float bbox[6], int sitOnXZPlane)
  */
 GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depthTexture)
 {
-	GLint origBoundTexture;
-	glGetIntegerv(GL_TEXTURE_BINDING_2D, &origBoundTexture);
-	GLint origBoundFrameBuffer;
-	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &origBoundFrameBuffer);
-	GLint origBoundRenderBuffer;
+	GLint origBoundTexture,origBoundFrameBuffer,origBoundRenderBuffer;;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D,   &origBoundTexture);
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING,  &origBoundFrameBuffer);
 	glGetIntegerv(GL_RENDERBUFFER_BINDING, &origBoundRenderBuffer);
 	
 	// set up texture
@@ -2647,7 +2650,8 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 	{
 		glGenTextures(1, texture);
 		glBindTexture(GL_TEXTURE_2D, *texture);
-		glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, width, height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+		glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, width, height, 0, GL_RGB,
+		             GL_UNSIGNED_BYTE, 0);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -2657,7 +2661,8 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 	{
 		glGenTextures(1, depthTexture);
 		glBindTexture(GL_TEXTURE_2D, *depthTexture);
-		glTexImage2D(GL_TEXTURE_2D, 0,GL_DEPTH_COMPONENT, width, height, 0,GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+		glTexImage2D(GL_TEXTURE_2D, 0,GL_DEPTH_COMPONENT, width, height, 0,
+		             GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -2769,7 +2774,10 @@ static float fps_now=-1; /**< Current estimate of FPS? Used by kuhl_getfps() */
 
 /** When called every frame, estimates the frames per second.
  *
- * @param milliseconds The time in milliseconds relative to some fixed value. For example, if you are using GLUT, you can use glutGet(GLUT_ELAPSED_TIME) to get the time in milliseconds since your program started.
+ * @param milliseconds The time in milliseconds relative to some fixed
+ * value. For example, if you are using GLUT, you can use
+ * glutGet(GLUT_ELAPSED_TIME) to get the time in milliseconds since
+ * your program started.
  *
  * @return An estimate of the frames per second (updated every second).
  *

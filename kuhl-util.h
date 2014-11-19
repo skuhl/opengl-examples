@@ -85,8 +85,6 @@ typedef struct _kuhl_geometry_
 	GLuint vertex_count; /**< How many vertices are in this geometry? - Filled in by kuhl_geometry_new(). */
 	GLenum primitive_type; /**< GL_TRIANGLES, GL_POINTS, etc. - Filled in by kuhl_geometry_new() */
 
-	float aabbox[6]; /**< Axis aligned bounding box calculated by kuhl_geometry_init() in object-coordinates. Order: xMin, xMax, yMin, yMax, zMin, zMax - Set by kuhl_geometry_init(). */
-
 	kuhl_attrib attribs[MAX_ATTRIBUTES]; /**< A list of attributes, to add or modify an attribute, use kuhl_geometry_attrib(). */
 	unsigned int attrib_count; /**< Number of attributes in this geometry */
 
@@ -148,8 +146,10 @@ float kuhl_getfps(int milliseconds);
 
 void kuhl_bbox_transform(float bbox[6], float mat[16]);
 
+#if 0
 int kuhl_geometry_collide(kuhl_geometry *geom1, float mat1[16],
                           kuhl_geometry *geom2, float mat2[16]);
+#endif
 
 void kuhl_geometry_draw(kuhl_geometry *geom);
 void kuhl_geometry_delete(kuhl_geometry *geom);
