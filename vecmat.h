@@ -287,12 +287,16 @@ static inline double vec4d_norm(const double A[4])
  * @param n Number of components in vector. */
 static inline void vecNf_scalarDiv_new(float result[], const float v[], const float scalar, const int n)
 {
+	/* If result and v point to the same place, we need a copy of v
+	 * that we can print if we divided by zero to aid in debugging. */
+	float vOrig[n];
+	vecNf_copy(vOrig, v, n);
 	for(int i=0; i<n; i++)
 		result[i] = v[i]/scalar;
 	if(!isfinite(result[0]))
 	{
 		printf("%s: WARNING: Divided the following vector by 0:\n", __func__);
-		vecNf_print(v, n);
+		vecNf_print(vOrig, n);
 	}
 }
 /** Divide each element in a double vector by a scalar.
@@ -302,12 +306,16 @@ static inline void vecNf_scalarDiv_new(float result[], const float v[], const fl
  * @param n Number of components in vector. */
 static inline void vecNd_scalarDiv_new(double result[], const double v[], const double scalar, const int n)
 {
+	/* If result and v point to the same place, we need a copy of v
+	 * that we can print if we divided by zero to aid in debugging. */
+	double vOrig[n];
+	vecNd_copy(vOrig, v, n);
 	for(int i=0; i<n; i++)
 		result[i] = v[i]/scalar;
 	if(!isfinite(result[0]))
 	{
 		printf("%s: WARNING: Divided the following vector by 0:\n", __func__);
-		vecNd_print(v, n);
+		vecNd_print(vOrig, n);
 	}
 }
 /** Divide each element in a 3-component float vector by a scalar.
