@@ -858,7 +858,29 @@ void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint compo
 	glBindVertexArray(0);
 }
 
-/** Initializes the vertex array object (VAO) associated with this kuhl_geometry and initializes other variables inside of the struct.
+/** Calculates the number of objects in the kuhl_geometry linked list.
+
+    @param geom The geometry object which you want to know the length of.
+
+    @return The number of geometry objects in the list.
+*/
+unsigned int kuhl_geometry_count(const kuhl_geometry *geom)
+{
+	if(geom == NULL)
+		return 0;
+	const kuhl_geometry *g = geom;
+	unsigned int count = 1;
+	while(g->next != NULL)
+	{
+		count++;
+		g = g->next;
+	}
+	return count;
+}
+
+
+/** Initializes the vertex array object (VAO) associated with this
+    kuhl_geometry and initializes other variables inside of the struct.
 
     @param geom A kuhl_geometry struct populated with the information
     necessary to draw some geometry.

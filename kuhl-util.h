@@ -157,6 +157,7 @@ void kuhl_geometry_delete(kuhl_geometry *geom);
 void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint components, const char* name, int warnIfAttribMissing);
 void kuhl_geometry_indices(kuhl_geometry *geom, GLuint *indices, GLuint indexCount);
 void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name, int warnIfSamplerMissing);
+unsigned int kuhl_geometry_count(const kuhl_geometry *geom);
 
 void kuhl_geometry_new(kuhl_geometry *geom, GLuint program, unsigned int vertexCount, GLint primitive_type);
 
