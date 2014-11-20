@@ -15,7 +15,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
 # name that contains a main() function.
 ####################################
 # Programs that need ASSIMP and ImageMagick
-set(NEED_ASSIMP_AND_IM  ogl3-assimp ogl3-slerp)
+set(NEED_ASSIMP_AND_IM  ogl3-assimp ogl3-slerp ogl3-explode)
 # Programs that only need ImageMagick
 set(NEED_IM ogl2-slideshow ogl2-texture ogl3-texture)
 # Programs that don't rely on libraries

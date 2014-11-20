@@ -20,9 +20,10 @@
 #include "projmat.h"
 #include "viewmat.h"
 
-GLuint fpsLabel = 0;
-float fpsLabelAspectRatio = 0;
-kuhl_geometry labelQuad;
+#include <assimp/cimport.h>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <assimp/anim.h>
 
 GLuint program = 0; // id value for the GLSL program
 kuhl_geometry *modelgeom = NULL;
@@ -47,11 +48,78 @@ float placeToPutModel[3] = { 0, 0, 0 };
 GLuint scene_list = 0; // display list for model
 char *modelFilename = NULL;
 char *modelTexturePath = NULL;
-int renderStyle = 0;
+int renderStyle = 2;
 
+struct aiScene *scene;
+kuhl_geometry geom;
+
+typedef struct {
+	GLfloat normal[3];
+	GLfloat velocity[3];
+} particle;
+
+particle **particles;
 
 #define GLSL_VERT_FILE "ogl3-assimp.vert"
 #define GLSL_FRAG_FILE "ogl3-assimp.frag"
+
+void explode()
+{
+	kuhl_geometry *g = modelgeom;
+	for(unsigned int i=0; i<kuhl_geometry_count(modelgeom); i++)
+	{
+		/* Calculate the velocity of each vertex when the explosion occurs */
+		for(unsigned int j=0; j<g->vertex_count; j++)
+		{
+			vec3f_copy(particles[i][j].velocity, particles[i][j].normal);
+
+			// Make the velocities point up and out.
+			// add slightly more than one so a normal vector pointing
+			// straight down isn't zero'd out:
+			particles[i][j].velocity[1] += .5;
+			
+			for(int k=0; k<3; k++)
+				particles[i][j].velocity[k] += (drand48()-.5);
+		}
+		g = g->next;
+	}
+}
+
+/** Update the vertex positions and the velocity stored in the
+ * particles array. */
+void update()
+{
+	kuhl_geometry *g = modelgeom;
+	for(unsigned int i=0; i<kuhl_geometry_count(modelgeom); i++)
+	{
+		int numFloats = 0;
+		GLfloat *pos = kuhl_geometry_attrib_get(g, "in_Position",
+		                                        &numFloats);
+
+		for(unsigned int j=0; j<g->vertex_count; j++)
+		{
+			/* If the first point isn't moving, don't update anything */
+			if(vec3f_norm(particles[i][j].velocity) == 0)
+				return;
+
+			/* Gravity is pushing particles down -Y, but we are
+			 * operating in object coordinates. If GeomTransform
+			 * (i.e., g->matrix) is used to rotate the model, then
+			 * gravity might not push the particles down in world
+			 * coordinates. */
+			float accel[3] = { 0, -1, 0};
+			float timestep = 0.1f; // change this to change speed of explosion
+			for(int k=0; k<3; k++)
+			{
+				pos[j*3+k] += timestep * (particles[i][j].velocity[k] + timestep * accel[k]/2);
+				particles[i][j].velocity[k] += timestep * accel[k];
+			}
+		}
+		g = g->next;
+	}
+}
+
+
 
 /* Called by GLUT whenever a key is pressed. */
 void keyboard(unsigned char key, int x, int y)
@@ -63,63 +131,6 @@ void keyboard(unsigned char key, int x, int y)
 		case 27: // ASCII code for Escape key
 			exit(0);
 			break;
-		case 'r':
-		{
-			// Reload GLSL program from disk
-			int origProgram = program;
-			program = kuhl_create_program(GLSL_VERT_FILE, GLSL_FRAG_FILE);
-			kuhl_delete_program(origProgram);
-			break;
-		}
-		case 'w':
-		{
-			// Toggle between wireframe and solid
-			int polygonMode;
-			glGetIntegerv(GL_POLYGON_MODE, &polygonMode);
-			if(polygonMode == GL_LINE)
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			else
-				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			break;
-		}
-		case 'p':
-		{
-			// Toggle between points and solid
-			int polygonMode;
-			glGetIntegerv(GL_POLYGON_MODE, &polygonMode);
-			if(polygonMode == GL_POINT)
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			else
-				glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-			break;
-		}
-		case 'c':
-		{
-			// Toggle front, back, and no culling
-			int cullMode;
-			glGetIntegerv(GL_CULL_FACE_MODE, &cullMode);
-			if(glIsEnabled(GL_CULL_FACE))
-			{
-				if(cullMode == GL_FRONT)
-				{
-					glCullFace(GL_BACK);
-					printf("Culling: Culling back faces; drawing front faces\n");
-				}
-				else
-				{
-					glDisable(GL_CULL_FACE);
-					printf("Culling: No culling; drawing all faces.\n");
-				}
-			}
-			else
-			{
-				glEnable(GL_CULL_FACE);
-				glCullFace(GL_FRONT);
-				printf("Culling: Culling front faces; drawing back faces\n");
-			}
-			kuhl_errorcheck();
-			break;
-		}
 		case '+': // increase size of points and width of lines
 		{
 			GLfloat currentPtSize;
@@ -170,7 +181,12 @@ void keyboard(unsigned char key, int x, int y)
 			kuhl_errorcheck();
 			break;
 		}
-		
+		case 'x':
+			explode();
+			break;
+		case 'z':
+			update();
+			break;
 		case ' ': // Toggle different sections of the GLSL fragment shader
 			renderStyle++;
 			if(renderStyle > 8)
@@ -216,7 +232,7 @@ void get_model_matrix(float result[16])
 		mat4f_mult_mat4f_new(result, translate, scale);
 		return;
 	}
-	
+
 	/* Get a matrix to scale+translate the model based on the bounding
 	 * box */
 	float fitMatrix[16];
@@ -230,39 +246,10 @@ void get_model_matrix(float result[16])
 	mat4f_mult_mat4f_new(result, moveToLookPoint, fitMatrix);
 }
 
-
-static int framesTillFpsUpdate = 0;
-
 void display()
 {
 	dgr_update();
 
-	/* Get current frames per second calculations. */
-	int time = glutGet(GLUT_ELAPSED_TIME);
-	float fps = kuhl_getfps(time);
-
-	if(framesTillFpsUpdate == 0)
-	{
-		framesTillFpsUpdate = 30;
-		char label[1024];
-		snprintf(label, 1024, "FPS: %0.1f", fps);
-		
-		/* Delete old label if it exists */
-		if(fpsLabel != 0) 
-			glDeleteTextures(1, &fpsLabel);
-
-		/* Make a new label */
-		float labelColor[3] = { 1,1,1 };
-		float labelBg[4] = { 0,0,0,.3 };
-		fpsLabelAspectRatio = kuhl_make_label(label,
-		                                      &fpsLabel,
-		                                      labelColor, labelBg, 128);
-		kuhl_geometry_texture(&labelQuad, fpsLabel, "tex", 1);
-	}
-	framesTillFpsUpdate--;
-
-	/* Ensure the slaves use the same render style as the master
-	 * process. */
 	dgr_setget("style", &renderStyle, sizeof(int));
 
 	// Clear the screen to black, clear the depth buffer
@@ -321,47 +308,15 @@ void display()
 		glUniform1f(kuhl_get_uniform("farPlane"), f[5]);
 		
 		kuhl_errorcheck();
+
+		kuhl_limitfps(60);
+		update();
 		kuhl_geometry_draw(modelgeom); /* Draw the model */
 		kuhl_errorcheck();
 
-		/* The shape of the frames per second quad depends on the
-		 * aspect ratio of the label texture and the aspect ratio of
-		 * the window (because we are placing the quad in normalized
-		 * device coordinates). */
-		float windowAspect  = glutGet(GLUT_WINDOW_WIDTH) /(float) glutGet(GLUT_WINDOW_HEIGHT);
-		float stretchLabel[16];
-		mat4f_scale_new(stretchLabel, 1/8.0 * fpsLabelAspectRatio / windowAspect, 1/8.0, 1);
-
-		/* Position label in the upper left corner of the screen */
-		float transLabel[16];
-		mat4f_translate_new(transLabel, -.9, .8, 0);
-		mat4f_mult_mat4f_new(modelview, transLabel, stretchLabel);
-		glUniformMatrix4fv(kuhl_get_uniform("ModelView"), 1, 0, modelview);
-
-		/* Make sure we don't use a projection matrix */
-		float identity[16];
-		mat4f_identity(identity);
-		glUniformMatrix4fv(kuhl_get_uniform("Projection"), 1, 0, identity);
-
-		/* Don't use depth testing and make sure we use the texture
-		 * rendering style */
-		glDisable(GL_DEPTH_TEST);
-		glUniform1i(kuhl_get_uniform("renderStyle"), 1);
-		kuhl_geometry_draw(&labelQuad); /* Draw the quad */
-		glEnable(GL_DEPTH_TEST);
-		kuhl_errorcheck();
-		
 		glUseProgram(0); // stop using a GLSL program.
 
 	} // finish viewport loop
-
-
-	
-	/* Update the model for the next frame based on the time. We
-	 * convert the time to seconds and then use mod to cause the
-	 * animation to repeat. */
-	dgr_setget("time", &time, sizeof(int));
-	kuhl_update_model(modelgeom, 0, ((time%10000)/1000.0));
 
 	
 	/* Check for errors. If there are errors, consider adding more
@@ -383,41 +338,9 @@ void display()
 	glutPostRedisplay();
 }
 
-/* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
-void init_geometryQuad(kuhl_geometry *geom, GLuint program)
-{
-	kuhl_geometry_new(geom, program,
-	                  4, // number of vertices
-	                  GL_TRIANGLES); // type of thing to draw
-
-	/* The data that we want to draw */
-	GLfloat vertexPositions[] = {0, 0, 0,
-	                             1, 0, 0,
-	                             1, 1, 0,
-	                             0, 1, 0 };
-	kuhl_geometry_attrib(geom, vertexPositions,
-	                     3, // number of components x,y,z
-	                     "in_Position", // GLSL variable
-	                     1); // warn if attribute is missing in GLSL program?
-
-	GLfloat texcoord[] = {0, 0,
-	                      1, 0,
-	                      1, 1,
-	                      0, 1};
-	kuhl_geometry_attrib(geom, texcoord,
-	                     2, // number of components x,y,z
-	                     "in_TexCoord", // GLSL variable
-	                     1); // warn if attribute is missing in GLSL program?
 
 
-	
 
-	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
-	                       0, 2, 3 }; // indices of second triangle.
-	kuhl_geometry_indices(geom, indexData, 6);
-
-	kuhl_errorcheck();
-}
 
 
 int main(int argc, char** argv)
@@ -487,7 +410,7 @@ int main(int argc, char** argv)
 	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
 	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
 	viewmat_init(initCamPos, initCamLook, initCamUp);
-
+	
 	// Clear the screen while things might be loading
 	glClearColor(.2,.2,.2,1);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -495,8 +418,35 @@ int main(int argc, char** argv)
 
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
-	init_geometryQuad(&labelQuad, program);
+
+	/* Count the number of kuhl_geometry objects for this model */
+	unsigned int geomCount = kuhl_geometry_count(modelgeom);
 	
+	/* Allocate an array of particle arrays */
+	particles = malloc(sizeof(particle*)*geomCount);
+	int i = 0;
+	for(kuhl_geometry *g = modelgeom; g != NULL; g=g->next)
+	{
+		/* Get the position and normal information from these
+		 * kuhl_geometry objects. */
+		GLint numFloats = 0;
+		GLfloat *norm = kuhl_geometry_attrib_get(g, "in_Normal",
+		                                         &numFloats);
+
+		printf("Read %d floats\n", numFloats);
+		particles[i] = malloc(sizeof(particle)*g->vertex_count);
+		for(unsigned int j=0; j<g->vertex_count; j++)
+		{
+			vec3f_set(particles[i][j].normal, norm[j*3+0],norm[j*3+1],norm[j*3+2]);
+			vec3f_normalize(particles[i][j].normal);
+			vec3f_set(particles[i][j].velocity, 0,0,0);
+		}
+
+		/* Change the geometry to be drawn as points */
+		g->primitive_type = GL_POINTS; // Comment out this line to default to triangle rendering.
+		i++;
+	}
+
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */
 	glutMainLoop();

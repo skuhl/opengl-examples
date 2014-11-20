@@ -7,7 +7,6 @@
 
 # Generated Binaries
 /dgr-relay
-/ogl2-assimp
 /ogl2-slideshow
 /ogl2-texture
 /ogl2-triangle
@@ -19,3 +18,4 @@
 /ogl3-triangle-shade
 /ogl3-picker
 /ogl3-slerp
+/ogl3-explode
