@@ -8,6 +8,19 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Wextra -g -Wno-unused-para
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
 
+# use color messages
+include(${CMAKE_SOURCE_DIR}/CMakeModules/colorMessage.cmake)
+
+
+
+
+# Displaying OpenGL Versions
+if(NOT APPLE)
+       execute_process(COMMAND glxinfo COMMAND grep "OpenGL core profile version string" COMMAND cut -d " " -f 6 COMMAND cut -d "." -f 1 OUTPUT_VARIABLE openglversion_major OUTPUT_STRIP_TRAILING_WHITESPACE)
+       execute_process(COMMAND glxinfo COMMAND grep "OpenGL core profile version string" COMMAND cut -d " " -f 6 COMMAND cut -d "." -f 2 OUTPUT_VARIABLE openglversion_minor OUTPUT_STRIP_TRAILING_WHITESPACE)
+       message("OpenGl core profile version supported - \"${openglversion_major}.${openglversion_minor}\"")
+endif()
+
 
 # SITE_NAME sets the HOSTNAME variable to the name of this computer.
 SITE_NAME(HOSTNAME)
