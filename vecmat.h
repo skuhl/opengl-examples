@@ -28,6 +28,7 @@ General tips for learning the vector and matrix functions provided by this file:
 extern "C" {
 #endif
 
+#include <stdio.h>
 #include <math.h>
 	
 /** Set the values in a 3-component float vector */
