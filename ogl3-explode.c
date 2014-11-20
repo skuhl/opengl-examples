@@ -54,7 +54,6 @@ struct aiScene *scene;
 kuhl_geometry geom;
 
 typedef struct {
-	GLfloat normal[3];
 	GLfloat velocity[3];
 } particle;
 
@@ -63,21 +62,30 @@ particle **particles;
 #define GLSL_VERT_FILE "ogl3-assimp.vert"
 #define GLSL_FRAG_FILE "ogl3-assimp.frag"
 
+/** Give each vertex a velocity when the explosion occurs. */
 void explode()
 {
 	kuhl_geometry *g = modelgeom;
 	for(unsigned int i=0; i<kuhl_geometry_count(modelgeom); i++)
 	{
+		/* Get the normal information from each of the vertices. */
+		GLint numFloats = 0;
+		GLfloat *norm = kuhl_geometry_attrib_get(g, "in_Normal",
+		                                         &numFloats);
+		
 		/* Calculate the velocity of each vertex when the explosion occurs */
 		for(unsigned int j=0; j<g->vertex_count; j++)
 		{
-			vec3f_copy(particles[i][j].velocity, particles[i][j].normal);
+			// Start by setting the velocity equal to the normal to
+			// make the particles move out.
+			vec3f_copy(particles[i][j].velocity, &norm[j*3]);
 
-			// Make the velocities point up and out.
-			// add slightly more than one so a normal vector pointing
-			// straight down isn't zero'd out:
+			// Instead of moving the particles only in the direction
+			// of the normal, make them move 'up' (in object
+			// coordinates) too.
 			particles[i][j].velocity[1] += .5;
-			
+
+			// Add a bit of randomness
 			for(int k=0; k<3; k++)
 				particles[i][j].velocity[k] += (drand48()-.5);
 		}
@@ -427,20 +435,11 @@ int main(int argc, char** argv)
 	int i = 0;
 	for(kuhl_geometry *g = modelgeom; g != NULL; g=g->next)
 	{
-		/* Get the position and normal information from these
-		 * kuhl_geometry objects. */
-		GLint numFloats = 0;
-		GLfloat *norm = kuhl_geometry_attrib_get(g, "in_Normal",
-		                                         &numFloats);
-
-		printf("Read %d floats\n", numFloats);
+		/* allocate space to store velocity information for all of the
+		 * vertices in this kuhl_geometry */
 		particles[i] = malloc(sizeof(particle)*g->vertex_count);
 		for(unsigned int j=0; j<g->vertex_count; j++)
-		{
-			vec3f_set(particles[i][j].normal, norm[j*3+0],norm[j*3+1],norm[j*3+2]);
-			vec3f_normalize(particles[i][j].normal);
 			vec3f_set(particles[i][j].velocity, 0,0,0);
-		}
 
 		/* Change the geometry to be drawn as points */
 		g->primitive_type = GL_POINTS; // Comment out this line to default to triangle rendering.
