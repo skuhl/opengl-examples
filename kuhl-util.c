@@ -745,6 +745,121 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 	geom->textures[destIndex].textureId = texture;
 }
 
+
+
+/** Finds the index of a kuhl_attrib stored inside of a kuhl_geometry
+ * by GLSL variable name.
+ *
+ * @param geom The geometry object to search.
+ *
+ * @param name The GLSL variable name of the attribute that you are
+ * looking for.
+ *
+ * @return The index into geom->attribs[] array of the
+ * attribute. Returns -1 if the attribute was not found.
+ */
+int kuhl_geometry_attrib_index(kuhl_geometry *geom, const char *name)
+{
+	if(geom == NULL || name == NULL)
+		return -1;
+	for(unsigned int i=0; i<geom->attrib_count; i++)
+	{
+		if(strcmp(name, geom->attribs[i].name) == 0)
+			return (int) i;
+	}
+	return -1;
+}
+
+/** Retrieves vertex attribute information stored in an OpenGL array
+ * buffer.
+ *
+ * @param geom The geometry object containing the attribute that you
+ * want to retrieve.
+ *
+ * @param name The GLSL variable name of the attribute that you are
+ * interested in.
+ *
+ * @param size A pointer to an integer that will be filled in with the
+ * length of the data retrieved.
+ *
+ * @return A pointer to a array of floats which contains all of
+ * per-vertex data for this attribute. Any changes you make to the
+ * array will automatically be propagated back to OpenGL before the
+ * next time the geometry is drawn. The array should NOT be
+ * free()'d. It also should NOT be accessed after the geometry is
+ * drawn. If you want to continue to access the data, you should call
+ * kuhl_geometry_attrib_get() every frame. If you aren't changing the
+ * data but still want access to it, it is best to make a copy of the
+ * array that kuhl_geometry_attrib_get() returns instead of calling it
+ * every single frame to retrieve the same data repeatedly.
+ */
+GLfloat* kuhl_geometry_attrib_get(kuhl_geometry *geom, const char *name, GLint *size)
+{
+	if(size != NULL)
+		*size = 0;
+
+	if(geom == NULL || name == NULL || size == NULL)
+		return NULL;
+
+	int index = kuhl_geometry_attrib_index(geom, name);
+	if(index < 0)
+		return NULL;
+
+	/* Bind the VAO and the buffer we are interested in */
+	kuhl_attrib *attrib = &(geom->attribs[index]);
+	if(!glIsBuffer(attrib->bufferobject) || !glIsVertexArray(geom->vao))
+		return NULL;
+	glBindVertexArray(geom->vao);
+	glBindBuffer(GL_ARRAY_BUFFER, attrib->bufferobject);
+	kuhl_errorcheck();
+
+	/* Get the size of the buffer */
+	GLint bufferSize = 0;
+	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &bufferSize);
+	GLint bufferNumFloats = bufferSize / sizeof(GLfloat);
+
+	/* Get a pointer to the memory-mapped array (but first check if
+	 * the buffer is already mapped. */
+	GLfloat *ret;
+	glGetBufferPointerv(GL_ARRAY_BUFFER, GL_BUFFER_MAP_POINTER, (void**) &ret);
+	if(ret == NULL) /* If buffer is not already mapped */
+		ret = (GLfloat*) glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
+
+	/* NOTE: We will unmap any buffer that needs unmapping in
+	 * kuhl_geometry_draw() before we draw. */
+	kuhl_errorcheck();
+	if(ret == NULL)
+		return NULL;
+	*size = bufferNumFloats;
+
+	// unbind
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+	kuhl_errorcheck();
+
+	return ret;
+}
+
+
+
+/** Adds a vertex attribute (such as vertex position, normal, color,
+ * texture coordinate, etc) to the geometry object.
+ *
+ * @param geom The geometry to add the attribute to.
+ *
+ * @param data An array of floats that contains the attribute
+ * data. This array should contain geom->vertex_count * components
+ * floats.
+ *
+ * @param components The number of floats per vertex in this attribute.
+ *
+ * @param name The GLSL variable name that this attribute should be
+ * connected to.
+ *
+ * @param warnIfAttribMissing If nonzero, print a warning if the
+ * attribute isn't present in the GLSL program for this geometry
+ * object.
+ */
 void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint components, const char* name, int warnIfAttribMissing)
 {
 	if(name == NULL || strlen(name) == 0)
@@ -790,22 +905,21 @@ void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint compo
 
 	/* If another attribute in kuhl_geometry has the same name,
 	 * overwrite it. */
-	unsigned int destIndex = geom->attrib_count;
-	for(unsigned int i=0; i<geom->attrib_count; i++)
+	int destIndex = kuhl_geometry_attrib_index(geom, name);
+
+	if(destIndex < 0)
 	{
-		if(strcmp(name, geom->attribs[i].name) == 0)
-			destIndex = i;
+		/* If this is a new attribute for this geometry object */
+		destIndex = geom->attrib_count;
+		geom->attrib_count++;
 	}
-	/* If overwriting, free resources from old attribute. */
-	if(destIndex < geom->attrib_count)
+	else
 	{
+		/* If overwriting, free resources from old attribute. */
 		free(geom->attribs[destIndex].name);
 		if(glIsBuffer(geom->attribs[destIndex].bufferobject))
 			glDeleteBuffers(1, &(geom->attribs[destIndex].bufferobject));
 	}
-	/* Increment attribute count if necessary. */
-	if(destIndex == geom->attrib_count)
-		geom->attrib_count++;
 //	printf("%s: Storing attribute %s at index %d in kuhl_geometry; connected to location %d in program %d\n", __func__, name, destIndex, attribLocation, geom->program);
 	
 	/* If we are writing past the end of the array. */
@@ -1126,6 +1240,22 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	glBindVertexArray(geom->vao);
 	kuhl_errorcheck();
 
+	/* kuhl_geometry_attrib_get() allows vertex attribute buffers to
+	 * be mapped. Here, we check if the buffers are mapped. If they
+	 * are, we unmap them before we draw the geometry. */
+	for(unsigned int i=0; i<geom->attrib_count; i++)
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, geom->attribs[i].bufferobject);
+		GLint bufferIsMapped = 0;
+		glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_MAPPED, &bufferIsMapped);
+		kuhl_errorcheck();
+		if(bufferIsMapped)
+			glUnmapBuffer(GL_ARRAY_BUFFER);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		kuhl_errorcheck();
+	}
+
+	
 	/* If the user provided us with indices, use glDrawElements() to
 	 * draw the geometry. */
 	if(geom->indices_len > 0 && glIsBuffer(geom->indices_bufferobject))

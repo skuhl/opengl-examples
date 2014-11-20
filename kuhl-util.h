@@ -60,8 +60,6 @@ typedef struct
 
 typedef struct
 {
-//	GLfloat* array;
-//	GLuint   components;
 	char*    name;
 	GLuint   bufferobject;
 } kuhl_attrib;
@@ -154,6 +152,7 @@ int kuhl_geometry_collide(kuhl_geometry *geom1, float mat1[16],
 void kuhl_geometry_draw(kuhl_geometry *geom);
 void kuhl_geometry_delete(kuhl_geometry *geom);
 
+GLfloat* kuhl_geometry_attrib_get(kuhl_geometry *geom, const char *name, GLint *size);
 void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint components, const char* name, int warnIfAttribMissing);
 void kuhl_geometry_indices(kuhl_geometry *geom, GLuint *indices, GLuint indexCount);
 void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name, int warnIfSamplerMissing);
