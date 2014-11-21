@@ -43,12 +43,6 @@ if(UNIX AND (GLXINFO OR GLEWINFO))
 		endif()
 	endif()
 endif()
-	
-
-
-#	else
-#		 message(FATAL_ERROR "freeglut version 2.6 or higher is required.")
-#endif()
 
 
 # SITE_NAME sets the HOSTNAME variable to the name of this computer.
