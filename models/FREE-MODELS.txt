@@ -1,0 +1,12 @@
+If you are looking for model files, try the following URLs:
+
+http://graphics.stanford.edu/data/3Dscanrep/
+http://graphics.cs.williams.edu/data/meshes.xml
+http://www.aimatshape.net/ontologies/shapes/viewmodels.jsp
+http://cyberware.com/products/scanners/index.html
+http://gfx.cs.princeton.edu/proj/sugcon/models/
+http://www.katsbits.com/download/models/md5-example.php
+http://people.sc.fsu.edu/~jburkardt/data/ply/ply.html
+http://graphics.im.ntu.edu.tw/~robin/courses/cg03/model/
+
+http://graphics.stanford.edu/projects/mich/   (only available to researchers)
