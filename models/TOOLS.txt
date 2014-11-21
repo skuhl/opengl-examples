@@ -1,0 +1,28 @@
+There are a variety of free and non-free software packages that allow you to easily create and/or manipulate 3D models. They include:
+
+=== Sketchup ===
+An easy-to-learn tool for making simple 3D models. The free version (called "SketchUp Make") can export to the Collada .dae file format.
+
+Operating Systems: Windows, Mac
+Website: http://www.sketchup.com/
+
+
+=== Blender ===
+A free, open-source software package for professional 3D modeling. It supports many features including texturing, rigging, skinning, animation, and rendering.
+
+Operating Systems: Windows, Mac, Linux
+Website: http://www.blender.org/
+
+
+=== Autodesk 123D ===
+A set of free 3D modeling tools. 123D Catch allows you to create 3D models from photographs and has Android and iPhone apps.
+
+Website: http://www.123dapp.com/
+
+
+=== Meshlab ===
+Meshlab provides may filters and functions for manipulating meshes.
+
+Operating Systems: Windows, Mac, Linux
+Website: http://meshlab.sourceforge.net/
+
