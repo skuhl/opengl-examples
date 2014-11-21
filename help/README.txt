@@ -52,7 +52,7 @@ Run code on the IVS display wall and account for the screen bezels (if you have 
 === Libraries used by these programs
 ===
 
-OpenGL 3.0 or higher (required) - OpenGL is available on all Linux
+OpenGL 3.2 or higher (required) - OpenGL is available on all Linux
 machines. To check the version of OpenGL on your computer, run
 "glxgears | grep version". Ignore any lines that say "glx" and the
 other version numbers should indicate which version of OpenGL your
