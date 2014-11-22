@@ -398,7 +398,7 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint program)
 	kuhl_geometry_attrib(geom, vertexPositions,
 	                     3, // number of components x,y,z
 	                     "in_Position", // GLSL variable
-	                     1); // warn if attribute is missing in GLSL program?
+	                     KG_WARN); // warn if attribute is missing in GLSL program?
 
 	GLfloat texcoord[] = {0, 0,
 	                      1, 0,
@@ -407,7 +407,7 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint program)
 	kuhl_geometry_attrib(geom, texcoord,
 	                     2, // number of components x,y,z
 	                     "in_TexCoord", // GLSL variable
-	                     1); // warn if attribute is missing in GLSL program?
+	                     KG_WARN); // warn if attribute is missing in GLSL program?
 
 
 	

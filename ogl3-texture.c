@@ -144,20 +144,20 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
 	GLfloat texcoordData[] = {0, 0,
 	                          1, 0,
 	                          1, 1 };
-	kuhl_geometry_attrib(geom, texcoordData, 2, "in_TexCoord", 1);
+	kuhl_geometry_attrib(geom, texcoordData, 2, "in_TexCoord", KG_WARN);
 
 
 /* The data that we want to draw */
 	GLfloat vertexData[] = {0, 0, 0,
 	                        1, 0, 0,
 	                        1, 1, 0};
-	kuhl_geometry_attrib(geom, vertexData, 3, "in_Position", 1);
+	kuhl_geometry_attrib(geom, vertexData, 3, "in_Position", KG_WARN);
 
 
 	/* Load the texture. It will be bound to texName */
 	GLuint texId = 0;
 	kuhl_read_texture_file("images/rainbow.png", &texId);
-	kuhl_geometry_texture(geom, texId, "tex", 1);
+	kuhl_geometry_texture(geom, texId, "tex", KG_WARN);
 
 	kuhl_errorcheck();
 }

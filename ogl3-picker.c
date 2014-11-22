@@ -191,12 +191,12 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
 	kuhl_geometry_attrib(geom, vertexPositions, // data
 	                     3, // number of components (x,y,z)
 	                     "in_Position", // GLSL variable
-	                     1); // warn if attribute is missing in GLSL program?
+	                     KG_WARN); // warn if attribute is missing in GLSL program?
 
 	GLfloat colorData[] = { 1,0,0,
 	                        0,1,0,
 	                        0,0,1 };
-	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", 1);
+	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", KG_WARN);
 }
 
 void init_geometryCursor(kuhl_geometry *geom, GLuint program)
@@ -208,13 +208,13 @@ void init_geometryCursor(kuhl_geometry *geom, GLuint program)
 	                         .04, 0, 0,
 	                        0, -.04, 0,
 	                        0,  .04, 0 };
-	kuhl_geometry_attrib(geom, vertexData, 3, "in_Position", 1);
+	kuhl_geometry_attrib(geom, vertexData, 3, "in_Position", KG_WARN);
 
 	GLfloat colorData[] = { 1,1,1,
 	                        1,1,1,
 	                        1,1,1,
 	                        1,1,1 };
-	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", 1);
+	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", KG_WARN);
 }
 
 
@@ -234,12 +234,12 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint program)
 	kuhl_geometry_attrib(geom, vertexPositions,
 	                     3, // number of components x,y,z
 	                     "in_Position", // GLSL variable
-	                     1); // warn if attribute is missing in GLSL program?
+	                     KG_WARN); // warn if attribute is missing in GLSL program?
 	GLfloat colorData[] = { 1,0,0,
 	                        0,1,0,
 	                        0,0,1,
 	                        0,1,1 };
-	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", 1);
+	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", KG_WARN);
 	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
 	                       0, 2, 3 }; // indices of second triangle.
 	kuhl_geometry_indices(geom, indexData, 6);

@@ -154,13 +154,13 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
 	kuhl_geometry_attrib(geom, vertexPositions, // data
 	                     3, // number of components (x,y,z)
 	                     "in_Position", // GLSL variable
-	                     1); // warn if attribute is missing in GLSL program?
+	                     KG_WARN); // warn if attribute is missing in GLSL program?
 
 	/* The normals for each vertex */
 	GLfloat normalData[] = {0, 0, 1,
 	                        0, 0, 1,
 	                        0, 0, 1};
-	kuhl_geometry_attrib(geom, normalData, 3, "in_Normal", 1);
+	kuhl_geometry_attrib(geom, normalData, 3, "in_Normal", KG_WARN);
 }
 
 
@@ -179,14 +179,14 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint program)
 	kuhl_geometry_attrib(geom, vertexPositions,
 	                     3, // number of components x,y,z
 	                     "in_Position", // GLSL variable
-	                     1); // warn if attribute is missing in GLSL program?
+	                     KG_WARN); // warn if attribute is missing in GLSL program?
 
 	/* The normals for each vertex */
 	GLfloat normalData[] = {0, 0, 1,
 	                        0, 0, 1,
 	                        0, 0, 1,
 	                        0, 0, 1};
-	kuhl_geometry_attrib(geom, normalData, 3, "in_Normal", 1);
+	kuhl_geometry_attrib(geom, normalData, 3, "in_Normal", KG_WARN);
 	
 	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
 	                       0, 2, 3 }; // indices of second triangle.

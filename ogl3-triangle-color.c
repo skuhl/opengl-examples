@@ -141,12 +141,12 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
 	kuhl_geometry_attrib(geom, vertexPositions, // data
 	                     3, // number of components (x,y,z)
 	                     "in_Position", // GLSL variable
-	                     1); // warn if attribute is missing in GLSL program?
+	                     KG_WARN); // warn if attribute is missing in GLSL program?
 
 	GLfloat colorData[] = {1,0,0,
 	                       0,1,0,
 	                       0,0,1 };
-	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", 1);
+	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", KG_WARN);
 }
 
 
