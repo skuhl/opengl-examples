@@ -1199,9 +1199,9 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 			continue;
 
 		/* Tell OpenGL that the texture that we refer to in our
-		 * GLSL program is going to be in texture unit 0.
+		 * GLSL program is going to be in texture unit number 'i'.
 		 */
-		glUniform1i(kuhl_get_uniform(tex->name), i);
+		glUniform1i(loc, i);
 		kuhl_errorcheck();
 		/* Turn on appropriate texture unit */
 		glActiveTexture(GL_TEXTURE0+i);
