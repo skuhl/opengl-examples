@@ -673,7 +673,21 @@ int kuhl_geometry_collide(kuhl_geometry *geom1, float mat1[16],
 }
 #endif
 
-void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name, int warnIfSamplerMissing)
+
+/** Adds a texture to the provided kuhl_geometry object.
+ *
+ * @param geom The geometry object to add a texture to.
+ *
+ * @param texture The OpenGL texture ID of the texture.
+ *
+ * @param name The GLSL variable name that the texture should be connected to.
+ *
+ * @param kg_options If KG_WARN bit is set, will warn if
+ * the GLSL variable is missing from the GLSL program for this piece
+ * of geometry. If set to KG_FULL_LIST is set, the texture will
+ * be applied to all of the geometry in this list. */
+ 
+void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name, int kg_options)
 {
 	if(name == NULL || strlen(name) == 0)
 	{
@@ -698,6 +712,10 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 		printf("%s: WARNING: You tried to set the texture to an invalid texture %d (detected while trying to set texture %s)\n", __func__, texture, name);
 		return;
 	}
+
+	if(kg_options & KG_FULL_LIST && geom->next != NULL)
+		kuhl_geometry_texture(geom->next, texture, name, kg_options);
+	
 	if(!glIsVertexArray(geom->vao))
 	{
 		printf("%s: WARNING: This geometry object has an invalid vertex array object %d (detected while setting texture %s)\n", __func__, geom->vao, name);
@@ -709,7 +727,7 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 	GLint samplerLocation = glGetUniformLocation(geom->program, name);
 	if(samplerLocation == -1)
 	{
-		if(warnIfSamplerMissing)
+		if(kg_options & KG_WARN)
 			printf("%s: WARNING: Texture sampler '%s' was missing in GLSL program %d.\n", __func__, name, geom->program);
 		return;
 	}
@@ -1963,7 +1981,13 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 	 * aiProcess_JoinIdenticalVertices - Ensures that the model uses an index buffer.
 	 * aiProcess_PreTransformVertices - Pretransforms all vertices according to matrices in the model file
 	 */
-	const struct aiScene* scene = aiImportFile(modelFilenameVarying, aiProcessPreset_TargetRealtime_Quality);
+
+	// If we are generating smooth normals, don't smooth edges that
+	// are 80 degrees or higher (i.e., use flat normals on a cube).
+	struct aiPropertyStore* propStore = aiCreatePropertyStore();
+	aiSetImportPropertyFloat(propStore, "PP_GSN_MAX_SMOOTHING_ANGLE", 1);
+	// Import/load the model
+	const struct aiScene* scene = aiImportFileExWithProperties(modelFilenameVarying,aiProcessPreset_TargetRealtime_Quality, NULL, propStore);
 	free(modelFilenameVarying);
 	if(scene == NULL)
 		return NULL;

@@ -58,6 +58,13 @@ typedef struct
 } kuhl_bonemat;
 #endif
 
+enum
+{ /* Options used for some kuhl_geometry functions */
+	KG_NONE = 0,
+	KG_WARN = 1,       /**< Warn if GLSL variable is missing */
+	KG_FULL_LIST = 2 /**< Apply to entire list of kuhl_geometry objects */
+};
+	
 typedef struct
 {
 	char*    name;
@@ -149,16 +156,16 @@ int kuhl_geometry_collide(kuhl_geometry *geom1, float mat1[16],
                           kuhl_geometry *geom2, float mat2[16]);
 #endif
 
+void kuhl_geometry_new(kuhl_geometry *geom, GLuint program, unsigned int vertexCount, GLint primitive_type);
 void kuhl_geometry_draw(kuhl_geometry *geom);
 void kuhl_geometry_delete(kuhl_geometry *geom);
-
-GLfloat* kuhl_geometry_attrib_get(kuhl_geometry *geom, const char *name, GLint *size);
-void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint components, const char* name, int warnIfAttribMissing);
-void kuhl_geometry_indices(kuhl_geometry *geom, GLuint *indices, GLuint indexCount);
-void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name, int warnIfSamplerMissing);
 unsigned int kuhl_geometry_count(const kuhl_geometry *geom);
+	
+GLfloat* kuhl_geometry_attrib_get(kuhl_geometry *geom, const char *name, GLint *size);
+void kuhl_geometry_indices(kuhl_geometry *geom, GLuint *indices, GLuint indexCount);
+void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint components, const char* name, int kg_options);
+void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name, int kg_options);
 
-void kuhl_geometry_new(kuhl_geometry *geom, GLuint program, unsigned int vertexCount, GLint primitive_type);
 
 
 
