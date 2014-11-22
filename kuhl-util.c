@@ -1985,7 +1985,7 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 	// If we are generating smooth normals, don't smooth edges that
 	// are 80 degrees or higher (i.e., use flat normals on a cube).
 	struct aiPropertyStore* propStore = aiCreatePropertyStore();
-	aiSetImportPropertyFloat(propStore, "PP_GSN_MAX_SMOOTHING_ANGLE", 1);
+	aiSetImportPropertyFloat(propStore, "PP_GSN_MAX_SMOOTHING_ANGLE", 50.0f);
 	// Import/load the model
 	const struct aiScene* scene = aiImportFileExWithProperties(modelFilenameVarying,aiProcessPreset_TargetRealtime_Quality, NULL, propStore);
 	free(modelFilenameVarying);
