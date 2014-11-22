@@ -2527,7 +2527,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		       mesh->mTextureCoords == NULL ? "no" : "yes",
 		       mesh->mNumBones,
 		       geom->texture_count == 0 ? "(null)" : texPath.data);
-	}
+	} // end for each mesh in node
 
 	/* Process all of the meshes in the aiNode's children too */
 	for (unsigned int i = 0; i < nd->mNumChildren; i++)
@@ -2541,6 +2541,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 				prev_geom->next = child_geom;
 			if(first_geom == NULL)
 				first_geom = child_geom;
+			prev_geom = child_geom;
 		}
 	}
 
@@ -2580,7 +2581,8 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
 		struct aiScene *scene = g->assimp_scene;
 		/* The aiNode object that this kuhl_geometry refers to. */
 		struct aiNode *node = g->assimp_node;
-
+		printf("name of node in geom %s\n", node->mName.data);
+		
 		/* Start at our current node and traverse up. Apply all of the
 		 * transformation matrices as we traverse up. */
 		float result[16];
