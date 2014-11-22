@@ -2581,7 +2581,6 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
 		struct aiScene *scene = g->assimp_scene;
 		/* The aiNode object that this kuhl_geometry refers to. */
 		struct aiNode *node = g->assimp_node;
-		printf("name of node in geom %s\n", node->mName.data);
 		
 		/* Start at our current node and traverse up. Apply all of the
 		 * transformation matrices as we traverse up. */
