@@ -30,7 +30,7 @@ include(${CMAKE_SOURCE_DIR}/CMakeModules/colorMessage.cmake)
 # available. Fail if a high enough version of OpenGL is not supported.
 find_file(GLXINFO glxinfo)
 find_file(GLEWINFO glewinfo)
-if(UNIX AND (GLXINFO OR GLEWINFO))
+if(UNIX AND NOT APPLE AND (GLXINFO OR GLEWINFO))
 	execute_process(COMMAND ${GLXINFO} COMMAND grep "OpenGL core profile version string" COMMAND cut -d " " -f 6 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE)
 	if(NOT openglversion AND GLEWINFO)
 		execute_process(COMMAND ${GLEWINFO} COMMAND grep "OpenGL version " COMMAND cut -d " " -f 3 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE)
