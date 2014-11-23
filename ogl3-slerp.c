@@ -20,10 +20,8 @@
 #include "projmat.h"
 #include "viewmat.h"
 GLuint program = 0; // id value for the GLSL program
-
 kuhl_geometry *modelgeom = NULL;
 float bbox[6];
-
 
 /** Set this variable to 1 to force this program to scale the entire
  * model and translate it so that we can see the entire model. This is
@@ -62,9 +60,11 @@ void keyboard(unsigned char key, int x, int y)
 		case 'r':
 		{
 			// Reload GLSL program from disk
-			int origProgram = program;
+			kuhl_delete_program(program);
 			program = kuhl_create_program(GLSL_VERT_FILE, GLSL_FRAG_FILE);
-			kuhl_delete_program(origProgram);
+			/* Apply the program to the model geometry */
+			kuhl_geometry_program(modelgeom, program, KG_FULL_LIST);
+
 			break;
 		}
 				
@@ -234,7 +234,7 @@ void display()
 		glUniform1f(kuhl_get_uniform("farPlane"), f[5]);
 		
 		kuhl_errorcheck();
-		kuhl_geometry_draw(modelgeom);
+		kuhl_geometry_draw(modelgeom); /* Draw the model */
 		kuhl_errorcheck();
 
 		glUseProgram(0); // stop using a GLSL program.

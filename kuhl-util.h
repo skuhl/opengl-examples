@@ -79,10 +79,10 @@ typedef struct
 	
 /** The kuhl_geometry struct is used to quickly draw 3D objects in
  * OpenGL 3.0. For more information, see the example programs and the
- * documentation for kuhl_geometry_zero(), kuhl_geometry_init(), and
- * kuhl_geometry_draw(). The functions provide error checking and uses
- * reasonable defaults. They also provide significantly less
- * flexibility than what OpenGL provides. */
+ * documentation for kuhl_geometry_new() and kuhl_geometry_draw(). The
+ * functions provide error checking and uses reasonable defaults. They
+ * also provide significantly less flexibility than what OpenGL
+ * provides. */
 typedef struct _kuhl_geometry_
 {
 	GLuint vao;  /**< OpenGL Vertex Array Object - created by kuhl_geometry_new() */
@@ -160,7 +160,8 @@ void kuhl_geometry_new(kuhl_geometry *geom, GLuint program, unsigned int vertexC
 void kuhl_geometry_draw(kuhl_geometry *geom);
 void kuhl_geometry_delete(kuhl_geometry *geom);
 unsigned int kuhl_geometry_count(const kuhl_geometry *geom);
-	
+
+void kuhl_geometry_program(kuhl_geometry *geom, GLuint program, int kg_options);
 GLfloat* kuhl_geometry_attrib_get(kuhl_geometry *geom, const char *name, GLint *size);
 void kuhl_geometry_indices(kuhl_geometry *geom, GLuint *indices, GLuint indexCount);
 void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint components, const char* name, int kg_options);

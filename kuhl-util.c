@@ -439,7 +439,8 @@ GLint kuhl_get_uniform(const char *uniformName)
  *
  * @param attributeName The name of the attribute variable.
  *
- * @return The location of the attribute variable.
+ * @return The location of the attribute variable. Returns -1 if the
+ * attribute is not found.
  */
 GLint kuhl_get_attribute(GLuint program, const char *attributeName)
 {
@@ -858,6 +859,70 @@ GLfloat* kuhl_geometry_attrib_get(kuhl_geometry *geom, const char *name, GLint *
 	return ret;
 }
 
+/** Changes the GLSL program that is used by a kuhl_geometry object.
+ *
+ * @param geom A geometry that you want to change the GLSL program for.
+ *
+ * @param program The new GLSL program you wish to use with the geometry.
+ *
+ * @param kg_options Set this to KG_FULL_LIST to apply the new program
+ * to all geometries in the kuhl_geometry linked list. Otherwise, set
+ * to 0.
+ */
+void kuhl_geometry_program(kuhl_geometry *geom, GLuint program, int kg_options)
+{
+	if(geom == NULL)
+		return;
+
+	if(kg_options & KG_FULL_LIST)
+		kuhl_geometry_program(geom->next, program, kg_options);
+
+	// If the caller deleted their old program and created a new one,
+	// the new program ID might match the old program ID. Therefore,
+	// we can't rely on the program IDs to verify that the user
+	// changed the program.
+
+	if(!glIsProgram(program))
+	{
+		printf("%s: WARNING: GLSL program %d is not a valid program.\n",
+		       __func__, program);
+	}
+	
+	geom->program = program;
+	
+	glBindVertexArray(geom->vao);
+	for(unsigned int i=0; i<geom->attrib_count; i++)
+	{
+		kuhl_attrib *attrib = &(geom->attribs[i]);
+		glBindBuffer(GL_ARRAY_BUFFER, attrib->bufferobject);
+		kuhl_errorcheck();
+
+		GLint attribLocation = kuhl_get_attribute(geom->program, attrib->name);
+		glEnableVertexAttribArray(attribLocation);
+
+		/* Get the size of the buffer */
+		GLint bufferSize = 0;
+		glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &bufferSize);
+		GLint bufferNumFloats = bufferSize/sizeof(GLfloat);
+		GLint components = bufferNumFloats / geom->vertex_count;
+
+		/* Connect this vertex attribute with the (possibly different)
+		 * attribute location. */
+		glVertexAttribPointer(
+			attribLocation, // attribute location in glsl program
+			components, // number of elements (x,y,z)
+			GL_FLOAT, // type of each element
+			GL_FALSE, // should OpenGL normalize values?
+			0,        // no extra data between each position
+			0 );      // offset of first element
+		kuhl_errorcheck();
+	}
+
+	/* NOTE: We do not have to update the uniform locations because
+	 * they are determined in kuhl_geometry_draw() */
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
 
 
 /** Adds a vertex attribute (such as vertex position, normal, color,

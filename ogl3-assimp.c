@@ -66,9 +66,11 @@ void keyboard(unsigned char key, int x, int y)
 		case 'r':
 		{
 			// Reload GLSL program from disk
-			int origProgram = program;
+			kuhl_delete_program(program);
 			program = kuhl_create_program(GLSL_VERT_FILE, GLSL_FRAG_FILE);
-			kuhl_delete_program(origProgram);
+			/* Apply the program to the model geometry */
+			kuhl_geometry_program(modelgeom, program, KG_FULL_LIST);
+
 			break;
 		}
 		case 'w':
