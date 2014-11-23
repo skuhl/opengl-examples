@@ -1186,6 +1186,7 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	
 	/* For each texture */
+	int hasTex = 0;
 	for(unsigned int i=0; i<geom->texture_count; i++)
 	{
 		kuhl_texture *tex = &(geom->textures[i]);
@@ -1198,6 +1199,9 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		if(loc == -1)
 			continue;
 
+		if(strcmp(tex->name, "tex") == 0)
+			hasTex = 1;
+		
 		/* Tell OpenGL that the texture that we refer to in our
 		 * GLSL program is going to be in texture unit number 'i'.
 		 */
@@ -1212,11 +1216,15 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		kuhl_errorcheck();
 	}
 
+	GLint loc;
+	loc = glGetUniformLocation(geom->program, "HasTex");
+	if(loc != -1)
+	    glUniform1i(loc, hasTex);
+
 	/* Try to set uniform variables if they are active in the current
 	 * GLSL program. If they are not active, don't print any warning
 	 * messages. */
 	int numBones = 0;
-	GLint loc;
 #ifdef KUHL_UTIL_USE_ASSIMP
 	loc = glGetUniformLocation(geom->program, "BoneMat");
 	if(loc != -1 && geom->bones)

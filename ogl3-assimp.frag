@@ -1,13 +1,15 @@
 #version 150 // GLSL 150 = OpenGL 3.2
 
 out vec4 fragColor;
-in vec2 out_TexCoord;
-in vec3 out_Normal;   // normal vector in eye coordinates
-in vec3 out_Color;
-in float out_Depth;   // Depth of fragment (range 0 through 1)
-in vec3 out_EyeCoord; // position of fragment in eye coordinates
+in vec2 out_TexCoord; // Vertex texture coordinate
+in vec3 out_Color;    // Vertex color
+in vec3 out_Normal;   // Normal vector in eye coordinates
+in vec3 out_EyeCoord; // Position of fragment in eye coordinates
 
-uniform sampler2D tex;
+in float out_Depth;   // Depth of fragment (range 0 through 1)
+
+uniform int HasTex;    // Is there a texture in tex?
+uniform sampler2D tex; // Diffuse texture
 uniform int renderStyle;
 
 
@@ -27,7 +29,10 @@ void main()
 	else if(renderStyle == 1)
 	{
 		/* Color value from the texture */
-		fragColor = texture(tex, out_TexCoord);
+		if(bool(HasTex))
+			fragColor = texture(tex, out_TexCoord);
+		else
+			fragColor = vec4(out_Color, 1);
 	}
 	else if(renderStyle == 2)
 	{
