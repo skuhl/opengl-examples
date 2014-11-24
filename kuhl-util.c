@@ -1633,6 +1633,31 @@ float kuhl_make_label(const char *label, GLuint *texName, float color[3], float 
  */
 float kuhl_read_texture_file(const char *filename, GLuint *texName)
 {
+	/* If we can't find the texture file, try replacing '\' characters
+	 * with '/' in case the path to the image file uses Windows path
+	 * separators instead of Linux path separators. */
+	char *newFilename;
+	FILE *file = fopen(filename, "r");
+	if(file == NULL) // if we can't find or can't read the file
+	{
+		newFilename = strdup(filename);
+		char *tmp = newFilename;
+
+		while(*tmp != '\0')
+		{
+			if(*tmp == '\\')
+				*tmp = '/';
+			tmp++;
+		}
+		if(strcmp(filename, newFilename) != 0)
+			printf("%s: Can't read '%s', trying '%s' instead.\n", __func__, filename, newFilename);
+	}
+	else // original path name seems to work.
+	{
+		fclose(file);
+		newFilename = strdup(filename);
+	}
+	
     /* It is generally best to just load images in RGBA8 format even
      * if we don't need the alpha component. ImageMagick will fill the
      * alpha component in correctly (opaque if there is no alpha
@@ -1641,7 +1666,7 @@ float kuhl_read_texture_file(const char *filename, GLuint *texName)
      * http://www.opengl.org/wiki/Common_Mistakes#Image_precision
      */
 	imageio_info iioinfo;
-	iioinfo.filename   = strdup(filename);
+	iioinfo.filename   = newFilename;
 	iioinfo.type       = CharPixel;
 	iioinfo.map        = (char*) "RGBA";
 	iioinfo.colorspace = sRGBColorspace;
