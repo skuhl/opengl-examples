@@ -72,6 +72,18 @@ int kuhl_errorcheckFileLine(const char *file, int line)
 	return 0;
 }
 
+/** Don't call this function, call kuhl_malloc() instead. */
+void *kuhl_mallocFileLine(size_t size, const char *file, int line)
+{
+	if(size == 0)
+		fprintf(stderr, "!!!!! malloc Warning !!!!! - Size 0 passed to malloc at %s:%d\n", file, line);
+	void *ret = malloc(size);
+	if(ret == NULL)
+		fprintf(stderr, "!!!!! malloc Error !!!!! - Failed to allocate %zu bytes at %s:%d\n", size, file, line);
+	return ret;
+}
+
+
 
 /** Reads a text file.
  *
@@ -88,7 +100,7 @@ char* kuhl_text_read(const char *filename)
 
 	/* We add one more character to create room to store a '\0' at the
 	 * end. */
-	char *content = (char*) malloc(sizeof(char)*(contentSpace+1));
+	char *content = (char*) kuhl_malloc(sizeof(char)*(contentSpace+1));
 
 	/* Pointer to where next chunk should be stored */
 	char *contentLoc = content;
@@ -2402,7 +2414,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		 * allocate each one individually (instead of malloc()'ing one
 		 * large space for all of the meshes in this node so each of
 		 * the objects can be free()'d) */
-		kuhl_geometry *geom = (kuhl_geometry*) malloc(sizeof(kuhl_geometry));
+		kuhl_geometry *geom = (kuhl_geometry*) kuhl_malloc(sizeof(kuhl_geometry));
 		kuhl_geometry_new(geom, program, mesh->mNumVertices,
 		                  meshPrimitiveTypeGL);
 
@@ -2418,7 +2430,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		mat4f_copy(geom->matrix, currentTransform);
 
 		/* Store the vertex position attribute into the kuhl_geometry struct */
-		float *vertexPositions = malloc(sizeof(float)*mesh->mNumVertices*3);
+		float *vertexPositions = kuhl_malloc(sizeof(float)*mesh->mNumVertices*3);
 		for(unsigned int i=0; i<mesh->mNumVertices; i++)
 		{
 			vertexPositions[i*3+0] = (mesh->mVertices)[i].x;
@@ -2431,7 +2443,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		/* Store the normal vectors in the kuhl_geometry struct */
 		if(mesh->mNormals != NULL)
 		{
-			float *normals = malloc(sizeof(float)*mesh->mNumVertices*3);
+			float *normals = kuhl_malloc(sizeof(float)*mesh->mNumVertices*3);
 			for(unsigned int i=0; i<mesh->mNumVertices; i++)
 			{
 				normals[i*3+0] = (mesh->mNormals)[i].x;
@@ -2445,7 +2457,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		/* Store the vertex color attribute */
 		if(mesh->mColors != NULL && mesh->mColors[0] != NULL)
 		{
-			float *colors = malloc(sizeof(float)*mesh->mNumVertices*3);
+			float *colors = kuhl_malloc(sizeof(float)*mesh->mNumVertices*3);
 			for(unsigned int i=0; i<mesh->mNumVertices; i++)
 			{
 				colors[i*3+0] = mesh->mColors[0][i].r;
@@ -2467,7 +2479,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 			struct aiColor4D diffuse;
 			if(AI_SUCCESS == aiGetMaterialColor(mtl, AI_MATKEY_COLOR_DIFFUSE, &diffuse))
 			{
-				float *colors = malloc(sizeof(float)*mesh->mNumVertices*3);
+				float *colors = kuhl_malloc(sizeof(float)*mesh->mNumVertices*3);
 				for(unsigned int i=0; i<mesh->mNumVertices; i++)
 				{
 					colors[i*3+0] = diffuse.r;
@@ -2481,7 +2493,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		/* Store the texture coordinate attribute */
 		if(mesh->mTextureCoords != NULL && mesh->mTextureCoords[0] != NULL)
 		{
-			float *texCoord = malloc(sizeof(float)*mesh->mNumVertices*2);
+			float *texCoord = kuhl_malloc(sizeof(float)*mesh->mNumVertices*2);
 			for(unsigned int i=0; i<mesh->mNumVertices; i++)
 			{
 				texCoord[i*2+0] = mesh->mTextureCoords[0][i].x;
@@ -2501,8 +2513,8 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 				exit(EXIT_FAILURE);
 			}
 			
-			float *indices = malloc(sizeof(float)*mesh->mNumVertices*4);
-			float *weights = malloc(sizeof(float)*mesh->mNumVertices*4);
+			float *indices = kuhl_malloc(sizeof(float)*mesh->mNumVertices*4);
+			float *weights = kuhl_malloc(sizeof(float)*mesh->mNumVertices*4);
 			/* For each vertex */
 			for(unsigned int i=0; i<mesh->mNumVertices; i++)
 			{
@@ -2585,15 +2597,15 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		if(mesh->mNumFaces > 0)
 		{
 			/* Get indices to draw with */
-			geom->indices_len = mesh->mNumFaces * meshPrimitiveType;
-			GLuint *indices = malloc(sizeof(GLuint)*geom->indices_len);
+			GLuint numIndices = mesh->mNumFaces * meshPrimitiveType;
+			GLuint *indices = kuhl_malloc(sizeof(GLuint)*numIndices);
 			for(unsigned int t = 0; t<mesh->mNumFaces; t++) // for each face
 			{
 				const struct aiFace* face = &mesh->mFaces[t];
 				for(unsigned int x = 0; x < meshPrimitiveType; x++) // for each index
-					indices[t*3+x] = face->mIndices[x];
+					indices[t*meshPrimitiveType+x] = face->mIndices[x];
 			}
-			kuhl_geometry_indices(geom, indices, mesh->mNumFaces*3);
+			kuhl_geometry_indices(geom, indices, numIndices);
 			free(indices);
 		}
 
@@ -2601,7 +2613,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		/* Initialize list of bone matrices if this mesh has bones. */
 		if(mesh->mNumBones > 0)
 		{
-			kuhl_bonemat *bones = (kuhl_bonemat*) malloc(sizeof(kuhl_bonemat));
+			kuhl_bonemat *bones = (kuhl_bonemat*) kuhl_malloc(sizeof(kuhl_bonemat));
 			bones->count = mesh->mNumBones;
 			bones->mesh = n;
 			for(unsigned int b=0; b < MAX_BONES; b++)

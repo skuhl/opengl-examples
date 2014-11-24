@@ -132,8 +132,15 @@ typedef struct _kuhl_geometry_
  */
 #define kuhl_errorcheck() kuhl_errorcheckFileLine(__FILE__, __LINE__)
 
+/** An alternative to malloc() which behaves the same way except it
+ * prints a message when common errors occur (out of memory, trying to
+ * allocate 0 bytes). */
+#define kuhl_malloc(size) kuhl_mallocFileLine(size, __FILE__, __LINE__)
+
 // kuhl_errorcheck() calls this C function:
 int kuhl_errorcheckFileLine(const char *file, int line);
+// kuhl_malloc() calls this C function:
+void* kuhl_mallocFileLine(size_t size, const char *file, int line);
 
 
 char* kuhl_text_read(const char *filename);
