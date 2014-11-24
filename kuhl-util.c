@@ -1149,13 +1149,34 @@ void kuhl_geometry_new(kuhl_geometry *geom, GLuint program, unsigned int vertexC
 	geom->next = NULL;
 }
 
-
+/** Applies a set of indices to the geometry so that vertices can be
+ * re-used by multiple triangles or lines.
+ *
+ * @param geom The geometry that the indices should be used with.
+ *
+ * @param indicies A list of indices. Each index refers to a specific vertex.
+ *
+ * @param indexCount The number of indices. For example, if the
+ * geometry object consists of triangles, indexCount should be
+ * numTriangles*3.
+*/
 void kuhl_geometry_indices(kuhl_geometry *geom, GLuint *indices, GLuint indexCount)
 {
 	if(indexCount == 0 || indices == NULL)
 	{
 		printf("%s: WARNING: indexCount was zero or indices array was NULL\n", __func__);
 		return;
+	}
+
+	if(geom->primitive_type == GL_TRIANGLES && indexCount % 3 != 0)
+	{
+		printf("%s: ERROR: indexCount=%u was not a multiple of 3 even though this geometry has triangles in it.", __func__, indexCount);
+		exit(EXIT_FAILURE);
+	}
+	else if(geom->primitive_type == GL_LINES && indexCount % 2 != 0)
+	{
+		printf("%s: ERROR: indexCount=%u was not a multiple of 2 even though this geometry has lines in it.", __func__, indexCount);
+		exit(EXIT_FAILURE);
 	}
 	
 	geom->indices_len = indexCount;
