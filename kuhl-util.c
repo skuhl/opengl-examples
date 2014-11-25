@@ -83,7 +83,88 @@ void *kuhl_mallocFileLine(size_t size, const char *file, int line)
 	return ret;
 }
 
+/** Checks if a file is readable or not.
 
+ @param filename The file to check
+ @return Returns 1 if we can read the file, 0 otherwise.
+*/
+int kuhl_can_read_file(const char *filename)
+{
+	FILE *f = fopen(filename, "r");
+	if(f == NULL)
+		return 0;
+	else
+	{
+		fclose(f);
+		return 1;
+	}
+}
+
+/* Given a filename, tries to find that file by:
+   1) Looking for the file using the given path.
+
+   2) Change '\' characters to '/' in case the provided path uses
+   Windows-style path separators.
+
+   3) Search for file relative to directory of executable (on Linux)
+
+   4) Combine possibilities 2 and 3 (on Linux)
+
+   @param filename The name of the file the caller wants to open.
+   @return A path to the file that may be different than the path
+   provided in the filename parameter. The returned string should be
+   free()'d. If the file was not found, a copy of the original
+   filename is returned.
+*/
+char* kuhl_find_file(const char *filename)
+{
+	if(kuhl_can_read_file(filename))
+		return strdup(filename);
+	
+	/* Try changing path separators from Windows style '\' to Linux
+	 * style '/'. */
+	char *pathSepChange = strdup(filename);
+	char *tmp = pathSepChange;
+	while(*tmp != '\0')
+	{
+		if(*tmp == '\\')
+			*tmp = '/';
+		tmp++;
+	}
+	if(kuhl_can_read_file(filename))
+		return pathSepChange;
+
+#ifdef __linux
+	/* If we can't open the filename directly, then try opening it
+	   with the full path based on the path to the
+	   executable. This allows us to more easily run programs from
+	   outside of the same directory that the executable that the
+	   executable resides without having to specify an absolute
+	   path to our shader programs. */
+	char exe[1024];
+	ssize_t len = readlink("/proc/self/exe", exe, 1023);
+	exe[len]='\0';
+	char *dir = dirname(exe);
+	char *newPathFile = malloc(sizeof(char)*1024);
+	snprintf(newPathFile, 1024, "%s/%s", dir, filename);
+	if(kuhl_can_read_file(newPathFile))
+	{
+		free(pathSepChange);
+		return newPathFile;
+	}
+	/* Try using executable directory along with the path that has
+	 * corrected file path separators */
+	snprintf(newPathFile, 1024, "%s/%s", dir, pathSepChange);
+	if(kuhl_can_read_file(newPathFile))
+	{
+		free(pathSepChange);
+		return newPathFile;
+	}
+#endif
+
+	free(pathSepChange);
+	return strdup(filename);
+}
 
 /** Reads a text file.
  *
@@ -105,36 +186,15 @@ char* kuhl_text_read(const char *filename)
 	/* Pointer to where next chunk should be stored */
 	char *contentLoc = content;
 
-	FILE *fp = fopen(filename,"rt");
+	char *newFilename = kuhl_find_file(filename);
+	FILE *fp = fopen(newFilename,"rt");
+	free(newFilename);
 	int readChars;
 
-#ifdef __linux
 	if(fp == NULL)
 	{
-		/* If we can't open the filename directly, then try opening it
-		   with the full path based on the path to the
-		   executable. This allows us to more easily run programs from
-		   outside of the same directory that the executable that the
-		   executable resides without having to specify an absolute
-		   path to our shader programs. */
-		char exe[1024];
-		ssize_t len = readlink("/proc/self/exe", exe, 1023);
-		exe[len]='\0';
-		char *dir = dirname(exe);
-		char newfilename[1024];
-		snprintf(newfilename, 1024, "%s/%s", dir, filename);
-		fp = fopen(newfilename,"rt");
-		if(fp != NULL)
-		{
-			printf("NOTE: %s was not found; using %s\n", filename, newfilename);
-		}
-	}
-#endif
-
-	if(fp == NULL)
-	{
-		fprintf(stderr, "ERROR: Can't open %s\n", filename);
-		exit(1);
+		fprintf(stderr, "ERROR: Can't open %s.\n", filename);
+		exit(EXIT_FAILURE);
 	}
 
 	do
@@ -1633,30 +1693,7 @@ float kuhl_make_label(const char *label, GLuint *texName, float color[3], float 
  */
 float kuhl_read_texture_file(const char *filename, GLuint *texName)
 {
-	/* If we can't find the texture file, try replacing '\' characters
-	 * with '/' in case the path to the image file uses Windows path
-	 * separators instead of Linux path separators. */
-	char *newFilename;
-	FILE *file = fopen(filename, "r");
-	if(file == NULL) // if we can't find or can't read the file
-	{
-		newFilename = strdup(filename);
-		char *tmp = newFilename;
-
-		while(*tmp != '\0')
-		{
-			if(*tmp == '\\')
-				*tmp = '/';
-			tmp++;
-		}
-		if(strcmp(filename, newFilename) != 0)
-			printf("%s: Can't read '%s', trying '%s' instead.\n", __func__, filename, newFilename);
-	}
-	else // original path name seems to work.
-	{
-		fclose(file);
-		newFilename = strdup(filename);
-	}
+	char *newFilename = kuhl_find_file(filename);
 	
     /* It is generally best to just load images in RGBA8 format even
      * if we don't need the alpha component. ImageMagick will fill the
@@ -1671,7 +1708,7 @@ float kuhl_read_texture_file(const char *filename, GLuint *texName)
 	iioinfo.map        = (char*) "RGBA";
 	iioinfo.colorspace = sRGBColorspace;
 	char *image = (char*) imagein(&iioinfo);
-	free(iioinfo.filename);
+	free(newFilename);
 	if(image == NULL)
 	{
 		fprintf(stderr, "%s: ERROR: Unable to read '%s'.\n", __func__, filename);
