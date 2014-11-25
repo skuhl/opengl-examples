@@ -7,7 +7,7 @@
  * @author Scott Kuhl
  *
  * This file provides miscellaneous matrix and vector math operations
- * as well as helper functions for loading vertex/fragment shader,
+ * as well as helper functions for loading vertex/fragment shaders,
  * textures via imageio.h (if KUHL_UTIL_USE_IMAGEMAGICK preprocessor
  * variable is defined) and 3D models (if KUHL_UTIL_USE_ASSIMP
  * preprocessor variable is defined).
@@ -58,23 +58,28 @@ typedef struct
 } kuhl_bonemat;
 #endif
 
+/** This enum is used by some kuhl_geometry related functions */
 enum
 { /* Options used for some kuhl_geometry functions */
-	KG_NONE = 0,
-	KG_WARN = 1,       /**< Warn if GLSL variable is missing */
+	KG_NONE = 0,     /**< No options */
+	KG_WARN = 1,     /**< Warn if GLSL variable is missing */
 	KG_FULL_LIST = 2 /**< Apply to entire list of kuhl_geometry objects */
 };
-	
+
+/** There is an array of kuhl_attrib structs inside of
+ * kuhl_geometry to store all vertex attribute information */
 typedef struct
 {
-	char*    name;
-	GLuint   bufferobject;
+	char*    name; /**< GLSL variable name the attribute information should be linked with. */
+	GLuint   bufferobject; /**< OpenGL buffer the attribute is stored in */
 } kuhl_attrib;
 
+/** There is an array of kuhl_texture structs inside of
+ * kuhl_geometry. */
 typedef struct
 {
-	char* name;
-	GLuint textureId;
+	char* name; /**< GLSL variable name the texture should be linked with. */
+	GLuint textureId; /**< OpenGL texture id/name of the texture */
 } kuhl_texture;
 	
 /** The kuhl_geometry struct is used to quickly draw 3D objects in
@@ -102,12 +107,12 @@ typedef struct _kuhl_geometry_
 
 	
 	float matrix[16]; /**< A matrix that all of this geometry should be transformed by */
-	int has_been_drawn;
+	int has_been_drawn; /**< Has this piece of geometry been drawn yet? */
 	
 #if KUHL_UTIL_USE_ASSIMP
 	struct aiNode *assimp_node; /**< Assimp node that this kuhl_geometry object was created from. */
 	struct aiScene *assimp_scene; /**< Assimp scene that this kuhl_geometry object is a part of. */
-	kuhl_bonemat *bones;
+	kuhl_bonemat *bones; /**< Information about bones in the model */
 #endif
 
 	struct _kuhl_geometry_ *next; /**< A kuhl_geometry object can be a linked list. */
@@ -143,6 +148,8 @@ int kuhl_errorcheckFileLine(const char *file, int line);
 void* kuhl_mallocFileLine(size_t size, const char *file, int line);
 
 
+int kuhl_can_read_file(const char *filename);
+char* kuhl_find_file(const char *filename);
 char* kuhl_text_read(const char *filename);
 GLuint kuhl_create_shader(const char *filename, GLuint shader_type);
 GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename);
