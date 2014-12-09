@@ -255,6 +255,13 @@ char* image_label(const char *label, int* width, int* height, float color[3], fl
 {
 	*width=0;
 	*height=0;
+	/* Since we are using a copy of ImageMagick that is not at the standard
+	   location on CCSR, we need to tell the imagemagick library where to
+	   look for config files. Without this, imagemagick prints errors about
+	   fonts when you try to make text labels.
+	*/
+	setenv("MAGICK_CONFIGURE_PATH", "/home/kuhl/public-vrlab/ImageMagick/config", 1);
+	
 //	if(!IsMagickInstantiated())
 		MagickCoreGenesis(NULL, MagickTrue);
 	ExceptionInfo *exception = AcquireExceptionInfo();
