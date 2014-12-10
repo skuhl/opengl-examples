@@ -2402,6 +2402,36 @@ static int kuhl_private_node_matrix(float transformResult[16],
 	return 1;
 }
 
+
+/* Appends two kuhl_geometry lists together and returns the first item
+ * in the list.
+ *
+ * @param a The list of geometry that should be appended to.
+ *
+ * @param b The lits of geometry to append to the end of the 'a' list.
+ *
+ * @return The first kuhl_geometry object in the appended
+ * list. Typically, this will equal 'a'. This function returns NULL if
+ * both 'a' and 'b' are null. It returns 'b' if only 'a' is null.
+ */
+kuhl_geometry* kuhl_geometry_append(kuhl_geometry *a, kuhl_geometry *b)
+{
+	if(a == NULL && b == NULL)
+		return NULL;
+	if(a == NULL && b != NULL)
+		return b;
+	if(a != NULL && b == NULL)
+		return a;
+
+	kuhl_geometry *origA = a;
+	while(a->next != NULL)
+		a = a->next;
+	a->next = b;
+	return origA;
+}
+
+
+
 /** Recursively calls itself to create one or more kuhl_geometry
  * structs for all of the nodes in the scene.
  *
@@ -2432,7 +2462,6 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 	/* Apply this node's transformation to our current transform. */
 	mat4f_mult_mat4f_new(currentTransform, currentTransform, thisTransform);
 
-	kuhl_geometry *prev_geom = NULL;
 	kuhl_geometry *first_geom = NULL;
 	
 	/* Create a kuhl_geometry object for each of the meshes assigned
@@ -2502,11 +2531,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		                  meshPrimitiveTypeGL);
 
 		/* Set up kuhl_geometry linked list */
-		if(prev_geom != NULL)
-			prev_geom->next = geom;
-		if(first_geom == NULL)
-			first_geom = geom;
-		prev_geom = geom;
+		first_geom = kuhl_geometry_append(first_geom, geom);
 
 		geom->assimp_node = (struct aiNode*) nd;
 		geom->assimp_scene = (struct aiScene*) sc;
@@ -2725,22 +2750,13 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 	for (unsigned int i = 0; i < nd->mNumChildren; i++)
 	{
 		kuhl_geometry *child_geom = kuhl_private_load_model(sc, nd->mChildren[i], program, currentTransform);
-		if(child_geom != NULL)
-		{
-			/* Attach the children geometry on the end of our list, or at
-			 * the beginning of our list if it is currently empty. */
-			if(prev_geom != NULL)
-				prev_geom->next = child_geom;
-			if(first_geom == NULL)
-				first_geom = child_geom;
-			prev_geom = child_geom;
-		}
+		first_geom = kuhl_geometry_append(first_geom, child_geom);
 	}
 
 	/* Restore the transform matrix to exactly as it was when this
 	 * function was called by the caller. */
 	mat4f_copy(currentTransform, origTransform);
-	
+
 	return first_geom;
 }
 
