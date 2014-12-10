@@ -29,10 +29,10 @@ void main()
 	else if(renderStyle == 1)
 	{
 		/* Color value from the texture */
-//		if(bool(HasTex))
+		if(bool(HasTex))
 			fragColor = texture(tex, out_TexCoord);
-//		else
-//			fragColor = vec4(out_Color, 1);
+		else
+			fragColor = vec4(out_Color, 1);
 	}
 	else if(renderStyle == 2)
 	{
