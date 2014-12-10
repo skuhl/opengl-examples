@@ -39,7 +39,7 @@ if(UNIX AND NOT APPLE AND (GLXINFO OR GLEWINFO))
 	if(openglversion)
 		message("OpenGL core profile version - ${openglversion}")
 		if(openglversion VERSION_LESS "3.2")
-			message(FATAL_ERROR "OpenGL version 3.2 or higher is required.")
+			message(WARNING "This software expect OpenGL version 3.2 or higher; some or all programs may fail to run correctly.")
 		endif()
 	endif()
 endif()
@@ -59,8 +59,6 @@ if(BUILD_DOCUMENTATION)
                      COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
                      SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)
 	# Add or remove 'ALL' after 'docs' above to enable/disable doxygen generation when running "make"
-	else()
-		message(WARNING "Not creating Doxygen documents because doxygen was not found on this system.")
 	endif()
 endif()
 
