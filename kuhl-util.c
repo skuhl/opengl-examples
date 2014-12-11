@@ -131,7 +131,7 @@ char* kuhl_find_file(const char *filename)
 			*tmp = '/';
 		tmp++;
 	}
-	if(kuhl_can_read_file(filename))
+	if(kuhl_can_read_file(pathSepChange))
 		return pathSepChange;
 
 #ifdef __linux
