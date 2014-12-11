@@ -3034,6 +3034,10 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 		                       *texture,      // texture id
 		                       0);            // mipmap level
 	}
+	else
+	  {
+	    glDrawBuffer(GL_NONE);
+	  }
 	kuhl_errorcheck();
 
 	if(depthTexture != NULL)
