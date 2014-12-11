@@ -70,6 +70,8 @@ void keyboard(unsigned char key, int x, int y)
 			program = kuhl_create_program(GLSL_VERT_FILE, GLSL_FRAG_FILE);
 			/* Apply the program to the model geometry */
 			kuhl_geometry_program(modelgeom, program, KG_FULL_LIST);
+			/* and the fps label*/
+			kuhl_geometry_program(&labelQuad, program, KG_FULL_LIST);
 
 			break;
 		}
