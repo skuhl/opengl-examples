@@ -2773,22 +2773,18 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 */
 void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, float time)
 {
-	kuhl_geometry *g = NULL;
-	for(g = first_geom; g != NULL; g=g->next)
-	{
-		if(g->assimp_scene == NULL || g->assimp_node == NULL)
-		{
-			printf("%s: This kuhl_geometry cannot be updated because it does not contain ASSIMP scene or node information.\n", __func__);
-			return;
-		}
-	}
-
-	for(g = first_geom; g != NULL; g=g->next)
+	for(kuhl_geometry *g = first_geom; g != NULL; g=g->next)
 	{
 		/* The aiScene object that this kuhl_geometry refers to. */
 		struct aiScene *scene = g->assimp_scene;
 		/* The aiNode object that this kuhl_geometry refers to. */
 		struct aiNode *node = g->assimp_node;
+
+		/* If the geometry contains no animations, isn't associated
+		 * with an ASSIMP scene or node, then there is no need to try
+		 * to animate it. */
+		if(scene->mNumAnimations == 0 || scene == NULL || node == NULL)
+			continue;
 		
 		/* Start at our current node and traverse up. Apply all of the
 		 * transformation matrices as we traverse up. */
