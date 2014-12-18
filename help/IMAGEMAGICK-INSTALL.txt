@@ -1,7 +1,8 @@
 You can typically install ImageMagick using the package manager in
-your Linux distribution or homebrew for OSX. Simply search for
-packages that include the word "magick" and install any packages that
-look like they are related to the ImageMagick MagickCore library.
+your Linux distribution or homebrew for OSX. Ghostscript is also
+required for fonts to work on OSX. Simply search for packages that
+include the word "magick" and install any packages that look like
+they are related to the ImageMagick MagickCore library.
 
 On Ubuntu 14.04, try installing the following two packages (and the
 packages that they depend on):
