@@ -1341,9 +1341,8 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	glUseProgram(geom->program);
 	kuhl_errorcheck();
 
-	glBindTexture(GL_TEXTURE_2D, 0);
-	
-	/* For each texture */
+	/* Bind all of the textures used in this geometry to texture
+	 * units. */
 	int hasTex = 0;
 	for(unsigned int i=0; i<geom->texture_count; i++)
 	{
@@ -1458,6 +1457,21 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		kuhl_errorcheck();
 	}
 
+
+	/* For each texture unit that we bound a texture to, unbind the
+	 * texture since we have finished drawing the geometry */
+	for(unsigned int i=0; i<geom->texture_count; i++)
+	{
+		kuhl_errorcheck();
+		/* Turn on appropriate texture unit */
+		glActiveTexture(GL_TEXTURE0+i);
+		kuhl_errorcheck();
+		/* Unbind the texture */
+		glBindTexture(GL_TEXTURE_2D, 0);
+		kuhl_errorcheck();
+	}
+
+	
 	/* Indicate in the struct that we have successfully drawn this
 	 * geom once. */
 	geom->has_been_drawn = 1;
