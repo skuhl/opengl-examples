@@ -15,11 +15,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
 # name that contains a main() function.
 ####################################
 # Programs that need ASSIMP and ImageMagick
-set(NEED_ASSIMP_AND_IM  ogl3-assimp ogl3-slerp ogl3-explode)
+set(NEED_ASSIMP_AND_IM ogl3-oculus) #ogl3-assimp ogl3-slerp ogl3-explode)
 # Programs that only need ImageMagick
-set(NEED_IM ogl2-slideshow ogl2-texture ogl3-texture)
+set(NEED_IM )#ogl2-slideshow ogl2-texture ogl3-texture)
 # Programs that don't rely on libraries
-set(NEED_NOTHING ogl2-triangle ogl3-triangle ogl3-triangle-color ogl3-triangle-shade ogl3-prerend ogl3-picker)
+set(NEED_NOTHING )#ogl2-triangle ogl3-triangle ogl3-triangle-color ogl3-triangle-shade ogl3-prerend ogl3-picker)
 
 
 # use color messages
@@ -183,6 +183,20 @@ find_package(Threads)
 #endif()
 
 
+# --- LibOVR (Oculus Rift) ---
+set(CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/LibOVR/Lib" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/LibOVR/Include" ${CMAKE_INCLUDE_PATH})
+message(${CMAKE_INCLUDE_PATH})
+find_package(LibOVR)
+if(LibOVR_FOUND)
+	message(${LibOVR_INCLUDE_DIRS})
+	include_directories(${LibOVR_INCLUDE_DIRS})
+	set(MISSING_LibOVR_DEFINITION "")
+else()
+	set(MISSING_LibOVR_DEFINITION "MISSING_LibOVR")
+endif()
+
+
 # Collect libraries that all programs use together into one cmake variable
 set(COMMON_LIBRARIES ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES}  ${M_LIB})
 if(VRPN_FOUND)
@@ -193,8 +207,8 @@ endif()
 # make compilation rule for all programs that need ASSIMP and ImageMagick
 if(ASSIMP_FOUND AND ImageMagick_FOUND)
 	foreach(arg ${NEED_ASSIMP_AND_IM})
-		add_executable(${arg} ${arg}.c  kuhl-util.c vecmat.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp imageio.c)
-		target_link_libraries(${arg} ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES})
+		add_executable(${arg} ${arg}.cpp  kuhl-util.c vecmat.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp imageio.c)
+		target_link_libraries(${arg} ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES} ${LibOVR_LIBRARIES})
 		set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_ASSIMP;KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
 	endforeach()
 else()
