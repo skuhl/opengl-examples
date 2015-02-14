@@ -17,6 +17,7 @@
 #include "vecmat.h"
 #include "mousemove.h"
 #include "vrpn-help.h"
+#include "hmdcontrol.h"
 #include "dgr.h"
 
 
@@ -34,7 +35,7 @@ static float viewports[MAX_VIEWPORTS][4]; /**< Contains one or more viewports. T
 static int viewports_size = 0; /**< Number of viewports in viewports array */
 static ViewmatModeType viewmat_mode = 0; /**< 0=mousemove, 1=IVS (using VRPN), 2=HMD (using VRPN), 3=none */
 static const char *viewmat_vrpn_obj; /**< Name of the VRPN object that we are tracking */
-
+static HmdControlState viewmat_hmd;
 
 /** Sets up viewmat to only have one viewport. This can be called
  * every frame since resizing the window will change the size of the
@@ -123,21 +124,22 @@ static void viewmat_init_mouse(float pos[3], float look[3], float up[3])
 	glutMotionFunc(mousemove_glutMotionFunc);
 	glutMouseFunc(mousemove_glutMouseFunc);
 	mousemove_set(pos[0],pos[1],pos[2],
-	              look[0],look[1],look[2],
-	              up[0],up[1],up[2]);
+				  look[0],look[1],look[2],
+				  up[0],up[1],up[2]);
 	mousemove_speed(0.05, 0.5);
 }
 
 
-static void viewmat_init_hmd(float pos[3], float look[3], float up[3])
+static void viewmat_init_hmd()
 {
-	/* TODO: For now, we are using mouse movement for the HMD mode */
-	glutMotionFunc(mousemove_glutMotionFunc);
-	glutMouseFunc(mousemove_glutMouseFunc);
-	mousemove_set(pos[0],pos[1],pos[2],
-	              look[0],look[1],look[2],
-	              up[0],up[1],up[2]);
-	mousemove_speed(0.05, 0.5);
+	const char* hmdDeviceFile = getenv("VIEWMAT_HMD_FILE");
+	if (hmdDeviceFile == NULL)
+	{
+		fprintf(stderr, "viewmat: Failed to setup HMD mode, VIEWMAT_HMD_FILE not set\n");
+		exit(EXIT_FAILURE);
+	}
+
+	viewmat_hmd = initHmdControl(hmdDeviceFile);
 }
 
 
@@ -163,8 +165,8 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	else if(strcasecmp(modeString, "hmd") == 0)
 	{
 		viewmat_mode = VIEWMAT_HMD;
-		viewmat_init_hmd(pos, look, up);
-		printf("viewmat: Using HMD head tracking mode, NOT COMPLETED. Tracking object: %s\n", viewmat_vrpn_obj);
+		viewmat_init_hmd();
+		printf("viewmat: Using HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
 	}
 	else if(strcasecmp(modeString, "none") == 0)
 	{
@@ -186,25 +188,23 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 
 void viewmat_get_hmd(float viewmatrix[16], int viewportNum)
 {
-	float pos[3],look[3],up[3];
-	mousemove_get(pos, look, up);
+	float quaternion[4];
+	updateHmdControl(&viewmat_hmd, quaternion);
+
+	float rotationMatrix[16];
+	mat4f_rotateQuatVec_new(rotationMatrix, quaternion);
 
 	float eyeDist = 0.055;  // TODO: Make this configurable.
 
-	float lookVec[3], rightVec[3];
-	vec3f_sub_new(lookVec, look, pos);
-	vec3f_normalize(lookVec);
-	vec3f_cross_new(rightVec, lookVec, up);
-	vec3f_normalize(rightVec);
-	if(viewportNum == 0)
-		vec3f_scalarMult(rightVec, -eyeDist/2.0);
-	else
-		vec3f_scalarMult(rightVec, eyeDist/2.0);
+	float xShift = (viewportNum == 0 ? -eyeDist : eyeDist) / 2.0f;
 
-	vec3f_add_new(look, look, rightVec);
-	vec3f_add_new(pos, pos, rightVec);
+	float shiftMatrix[16];
+	mat4f_translate_new(shiftMatrix, xShift, 0, 0);
 
-	mat4f_lookatVec_new(viewmatrix, pos, look, up);
+	// apply the shift, then the rotation, then the position
+	// as in (Pos * (Rotation * (Shift * (vector))) == (Pos * Rotation * Shift) * vector
+	// except we have no way of acquiring the Pos matrix, so leave it out
+	mat4f_mult_mat4f_new(viewmatrix, rotationMatrix, shiftMatrix);
 	// Don't need to use DGR!
 }
 
@@ -316,7 +316,7 @@ void viewmat_get_viewport(int viewportValue[4], int viewportNum)
 
 /** Returns the number of viewports that viewmat has.
 
-    @return The number of viewports that viewmat has.
+	@return The number of viewports that viewmat has.
 */
 int viewmat_num_viewports()
 {
