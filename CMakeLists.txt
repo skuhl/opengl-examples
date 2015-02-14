@@ -56,8 +56,8 @@ if(BUILD_DOCUMENTATION)
 	if(DOXYGEN_FOUND)
 	#-- Add a custom target to run Doxygen when ever the project is built
 	add_custom_target (docs 
-                     COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
-                     SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)
+		COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Doxyfile
+		SOURCES ${CMAKE_SOURCE_DIR}/Doxyfile)
 	# Add or remove 'ALL' after 'docs' above to enable/disable doxygen generation when running "make"
 	endif()
 endif()
@@ -81,10 +81,10 @@ include_directories(${GLUT_INCLUDE_DIR})
 # Make sure freeglut installation is new enough!
 include(CheckSymbolExists)
 if(UNIX AND NOT APPLE)
-  CHECK_SYMBOL_EXISTS(GLUT_CORE_PROFILE "${GLUT_INCLUDE_DIR}/GL/freeglut.h;${GLUT_INCLUDE_DIR}/GL/freeglut_ext.h" FREEGLUT_NEW_ENOUGH)
-  if(NOT FREEGLUT_NEW_ENOUGH)
-    message(FATAL_ERROR "freeglut version 2.6 or higher is required.")
-  endif()
+	CHECK_SYMBOL_EXISTS(GLUT_CORE_PROFILE "${GLUT_INCLUDE_DIR}/GL/freeglut.h;${GLUT_INCLUDE_DIR}/GL/freeglut_ext.h" FREEGLUT_NEW_ENOUGH)
+	if(NOT FREEGLUT_NEW_ENOUGH)
+		message(FATAL_ERROR "freeglut version 2.6 or higher is required.")
+	endif()
 endif()
 
 # --- GLEW ---
@@ -109,7 +109,7 @@ include_directories(${GLEW_INCLUDE_DIRS})
 include(CheckSymbolExists)
 CHECK_SYMBOL_EXISTS(GL_ARB_get_program_binary "${GLEW_INCLUDE_DIRS}/GL/glew.h" GLEW_NEW_ENOUGH)
 if(NOT GLEW_NEW_ENOUGH)
-  message(FATAL_ERROR "glew version 1.5.6 or higher is required.")
+	message(FATAL_ERROR "glew version 1.5.6 or higher is required.")
 endif()
 
 # --- ImageMagick (recommended, optional) ---
@@ -193,7 +193,7 @@ endif()
 # make compilation rule for all programs that need ASSIMP and ImageMagick
 if(ASSIMP_FOUND AND ImageMagick_FOUND)
 	foreach(arg ${NEED_ASSIMP_AND_IM})
-		add_executable(${arg} ${arg}.c  kuhl-util.c vecmat.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp imageio.c)
+		add_executable(${arg} ${arg}.c  kuhl-util.c vecmat.c dgr.c mousemove.c hmdcontrol.c projmat.c viewmat.c vrpn-help.cpp imageio.c)
 		target_link_libraries(${arg} ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES})
 		set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_ASSIMP;KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
 	endforeach()
@@ -209,7 +209,7 @@ endif()
 # Make compilation rule for all programs that only need ImageMagick
 if(ImageMagick_FOUND)
 	foreach(arg ${NEED_IM})
-		add_executable(${arg} ${arg}.c kuhl-util.c vecmat.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp imageio.c)
+		add_executable(${arg} ${arg}.c kuhl-util.c vecmat.c dgr.c mousemove.c hmdcontrol.c projmat.c viewmat.c vrpn-help.cpp imageio.c)
 		target_link_libraries(${arg} ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ImageMagick_LIBRARIES})
 		set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
 	endforeach()
@@ -219,7 +219,7 @@ endif()
 
 # Make compilation rule for all programs that don't need ImageMagick or ASSIMIP
 foreach(arg ${NEED_NOTHING})
-	add_executable(${arg} ${arg}.c kuhl-util.c vecmat.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp)
+	add_executable(${arg} ${arg}.c kuhl-util.c vecmat.c dgr.c mousemove.c hmdcontrol.c projmat.c viewmat.c vrpn-help.cpp)
 	target_link_libraries(${arg} ${COMMON_LIBRARIES} ${GLUT_LIBRARIES})
 	set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
 endforeach()
