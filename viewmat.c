@@ -124,8 +124,8 @@ static void viewmat_init_mouse(float pos[3], float look[3], float up[3])
 	glutMotionFunc(mousemove_glutMotionFunc);
 	glutMouseFunc(mousemove_glutMouseFunc);
 	mousemove_set(pos[0],pos[1],pos[2],
-				  look[0],look[1],look[2],
-				  up[0],up[1],up[2]);
+	              look[0],look[1],look[2],
+	              up[0],up[1],up[2]);
 	mousemove_speed(0.05, 0.5);
 }
 
@@ -316,7 +316,7 @@ void viewmat_get_viewport(int viewportValue[4], int viewportNum)
 
 /** Returns the number of viewports that viewmat has.
 
-	@return The number of viewports that viewmat has.
+    @return The number of viewports that viewmat has.
 */
 int viewmat_num_viewports()
 {
