@@ -14,8 +14,14 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-// write "safe", a method that always succeeds (failure is handled by exit())
-void writeSafe(const int fd, const unsigned char* buf, size_t numBytes)
+/**
+   Reliably write bytes to a file descriptor.
+
+   @param fd File descriptor to write to.
+   @param buf Buffer containing bytes to write.
+   @param numBytes Number of bytes in the buffer that should be written.
+ */
+static void writeSafe(const int fd, const unsigned char* buf, size_t numBytes)
 {
 	while (numBytes > 0)
 	{
@@ -34,8 +40,14 @@ void writeSafe(const int fd, const unsigned char* buf, size_t numBytes)
 	}
 }
 
-// read "safe", same as writeSafe but for reading
-void readSafe(int fd, unsigned char* buf, size_t numBytes)
+/**
+   Reliably read bytes from a file descriptor.
+
+   @param fd File descriptor to read from.
+   @param buf Buffer containing bytes to read.
+   @param numBytes Number of bytes in the buffer that be read.
+ */
+static void readSafe(int fd, unsigned char* buf, size_t numBytes)
 {
 	while (numBytes > 0)
 	{
@@ -54,7 +66,12 @@ void readSafe(int fd, unsigned char* buf, size_t numBytes)
 	}
 }
 
-void swapEndianessFloat(float* data, const int n)
+/**
+   Swap the endian of an array of floats.
+   @param data A pointer to an array of floats.
+   @param n The number of floats in the array.
+*/
+static void swapEndianessFloat(float* data, const int n)
 {
 	unsigned char* charData = (unsigned char*)data;
 	int i;
