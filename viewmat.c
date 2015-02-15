@@ -216,6 +216,30 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 
 void viewmat_get_hmd(float viewmatrix[16], int viewportNum)
 {
+	float pos[3],look[3],up[3];
+	mousemove_get(pos, look, up);
+
+	float eyeDist = 0.055;  // TODO: Make this configurable.
+
+	float lookVec[3], rightVec[3];
+	vec3f_sub_new(lookVec, look, pos);
+	vec3f_normalize(lookVec);
+	vec3f_cross_new(rightVec, lookVec, up);
+	vec3f_normalize(rightVec);
+	if(viewportNum == 0)
+		vec3f_scalarMult(rightVec, -eyeDist/2.0);
+	else
+		vec3f_scalarMult(rightVec, eyeDist/2.0);
+
+	vec3f_add_new(look, look, rightVec);
+	vec3f_add_new(pos, pos, rightVec);
+
+	mat4f_lookatVec_new(viewmatrix, pos, look, up);
+	// Don't need to use DGR!
+}
+
+void viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
+{
 	float quaternion[4];
 	updateHmdControl(&viewmat_hmd, quaternion);
 
@@ -314,8 +338,11 @@ void viewmat_get(float viewmatrix[16], float frustum[6], int viewportNum)
 	if(viewmat_mode == VIEWMAT_IVS) // IVS
 		viewmat_get_ivs(viewmatrix, frustum);
 
-	if(viewmat_mode == VIEWMAT_HMD) // HMD
+	if(viewmat_mode == VIEWMAT_HMD) // generic HMD
 		viewmat_get_hmd(viewmatrix, viewportNum);
+
+	if(viewmat_mode == VIEWMAT_HMD_DSIGHT) // dSight HMD
+		viewmat_get_hmd_dsight(viewmatrix, viewportNum);
 }
 
 /** Gets the viewport information for a particular viewport.
