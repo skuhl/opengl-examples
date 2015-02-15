@@ -38,7 +38,7 @@ fi
 # Add local directory to our PATH so user can use "exectuable" instead of "./executable"
 PATH=.:$PATH
 
-export VIEWMAT_MODE="hmd"
-export VIEWMAT_HMD_FILE="/dev/ttyACM0"
+export VIEWMAT_MODE="dsight"
+export VIEWMAT_DSIGHT_FILE="/dev/ttyACM0"
 "${@}"
 

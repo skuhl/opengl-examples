@@ -27,6 +27,8 @@ typedef enum
 	VIEWMAT_MOUSE,
 	VIEWMAT_IVS,
 	VIEWMAT_HMD,
+	VIEWMAT_HMD_DSIGHT,
+	VIEWMAT_HMD_OCULUS,
 	VIEWMAT_NONE
 } ViewmatModeType;
 
@@ -129,16 +131,30 @@ static void viewmat_init_mouse(float pos[3], float look[3], float up[3])
 	mousemove_speed(0.05, 0.5);
 }
 
-
-static void viewmat_init_hmd()
+/** Initialize view matrix for "hmd" mode. */
+static void viewmat_init_hmd(float pos[3], float look[3], float up[3])
 {
-	const char* hmdDeviceFile = getenv("VIEWMAT_HMD_FILE");
+	/* TODO: For now, we are using mouse movement for the HMD mode */
+	glutMotionFunc(mousemove_glutMotionFunc);
+	glutMouseFunc(mousemove_glutMouseFunc);
+	mousemove_set(pos[0],pos[1],pos[2],
+	              look[0],look[1],look[2],
+	              up[0],up[1],up[2]);
+	mousemove_speed(0.05, 0.5);
+}
+
+/** Initialize view matrix for "dSight" mode. */
+static void viewmat_init_hmd_dsight()
+{
+	const char* hmdDeviceFile = getenv("VIEWMAT_DSIGHT_FILE");
 	if (hmdDeviceFile == NULL)
 	{
-		fprintf(stderr, "viewmat: Failed to setup HMD mode, VIEWMAT_HMD_FILE not set\n");
+		fprintf(stderr, "viewmat: Failed to setup dSight HMD mode, VIEWMAT_DSIGHT_FILE not set\n");
 		exit(EXIT_FAILURE);
 	}
 
+	/* TODO: Currently this mode only supports the orientation sensor
+	 * in the dSight HMD */
 	viewmat_hmd = initHmdControl(hmdDeviceFile);
 }
 
@@ -162,10 +178,22 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 		viewmat_init_ivs();
 		printf("viewmat: Using IVS head tracking mode, tracking object: %s\n", viewmat_vrpn_obj);
 	}
+	else if(strcasecmp(modeString, "dsight") == 0)
+	{
+		viewmat_mode = VIEWMAT_HMD_DSIGHT;
+		viewmat_init_hmd_dsight();
+		printf("viewmat: Using dSight HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
+	}
+	else if(strcasecmp(modeString, "oculus") == 0)
+	{
+		viewmat_mode = VIEWMAT_HMD;
+		viewmat_init_hmd(pos, look, up);
+		printf("viewmat: Using Oculus HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
+	}
 	else if(strcasecmp(modeString, "hmd") == 0)
 	{
 		viewmat_mode = VIEWMAT_HMD;
-		viewmat_init_hmd();
+		viewmat_init_hmd(pos, look, up);
 		printf("viewmat: Using HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
 	}
 	else if(strcasecmp(modeString, "none") == 0)
