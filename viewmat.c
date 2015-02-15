@@ -214,6 +214,7 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	viewmat_refresh_viewports();
 }
 
+/** Get the view matrix for a generic HMD device. */
 void viewmat_get_hmd(float viewmatrix[16], int viewportNum)
 {
 	float pos[3],look[3],up[3];
@@ -238,6 +239,7 @@ void viewmat_get_hmd(float viewmatrix[16], int viewportNum)
 	// Don't need to use DGR!
 }
 
+/** Get the view matrix for the dSight HMD. */
 void viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
 {
 	float quaternion[4];
