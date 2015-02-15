@@ -183,12 +183,26 @@ find_package(Threads)
 #endif()
 
 
+# --- LibOVR (Oculus Rift) ---
+set(CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/LibOVR/Lib" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/LibOVR/Include" ${CMAKE_INCLUDE_PATH})
+find_package(LibOVR)
+if(LIBOVR_FOUND)
+	include_directories(${LibOVR_INCLUDE_DIRS})
+	set(MISSING_LibOVR_DEFINITION "")
+else()
+	set(MISSING_LibOVR_DEFINITION "MISSING_LibOVR")
+endif()
+
+
 # Collect libraries that all programs use together into one cmake variable
 set(COMMON_LIBRARIES ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES}  ${M_LIB})
 if(VRPN_FOUND)
-	set(COMMON_LIBRARIES ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES}  ${VRPN_LIBRARIES} ${M_LIB})
+	set(COMMON_LIBRARIES ${VRPN_LIBRARIES} "${COMMON_LIBRARIES}")
 endif()
-
+if(LIBOVR_FOUND)
+	set(COMMON_LIBRARIES ${LibOVR_LIBRARIES} "${COMMON_LIBRARIES}")
+endif()
 
 # make compilation rule for all programs that need ASSIMP and ImageMagick
 if(ASSIMP_FOUND AND ImageMagick_FOUND)

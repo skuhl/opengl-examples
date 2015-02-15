@@ -26,5 +26,3 @@ find_package_handle_standard_args(VRPN DEFAULT_MSG
     VRPN_INCLUDE_DIRS VRPN_INCLUDE_VRPN VRPN_INCLUDE_QUAT
 )
 endif()
-
-mark_as_advanced( VRPN_FOUND )
