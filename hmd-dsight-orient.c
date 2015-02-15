@@ -30,15 +30,13 @@ static void writeSafe(const int fd, const unsigned char* buf, size_t numBytes)
 	while (numBytes > 0)
 	{
 		ssize_t result = write(fd, buf, numBytes);
-		if (result == -1)
+		if(result < 0)
 		{
-			if (errno == EAGAIN)
-			{
-				continue;
-			}
-			fprintf(stderr, "%s:%d: writeSafe failed, errno = %d\n", __FILE__, __LINE__, errno);
+			fprintf(stderr, "%s:%d: ", __FILE__, __LINE__);
+			perror("write:");
 			exit(EXIT_FAILURE);
 		}
+		// write() wrote none, some, or all of the bytes we wanted to write.
 		buf += result;
 		numBytes -= (size_t)result;
 	}
@@ -56,15 +54,18 @@ static void readSafe(int fd, unsigned char* buf, size_t numBytes)
 	while (numBytes > 0)
 	{
 		ssize_t result = read(fd, buf, numBytes);
-		if (result == -1)
+		if(result == 0)
 		{
-			if (errno == EAGAIN)
-			{
-				continue;
-			}
-			fprintf(stderr, "%s:%d: readSafe failed, errno = %d\n", __FILE__, __LINE__, errno);
-			exit(1);
+			fprintf(stderr, "%s:%d: readSafe reached end of file(?!)\n", __FILE__, __LINE__);
+			exit(EXIT_FAILURE);
 		}
+		else if(result < 0)
+		{
+			fprintf(stderr, "%s:%d: ", __FILE__, __LINE__);
+			perror("read:");
+			exit(EXIT_FAILURE);
+		}
+		// read() either read all or some of the bytes we wanted to read.
 		buf += result;
 		numBytes -= (size_t)result;
 	}
