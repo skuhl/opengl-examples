@@ -4,8 +4,12 @@
  */
 
 /** @file
-* @author Evan Hauck
-*/
+ *
+ * This file provides a way to interact with the YEI orientation
+ * sensor that use used by the Sensics dSight HMD.
+ *
+ * @author Evan Hauck
+ */
 
 #include "hmd-dsight-orient.h"
 #include <unistd.h>
@@ -32,7 +36,7 @@ static void writeSafe(const int fd, const unsigned char* buf, size_t numBytes)
 			{
 				continue;
 			}
-			fprintf(stderr, "writeSafe failed, errno = %d\n", errno);
+			fprintf(stderr, "%s:%d: writeSafe failed, errno = %d\n", __FILE__, __LINE__, errno);
 			exit(EXIT_FAILURE);
 		}
 		buf += result;
@@ -58,7 +62,7 @@ static void readSafe(int fd, unsigned char* buf, size_t numBytes)
 			{
 				continue;
 			}
-			fprintf(stderr, "readSafe failed, errno = %d\n", errno);
+			fprintf(stderr, "%s:%d: readSafe failed, errno = %d\n", __FILE__, __LINE__, errno);
 			exit(1);
 		}
 		buf += result;
@@ -93,7 +97,7 @@ HmdControlState initHmdControl(const char* deviceFile)
 	result.fd = open(deviceFile, O_RDWR | O_NOCTTY);
 	if (result.fd == -1)
 	{
-		fprintf(stderr, "Could not open %s for HMD rotation sensor driver\n", deviceFile);
+		fprintf(stderr, "%s:%d: Could not open %s for HMD rotation sensor driver\n", __FILE__, __LINE__, deviceFile);
 		exit(EXIT_FAILURE);
 	}
 	return result;
