@@ -19,7 +19,7 @@
 #include <fcntl.h>
 
 /**
-   Reliably write bytes to a file descriptor.
+   Reliably write bytes to a file descriptor. Exits on failure.
 
    @param fd File descriptor to write to.
    @param buf Buffer containing bytes to write.
@@ -43,7 +43,7 @@ static void writeSafe(const int fd, const unsigned char* buf, size_t numBytes)
 }
 
 /**
-   Reliably read bytes from a file descriptor.
+   Reliably read bytes from a file descriptor. Exits on failure.
 
    @param fd File descriptor to read from.
    @param buf Buffer containing bytes to read.
@@ -92,6 +92,10 @@ static void swapEndianessFloat(float* data, const int n)
 	}
 }
 
+/** Opens a connection to the orientation sensor in the dSight HMD.
+
+    @param deviceFile The serial device to communicate with. For example, /dev/ttyACM0
+*/
 HmdControlState initHmdControl(const char* deviceFile)
 {
 	HmdControlState result;
@@ -104,9 +108,16 @@ HmdControlState initHmdControl(const char* deviceFile)
 	return result;
 }
 
+
 // http://stackoverflow.com/questions/2100331
 #define IS_BIG_ENDIAN (!*(unsigned char *)&(unsigned short){1})
 
+
+/** Retrieve the latest orientation from the dSight HMD.
+
+    @param state A HmdControlState struct created by initHmdControl()
+    @param The resulting quaternion.
+*/
 void updateHmdControl(HmdControlState *state, float quaternion[4])
 {
 	const unsigned char writeData[3] = { 0xf7, 0x00, 0x00 };
