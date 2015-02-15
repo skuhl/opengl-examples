@@ -39,5 +39,6 @@ fi
 PATH=.:$PATH
 
 export VIEWMAT_MODE="hmd"
+export VIEWMAT_HMD_FILE="/dev/ttyACM0"
 "${@}"
 

@@ -17,7 +17,7 @@
 #include "vecmat.h"
 #include "mousemove.h"
 #include "vrpn-help.h"
-#include "hmdcontrol.h"
+#include "hmd-dsight-orient.h"
 #include "dgr.h"
 
 

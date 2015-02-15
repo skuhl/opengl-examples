@@ -7,7 +7,7 @@
 * @author Evan Hauck
 */
 
-#include "hmdcontrol.h"
+#include "hmd-dsight-orient.h"
 #include <unistd.h>
 #include <errno.h>
 #include <stdio.h>

@@ -7,8 +7,8 @@
 * @author Evan Hauck
 */
 
-#ifndef __HMDCONTROL_H__
-#define __HMDCONTROL_H__
+#ifndef __HMDDSIGHTORIENT_H__
+#define __HMDDSIGHTORIENT_H__
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,4 +24,4 @@ void updateHmdControl(HmdControlState *state, float quaternion[4]);
 #ifdef __cplusplus
 } // end extern "C"
 #endif
-#endif // __HMDCONTROL_H__
+#endif // __HMDDSIGHTORIENT_H__
