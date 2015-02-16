@@ -184,30 +184,37 @@ find_package(Threads)
 
 
 # --- LibOVR (Oculus Rift) ---
-set(CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/LibOVR/Lib" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/LibOVR/Include" ${CMAKE_INCLUDE_PATH})
-find_package(LibOVR)
-if(LIBOVR_FOUND)
-	include_directories(${LibOVR_INCLUDE_DIRS})
-	set(MISSING_LibOVR_DEFINITION "")
+set(OVR_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR")
+set(CMAKE_LIBRARY_PATH "${OVR_DIR}/Lib/Linux/Release/x86_64" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "${OVR_DIR}/Include" ${CMAKE_INCLUDE_PATH})
+set(CMAKE_INCLUDE_PATH "${OVR_DIR}/Src" ${CMAKE_INCLUDE_PATH})
+find_package(OVR)
+if(OVR_FOUND)
+	include_directories(${OVR_INCLUDE_DIRS})
+	set(MISSING_OVR_DEFINITION "")
 else()
-	set(MISSING_LibOVR_DEFINITION "MISSING_LibOVR")
+	set(MISSING_OVR_DEFINITION "MISSING_LibOVR")
 endif()
 
 
 # Collect libraries that all programs use together into one cmake variable
-set(COMMON_LIBRARIES ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES}  ${M_LIB})
-if(VRPN_FOUND)
-	set(COMMON_LIBRARIES ${VRPN_LIBRARIES} "${COMMON_LIBRARIES}")
+set(COMMON_LIBRARIES ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} ${M_LIB})
+if(VRPN_FOUND)  # Add VRPN to the list if it is available
+	set(COMMON_LIBRARIES ${COMMON_LIBRARIES} ${VRPN_LIBRARIES})
 endif()
-if(LIBOVR_FOUND)
-	set(COMMON_LIBRARIES ${LibOVR_LIBRARIES} "${COMMON_LIBRARIES}")
+if(OVR_FOUND) # Add Oculus LibOVR to the list if it is available
+	set(COMMON_LIBRARIES ${COMMON_LIBRARIES} ${OVR_LIBRARIES})
 endif()
 
 # make compilation rule for all programs that need ASSIMP and ImageMagick
 if(ASSIMP_FOUND AND ImageMagick_FOUND)
 	foreach(arg ${NEED_ASSIMP_AND_IM})
-		add_executable(${arg} ${arg}.c  kuhl-util.c vecmat.c dgr.c mousemove.c hmd-dsight-orient.c projmat.c viewmat.c vrpn-help.cpp imageio.c)
+		if(EXISTS ${arg}.cpp)   # Figure out if the program is a c or cpp file
+			set(SOURCE_FILE ${arg}.cpp)
+		else()
+			set(SOURCE_FILE ${arg}.c)
+		endif()
+		add_executable(${arg} ${SOURCE_FILE} kuhl-util.c vecmat.c dgr.c mousemove.c hmd-dsight-orient.c projmat.c viewmat.c vrpn-help.cpp imageio.c)
 		target_link_libraries(${arg} ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES})
 		set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_ASSIMP;KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
 	endforeach()
@@ -223,7 +230,12 @@ endif()
 # Make compilation rule for all programs that only need ImageMagick
 if(ImageMagick_FOUND)
 	foreach(arg ${NEED_IM})
-		add_executable(${arg} ${arg}.c kuhl-util.c vecmat.c dgr.c mousemove.c hmd-dsight-orient.c projmat.c viewmat.c vrpn-help.cpp imageio.c)
+		if(EXISTS ${arg}.cpp)   # Figure out if the program is a c or cpp file
+			set(SOURCE_FILE ${arg}.cpp)
+		else()
+			set(SOURCE_FILE ${arg}.c)
+		endif()
+		add_executable(${arg} ${SOURCE_FILE} kuhl-util.c vecmat.c dgr.c mousemove.c hmd-dsight-orient.c projmat.c viewmat.c vrpn-help.cpp imageio.c)
 		target_link_libraries(${arg} ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ImageMagick_LIBRARIES})
 		set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
 	endforeach()
@@ -233,7 +245,12 @@ endif()
 
 # Make compilation rule for all programs that don't need ImageMagick or ASSIMIP
 foreach(arg ${NEED_NOTHING})
-	add_executable(${arg} ${arg}.c kuhl-util.c vecmat.c dgr.c mousemove.c hmd-dsight-orient.c projmat.c viewmat.c vrpn-help.cpp)
+	if(EXISTS ${arg}.cpp)   # Figure out if the program is a c or cpp file
+		set(SOURCE_FILE ${arg}.cpp)
+	else()
+		set(SOURCE_FILE ${arg}.c)
+	endif()
+	add_executable(${arg} ${SOURCE_FILE} kuhl-util.c vecmat.c dgr.c mousemove.c hmd-dsight-orient.c projmat.c viewmat.c vrpn-help.cpp)
 	target_link_libraries(${arg} ${COMMON_LIBRARIES} ${GLUT_LIBRARIES})
 	set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
 endforeach()
