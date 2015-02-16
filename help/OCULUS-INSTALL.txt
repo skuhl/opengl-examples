@@ -1,0 +1,21 @@
+Linux support for Oculus Rift is still considered experimental, and must be
+compiled from source. You will need to be on a computer that you have root
+access to.
+ 
+Installation:
+1. Download the Linux Oculus SDK from https://developer.oculus.com/downloads/
+2. Extract the contents using "tar -xf ovr_sdk_linux*.tar.xz"
+3. Run "sudo ./ConfigureDebian.sh"
+4. Run "make"
+
+NOTE: Before using any applications that require an Oculus Rift, you MUST run
+      the Oculus Rift daemon (oculusd). 
+      To do so, run "./oculusd"
+
+Oculus Configuration:
+1. Make sure oculusd is running.
+2. Run "cd ConfigUtil"
+3. Run "./RiftConfigUtil"
+4. If it gives an error message, you may need to modify permissions of the 
+   Resources directory and its contents before being able to run the utility.
+
