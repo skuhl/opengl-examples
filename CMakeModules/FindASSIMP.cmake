@@ -16,4 +16,3 @@ find_package_handle_standard_args(ASSIMP DEFAULT_MSG
 )
 endif()
 
-mark_as_advanced( ASSIMP_FOUND )
