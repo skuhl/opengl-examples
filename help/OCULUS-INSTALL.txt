@@ -4,7 +4,7 @@ access to.
  
 Installation:
 1. Download the Linux Oculus SDK from https://developer.oculus.com/downloads/
-2. Extract the contents.
+2. Extract the contents using "tar -xf ovr_sdk_linux*.tar.xz"
 3. Run "sudo ./ConfigureDebian.sh"
 4. Run "make"
 
