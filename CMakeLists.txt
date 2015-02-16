@@ -182,33 +182,35 @@ find_package(Threads)
 #message("Last attempt to find pthreads: " ${CMAKE_THREAD_LIBS_INIT})
 #endif()
 
-
 # --- LibOVR (Oculus Rift) ---
-set(CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/LibOVR/Lib" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/LibOVR/Include" ${CMAKE_INCLUDE_PATH})
-message(${CMAKE_INCLUDE_PATH})
+set(LIBOVR_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR")
+message(${LIBOVR_DIR})
+set(CMAKE_LIBRARY_PATH "${LIBOVR_DIR}/Lib/Linux/Release/x86_64" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "${LIBOVR_DIR}/Include" ${CMAKE_INCLUDE_PATH})
+set(CMAKE_INCLUDE_PATH "${LIBOVR_DIR}/Src" ${CMAKE_INCLUDE_PATH})
+#set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/LibOVR/Src/Kernel" ${CMAKE_INCLUDE_PATH})
+#set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/LibOVR/Src/Util" ${CMAKE_INCLUDE_PATH})
 find_package(LibOVR)
-if(LibOVR_FOUND)
-	message(${LibOVR_INCLUDE_DIRS})
+if(LIBOVR_FOUND)
 	include_directories(${LibOVR_INCLUDE_DIRS})
 	set(MISSING_LibOVR_DEFINITION "")
 else()
 	set(MISSING_LibOVR_DEFINITION "MISSING_LibOVR")
 endif()
-
+set(OVR_LIB_PATH "-L${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR/Lib/Linux/Release/x86_64 -lovr -ludev -lpthread -lGL -lX11 -lXrandr -lrt")
 
 # Collect libraries that all programs use together into one cmake variable
-set(COMMON_LIBRARIES ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES}  ${M_LIB})
+set(COMMON_LIBRARIES ${CMAKE_THREAD_LIBS_INIT} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} ${M_LIB})
 if(VRPN_FOUND)
-	set(COMMON_LIBRARIES ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES}  ${VRPN_LIBRARIES} ${M_LIB})
+	set(COMMON_LIBRARIES ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} ${VRPN_LIBRARIES} ${M_LIB})
 endif()
 
 
 # make compilation rule for all programs that need ASSIMP and ImageMagick
 if(ASSIMP_FOUND AND ImageMagick_FOUND)
 	foreach(arg ${NEED_ASSIMP_AND_IM})
-		add_executable(${arg} ${arg}.cpp  kuhl-util.c vecmat.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp imageio.c)
-		target_link_libraries(${arg} ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES} ${LibOVR_LIBRARIES})
+		add_executable(${arg} ${arg}.cpp kuhl-util.c vecmat.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp imageio.c)
+		target_link_libraries(${arg} ${OVR_LIB_PATH} ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES})
 		set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_ASSIMP;KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION}")
 	endforeach()
 else()

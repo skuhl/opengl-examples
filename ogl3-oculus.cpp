@@ -21,6 +21,85 @@
 #include "viewmat.h"
 
 #include "OVR.h"
+#include "Kernel/OVR_Types.h"
+#include "OVR_CAPI.h"
+#include "OVR_CAPI_GL.h"
+#include "Kernel/OVR_Math.h"
+
+ovrHmd hmd;
+ovrHmdDesc l_HmdDesc;
+ovrEyeRenderDesc eyeRenderDesc[2];
+ovrRecti eyeRenderViewport[2];
+ovrGLTexture eyeTexture[2];
+int windowWidth = 1920;
+int windowHeight = 1080;
+double LastUpdate = 0;
+double LastFpsUpdate = 0;
+float FPS = 0;
+float SecondsPerFrame = 0;
+long int FrameCounter = 0;
+long int TotalFrameCounter = 0;
+GLuint frameBuffer=0;
+GLuint texture;
+
+void init1() {
+    ovr_Initialize();
+    hmd = ovrHmd_Create(0);
+
+    if (!hmd)
+    {
+        hmd = ovrHmd_CreateDebug(ovrHmd_DK2);
+    }
+
+    OVR::Sizei resolution = hmd->Resolution;
+    printf("Resolution = %d, %d\n", resolution.w, resolution.h);
+    windowWidth = resolution.w;
+    windowHeight = resolution.h;
+}
+void init2() {
+	printf("1");
+    OVR::Sizei recommendedTex0Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left, hmd->DefaultEyeFov[0], 1.0f);
+    OVR::Sizei recommendedTex1Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right, hmd->DefaultEyeFov[1], 1.0f);
+    OVR::Sizei renderTargetSize;
+    renderTargetSize.w = recommendedTex0Size.w + recommendedTex1Size.w;
+    renderTargetSize.h = (recommendedTex0Size.h>recommendedTex1Size.h?recommendedTex0Size.h:recommendedTex1Size.h);
+    
+	printf("2");
+	kuhl_gen_framebuffer(renderTargetSize.w, renderTargetSize.h, &texture, NULL);
+
+	printf("3");
+    ovrFovPort eyeFov[2] = { hmd->DefaultEyeFov[0], hmd->DefaultEyeFov[1] };
+
+	printf("4");
+    eyeRenderViewport[0].Pos = OVR::Vector2i(0, 0);
+    eyeRenderViewport[0].Size = OVR::Sizei(renderTargetSize.w / 2, renderTargetSize.h);
+    eyeRenderViewport[1].Pos = OVR::Vector2i((renderTargetSize.w + 1) / 2, 0);
+    eyeRenderViewport[1].Size = eyeRenderViewport[0].Size;
+
+	printf("5");
+    eyeTexture[0].OGL.Header.API = ovrRenderAPI_OpenGL;
+    eyeTexture[0].OGL.Header.TextureSize = renderTargetSize;
+    eyeTexture[0].OGL.Header.RenderViewport = eyeRenderViewport[0];
+    eyeTexture[0].OGL.TexId = texture;
+
+	printf("6");
+    eyeTexture[1] = eyeTexture[0];
+    eyeTexture[1].OGL.Header.RenderViewport = eyeRenderViewport[1];
+
+	printf("7");
+    ovrGLConfig cfg;
+    cfg.OGL.Header.API = ovrRenderAPI_OpenGL;
+    cfg.OGL.Header.BackBufferSize = OVR::Sizei(hmd->Resolution.w, hmd->Resolution.h);
+    cfg.OGL.Header.Multisample = 1;
+
+	printf("8");
+
+    ovrHmd_ConfigureRendering(hmd, &cfg.Config, ovrDistortionCap_Chromatic | ovrDistortionCap_Vignette | ovrDistortionCap_TimeWarp | ovrDistortionCap_Overdrive, eyeFov, eyeRenderDesc);
+	printf("9");
+    ovrHmd_SetEnabledCaps(hmd, ovrHmdCap_LowPersistence | ovrHmdCap_DynamicPrediction);
+    ovrHmd_ConfigureTracking(hmd, ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection | ovrTrackingCap_Position, 0);
+	printf("10");
+}
 
 GLuint fpsLabel = 0;
 float fpsLabelAspectRatio = 0;
@@ -50,7 +129,6 @@ GLuint scene_list = 0; // display list for model
 char *modelFilename = NULL;
 char *modelTexturePath = NULL;
 int renderStyle = 0;
-
 
 #define GLSL_VERT_FILE "ogl3-assimp.vert"
 #define GLSL_FRAG_FILE "ogl3-assimp.frag"
@@ -239,6 +317,176 @@ void get_model_matrix(float result[16])
 
 static int framesTillFpsUpdate = 0;
 
+void ovrDisplay() {
+		dgr_update();
+
+	/* Get current frames per second calculations. */
+	int time = glutGet(GLUT_ELAPSED_TIME);
+	float fps = kuhl_getfps(time);
+
+	if(framesTillFpsUpdate == 0)
+	{
+		framesTillFpsUpdate = 30;
+		char label[1024];
+		snprintf(label, 1024, "FPS: %0.1f", fps);
+		
+		/* Delete old label if it exists */
+		if(fpsLabel != 0) 
+			glDeleteTextures(1, &fpsLabel);
+
+		/* Make a new label */
+		float labelColor[3] = { 1,1,1 };
+		float labelBg[4] = { 0,0,0,.3 };
+		fpsLabelAspectRatio = kuhl_make_label(label,
+		                                      &fpsLabel,
+		                                      labelColor, labelBg, 128);
+		kuhl_geometry_texture(&labelQuad, fpsLabel, "tex", 1);
+	}
+	framesTillFpsUpdate--;
+
+	/* Ensure the slaves use the same render style as the master
+	 * process. */
+	dgr_setget("style", &renderStyle, sizeof(int));
+
+	// Clear the screen to black, clear the depth buffer
+	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST); // turn on depth testing
+	kuhl_errorcheck();
+
+	/* Turn on blending (note, if you are using transparent textures,
+	   the transparency may not look correct unless you draw further
+	   items before closer items.). */
+	glEnable(GL_BLEND);
+	glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+	
+	
+	// Oculus start
+	//ovrFrameTiming hmdFrameTiming = ovrHmd_BeginFrame(hmd, 0);
+	//pRender->SetRenderTarget ( pRendertargetTexture );
+	//pRender->Clear();
+	//ovrPosef headPose[2];
+	
+	for (int eyeIndex = 0; eyeIndex < ovrEye_Count; eyeIndex++)
+	{
+		//ovrEyeType eye = hmd->EyeRenderOrder[eyeIndex];
+		//headPose[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
+		
+		//OVR::Quatf orientation = OVR::Quatf(headPose[eye].Orientation);
+		//OVR::Matrix4f proj = ovrMatrix4f_Projection(EyeRenderDesc[eye].Fov, 0.01f, 10000.0f, true);
+		// * Test code *
+		// Assign quaternion result directly to view (translation is ignored).
+		//OVR::Matrix4f view = OVR::Matrix4f(orientation.Inverted());// * OVR::Matrix4f::Translation(-WorldEyePos);
+		
+		//pRender->SetViewport(EyeRenderViewport[eye]);
+		//pRender->SetProjection(proj);
+		//pRoomScene->Render(pRender, 
+		//	Matrix4f::Translation(EyeRenderDesc[eye].HmdToEyeViewOffset) * view);
+		
+		/* Where is the viewport that we are drawing onto and what is its size? */
+				
+		int viewport[4]; // x,y of lower left corner, width, height
+		viewmat_get_viewport(viewport, eyeIndex);
+		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+
+		/* Get the frustum information which will be later used to generate a perspective projection matrix. */
+		float f[6]; // left, right, top, bottom, near>0, far>0
+		projmat_get_frustum(f, viewport[2], viewport[3]);
+	    
+		/* Get the view or camera matrix; update the frustum values if needed. */
+		float viewMat[16];/* ={view.M[0][0], view.M[0][1], view.M[0][2], view.M[0][3],
+							view.M[1][0], view.M[1][1], view.M[1][2], view.M[1][3],
+							view.M[2][0], view.M[2][1], view.M[2][2], view.M[2][3],
+							view.M[3][0], view.M[3][1], view.M[3][2], view.M[3][3]};*/
+		viewmat_get(viewMat, f, eyeIndex);
+
+		glUseProgram(program);
+		/* Communicate matricies to OpenGL */
+		float perspective[16];
+		mat4f_frustum_new(perspective,f[0], f[1], f[2], f[3], f[4], f[5]);
+		glUniformMatrix4fv(kuhl_get_uniform("Projection"),
+		                   1, // count
+		                   0, // transpose
+		                   perspective); // value
+		float modelMat[16];
+		get_model_matrix(modelMat);
+		
+		// modelview = view * model
+		float modelview[16];
+		mat4f_mult_mat4f_new(modelview, viewMat, modelMat);
+
+		glUniformMatrix4fv(kuhl_get_uniform("ModelView"),
+		                   1, // count
+		                   0, // transpose
+		                   modelview); // value
+
+		glUniform1i(kuhl_get_uniform("renderStyle"), renderStyle);
+		// Copy far plane value into vertex program so we can render depth buffer.
+		glUniform1f(kuhl_get_uniform("farPlane"), f[5]);
+		
+		kuhl_errorcheck();
+		kuhl_geometry_draw(modelgeom); /* Draw the model */
+		kuhl_errorcheck();
+
+		/* The shape of the frames per second quad depends on the
+		 * aspect ratio of the label texture and the aspect ratio of
+		 * the window (because we are placing the quad in normalized
+		 * device coordinates). */
+		float windowAspect  = glutGet(GLUT_WINDOW_WIDTH) /(float) glutGet(GLUT_WINDOW_HEIGHT);
+		float stretchLabel[16];
+		mat4f_scale_new(stretchLabel, 1/8.0 * fpsLabelAspectRatio / windowAspect, 1/8.0, 1);
+
+		/* Position label in the upper left corner of the screen */
+		float transLabel[16];
+		mat4f_translate_new(transLabel, -.9, .8, 0);
+		mat4f_mult_mat4f_new(modelview, transLabel, stretchLabel);
+		glUniformMatrix4fv(kuhl_get_uniform("ModelView"), 1, 0, modelview);
+
+		/* Make sure we don't use a projection matrix */
+		float identity[16];
+		mat4f_identity(identity);
+		glUniformMatrix4fv(kuhl_get_uniform("Projection"), 1, 0, identity);
+
+		/* Don't use depth testing and make sure we use the texture
+		 * rendering style */
+		glDisable(GL_DEPTH_TEST);
+		glUniform1i(kuhl_get_uniform("renderStyle"), 1);
+		kuhl_geometry_draw(&labelQuad); /* Draw the quad */
+		glEnable(GL_DEPTH_TEST);
+		kuhl_errorcheck();
+		
+		glUseProgram(0); // stop using a GLSL program.
+
+	}
+	
+	/* Update the model for the next frame based on the time. We
+	 * convert the time to seconds and then use mod to cause the
+	 * animation to repeat. */
+	dgr_setget("time", &time, sizeof(int));
+	kuhl_update_model(modelgeom, 0, ((time%10000)/1000.0));
+
+	
+	/* Check for errors. If there are errors, consider adding more
+	 * calls to kuhl_errorcheck() in your code. */
+	kuhl_errorcheck();
+
+	glFlush();
+	glFinish();
+	
+	/* Display the buffer we just drew (necessary for double buffering). */
+	glutSwapBuffers();
+
+	// kuhl_video_record("videoout", 30);
+	
+	/* Ask GLUT to call display() again. We shouldn't call display()
+	 * ourselves recursively because it will not leave time for GLUT
+	 * to call other callback functions for when a key is pressed, the
+	 * window is resized, etc. */
+	glutPostRedisplay();
+	
+	// Let OVR do distortion rendering, Present and flush/sync.
+	//ovrHmd_EndFrame(hmd, headPose, EyeTextures);
+}
 void display()
 {
 	dgr_update();
@@ -446,10 +694,12 @@ int main(int argc, char** argv)
 		       "%s modelFile texturePath\n", argv[0], argv[0]);
 		exit(1);
 	}
-
+	
+	init1();
+	
 	/* set up our GLUT window */
 	glutInit(&argc, argv);
-	glutInitWindowSize(512, 512);
+	glutInitWindowSize(windowWidth, windowHeight);
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
 #ifdef __APPLE__
@@ -470,6 +720,7 @@ int main(int argc, char** argv)
 		fprintf(stderr, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
 		exit(EXIT_FAILURE);
 	}
+	
 	/* When experimental features are turned on in GLEW, the first
 	 * call to glGetError() or kuhl_errorcheck() may incorrectly
 	 * report an error. So, we call glGetError() to ensure that a
@@ -503,6 +754,8 @@ int main(int argc, char** argv)
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
 	init_geometryQuad(&labelQuad, program);
 	
+	init2();
+	
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */
 	glutMainLoop();
@@ -510,6 +763,9 @@ int main(int argc, char** argv)
     while(1)
        glutMainLoopEvent();
     */
-
+	
+	ovrHmd_Destroy(hmd);
+	ovr_Shutdown();
+	
 	exit(EXIT_SUCCESS);
 }
