@@ -21,11 +21,7 @@
 #include "viewmat.h"
 
 #include "OVR.h"
-#include "Kernel/OVR_Types.h"
-#include "OVR_CAPI.h"
 #include "OVR_CAPI_GL.h"
-#include "Kernel/OVR_Math.h"
-
 ovrHmd hmd;
 ovrHmdDesc l_HmdDesc;
 ovrEyeRenderDesc eyeRenderDesc[2];
