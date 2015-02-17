@@ -1,7 +1,9 @@
 ASSIMP 3.0 is available in the Ubuntu 14.04 package manager as well as
 homebrew for OSX. It is sufficient for most purposes. If you are
 trying to use ASSIMP for the first time, I recommend that you try this
-easy option before trying to download and compile the latest version.
+easy option before trying to download and compile the latest
+version. On many systems, you will need to install both the library
+and the associated headers (for example libassimp3 and libassimp-dev).
 
 If you are encountering problems are loading lots of 3D models,
 getting the latest version (3.1.1, at the current time of writing) may
