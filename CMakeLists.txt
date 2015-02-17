@@ -184,10 +184,15 @@ find_package(Threads)
 
 
 # --- LibOVR (Oculus Rift) ---
-set(OVR_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR")
-set(CMAKE_LIBRARY_PATH "${OVR_DIR}/Lib/Linux/Release/x86_64" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "${OVR_DIR}/Include" ${CMAKE_INCLUDE_PATH})
-set(CMAKE_INCLUDE_PATH "${OVR_DIR}/Src" ${CMAKE_INCLUDE_PATH})
+# Rekhi Linux lab
+set(CMAKE_LIBRARY_PATH "/home/campus11/kuhl/public-cs4611/ovr_sdk_linux_0.4.4/LibOVR/Lib/Linux/Release/x86_64" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "/home/campus11/kuhl/public-cs4611/ovr_sdk_linux_0.4.4/LibOVR/Include" ${CMAKE_INCLUDE_PATH})
+set(CMAKE_INCLUDE_PATH "/home/campus11/kuhl/public-cs4611/ovr_sdk_linux_0.4.4/LibOVR/Src" ${CMAKE_INCLUDE_PATH})
+# Installed in this directory's parent directory
+set(CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR/Lib/Linux/Release/x86_64" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR/Include" ${CMAKE_INCLUDE_PATH})
+set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR/Src" ${CMAKE_INCLUDE_PATH})
+
 find_package(OVR)
 if(OVR_FOUND)
 	include_directories(${OVR_INCLUDE_DIRS})
