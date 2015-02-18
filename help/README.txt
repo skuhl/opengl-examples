@@ -111,7 +111,7 @@ VRPN (optional, necessary to communicate with a VRPN tracking system server)
 
 LibOVR (optional, necessary to run this code with the Oculus HMD)
  - For a guide to install LibOVR, see OCULUS-INSTALL.txt
-
+ - License: https://developer.oculus.com/licenses/  (exact license depends on SDK version)
 
 ===
 === Compilation system

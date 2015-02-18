@@ -2,20 +2,33 @@ Linux support for Oculus Rift is still considered experimental, and must be
 compiled from source. You will need to be on a computer that you have root
 access to.
  
-Installation:
+=== Installation ===
 1. Download the Linux Oculus SDK from https://developer.oculus.com/downloads/
 2. Extract the contents using "tar -xf ovr_sdk_linux*.tar.xz"
-3. Run "sudo ./ConfigureDebian.sh"
-4. Run "make"
+3. If you are on a Debian or Ubuntu machine, run "sudo ./ConfigureDebian.sh"
 
-NOTE: Before using any applications that require an Oculus Rift, you MUST run
-      the Oculus Rift daemon (oculusd). 
-      To do so, run "./oculusd"
+    If you are not on a Debian/Ubuntu machine, you can open the script
+    in a text editor and note the packages that it installs via
+    apt-get. You may need to install similar packages on your system
+    to get the library to compile. You may also need administrator
+    access to install a udev-related file onto your system.
 
-Oculus Configuration:
+4. Run "make". On at least one computer, I had to remove -Werror from
+one or more makefiles to get the compiler. (The -Werror option tells
+the compiler to treat warnings the same way as it does error)
+
+5. Run "./oculusd" to start the Oculus daemon. If you want to run the
+script in the background, run "./oculusd -d". You can see if it is
+running by using the command "ps aux | grep oculusd".
+
+=== Running a sample program ===
+The Oculus driver comes with a sample program in the "Sample" folder. You can use that to confirm that LibOVR can successfully communicate with your HMD.
+
+=== Oculus Configuration ===
+You do not necessarily have to perform this step to use your HMD.
+
 1. Make sure oculusd is running.
 2. Run "cd ConfigUtil"
 3. Run "./RiftConfigUtil"
 4. If it gives an error message, you may need to modify permissions of the 
    Resources directory and its contents before being able to run the utility.
-
