@@ -355,13 +355,12 @@ static void viewmat_init_hmd_oculus()
 	glcfg.OGL.Header.Multisample = 1;
 	glcfg.OGL.Disp = glXGetCurrentDisplay();
 
-	if(hmd->HmdCaps & ovrHmdCap_ExtendDesktop) {
+#if 0
+	/* We have only tested the Oculus in Extended Desktop mode on Linux. */
+	if((hmd->HmdCaps & ovrHmdCap_ExtendDesktop)) {
+		/* Note: debug mode seems to cause this if-statement to put us in direct-hmd mode. */
 		printf("Oculus: Running in 'extended desktop' mode\n");
 	} else {
-		/* to sucessfully draw to the HMD display in "direct-hmd" mode, we have to
-		 * call ovrHmd_AttachToWindow
-		 * XXX: this doesn't work properly yet due to bugs in the oculus 0.4.1 sdk/driver
-		 */
 #ifdef WIN32
 		ovrHmd_AttachToWindow(hmd, glcfg.OGL.Window, 0, 0);
 #elif defined(OVR_OS_LINUX)
@@ -369,6 +368,7 @@ static void viewmat_init_hmd_oculus()
 #endif
 		printf("Oculus: running in 'direct-hmd' mode\n");
 	}
+#endif
 
 		/* enable low-persistence display and dynamic prediction for lattency compensation */
 	unsigned int hmd_caps = ovrHmdCap_LowPersistence | ovrHmdCap_DynamicPrediction;
