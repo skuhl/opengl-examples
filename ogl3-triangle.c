@@ -42,10 +42,6 @@ void keyboard(unsigned char key, int x, int y)
  * at some point. */
 void display()
 {
-	int time = glutGet(GLUT_ELAPSED_TIME);
-	float fps = kuhl_getfps(time);
-	printf("fps=%f\n", fps);
-	
 	/* If we are using DGR, send or receive data to keep multiple
 	 * processes/computers synchronized. */
 	dgr_update();

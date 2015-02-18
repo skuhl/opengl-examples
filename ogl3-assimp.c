@@ -466,7 +466,7 @@ int main(int argc, char** argv)
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 #endif
 	glutCreateWindow(argv[0]); // set window title to executable name
-//	glEnable(GL_MULTISAMPLE);
+	glEnable(GL_MULTISAMPLE);
 
 	/* Initialize GLEW */
 	glewExperimental = GL_TRUE;
