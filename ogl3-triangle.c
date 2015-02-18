@@ -42,6 +42,10 @@ void keyboard(unsigned char key, int x, int y)
  * at some point. */
 void display()
 {
+	int time = glutGet(GLUT_ELAPSED_TIME);
+	float fps = kuhl_getfps(time);
+	printf("fps=%f\n", fps);
+	
 	/* If we are using DGR, send or receive data to keep multiple
 	 * processes/computers synchronized. */
 	dgr_update();
@@ -124,9 +128,6 @@ void display()
 	/* Check for errors. If there are errors, consider adding more
 	 * calls to kuhl_errorcheck() in your code. */
 	kuhl_errorcheck();
-
-	/* Display the buffer we just drew (necessary for double buffering). */
-	glutSwapBuffers();
 
 	/* Ask GLUT to call display() again. We shouldn't call display()
 	 * ourselves recursively because it will not leave time for GLUT

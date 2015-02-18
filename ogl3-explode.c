@@ -350,9 +350,6 @@ void display()
 	 * calls to kuhl_errorcheck() in your code. */
 	kuhl_errorcheck();
 
-	/* Display the buffer we just drew (necessary for double buffering). */
-	glutSwapBuffers();
-
 	// kuhl_video_record("videoout", 30);
 	
 	/* Ask GLUT to call display() again. We shouldn't call display()

@@ -82,6 +82,10 @@ void viewmat_end_frame(void)
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		ovrHmd_EndFrame(hmd, pose, &EyeTexture[0].Texture);
 	}
+	else
+	{
+		glutSwapBuffers();
+	}
 }
 
 /** Changes the framebuffer (as needed) that OpenGL is rendering
@@ -349,10 +353,16 @@ static void viewmat_init_hmd_oculus()
 	/* configure SDK-rendering and enable chromatic abberation correction, vignetting, and
 	 * timewrap, which shifts the image before drawing to counter any lattency between the call
 	 * to ovrHmd_GetEyePose and ovrHmd_EndFrame.
+	 *
+	 * Chromatic - Chromatic aberration correction
+	 * TimeWarp  - Simulate rotation by moving image on screen if fps is low.
+	 * Overdrive - Overdrive brightness transitions to compensate for DK2 artifacts
+	 * Vignette  - Change brightness at edges of image
+	 *
+	 * See OVR_CAPI.h for additional options
 	 */
-	unsigned int distort_caps = ovrDistortionCap_Chromatic | ovrDistortionCap_TimeWarp |
-		ovrDistortionCap_Overdrive;
-
+	unsigned int distort_caps = ovrDistortionCap_Chromatic | ovrDistortionCap_TimeWarp | ovrDistortionCap_Overdrive | ovrDistortionCap_Vignette;
+	
 	if(!ovrHmd_ConfigureRendering(hmd, &glcfg.Config, distort_caps, hmd->DefaultEyeFov, eye_rdesc)) {
 		fprintf(stderr, "failed to configure distortion renderer\n");
 	}
@@ -472,10 +482,10 @@ static void viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
 void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 {
 	pose[viewportID] = ovrHmd_GetHmdPosePerEye(hmd, viewportID);
-	float transMat[16], rotMat[16];
-	mat4f_identity(transMat);
+	float offsetMat[16], rotMat[16];
+	mat4f_identity(offsetMat);
 	mat4f_identity(rotMat);
-	mat4f_translate_new(transMat,
+	mat4f_translate_new(offsetMat,
 	                    eye_rdesc[viewportID].HmdToEyeViewOffset.x,
 	                    eye_rdesc[viewportID].HmdToEyeViewOffset.y,
 	                    eye_rdesc[viewportID].HmdToEyeViewOffset.z);
@@ -484,8 +494,15 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 	                     pose[viewportID].Orientation.y,
 	                     pose[viewportID].Orientation.z,
 	                     pose[viewportID].Orientation.w);
-	mat4f_transpose(rotMat);
-	mat4f_mult_mat4f_new(viewmatrix, rotMat, transMat);
+	mat4f_transpose(rotMat); /* orientation sensor rotates camera, not world */
+
+	float initPosMat[16];
+	// Move world down so our eye is at a normal eyeheight
+	mat4f_translate_new(initPosMat, 0,-1.55,0);
+	
+	// viewmatrix = transmat * rotmat *  initposmat
+	mat4f_mult_mat4f_new(viewmatrix, offsetMat, rotMat);
+	mat4f_mult_mat4f_new(viewmatrix, viewmatrix, initPosMat);
 }
 
 

@@ -130,9 +130,6 @@ void display()
 	 * calls to kuhl_errorcheck() in your code. */
 	kuhl_errorcheck();
 
-	/* Display the buffer we just drew (necessary for double buffering). */
-	glutSwapBuffers();
-
 	/* Ask GLUT to call display() again. We shouldn't call display()
 	 * ourselves recursively because it will not leave time for GLUT
 	 * to call other callback functions for when a key is pressed, the

@@ -32,7 +32,7 @@ float bbox[6];
  * model and translate it so that we can see the entire model. This is
  * a useful setting to use when you are loading a new model that you
  * are unsure about the units and position of the model geometry. */
-#define FIT_TO_VIEW_AND_ROTATE 1
+#define FIT_TO_VIEW_AND_ROTATE 0
 /** The location in 3D space that we want the center of the bounding
  * box to be (if FIT_TO_VIEW_AND_ROTATE is set) or the location that
  * we should put the origin of the model */
@@ -386,9 +386,6 @@ void display()
 	 * calls to kuhl_errorcheck() in your code. */
 	kuhl_errorcheck();
 
-	/* Display the buffer we just drew (necessary for double buffering). */
-	glutSwapBuffers();
-
 	// kuhl_video_record("videoout", 30);
 	
 	/* Ask GLUT to call display() again. We shouldn't call display()
@@ -469,7 +466,7 @@ int main(int argc, char** argv)
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 #endif
 	glutCreateWindow(argv[0]); // set window title to executable name
-	glEnable(GL_MULTISAMPLE);
+//	glEnable(GL_MULTISAMPLE);
 
 	/* Initialize GLEW */
 	glewExperimental = GL_TRUE;
