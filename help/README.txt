@@ -47,6 +47,10 @@ Run code on the IVS display wall and account for the screen bezels (if you have 
 
     ./ivs3.sh ./ogl3-triangle
 
+Run the code using the Oculus HMD
+
+    ./oculus.sh ./ogl3-triangle
+
 
 ===
 === Libraries used by these programs
@@ -104,6 +108,9 @@ VRPN (optional, necessary to communicate with a VRPN tracking system server)
  - For a guide to install VRPN, see VRPN-INSTALL.txt
  - Homepage: http://www.cs.unc.edu/Research/vrpn/
  - License: http://www.cs.unc.edu/Research/vrpn/obtaining_vrpn.html
+
+LibOVR (optional, necessary to run this code with the Oculus HMD)
+ - For a guide to install LibOVR, see OCULUS-INSTALL.txt
 
 
 ===
