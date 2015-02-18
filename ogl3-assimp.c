@@ -32,11 +32,12 @@ float bbox[6];
  * model and translate it so that we can see the entire model. This is
  * a useful setting to use when you are loading a new model that you
  * are unsure about the units and position of the model geometry. */
-#define FIT_TO_VIEW_AND_ROTATE 0
-/** The location in 3D space that we want the center of the bounding
- * box to be (if FIT_TO_VIEW_AND_ROTATE is set) or the location that
- * we should put the origin of the model */
-float placeToPutModel[3] = { 0, 0, -1 };
+#define FIT_TO_VIEW_AND_ROTATE 1
+/** If FIT_TO_VIEW_AND_ROTATE is set, this is the place to put the
+ * center of the bottom face of the bounding box. If
+ * FIT_TO_VIEW_AND_ROTATE is not set, this is the location in world
+ * coordinates that we want to model's origin to appear at. */
+float placeToPutModel[3] = { 0, 0, 0 };
 /** SketchUp produces files that older versions of ASSIMP think 1 unit
  * is 1 inch. However, all of this software assumes that 1 unit is 1
  * meter. So, we need to convert some models from inches to
@@ -222,7 +223,9 @@ void get_model_matrix(float result[16])
 	}
 	
 	/* Get a matrix to scale+translate the model based on the bounding
-	 * box */
+	 * box. If the last parameter is 1, the bounding box will sit on
+	 * the XZ plane. If it is set to 0, the bounding box will be
+	 * centered at the specified point. */
 	float fitMatrix[16];
 	kuhl_bbox_fit(fitMatrix, bbox, 1);
 
@@ -495,7 +498,7 @@ int main(int argc, char** argv)
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
 
-	float initCamPos[3]  = {0,1,2}; // location of camera
+	float initCamPos[3]  = {0,1.55,2}; // 1.55m is a good approx eyeheight
 	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
 	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
 	viewmat_init(initCamPos, initCamLook, initCamUp);

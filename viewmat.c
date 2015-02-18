@@ -54,6 +54,7 @@ ovrGLTexture EyeTexture[2];
 ovrEyeRenderDesc eye_rdesc[2];
 ovrFrameTiming timing;
 ovrPosef pose[2];
+float oculus_initialPos[3];
 #endif
 
 
@@ -280,8 +281,11 @@ static void viewmat_init_hmd_dsight()
 	viewmat_hmd = initHmdControl(hmdDeviceFile);
 }
 
-
-static void viewmat_init_hmd_oculus()
+/** Initialize the Oculus HMD.
+ *
+ * @param pos The position that we want the Oculus HMD to start at.
+ */
+static void viewmat_init_hmd_oculus(float pos[3])
 {
 #ifdef MISSING_OVR
 	printf("Oculus support is missing: You have not compiled this code against the LibOVR library\n");
@@ -395,6 +399,8 @@ static void viewmat_init_hmd_oculus()
 	/* disable health and safety warning */
 	ovrhmd_EnableHSWDisplaySDKRender(hmd, 0);
 
+	vec3f_copy(oculus_initialPos, pos);
+	
 	// TODO: We are supposed to do these things when we are done:
 	//ovrHmd_Destroy(hmd);
 	//ovr_Shutdown();
@@ -429,7 +435,7 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	else if(strcasecmp(modeString, "oculus") == 0)
 	{
 		viewmat_mode = VIEWMAT_HMD_OCULUS;
-		viewmat_init_hmd_oculus();
+		viewmat_init_hmd_oculus(pos);
 		// TODO: Tracking options?
 		printf("viewmat: Using Oculus HMD head tracking mode.");
 	}
@@ -524,8 +530,12 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 	mat4f_transpose(rotMat); /* orientation sensor rotates camera, not world */
 
 	float initPosMat[16];
-	// Move world down so our eye is at a normal eyeheight
-	mat4f_translate_new(initPosMat, 0,-1.55,0);
+	// Move world down so our eye is at a normal eyeheight. Note: We
+	// need to move the world in the opposite direction to effectively
+	// move the camera to the position we want it at.
+	float negatePos[3];
+	vec3f_scalarMult_new(negatePos, oculus_initialPos, -1.0f);
+	mat4f_translateVec_new(initPosMat, negatePos);
 	
 	// viewmatrix = transmat * rotmat *  initposmat
 	mat4f_mult_mat4f_new(viewmatrix, offsetMat, rotMat);
