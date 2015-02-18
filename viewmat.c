@@ -24,6 +24,8 @@
 #include "viewmat.h"
 #include "projmat.h"
 
+
+#ifndef MISSING_OVR
 #include <GL/glx.h>
 #define OVR_OS_LINUX
 /* LibOVR defines a static_assert macro that produces a compiler
@@ -36,6 +38,16 @@
  * declared in the headers, we need to declare it here to avoid
  * compiler warnings about implicit declarations. */
 OVR_EXPORT void ovrhmd_EnableHSWDisplaySDKRender(ovrHmd hmd, ovrBool enable);
+
+ovrHmd hmd;
+GLuint leftTexture,rightTexture;
+GLint leftFramebuffer, rightFramebuffer;
+ovrGLTexture EyeTexture[2];
+ovrEyeRenderDesc eye_rdesc[2];
+ovrFrameTiming timing;
+ovrPosef pose[2];
+#endif
+
 
 
 /** The different modes that viewmat works with. */
@@ -57,19 +69,13 @@ static const char *viewmat_vrpn_obj; /**< Name of the VRPN object that we are tr
 static HmdControlState viewmat_hmd;
 
 
-ovrHmd hmd;
-GLuint leftTexture,rightTexture;
-GLint leftFramebuffer, rightFramebuffer;
-ovrGLTexture EyeTexture[2];
-ovrEyeRenderDesc eye_rdesc[2];
-ovrFrameTiming timing;
-ovrPosef pose[2];
-
 /** Should be called prior to rendering a frame. */
 void viewmat_begin_frame(void)
 {
+#ifndef MISSING_OVR
 	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
 		timing = ovrHmd_BeginFrame(hmd, 0);
+#endif
 }
 
 /** Should be called when we have completed rendering a frame. For
@@ -80,7 +86,9 @@ void viewmat_end_frame(void)
 	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#ifndef MISSING_OVR
 		ovrHmd_EndFrame(hmd, pose, &EyeTexture[0].Texture);
+#endif
 	}
 	else
 	{
@@ -103,6 +111,7 @@ void viewmat_end_frame(void)
  */
 void viewmat_begin_eye(int viewportID)
 {
+#ifndef MISSING_OVR
 	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
 	{
 		if(viewportID == 0)
@@ -116,6 +125,7 @@ void viewmat_begin_eye(int viewportID)
 			exit(EXIT_FAILURE);
 		}
 	}
+#endif
 }
 
 /** Sets up viewmat to only have one viewport. This can be called
@@ -158,6 +168,7 @@ static void viewmat_two_viewports()
 /** The oculus uses one framebuffer per eye. */
 static void viewmat_oculus_viewports()
 {
+#ifndef MISSING_OVR
 	int windowWidth  = EyeTexture[0].OGL.Header.RenderViewport.Size.w;
 	int windowHeight = EyeTexture[0].OGL.Header.RenderViewport.Size.h;
 
@@ -172,6 +183,7 @@ static void viewmat_oculus_viewports()
 		viewports[i][2] = windowWidth;
 		viewports[i][3] = windowHeight;
 	}
+#endif
 }
 
 
@@ -263,6 +275,10 @@ static void viewmat_init_hmd_dsight()
 
 static void viewmat_init_hmd_oculus()
 {
+#ifdef MISSING_OVR
+	printf("Oculus support is missing: You have not compiled this code against the LibOVR library\n");
+	exit(EXIT_FAILURE);
+#else
 	ovr_Initialize();
 
 	hmd = ovrHmd_Create(0);
@@ -373,6 +389,7 @@ static void viewmat_init_hmd_oculus()
 	// TODO: We are supposed to do these things when we are done:
 	//ovrHmd_Destroy(hmd);
 	//ovr_Shutdown();
+#endif
 }
 
 /** Initialize viewmat and use the specified pos/look/up values as a
@@ -481,6 +498,7 @@ static void viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
 
 void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 {
+#ifndef MISSING_OVR
 	pose[viewportID] = ovrHmd_GetHmdPosePerEye(hmd, viewportID);
 	float offsetMat[16], rotMat[16];
 	mat4f_identity(offsetMat);
@@ -503,6 +521,7 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 	// viewmatrix = transmat * rotmat *  initposmat
 	mat4f_mult_mat4f_new(viewmatrix, offsetMat, rotMat);
 	mat4f_mult_mat4f_new(viewmatrix, viewmatrix, initPosMat);
+#endif
 }
 
 
@@ -599,6 +618,7 @@ void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 	 * projection matrix. */
 	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
 	{
+#ifndef MISSING_OVR
 		/* Oculus doesn't provide us with easy access to the view
 		 * frustum information. We get the projection matrix directly
 		 * from libovr. */
@@ -607,6 +627,7 @@ void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 		mat4f_setRow(projmatrix, &(ovrpersp.M[1][0]), 1);
 		mat4f_setRow(projmatrix, &(ovrpersp.M[2][0]), 2);
 		mat4f_setRow(projmatrix, &(ovrpersp.M[3][0]), 3);
+#endif
 	}
 	else
 	{
