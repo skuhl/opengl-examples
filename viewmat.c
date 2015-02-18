@@ -316,8 +316,6 @@ static void viewmat_init_hmd_oculus()
 	printf("up=%f\n", hmd->DefaultEyeFov[ovrEye_Left].LeftTan);
 	printf("up=%f\n", hmd->DefaultEyeFov[ovrEye_Left].RightTan);
 #endif
-
-	ovrHmd_ConfigureTracking(hmd, ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection | ovrTrackingCap_Position, 0);
 	
 	/* Create framebuffers which render directly to textures for the left and right eyes. */
 	ovrSizei recommendTexSizeL = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left,  hmd->DefaultEyeFov[ovrEye_Left],  1);
@@ -345,7 +343,6 @@ static void viewmat_init_hmd_oculus()
 
 	EyeTexture[0].OGL.TexId = leftTexture;
 	EyeTexture[1].OGL.TexId = rightTexture;
-	// printf("left right: %d %d\n", leftTexture, rightTexture);
 
 	union ovrGLConfig glcfg;
 	memset(&glcfg, 0, sizeof(glcfg));
@@ -370,7 +367,11 @@ static void viewmat_init_hmd_oculus()
 	}
 #endif
 
-		/* enable low-persistence display and dynamic prediction for lattency compensation */
+	ovrHmd_ConfigureTracking(hmd, ovrTrackingCap_Orientation |
+	                         ovrTrackingCap_MagYawCorrection |
+	                         ovrTrackingCap_Position, 0);
+	
+	/* Enable low-persistence display and dynamic prediction for latency compensation */
 	unsigned int hmd_caps = ovrHmdCap_LowPersistence | ovrHmdCap_DynamicPrediction;
 	ovrHmd_SetEnabledCaps(hmd, hmd_caps);
 
