@@ -240,7 +240,7 @@ void get_model_matrix(float result[16])
 		mat4f_mult_mat4f_new(result, translate, scale);
 		return;
 	}
-
+	
 	/* Get a matrix to scale+translate the model based on the bounding
 	 * box */
 	float fitMatrix[16];
@@ -254,65 +254,83 @@ void get_model_matrix(float result[16])
 	mat4f_mult_mat4f_new(result, moveToLookPoint, fitMatrix);
 }
 
+
+/* Called by GLUT whenever the window needs to be redrawn. This
+ * function should not be called directly by the programmer. Instead,
+ * we can call glutPostRedisplay() to request that GLUT call display()
+ * at some point. */
 void display()
 {
+	/* If we are using DGR, send or receive data to keep multiple
+	 * processes/computers synchronized. */
 	dgr_update();
 
 	dgr_setget("style", &renderStyle, sizeof(int));
 
-	// Clear the screen to black, clear the depth buffer
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST); // turn on depth testing
-	kuhl_errorcheck();
-
-	/* Turn on blending (note, if you are using transparent textures,
-	   the transparency may not look correct unless you draw further
-	   items before closer items.). */
-	glEnable(GL_BLEND);
-	glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
-	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 	
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will
 	 * run twice for HMDs (once for the left eye and once for the
 	 * right. */
+	viewmat_begin_frame();
 	for(int viewportID=0; viewportID<viewmat_num_viewports(); viewportID++)
 	{
+		viewmat_begin_eye(viewportID);
+
 		/* Where is the viewport that we are drawing onto and what is its size? */
 		int viewport[4]; // x,y of lower left corner, width, height
 		viewmat_get_viewport(viewport, viewportID);
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
-		/* Get the frustum information which will be later used to generate a perspective projection matrix. */
-		float f[6]; // left, right, top, bottom, near>0, far>0
-		projmat_get_frustum(f, viewport[2], viewport[3]);
-	    
+		/* Clear the current viewport. Without glScissor(), glClear()
+		 * clears the entire screen. We could call glClear() before
+		 * this viewport loop---but on order for all variations of
+		 * this code to work (Oculus support, etc), we can only draw
+		 * after viewmat_begin_eye(). */
+		glScissor(viewport[0], viewport[1], viewport[2], viewport[3]);
+		glEnable(GL_SCISSOR_TEST);
+		glClearColor(.2,.2,.2,0); // set clear color to grey
+		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+		glDisable(GL_SCISSOR_TEST);
+		glEnable(GL_DEPTH_TEST); // turn on depth testing
+		kuhl_errorcheck();
+
+		/* Turn on blending (note, if you are using transparent textures,
+		   the transparency may not look correct unless you draw further
+		   items before closer items.). */
+		glEnable(GL_BLEND);
+		glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+
+
+
 		/* Get the view or camera matrix; update the frustum values if needed. */
-		float viewMat[16];
-		viewmat_get(viewMat, f, viewportID);
+		float viewMat[16], perspective[16];
+		viewmat_get(viewMat, perspective, viewportID);
 
 		glUseProgram(program);
-		/* Communicate matricies to OpenGL */
-		float perspective[16];
-		mat4f_frustum_new(perspective,f[0], f[1], f[2], f[3], f[4], f[5]);
+		kuhl_errorcheck();
+		/* Send the perspective projection matrix to the vertex program. */
 		glUniformMatrix4fv(kuhl_get_uniform("Projection"),
-		                   1, // count
+		                   1, // number of 4x4 float matrices
 		                   0, // transpose
 		                   perspective); // value
+
 		float modelMat[16];
 		get_model_matrix(modelMat);
-		
-		// modelview = view * model
 		float modelview[16];
-		mat4f_mult_mat4f_new(modelview, viewMat, modelMat);
+		mat4f_mult_mat4f_new(modelview, viewMat, modelMat); // modelview = view * model
 
+		/* Send the modelview matrix to the vertex program. */
 		glUniformMatrix4fv(kuhl_get_uniform("ModelView"),
-		                   1, // count
+		                   1, // number of 4x4 float matrices
 		                   0, // transpose
 		                   modelview); // value
 
 		glUniform1i(kuhl_get_uniform("renderStyle"), renderStyle);
 		// Copy far plane value into vertex program so we can render depth buffer.
+		float f[6]; // left, right, top, bottom, near>0, far>0
+		projmat_get_frustum(f, viewport[2], viewport[3]);
 		glUniform1f(kuhl_get_uniform("farPlane"), f[5]);
 		
 		kuhl_errorcheck();
@@ -325,15 +343,13 @@ void display()
 		glUseProgram(0); // stop using a GLSL program.
 
 	} // finish viewport loop
-
+	viewmat_end_frame();
 	
+
 	/* Check for errors. If there are errors, consider adding more
 	 * calls to kuhl_errorcheck() in your code. */
 	kuhl_errorcheck();
 
-	glFlush();
-	glFinish();
-	
 	/* Display the buffer we just drew (necessary for double buffering). */
 	glutSwapBuffers();
 

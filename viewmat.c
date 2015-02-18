@@ -8,6 +8,7 @@
  */
 
 #include <stdlib.h>
+#include <GL/glew.h>
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
@@ -20,15 +21,31 @@
 #include "hmd-dsight-orient.h"
 #include "dgr.h"
 
+#include "viewmat.h"
+#include "projmat.h"
+
+#include <GL/glx.h>
+#define OVR_OS_LINUX
+/* LibOVR defines a static_assert macro that produces a compiler
+ * error. Since it isn't necessary, we redefine it as a function that
+ * doesn't do anything. */
+#define static_assert(a,b)
+#include "OVR_CAPI.h"
+#include "OVR_CAPI_GL.h"
+/* We call this function to disable the safety warning. Since it isn't
+ * declared in the headers, we need to declare it here to avoid
+ * compiler warnings about implicit declarations. */
+OVR_EXPORT void ovrhmd_EnableHSWDisplaySDKRender(ovrHmd hmd, ovrBool enable);
+
 
 /** The different modes that viewmat works with. */
 typedef enum
 {
 	VIEWMAT_MOUSE,
-	VIEWMAT_IVS,
-	VIEWMAT_HMD,
-	VIEWMAT_HMD_DSIGHT,
-	VIEWMAT_HMD_OCULUS,
+	VIEWMAT_IVS,        /* Michigan Tech's Immersive Visualization Studio */
+	VIEWMAT_HMD,        /* Side-by-side view */
+	VIEWMAT_HMD_DSIGHT, /* Sensics dSight */
+	VIEWMAT_HMD_OCULUS, /* HMDs supported by libovr (Oculus DK1, DK2, etc). */
 	VIEWMAT_NONE
 } ViewmatModeType;
 
@@ -38,6 +55,64 @@ static int viewports_size = 0; /**< Number of viewports in viewports array */
 static ViewmatModeType viewmat_mode = 0; /**< 0=mousemove, 1=IVS (using VRPN), 2=HMD (using VRPN), 3=none */
 static const char *viewmat_vrpn_obj; /**< Name of the VRPN object that we are tracking */
 static HmdControlState viewmat_hmd;
+
+
+ovrHmd hmd;
+GLuint leftTexture,rightTexture;
+GLint leftFramebuffer, rightFramebuffer;
+ovrGLTexture EyeTexture[2];
+ovrEyeRenderDesc eye_rdesc[2];
+ovrFrameTiming timing;
+ovrPosef pose[2];
+
+/** Should be called prior to rendering a frame. */
+void viewmat_begin_frame(void)
+{
+	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
+		timing = ovrHmd_BeginFrame(hmd, 0);
+}
+
+/** Should be called when we have completed rendering a frame. For
+ * HMDs, this should be called after both the left and right eyes have
+ * been rendered. */
+void viewmat_end_frame(void)
+{
+	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		ovrHmd_EndFrame(hmd, pose, &EyeTexture[0].Texture);
+	}
+}
+
+/** Changes the framebuffer (as needed) that OpenGL is rendering
+ * to. Some HMDs (such as the Oculus Rift) require us to prerender the
+ * left and right eye scenes to a texture. Those textures are then
+ * processed and displayed on the screen. This function should be
+ * called before any drawing occurs for that particular eye. Once both
+ * eyes are rendered, viewmat_end_frame() will reset the bound
+ * framebuffer and render the scene.
+ *
+ * @param viewportID The viewport number that we are rendering to. If
+ * running as a single window, non-stereo desktop application, use
+ * 0. For HMDs, use 0 when rendering the left eye and 1 when rendering
+ * the right eye.
+ */
+void viewmat_begin_eye(int viewportID)
+{
+	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
+	{
+		if(viewportID == 0)
+			glBindFramebuffer(GL_FRAMEBUFFER, leftFramebuffer);
+		else if(viewportID == 1)
+			glBindFramebuffer(GL_FRAMEBUFFER, rightFramebuffer);
+		else
+		{
+			fprintf(stderr, "%s:%d: Unknown viewport ID: %d\n",
+			        __FILE__, __LINE__, viewportID);
+			exit(EXIT_FAILURE);
+		}
+	}
+}
 
 /** Sets up viewmat to only have one viewport. This can be called
  * every frame since resizing the window will change the size of the
@@ -76,6 +151,26 @@ static void viewmat_two_viewports()
 	viewports[1][3] = windowHeight;
 }
 
+/** The oculus uses one framebuffer per eye. */
+static void viewmat_oculus_viewports()
+{
+	int windowWidth  = EyeTexture[0].OGL.Header.RenderViewport.Size.w;
+	int windowHeight = EyeTexture[0].OGL.Header.RenderViewport.Size.h;
+
+	/* The two Oculus viewports are the same (they each fill the
+	 * entire scree) because we are rendering the left and right eyes
+	 * separately straight to a texture. */
+	viewports_size = 2;
+	for(int i=0; i<2; i++)
+	{
+		viewports[i][0] = 0;
+		viewports[i][1] = 0;
+		viewports[i][2] = windowWidth;
+		viewports[i][3] = windowHeight;
+	}
+}
+
+
 /** This method should be called regularly to ensure that we adjust
  * our viewports after a window is resized. */
 static void viewmat_refresh_viewports()
@@ -84,8 +179,11 @@ static void viewmat_refresh_viewports()
 	   viewmat_mode == VIEWMAT_NONE ||
 	   viewmat_mode == VIEWMAT_IVS)
 		viewmat_one_viewport();
-	else if(viewmat_mode == VIEWMAT_HMD)
+	else if(viewmat_mode == VIEWMAT_HMD ||
+	        viewmat_mode == VIEWMAT_HMD_DSIGHT)
 		viewmat_two_viewports();
+	else if(viewmat_mode == VIEWMAT_HMD_OCULUS)
+		viewmat_oculus_viewports();
 	else
 	{
 		printf("viewmat: unknown mode: %d\n", viewmat_mode);
@@ -159,6 +257,114 @@ static void viewmat_init_hmd_dsight()
 }
 
 
+static void viewmat_init_hmd_oculus()
+{
+	ovr_Initialize();
+
+	hmd = ovrHmd_Create(0);
+	if(!hmd)
+	{
+		fprintf(stderr, "Oculus: Failed to open Oculus HMD. Is oculusd running?\n");
+		fprintf(stderr, "Oculus: Press any key to proceed with HMD debugging window.\n");
+		char c; 
+		fscanf(stdin, "%c", &c);
+
+
+		hmd = ovrHmd_CreateDebug(ovrHmd_DK2);
+		if(!hmd)
+		{
+			fprintf(stderr, "Oculus: Failed to create virtual debugging HMD\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+	
+	printf("Oculus: initialized HMD: %s - %s\n", hmd->Manufacturer, hmd->ProductName);
+	glutReshapeWindow(hmd->Resolution.w, hmd->Resolution.h);
+
+#if 0
+	printf("default fov tangents left eye:\n");
+	printf("up=%f\n", hmd->DefaultEyeFov[ovrEye_Left].UpTan);
+	printf("up=%f\n", hmd->DefaultEyeFov[ovrEye_Left].DownTan);
+	printf("up=%f\n", hmd->DefaultEyeFov[ovrEye_Left].LeftTan);
+	printf("up=%f\n", hmd->DefaultEyeFov[ovrEye_Left].RightTan);
+#endif
+
+	ovrHmd_ConfigureTracking(hmd, ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection | ovrTrackingCap_Position, 0);
+	
+	/* Create framebuffers which render directly to textures for the left and right eyes. */
+	ovrSizei recommendTexSizeL = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left,  hmd->DefaultEyeFov[ovrEye_Left],  1);
+	ovrSizei recommendTexSizeR = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right, hmd->DefaultEyeFov[ovrEye_Right], 1);
+	leftFramebuffer  = kuhl_gen_framebuffer(recommendTexSizeL.w, recommendTexSizeL.h, &leftTexture,  NULL);
+	rightFramebuffer = kuhl_gen_framebuffer(recommendTexSizeR.w, recommendTexSizeR.h, &rightTexture, NULL);
+	//printf("Left recommended texture size: %d %d\n", recommendTexSizeL.w, recommendTexSizeL.h);
+	//printf("Right recommended texture size: %d %d\n", recommendTexSizeR.w, recommendTexSizeR.h);
+
+	EyeTexture[0].OGL.Header.API = ovrRenderAPI_OpenGL;
+	EyeTexture[0].OGL.Header.TextureSize.w = recommendTexSizeL.w;
+	EyeTexture[0].OGL.Header.TextureSize.h = recommendTexSizeL.h;
+	EyeTexture[0].OGL.Header.RenderViewport.Pos.x = 0;
+	EyeTexture[0].OGL.Header.RenderViewport.Pos.y = 0;
+	EyeTexture[0].OGL.Header.RenderViewport.Size.w = recommendTexSizeL.w;
+	EyeTexture[0].OGL.Header.RenderViewport.Size.h = recommendTexSizeL.h;
+
+	EyeTexture[1].OGL.Header.API = ovrRenderAPI_OpenGL;
+	EyeTexture[1].OGL.Header.TextureSize.w = recommendTexSizeR.w;
+	EyeTexture[1].OGL.Header.TextureSize.h = recommendTexSizeR.h;
+	EyeTexture[1].OGL.Header.RenderViewport.Pos.x = 0;
+	EyeTexture[1].OGL.Header.RenderViewport.Pos.y = 0;
+	EyeTexture[1].OGL.Header.RenderViewport.Size.w = recommendTexSizeR.w;
+	EyeTexture[1].OGL.Header.RenderViewport.Size.h = recommendTexSizeR.h;
+
+	EyeTexture[0].OGL.TexId = leftTexture;
+	EyeTexture[1].OGL.TexId = rightTexture;
+	// printf("left right: %d %d\n", leftTexture, rightTexture);
+
+	union ovrGLConfig glcfg;
+	memset(&glcfg, 0, sizeof(glcfg));
+	glcfg.OGL.Header.API=ovrRenderAPI_OpenGL;
+	glcfg.OGL.Header.BackBufferSize.h=hmd->Resolution.h;
+	glcfg.OGL.Header.BackBufferSize.w=hmd->Resolution.w;
+	glcfg.OGL.Header.Multisample = 1;
+	glcfg.OGL.Disp = glXGetCurrentDisplay();
+
+	if(hmd->HmdCaps & ovrHmdCap_ExtendDesktop) {
+		printf("Oculus: Running in 'extended desktop' mode\n");
+	} else {
+		/* to sucessfully draw to the HMD display in "direct-hmd" mode, we have to
+		 * call ovrHmd_AttachToWindow
+		 * XXX: this doesn't work properly yet due to bugs in the oculus 0.4.1 sdk/driver
+		 */
+#ifdef WIN32
+		ovrHmd_AttachToWindow(hmd, glcfg.OGL.Window, 0, 0);
+#elif defined(OVR_OS_LINUX)
+		ovrHmd_AttachToWindow(hmd, (void*)glXGetCurrentDrawable(), 0, 0);
+#endif
+		printf("Oculus: running in 'direct-hmd' mode\n");
+	}
+
+		/* enable low-persistence display and dynamic prediction for lattency compensation */
+	unsigned int hmd_caps = ovrHmdCap_LowPersistence | ovrHmdCap_DynamicPrediction;
+	ovrHmd_SetEnabledCaps(hmd, hmd_caps);
+
+	/* configure SDK-rendering and enable chromatic abberation correction, vignetting, and
+	 * timewrap, which shifts the image before drawing to counter any lattency between the call
+	 * to ovrHmd_GetEyePose and ovrHmd_EndFrame.
+	 */
+	unsigned int distort_caps = ovrDistortionCap_Chromatic | ovrDistortionCap_TimeWarp |
+		ovrDistortionCap_Overdrive;
+
+	if(!ovrHmd_ConfigureRendering(hmd, &glcfg.Config, distort_caps, hmd->DefaultEyeFov, eye_rdesc)) {
+		fprintf(stderr, "failed to configure distortion renderer\n");
+	}
+
+	/* disable health and safety warning */
+	ovrhmd_EnableHSWDisplaySDKRender(hmd, 0);
+
+	// TODO: We are supposed to do these things when we are done:
+	//ovrHmd_Destroy(hmd);
+	//ovr_Shutdown();
+}
+
 /** Initialize viewmat and use the specified pos/look/up values as a
  * starting location when mouse movement is used.
  *
@@ -186,9 +392,10 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	}
 	else if(strcasecmp(modeString, "oculus") == 0)
 	{
-		viewmat_mode = VIEWMAT_HMD;
-		viewmat_init_hmd(pos, look, up);
-		printf("viewmat: Using Oculus HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
+		viewmat_mode = VIEWMAT_HMD_OCULUS;
+		viewmat_init_hmd_oculus();
+		// TODO: Tracking options?
+		printf("viewmat: Using Oculus HMD head tracking mode.");
 	}
 	else if(strcasecmp(modeString, "hmd") == 0)
 	{
@@ -215,7 +422,7 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 }
 
 /** Get the view matrix for a generic HMD device. */
-void viewmat_get_hmd(float viewmatrix[16], int viewportNum)
+static void viewmat_get_hmd(float viewmatrix[16], int viewportNum)
 {
 	float pos[3],look[3],up[3];
 	mousemove_get(pos, look, up);
@@ -240,7 +447,7 @@ void viewmat_get_hmd(float viewmatrix[16], int viewportNum)
 }
 
 /** Get the view matrix for the dSight HMD. */
-void viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
+static void viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
 {
 	float quaternion[4];
 	updateHmdControl(&viewmat_hmd, quaternion);
@@ -262,7 +469,24 @@ void viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
 	// Don't need to use DGR!
 }
 
-
+void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
+{
+	pose[viewportID] = ovrHmd_GetHmdPosePerEye(hmd, viewportID);
+	float transMat[16], rotMat[16];
+	mat4f_identity(transMat);
+	mat4f_identity(rotMat);
+	mat4f_translate_new(transMat,
+	                    eye_rdesc[viewportID].HmdToEyeViewOffset.x,
+	                    eye_rdesc[viewportID].HmdToEyeViewOffset.y,
+	                    eye_rdesc[viewportID].HmdToEyeViewOffset.z);
+	mat4f_rotateQuat_new(rotMat,
+	                     pose[viewportID].Orientation.x,
+	                     pose[viewportID].Orientation.y,
+	                     pose[viewportID].Orientation.z,
+	                     pose[viewportID].Orientation.w);
+	mat4f_transpose(rotMat);
+	mat4f_mult_mat4f_new(viewmatrix, rotMat, transMat);
+}
 
 
 /** Get a view matrix from mousemove.
@@ -328,23 +552,49 @@ void viewmat_get_ivs(float viewmatrix[16], float frustum[6])
  *
  * @param viewmatrix A 4x4 view matrix for viewmat to fill in.
  *
- * @param frustum View frustum values to be adjusted by viewmat if
- * needed. You can also set frustum to NULL if you don't want to use
- * dynamic frustums.
+ * @param projmatrix TODO.
  */
-void viewmat_get(float viewmatrix[16], float frustum[6], int viewportNum)
+void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 {
+	int viewport[4]; // x,y of lower left corner, width, height
+	viewmat_get_viewport(viewport, viewportID);
+
+	/* Get the view or camera matrix; update the frustum values if needed. */
+	float f[6]; // left, right, top, bottom, near>0, far>0
+	projmat_get_frustum(f, viewport[2], viewport[3]);
+
 	if(viewmat_mode == VIEWMAT_MOUSE) // mouse movement
 		viewmat_get_mouse(viewmatrix);
 
 	if(viewmat_mode == VIEWMAT_IVS) // IVS
-		viewmat_get_ivs(viewmatrix, frustum);
+		viewmat_get_ivs(viewmatrix, f); // frustum is updated based on head tracking
 
 	if(viewmat_mode == VIEWMAT_HMD) // generic HMD
-		viewmat_get_hmd(viewmatrix, viewportNum);
+		viewmat_get_hmd(viewmatrix, viewportID);
 
 	if(viewmat_mode == VIEWMAT_HMD_DSIGHT) // dSight HMD
-		viewmat_get_hmd_dsight(viewmatrix, viewportNum);
+		viewmat_get_hmd_dsight(viewmatrix, viewportID);
+
+	if(viewmat_mode == VIEWMAT_HMD_OCULUS) // Oculus HMD
+		viewmat_get_hmd_oculus(viewmatrix, viewportID);
+
+	/* Now that the view matrix is known, return to calculating the
+	 * projection matrix. */
+	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
+	{
+		/* Oculus doesn't provide us with easy access to the view
+		 * frustum information. We get the projection matrix directly
+		 * from libovr. */
+		ovrMatrix4f ovrpersp = ovrMatrix4f_Projection(hmd->DefaultEyeFov[viewportID], 0.5, 500, 1);
+		mat4f_setRow(projmatrix, &(ovrpersp.M[0][0]), 0);
+		mat4f_setRow(projmatrix, &(ovrpersp.M[1][0]), 1);
+		mat4f_setRow(projmatrix, &(ovrpersp.M[2][0]), 2);
+		mat4f_setRow(projmatrix, &(ovrpersp.M[3][0]), 3);
+	}
+	else
+	{
+		mat4f_frustum_new(projmatrix, f[0], f[1], f[2], f[3], f[4], f[5]);
+	}
 }
 
 /** Gets the viewport information for a particular viewport.

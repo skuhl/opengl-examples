@@ -77,23 +77,19 @@ void display()
 		viewmat_get_viewport(viewport, viewportID);
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
-		/* Get the view frustum information. */
-		float f[6];
-		projmat_get_frustum(f, viewport[2], viewport[3]);
 	    
 		/* Get the view/camera matrix, update view frustum if necessary. */
-		float viewMat[16];
-		viewmat_get(viewMat, f, viewportID);
+		float viewMat[16], projMat[16];
+		viewmat_get(viewMat, projMat, viewportID);
 	    
 		/* Communicate matricies to OpenGL */
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		glFrustum(f[0], f[1], f[2], f[3], f[4], f[5]); // projection matrix
+		glMultMatrixf(projMat);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 		glMultMatrixf(viewMat); // view/camera matrix
 		kuhl_errorcheck();
-
 
 		/* Change angle for animation. */
 		int count = glutGet(GLUT_ELAPSED_TIME) % 10000; // get a counter that repeats every 10 seconds
