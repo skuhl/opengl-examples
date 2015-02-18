@@ -26,6 +26,14 @@
 
 
 #ifndef MISSING_OVR
+/* NOTE: Some of the Oculus OVR code is based on an SDL example that
+   is released into the public domain. See below for direct links to
+   the code:
+   
+   https://codelab.wordpress.com/2014/09/07/oculusvr-sdk-and-simple-oculus-rift-dk2-opengl-test-program/
+   http://nuclear.mutantstargoat.com/hg/oculus2/file/tip
+*/
+
 #include <GL/glx.h>
 #define OVR_OS_LINUX
 /* LibOVR defines a static_assert macro that produces a compiler
