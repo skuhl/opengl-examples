@@ -253,26 +253,32 @@ void display()
 	int time = glutGet(GLUT_ELAPSED_TIME);
 	float fps = kuhl_getfps(time);
 
-	if(framesTillFpsUpdate == 0)
+	if(dgr_is_enabled() == 0 || dgr_is_master())
 	{
-		framesTillFpsUpdate = 30;
-		char label[1024];
-		snprintf(label, 1024, "FPS: %0.1f", fps);
+		// If DGR is being used, only display dgr counter if we are
+		// the master process.
+
+		if(framesTillFpsUpdate == 0)
+		{
+			framesTillFpsUpdate = 30;
+			char label[1024];
+			snprintf(label, 1024, "FPS: %0.1f", fps);
 		
-		/* Delete old label if it exists */
-		if(fpsLabel != 0) 
-			glDeleteTextures(1, &fpsLabel);
+			/* Delete old label if it exists */
+			if(fpsLabel != 0) 
+				glDeleteTextures(1, &fpsLabel);
 
-		/* Make a new label */
-		float labelColor[3] = { 1,1,1 };
-		float labelBg[4] = { 0,0,0,.3 };
-		fpsLabelAspectRatio = kuhl_make_label(label,
-		                                      &fpsLabel,
-		                                      labelColor, labelBg, 128);
-		kuhl_geometry_texture(&labelQuad, fpsLabel, "tex", 1);
+			/* Make a new label */
+			float labelColor[3] = { 1,1,1 };
+			float labelBg[4] = { 0,0,0,.3 };
+			fpsLabelAspectRatio = kuhl_make_label(label,
+			                                      &fpsLabel,
+			                                      labelColor, labelBg, 128);
+			kuhl_geometry_texture(&labelQuad, fpsLabel, "tex", 1);
+		}
+		framesTillFpsUpdate--;
 	}
-	framesTillFpsUpdate--;
-
+	
 	/* Ensure the slaves use the same render style as the master
 	 * process. */
 	dgr_setget("style", &renderStyle, sizeof(int));
