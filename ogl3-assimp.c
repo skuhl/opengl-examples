@@ -353,32 +353,36 @@ void display()
 		kuhl_geometry_draw(modelgeom); /* Draw the model */
 		kuhl_errorcheck();
 
-		/* The shape of the frames per second quad depends on the
-		 * aspect ratio of the label texture and the aspect ratio of
-		 * the window (because we are placing the quad in normalized
-		 * device coordinates). */
-		float windowAspect  = glutGet(GLUT_WINDOW_WIDTH) /(float) glutGet(GLUT_WINDOW_HEIGHT);
-		float stretchLabel[16];
-		mat4f_scale_new(stretchLabel, 1/8.0 * fpsLabelAspectRatio / windowAspect, 1/8.0, 1);
+		if(dgr_is_enabled() == 0 || dgr_is_master())
+		{
 
-		/* Position label in the upper left corner of the screen */
-		float transLabel[16];
-		mat4f_translate_new(transLabel, -.9, .8, 0);
-		mat4f_mult_mat4f_new(modelview, transLabel, stretchLabel);
-		glUniformMatrix4fv(kuhl_get_uniform("ModelView"), 1, 0, modelview);
+			/* The shape of the frames per second quad depends on the
+			 * aspect ratio of the label texture and the aspect ratio of
+			 * the window (because we are placing the quad in normalized
+			 * device coordinates). */
+			float windowAspect  = glutGet(GLUT_WINDOW_WIDTH) /(float) glutGet(GLUT_WINDOW_HEIGHT);
+			float stretchLabel[16];
+			mat4f_scale_new(stretchLabel, 1/8.0 * fpsLabelAspectRatio / windowAspect, 1/8.0, 1);
 
-		/* Make sure we don't use a projection matrix */
-		float identity[16];
-		mat4f_identity(identity);
-		glUniformMatrix4fv(kuhl_get_uniform("Projection"), 1, 0, identity);
+			/* Position label in the upper left corner of the screen */
+			float transLabel[16];
+			mat4f_translate_new(transLabel, -.9, .8, 0);
+			mat4f_mult_mat4f_new(modelview, transLabel, stretchLabel);
+			glUniformMatrix4fv(kuhl_get_uniform("ModelView"), 1, 0, modelview);
 
-		/* Don't use depth testing and make sure we use the texture
-		 * rendering style */
-		glDisable(GL_DEPTH_TEST);
-		glUniform1i(kuhl_get_uniform("renderStyle"), 1);
-		kuhl_geometry_draw(&labelQuad); /* Draw the quad */
-		glEnable(GL_DEPTH_TEST);
-		kuhl_errorcheck();
+			/* Make sure we don't use a projection matrix */
+			float identity[16];
+			mat4f_identity(identity);
+			glUniformMatrix4fv(kuhl_get_uniform("Projection"), 1, 0, identity);
+
+			/* Don't use depth testing and make sure we use the texture
+			 * rendering style */
+			glDisable(GL_DEPTH_TEST);
+			glUniform1i(kuhl_get_uniform("renderStyle"), 1);
+			kuhl_geometry_draw(&labelQuad); /* Draw the quad */
+			glEnable(GL_DEPTH_TEST);
+			kuhl_errorcheck();
+		}
 		
 		glUseProgram(0); // stop using a GLSL program.
 
