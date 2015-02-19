@@ -437,7 +437,7 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 		viewmat_mode = VIEWMAT_HMD_OCULUS;
 		viewmat_init_hmd_oculus(pos);
 		// TODO: Tracking options?
-		printf("viewmat: Using Oculus HMD head tracking mode.");
+		printf("viewmat: Using Oculus HMD head tracking mode.\n");
 	}
 	else if(strcasecmp(modeString, "hmd") == 0)
 	{
