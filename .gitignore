@@ -5,6 +5,9 @@
 /cmake_install.cmake
 /doxygen-docs
 
+# Generated libraries
+/libkuhl.a
+
 # Generated Binaries
 /dgr-relay
 /ogl2-slideshow

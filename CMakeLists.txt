@@ -48,7 +48,6 @@ endif()
 # SITE_NAME sets the HOSTNAME variable to the name of this computer.
 SITE_NAME(HOSTNAME)
 
-
 # Doxygen documentation
 option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" ON)
 if(BUILD_DOCUMENTATION)
@@ -127,7 +126,11 @@ find_package(ImageMagick COMPONENTS MagickCore)
 
 if(ImageMagick_FOUND)
 	include_directories(${ImageMagick_INCLUDE_DIRS})
+	set(IMAGEMAGICK_FOUND_DEFINITION "KUHL_UTIL_USE_IMAGEMAGICK")
+else()
+	set(IMAGEMAGICK_FOUND_DEFINITION "")
 endif()
+
 
 
 # --- ASSIMP (recommended, optional) ---
@@ -143,8 +146,11 @@ set(CMAKE_INCLUDE_PATH /home/campus11/kuhl/public-cs4611/assimp/include ${CMAKE_
 
 
 find_package(ASSIMP)
-if(ASSIMP_FOUND)
+if(ASSIMP_FOUND AND ImageMagick_FOUND)  # only use Assimp if imagemagick is also found (imagemagick is needed for textures)
 	include_directories(${ASSIMP_INCLUDE_DIRS})
+	set(ASSIMP_FOUND_DEFINITION "KUHL_UTIL_USE_ASSIMP")
+else()
+	set(ASSIMP_FOUND_DEFINITION "")
 endif()
 
 
@@ -211,54 +217,46 @@ if(OVR_FOUND) # Add Oculus LibOVR to the list if it is available
 	set(COMMON_LIBRARIES ${COMMON_LIBRARIES} ${OVR_LIBRARIES})
 endif()
 
-# make compilation rule for all programs that need ASSIMP and ImageMagick
-if(ASSIMP_FOUND AND ImageMagick_FOUND)
-	foreach(arg ${NEED_ASSIMP_AND_IM})
-		if(EXISTS ${arg}.cpp)   # Figure out if the program is a c or cpp file
-			set(SOURCE_FILE ${arg}.cpp)
-		else()
-			set(SOURCE_FILE ${arg}.c)
-		endif()
-		add_executable(${arg} ${SOURCE_FILE} kuhl-util.c vecmat.c dgr.c mousemove.c hmd-dsight-orient.c projmat.c viewmat.c vrpn-help.cpp imageio.c)
-		target_link_libraries(${arg} ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES})
-		set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_ASSIMP;KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION}")
-	endforeach()
-else()
-	if(NOT ASSIMP_FOUND)
-		message(WARNING "ASSIMP library not found, not compiling: ${NEED_ASSIMP_AND_IM}")
-	endif()
-	if(NOT ImageMagick_FOUND)
-		message(WARNING "ImageMagick library not found, not compiling: ${NEED_ASSIMP_AND_IM}")	
-	endif()
-endif()
+# Set the preprocessor flags.
+set(PREPROC_DEFINE "MOUSEMOVE_GLUT;${ASSIMP_FOUND_DEFINITION};${IMAGEMAGICK_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION}")
 
-# Make compilation rule for all programs that only need ImageMagick
+# Create a static library containing all files that we regularly use.
+set(FILES_IN_LIBKUHL kuhl-util.c vecmat.c dgr.c mousemove.c hmd-dsight-orient.c projmat.c viewmat.c vrpn-help.cpp)
 if(ImageMagick_FOUND)
-	foreach(arg ${NEED_IM})
-		if(EXISTS ${arg}.cpp)   # Figure out if the program is a c or cpp file
-			set(SOURCE_FILE ${arg}.cpp)
-		else()
-			set(SOURCE_FILE ${arg}.c)
-		endif()
-		add_executable(${arg} ${SOURCE_FILE} kuhl-util.c vecmat.c dgr.c mousemove.c hmd-dsight-orient.c projmat.c viewmat.c vrpn-help.cpp imageio.c)
-		target_link_libraries(${arg} ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ImageMagick_LIBRARIES})
-		set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "KUHL_UTIL_USE_IMAGEMAGICK;MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION}")
-	endforeach()
+	set(FILES_IN_LIBKUHL ${FILES_IN_LIBKUHL} imageio.c)
+endif()
+add_library(kuhl STATIC ${FILES_IN_LIBKUHL})
+set_target_properties(kuhl PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
+
+
+# Construct a list of programs that we want to compile based on which libraries are available.
+set(PROGRAMS_TO_MAKE ${NEED_NOTHING})
+if(ASSIMP_FOUND AND ImageMagick_FOUND)
+	set(PROGRAMS_TO_MAKE ${PROGRAMS_TO_MAKE} ${NEED_ASSIMP_AND_IM})
 else()
-	message(WARNING "ImageMagick library not found, not compiling: ${NEED_IM}")
+	message(WARNING "ASSIMP and/or ImageMagick libraries were not found, not compiling: ${NEED_ASSIMP_AND_IM}")
+endif()
+if(ImageMagick_FOUND)
+	set(PROGRAMS_TO_MAKE ${PROGRAMS_TO_MAKE} ${NEED_IM})
+else()
+	message(WARNING "ImageMagick library was not found, not compiling: ${NEED_IM}")
 endif()
 
-# Make compilation rule for all programs that don't need ImageMagick or ASSIMIP
-foreach(arg ${NEED_NOTHING})
+# Compile the list of programs.
+foreach(arg ${PROGRAMS_TO_MAKE})
 	if(EXISTS ${arg}.cpp)   # Figure out if the program is a c or cpp file
 		set(SOURCE_FILE ${arg}.cpp)
 	else()
 		set(SOURCE_FILE ${arg}.c)
 	endif()
-	add_executable(${arg} ${SOURCE_FILE} kuhl-util.c vecmat.c dgr.c mousemove.c hmd-dsight-orient.c projmat.c viewmat.c vrpn-help.cpp)
-	target_link_libraries(${arg} ${COMMON_LIBRARIES} ${GLUT_LIBRARIES})
-	set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "MOUSEMOVE_GLUT;${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION}")
+	add_executable(${arg} ${SOURCE_FILE})
+	target_link_libraries(${arg} kuhl ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES})
+	set_target_properties(${arg} PROPERTIES LINKER_LANGUAGE "CXX")
+	set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
+	add_dependencies(${arg} libkuhl.a)
 endforeach()
+
+
 
 # Build dgr-relay
 if(Threads_FOUND)
