@@ -386,7 +386,7 @@ GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename)
 {
 	if(vertexFilename == NULL || fragFilename == NULL)
 	{
-		fprintf(stderr, "%s: One or more of the parameters were NULL\n", __func__);
+		kuhl_errmsg("One or more of the parameters were NULL\n");
 		return 0;
 	}
 
@@ -422,8 +422,8 @@ GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename)
 	if(linked == GL_FALSE)
 	{
 		kuhl_print_program_log(program);
-		fprintf(stderr, "%s: ERROR: Failed to link GLSL program.\n", __func__);
-		exit(1);
+		kuhl_errmsg("Failed to link GLSL program.\n");
+		exit(EXIT_FAILURE);
 	}
 
 	/* We used to call glValidateProgram() here. However, some drivers
@@ -468,7 +468,7 @@ GLint kuhl_get_uniform(const char *uniformName)
 	kuhl_errorcheck();
 	if(uniformName == NULL || strlen(uniformName) == 0)
 	{
-		fprintf(stderr, "%s: You asked for the location of an uniform name, but your name was an empty string or a NULL pointer.\n", __func__);
+		kuhl_errmsg("You asked for the location of an uniform name, but your name was an empty string or a NULL pointer.\n");
 		return -1;
 	}
 
@@ -476,13 +476,13 @@ GLint kuhl_get_uniform(const char *uniformName)
 	glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
 	if(currentProgram == 0)
 	{
-		fprintf(stderr, "%s: Can't get the uniform location of %s because no GLSL program is currently being used.\n", __func__, uniformName);
+		kuhl_errmsg("Can't get the uniform location of %s because no GLSL program is currently being used.\n", uniformName);
 		return -1;
 	}
 	
 	if(!glIsProgram(currentProgram))
 	{
-		fprintf(stderr, "%s: The current active program (%d) is not a valid GLSL program.\n", __func__, currentProgram);
+		kuhl_errmsg("The current active program (%d) is not a valid GLSL program.\n", currentProgram);
 		return -1;
 	}
 
@@ -490,12 +490,12 @@ GLint kuhl_get_uniform(const char *uniformName)
 	kuhl_errorcheck();
 	if(loc == -1 && missingUniformCount < 50)
 	{
-		fprintf(stderr, "%s: Uniform variable '%s' is missing or inactive in your GLSL program.\n", __func__, uniformName);
+		kuhl_errmsg("Uniform variable '%s' is missing or inactive in your GLSL program.\n", uniformName);
 		missingUniformCount++;
 		if(missingUniformCount == 50)
 		{
-			fprintf(stderr, "%s: Hiding any additional error messages.\n", __func__);
-			fprintf(stderr, "%s: Remember that the GLSL variables that do not affect the appearance of your program will be set to inactive by the GLSL compiler\n", __func__);
+			kuhl_errmsg("Hiding any additional error messages.\n");
+			kuhl_errmsg("Remember that the GLSL variables that do not affect the appearance of your program will be set to inactive by the GLSL compiler\n");
 		}
 	}
 	return loc;
@@ -518,13 +518,12 @@ GLint kuhl_get_attribute(GLuint program, const char *attributeName)
 {
 	if(attributeName == NULL || strlen(attributeName) == 0)
 	{
-		fprintf(stderr, "%s: You asked for the location of an attribute name in program %d, but your name was an empty string or a NULL pointer.\n", __func__, program);
+		kuhl_errmsg("You asked for the location of an attribute name in program %d, but your name was an empty string or a NULL pointer.\n", program);
 	}
 
 	if(!glIsProgram(program))
 	{
-		fprintf(stderr, "%s: Program %d is not a valid GLSL program.\n",
-		        __func__, program);
+		kuhl_errmsg("Program %d is not a valid GLSL program.\n", program);
 		exit(EXIT_FAILURE);
 	}
 
@@ -532,15 +531,14 @@ GLint kuhl_get_attribute(GLuint program, const char *attributeName)
 	glGetProgramiv(program, GL_LINK_STATUS, &linkStatus);
 	if(linkStatus == GL_FALSE)
 	{
-		fprintf(stderr, "%s: Cannot get attribute '%s' from program %d because the program is not linked.\n", __func__, attributeName, program);
+		kuhl_errmsg("Cannot get attribute '%s' from program %d because the program is not linked.\n", attributeName, program);
 	}
 	
 	GLint loc = glGetAttribLocation(program, attributeName);
 	kuhl_errorcheck();
 	if(loc == -1)
 	{
-		fprintf(stderr, "%s: Attribute variable '%s' is missing or inactive in GLSL program %d.\n",
-		        __func__, attributeName, program);
+		kuhl_errmsg("Attribute variable '%s' is missing or inactive in GLSL program %d.\n", attributeName, program);
 	}
 	return loc;
 }
@@ -563,8 +561,9 @@ static void kuhl_geometry_sanity_check_attribute(GLuint bufferobject, const char
 			/* All parts of this attribute should be set */
 			if(attributeName == NULL || bufferobject == 0)
 			{
-				fprintf(stderr, "%s: Only part of the attribute was set: Name=%s bufferobject=%d\n",
-				        __func__, attributeName, bufferobject);
+				kuhl_errmsg("Only part of the attribute was set:"
+				            "Name=%s bufferobject=%d\n",
+				            attributeName, bufferobject);
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -577,7 +576,7 @@ static void kuhl_geometry_sanity_check_attribute(GLuint bufferobject, const char
 		 * bufferobject for the attribute. */
 		if(glIsBuffer(bufferobject))
 		{
-			fprintf(stderr, "%s: We created a buffer object for attribute %s even though it isn't in the GLSL program %d\n", __func__, attributeName, program);
+			kuhl_errmsg("We created a buffer object for attribute %s even though it isn't in the GLSL program %d\n", attributeName, program);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -598,14 +597,14 @@ static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
 {
 	if(geom->program == 0)
 	{
-		fprintf(stderr, "%s: ERROR: The program element was not set in your kuhl_geometry struct. You must specify which GLSL program will be used with this geometry.\n", __func__);
+		kuhl_errmsg("The program element was not set in your kuhl_geometry struct. You must specify which GLSL program will be used with this geometry.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	/* Check if the program is valid (we don't need to enable it here). */
 	if(!glIsProgram(geom->program))
 	{
-		fprintf(stderr, "%s: ERROR: The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", __func__, geom->program);
+		kuhl_errmsg("The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", geom->program);
 		exit(EXIT_FAILURE);
 	}
 
@@ -619,15 +618,14 @@ static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
 	if(validated == GL_FALSE)
 	{
 		kuhl_print_program_log(geom->program);
-		fprintf(stderr, "%s: ERROR: Failed to validate GLSL program %d.\n",
-		        __func__, geom->program);
+		kuhl_errmsg("Failed to validate GLSL program %d.\n", geom->program);
 		exit(EXIT_FAILURE);
 	}
 
 	
 	if(geom->vertex_count < 1)
 	{
-		fprintf(stderr, "%s: ERROR: vertex_count must be greater than 0.\n", __func__);
+		kuhl_errmsg("vertex_count must be greater than 0.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -639,7 +637,7 @@ static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
 	     geom->primitive_type == GL_TRIANGLE_FAN ||
 	     geom->primitive_type == GL_TRIANGLES))
 	{
-		fprintf(stderr, "%s: primitive_type must be set to GL_POINTS, GL_LINE_STRIP, GL_LINE_LOOP, GL_LINES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, or GL_TRIANGLES.\n", __func__);
+		kuhl_errmsg("primitive_type must be set to GL_POINTS, GL_LINE_STRIP, GL_LINE_LOOP, GL_LINES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, or GL_TRIANGLES.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -764,25 +762,22 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 {
 	if(name == NULL || strlen(name) == 0)
 	{
-		printf("%s: WARNING: GLSL variable name was NULL or the empty string.\n",
-		       __func__);
+		kuhl_warnmsg("GLSL variable name was NULL or the empty string.\n");
 		return;
 	}
 	if(geom == NULL)
 	{
-		printf("%s: WARNING: Geometry struct is null while trying to set texture %s.\n",
-		       __func__, name);
+		kuhl_warnmsg("Geometry struct is null while trying to set texture %s.\n", name);
 		return;
 	}
 	if(texture == 0)
 	{
-		printf("%s: WARNING: Texture was set to 0 while trying to set texture %s\n",
-		       __func__, name);
+		kuhl_warnmsg("Texture was set to 0 while trying to set texture %s\n", name);
 		return;
 	}
 	if(!glIsTexture(texture))
 	{
-		printf("%s: WARNING: You tried to set the texture to an invalid texture %d (detected while trying to set texture %s)\n", __func__, texture, name);
+		kuhl_warnmsg("You tried to set the texture to an invalid texture %d (detected while trying to set texture %s)\n", texture, name);
 		return;
 	}
 
@@ -791,7 +786,7 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 	
 	if(!glIsVertexArray(geom->vao))
 	{
-		printf("%s: WARNING: This geometry object has an invalid vertex array object %d (detected while setting texture %s)\n", __func__, geom->vao, name);
+		kuhl_warnmsg("This geometry object has an invalid vertex array object %d (detected while setting texture %s)\n", geom->vao, name);
 		return;
 	}
 	
@@ -801,7 +796,7 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 	if(samplerLocation == -1)
 	{
 		if(kg_options & KG_WARN)
-			printf("%s: WARNING: Texture sampler '%s' was missing in GLSL program %d.\n", __func__, name, geom->program);
+			kuhl_warnmsg("Texture sampler '%s' was missing in GLSL program %d.\n", name, geom->program);
 		return;
 	}
 
@@ -827,8 +822,7 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 	/* If we are writing past the end of the array. */
 	if(destIndex == MAX_TEXTURES)
 	{
-		fprintf(stderr, "%s: You tried to add more than %d textures to a kuhl_geometry object\n",
-		        __func__, MAX_TEXTURES);
+		kuhl_errmsg("You tried to add more than %d textures to a kuhl_geometry object\n", MAX_TEXTURES);
 		exit(EXIT_FAILURE);
 	}
 
@@ -956,8 +950,7 @@ void kuhl_geometry_program(kuhl_geometry *geom, GLuint program, int kg_options)
 
 	if(!glIsProgram(program))
 	{
-		printf("%s: WARNING: GLSL program %d is not a valid program.\n",
-		       __func__, program);
+		kuhl_warnmsg("GLSL program %d is not a valid program.\n",program);
 	}
 	
 	geom->program = program;
@@ -1019,31 +1012,29 @@ void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint compo
 {
 	if(name == NULL || strlen(name) == 0)
 	{
-		printf("%s: WARNING: GLSL variable name was NULL or the empty string.\n",
-		       __func__);
+		kuhl_warnmsg("GLSL variable name was NULL or the empty string.\n");
 		return;
 	}
 	if(geom == NULL)
 	{
-		printf("%s: WARNING: Geometry struct is null while trying to set attribute %s.\n",
-		       __func__, name);
+		kuhl_warnmsg("Geometry struct is null while trying to set attribute %s.\n",name);
 		return;
 	}
 	if(data == NULL)
 	{
-		printf("%s: WARNING: data array is null while trying to set attribute %s.\n",
-		       __func__, name);
+		kuhl_warnmsg("data array is null while trying to set attribute %s.\n",
+		             name);
 		return;
 	}
 	if(components == 0)
 	{
-		printf("%s: WARNING: Components was 0 while trying to set attribute %s.\n",
-		       __func__, name);
+		kuhl_warnmsg("Components was 0 while trying to set attribute %s.\n",
+		             name);
 		return;
 	}
 	if(!glIsVertexArray(geom->vao))
 	{
-		printf("%s: WARNING: This geometry object has an invalid vertex array object %d (detected while setting attribute %s)\n", __func__, geom->vao, name);
+		kuhl_warnmsg("This geometry object has an invalid vertex array object %d (detected while setting attribute %s)\n", geom->vao, name);
 		return;
 	}
 
@@ -1053,8 +1044,8 @@ void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint compo
 	if(attribLocation == -1)
 	{
 		if(warnIfAttribMissing)
-			printf("%s: WARNING: Attribute '%s' was missing in geometry object.\n",
-			       __func__, name);
+			kuhl_warnmsg("Attribute '%s' was missing in geometry object.\n",
+			             name);
 		return;
 	}
 
@@ -1177,13 +1168,13 @@ void kuhl_geometry_new(kuhl_geometry *geom, GLuint program, unsigned int vertexC
 	/* Check if the program is valid (we don't need to enable it here). */
 	if(!glIsProgram(program))
 	{
-		fprintf(stderr, "%s: ERROR: The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", __func__, geom->program);
+		kuhl_errmsg("The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", geom->program);
 		exit(EXIT_FAILURE);
 	}
 
 	if(vertexCount == 0)
 	{
-		fprintf(stderr, "%s: WARNING: You are creating a geometry object with a vertexCount of 0.\n", __func__);
+		kuhl_warnmsg("You are creating a geometry object with a vertexCount of 0.\n");
 	}
 
 	geom->program = program;

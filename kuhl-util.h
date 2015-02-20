@@ -142,6 +142,17 @@ typedef struct _kuhl_geometry_
  * allocate 0 bytes). */
 #define kuhl_malloc(size) kuhl_mallocFileLine(size, __FILE__, __LINE__)
 
+/** Print an error message to stderr with file and line number
+ * information. */
+#define kuhl_errmsg(M, ...) fprintf(stderr, "ERROR: %s():%d: " M, __func__, __LINE__, ##__VA_ARGS__)
+/** Print a warning message to stderr with file and line number
+ * information. */
+#define kuhl_warnmsg(M, ...) fprintf(stderr, "WARNING: %s():%d: " M, __func__, __LINE__, ##__VA_ARGS__)
+/** Print a message to stdout with file and line number
+ * information. */
+#define kuhl_msg(M, ...) fprintf(stdout, "%s():%d: " M, __func__, __LINE__, ##__VA_ARGS__)
+
+	
 // kuhl_errorcheck() calls this C function:
 int kuhl_errorcheckFileLine(const char *file, int line);
 // kuhl_malloc() calls this C function:
