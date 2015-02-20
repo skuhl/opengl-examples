@@ -544,8 +544,15 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	viewmat_refresh_viewports();
 }
 
-/** Get the view matrix for a generic HMD device. */
-static void viewmat_get_hmd(float viewmatrix[16], int viewportNum)
+/** Get the view matrix from the mouse.
+ *
+ * @param viewmatrix The view matrix to be filled in.
+ *
+ * @param viewportNum If mouse mode is used with a left an right
+ * screen for an HMD, we need to return different view matrices for
+ * the left (0) and right (1) eyes.
+ **/
+static void viewmat_get_mouse(float viewmatrix[16], int viewportNum)
 {
 	float pos[3],look[3],up[3];
 	mousemove_get(pos, look, up);
@@ -566,7 +573,11 @@ static void viewmat_get_hmd(float viewmatrix[16], int viewportNum)
 	vec3f_add_new(pos, pos, rightVec);
 
 	mat4f_lookatVec_new(viewmatrix, pos, look, up);
-	// Don't need to use DGR!
+
+	if(viewportNum == 0)
+		dgr_setget("!!viewMat0", viewmatrix, sizeof(float)*16);
+	else
+		dgr_setget("!!viewMat1", viewmatrix, sizeof(float)*16);
 }
 
 /** Get the view matrix for the dSight HMD. */
@@ -655,19 +666,6 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 #endif
 }
 
-
-/** Get a view matrix from mousemove.
-
- @param viewmatrix The location where the viewmatrix should be stored.
-*/
-void viewmat_get_mouse(float viewmatrix[16])
-{
-	float pos[3],look[3],up[3];
-	mousemove_get(pos, look, up);
-	mat4f_lookatVec_new(viewmatrix, pos, look, up);
-	dgr_setget("!!viewMatMouse", viewmatrix, sizeof(float)*16);
-}
-
 /** Get a view matrix from VRPN and adjust the view frustum
  * appropriately.
  * @param viewmatrix The location where the viewmatrix should be stored.
@@ -733,16 +731,14 @@ void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 
 	switch(viewmat_mode)
 	{
-		case VIEWMAT_MOUSE: // mouse movement
-		case VIEWMAT_ANAGLYPH:
-			viewmat_get_hmd(viewmatrix, viewportID);
+		case VIEWMAT_MOUSE:    // mouse movement
+		case VIEWMAT_ANAGLYPH: // red/cyan anaglyph
+		case VIEWMAT_HMD:      // side-by-side HMD view
+			viewmat_get_mouse(viewmatrix, viewportID);
 			break;
 		case VIEWMAT_IVS: // IVS display wall
 			// frustum is updated based on head tracking
 			viewmat_get_ivs(viewmatrix, f);
-			break;
-		case VIEWMAT_HMD: // side-by-side HMD view
-			viewmat_get_hmd(viewmatrix, viewportID);
 			break;
 		case VIEWMAT_HMD_DSIGHT: // dSight HMD
 			viewmat_get_hmd_dsight(viewmatrix, viewportID);
@@ -754,7 +750,7 @@ void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 			// Get the view matrix from the mouse movement code...but
 			// we haven't registered mouse movement callback
 			// functions, so mouse movement won't work.
-			viewmat_get_mouse(viewmatrix);
+			viewmat_get_mouse(viewmatrix, viewportID);
 			break;
 			break;
 		default:
