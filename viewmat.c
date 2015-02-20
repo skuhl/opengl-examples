@@ -424,6 +424,8 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	glcfg.OGL.Header.API=ovrRenderAPI_OpenGL;
 	glcfg.OGL.Header.BackBufferSize.h=hmd->Resolution.h;
 	glcfg.OGL.Header.BackBufferSize.w=hmd->Resolution.w;
+	// TODO: Multisampling is not complete. Need to implement:
+	// http://ake.in.th/2013/04/02/offscreening-and-multisampling-with-opengl/
 	glcfg.OGL.Header.Multisample = 1;
 	glcfg.OGL.Disp = glXGetCurrentDisplay();
 
