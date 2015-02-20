@@ -28,7 +28,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <GL/gl.h>
 
 #ifdef __cplusplus
 extern "C" {

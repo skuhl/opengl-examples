@@ -363,10 +363,14 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	hmd = ovrHmd_Create(0);
 	if(!hmd)
 	{
-		kuhl_errmsg("Failed to open Oculus HMD. Is oculusd running?\n");
-		kuhl_errmsg("Press any key to proceed with Oculus debugging window.\n");
+		kuhl_warnmsg("Failed to open Oculus HMD. Is oculusd running?\n");
+		kuhl_warnmsg("Press any key to proceed with Oculus debugging window.\n");
 		char c; 
-		fscanf(stdin, "%c", &c);
+		if(fscanf(stdin, "%c", &c) < 0)
+		{
+			kuhl_errmsg("fscanf error.\n");
+			exit(EXIT_FAILURE);
+		}
 
 
 		hmd = ovrHmd_CreateDebug(ovrHmd_DK2);
