@@ -67,7 +67,8 @@ typedef enum
 	VIEWMAT_HMD,        /* Side-by-side view */
 	VIEWMAT_HMD_DSIGHT, /* Sensics dSight */
 	VIEWMAT_HMD_OCULUS, /* HMDs supported by libovr (Oculus DK1, DK2, etc). */
-	VIEWMAT_NONE
+	VIEWMAT_ANAGLYPH,   /* Red-Cyan anaglyph images */
+	VIEWMAT_NONE        /* No matrix handler used */
 } ViewmatModeType;
 
 #define MAX_VIEWPORTS 32 /**< Hard-coded maximum number of viewports supported. */
@@ -99,10 +100,15 @@ void viewmat_end_frame(void)
 		ovrHmd_EndFrame(hmd, pose, &EyeTexture[0].Texture);
 #endif
 	}
-	else
+	else if(viewmat_mode == VIEWMAT_ANAGLYPH)
 	{
-		glutSwapBuffers();
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	}
+
+	/* Need to swap front and back buffers here unless we are using
+	 * Oculus. (Oculus draws to the screen directly). */
+	if(viewmat_mode != VIEWMAT_HMD_OCULUS)
+		glutSwapBuffers();
 }
 
 /** Changes the framebuffer (as needed) that OpenGL is rendering
@@ -135,6 +141,20 @@ void viewmat_begin_eye(int viewportID)
 		}
 	}
 #endif
+
+	if(viewmat_mode == VIEWMAT_ANAGLYPH)
+	{
+		if(viewportID == 0)
+			glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE);
+		else if(viewportID == 1)
+			glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_FALSE);
+		else
+		{
+			fprintf(stderr, "%s:%d: Unknown viewport ID: %d\n",
+			        __FILE__, __LINE__, viewportID);
+			exit(EXIT_FAILURE);
+		}
+	}
 }
 
 /** Sets up viewmat to only have one viewport. This can be called
@@ -150,6 +170,48 @@ static void viewmat_one_viewport()
 	viewports[0][1] = 0;
 	viewports[0][2] = windowWidth;
 	viewports[0][3] = windowHeight;
+}
+
+static void viewmat_anaglyph_viewports()
+{
+	/* One viewport fills the entire screen */
+	int windowWidth  = glutGet(GLUT_WINDOW_WIDTH);
+	int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+	viewports_size = 2;
+	/* Our anaglyph rendering uses parallel cameras. Changing the
+	 * offset will change the distance at which objects are perceived
+	 * to be at the depth of your screen. For example, a star that is
+	 * infinitely far away form the parallel cameras would project
+	 * onto the same pixel in each camera. However, if we displayed
+	 * those two images without an offset, your eyes would have to
+	 * verge to the depth of the screen to fuse the star---causing
+	 * convergence cues to indicate that the star is at the depth of
+	 * the screen. Offsetting the image horizontally by the
+	 * inter-pupil eye distances can resolve this problem. Offsetting
+	 * too should be avoided because it causes divergence.
+	 *
+	 * Anaglyph images may not look good because some light will get
+	 * to the incorrect eye due to imperfect filters. Also, if you
+	 * move the camera very close to an object, may be difficult to
+	 * fuse the object. (Objects close to your eyes in the real world
+	 * are hard to fuse too!).
+	 *
+	 * The offset parameter below is in pixels. Depending on the size
+	 * the pixels on your screen, you may need to adjust this value.
+	 */
+	int offset = -20;
+	
+	for(int i=0; i<2; i++)
+	{
+
+		if(i == 0)
+			viewports[i][0] = -offset/2;
+		else
+			viewports[i][0] = offset/2;
+		viewports[i][1] = 0;
+		viewports[i][2] = windowWidth;
+		viewports[i][3] = windowHeight;
+	}
 }
 
 /** Sets up viewmat to split the screen vertically into two
@@ -200,19 +262,26 @@ static void viewmat_oculus_viewports()
  * our viewports after a window is resized. */
 static void viewmat_refresh_viewports()
 {
-	if(viewmat_mode == VIEWMAT_MOUSE ||
-	   viewmat_mode == VIEWMAT_NONE ||
-	   viewmat_mode == VIEWMAT_IVS)
-		viewmat_one_viewport();
-	else if(viewmat_mode == VIEWMAT_HMD ||
-	        viewmat_mode == VIEWMAT_HMD_DSIGHT)
-		viewmat_two_viewports();
-	else if(viewmat_mode == VIEWMAT_HMD_OCULUS)
-		viewmat_oculus_viewports();
-	else
+	switch(viewmat_mode)
 	{
-		printf("viewmat: unknown mode: %d\n", viewmat_mode);
-		exit(EXIT_FAILURE);
+		case VIEWMAT_MOUSE:
+		case VIEWMAT_NONE:
+		case VIEWMAT_IVS:
+			viewmat_one_viewport();
+			break;
+		case VIEWMAT_HMD:
+		case VIEWMAT_HMD_DSIGHT:
+			viewmat_two_viewports();
+			break;
+		case VIEWMAT_HMD_OCULUS:
+			viewmat_oculus_viewports();
+			break;
+		case VIEWMAT_ANAGLYPH:
+			viewmat_anaglyph_viewports();
+			break;
+		default:
+			printf("%s:%d: unknown mode: %d\n", __FILE__, __LINE__, viewmat_mode);
+			exit(EXIT_FAILURE);
 	}
 }
 
@@ -449,6 +518,16 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	{
 		printf("viewmat: No view matrix handler is being used.\n");
 		viewmat_mode = VIEWMAT_NONE;
+		// Set our initial position, but don't handle mouse movement.
+		mousemove_set(pos[0],pos[1],pos[2],
+		              look[0],look[1],look[2],
+		              up[0],up[1],up[2]);
+	}
+	else if(strcasecmp(modeString, "anaglyph") == 0)
+	{
+		printf("viewmat: Anaglyph image rendering. Use the red filter on the left eye and the cyan filter on the right eye.\n");
+		viewmat_mode = VIEWMAT_ANAGLYPH;
+		viewmat_init_mouse(pos, look, up);
 	}
 	else
 	{
@@ -601,13 +680,14 @@ void viewmat_get_ivs(float viewmatrix[16], float frustum[6])
  * the IVS display wall, the frustum is adjusted dynamically based on
  * where a person is relative to the screens.
  *
- * @param viewportNum If there is only one viewport, set this to 0. If
+ * @param viewmatrix A 4x4 view matrix for viewmat to fill in.
+ *
+ * @param projmatrix A 4x4 projection matrix for viewmat to fill in.
+ *
+ * @param viewportID If there is only one viewport, set this to 0. If
  * the system uses multiple viewports (i.e., HMD), then set this to 0
  * or 1 to get the view matrices for the left and right eyes.
  *
- * @param viewmatrix A 4x4 view matrix for viewmat to fill in.
- *
- * @param projmatrix TODO.
  */
 void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 {
@@ -618,23 +698,39 @@ void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 	float f[6]; // left, right, top, bottom, near>0, far>0
 	projmat_get_frustum(f, viewport[2], viewport[3]);
 
-	if(viewmat_mode == VIEWMAT_MOUSE) // mouse movement
-		viewmat_get_mouse(viewmatrix);
+	switch(viewmat_mode)
+	{
+		case VIEWMAT_MOUSE: // mouse movement
+		case VIEWMAT_ANAGLYPH:
+			viewmat_get_hmd(viewmatrix, viewportID);
+			break;
+		case VIEWMAT_IVS: // IVS display wall
+			// frustum is updated based on head tracking
+			viewmat_get_ivs(viewmatrix, f);
+			break;
+		case VIEWMAT_HMD: // side-by-side HMD view
+			viewmat_get_hmd(viewmatrix, viewportID);
+			break;
+		case VIEWMAT_HMD_DSIGHT: // dSight HMD
+			viewmat_get_hmd_dsight(viewmatrix, viewportID);
+			break;
+		case VIEWMAT_HMD_OCULUS:
+			viewmat_get_hmd_oculus(viewmatrix, viewportID);
+			break;
+		case VIEWMAT_NONE:
+			// Get the view matrix from the mouse movement code...but
+			// we haven't registered mouse movement callback
+			// functions, so mouse movement won't work.
+			viewmat_get_mouse(viewmatrix);
+			break;
+			break;
+		default:
+			printf("%s:%d: Unknown viewmat mode: %d\n", __FILE__, __LINE__, viewmat_mode);
+			exit(EXIT_FAILURE);
+	}
+		
+	/* The following code calculates the projection matrix. */
 
-	if(viewmat_mode == VIEWMAT_IVS) // IVS
-		viewmat_get_ivs(viewmatrix, f); // frustum is updated based on head tracking
-
-	if(viewmat_mode == VIEWMAT_HMD) // generic HMD
-		viewmat_get_hmd(viewmatrix, viewportID);
-
-	if(viewmat_mode == VIEWMAT_HMD_DSIGHT) // dSight HMD
-		viewmat_get_hmd_dsight(viewmatrix, viewportID);
-
-	if(viewmat_mode == VIEWMAT_HMD_OCULUS) // Oculus HMD
-		viewmat_get_hmd_oculus(viewmatrix, viewportID);
-
-	/* Now that the view matrix is known, return to calculating the
-	 * projection matrix. */
 	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
 	{
 #ifndef MISSING_OVR
