@@ -184,7 +184,7 @@ void keyboard(unsigned char key, int x, int y)
 			{
 				case 0: printf("Render style: Diffuse (headlamp light)\n"); break;
 				case 1: printf("Render style: Texture (color is used on non-textured geometry)\n"); break;
-				case 2: printf("Render style: Texture+diffuse (color is used on non-textured geometry)\n");
+				case 2: printf("Render style: Texture+diffuse (color is used on non-textured geometry)\n"); break;
 				case 3: printf("Render style: Vertex color\n"); break;
 				case 4: printf("Render style: Vertex color + diffuse (headlamp light)\n"); break;
 				case 5: printf("Render style: Normals\n"); break;
