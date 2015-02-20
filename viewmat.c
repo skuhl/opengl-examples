@@ -199,7 +199,7 @@ static void viewmat_anaglyph_viewports()
 	 * The offset parameter below is in pixels. Depending on the size
 	 * the pixels on your screen, you may need to adjust this value.
 	 */
-	int offset = -20;
+	int offset = 20;
 	
 	for(int i=0; i<2; i++)
 	{
