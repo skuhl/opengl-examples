@@ -221,9 +221,10 @@ endif()
 set(PREPROC_DEFINE "MOUSEMOVE_GLUT;${ASSIMP_FOUND_DEFINITION};${IMAGEMAGICK_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION}")
 
 # Create a static library containing all files that we regularly use.
-set(FILES_IN_LIBKUHL kuhl-util.c vecmat.c dgr.c mousemove.c hmd-dsight-orient.c projmat.c viewmat.c vrpn-help.cpp)
+include_directories("lib")
+set(FILES_IN_LIBKUHL lib/kuhl-util.c lib/vecmat.c lib/dgr.c lib/mousemove.c lib/hmd-dsight-orient.c lib/projmat.c lib/viewmat.c lib/vrpn-help.cpp)
 if(ImageMagick_FOUND)
-	set(FILES_IN_LIBKUHL ${FILES_IN_LIBKUHL} imageio.c)
+	set(FILES_IN_LIBKUHL ${FILES_IN_LIBKUHL} lib/imageio.c)
 endif()
 add_library(kuhl STATIC ${FILES_IN_LIBKUHL})
 set_target_properties(kuhl PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
