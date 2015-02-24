@@ -460,10 +460,12 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	 * TimeWarp  - Simulate rotation by moving image on screen if fps is low.
 	 * Overdrive - Overdrive brightness transitions to compensate for DK2 artifacts
 	 * Vignette  - Change brightness at edges of image
+	 * LinuxDevFullscreen - Screen rotation for DK2
 	 *
 	 * See OVR_CAPI.h for additional options
 	 */
 	unsigned int distort_caps = ovrDistortionCap_Chromatic | ovrDistortionCap_TimeWarp | ovrDistortionCap_Overdrive | ovrDistortionCap_Vignette;
+	// ovrDistortionCap_LinuxDevFullscreen
 	
 	if(!ovrHmd_ConfigureRendering(hmd, &glcfg.Config, distort_caps, hmd->DefaultEyeFov, eye_rdesc)) {
 		kuhl_errmsg("Failed to configure distortion renderer.\n");
