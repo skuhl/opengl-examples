@@ -422,8 +422,19 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	union ovrGLConfig glcfg;
 	memset(&glcfg, 0, sizeof(glcfg));
 	glcfg.OGL.Header.API=ovrRenderAPI_OpenGL;
-	glcfg.OGL.Header.BackBufferSize.h=hmd->Resolution.h;
-	glcfg.OGL.Header.BackBufferSize.w=hmd->Resolution.w;
+	if(hmd->Type == ovrHmd_DK2)
+	{
+		/* Since the DK2 monitor is rotated, we need to swap the width
+		 * and height here so that the final image correctly fills the
+		 * entire screen. */
+		glcfg.OGL.Header.BackBufferSize.h=hmd->Resolution.w;
+		glcfg.OGL.Header.BackBufferSize.w=hmd->Resolution.h;
+	} else
+	{
+		glcfg.OGL.Header.BackBufferSize.h=hmd->Resolution.h;
+		glcfg.OGL.Header.BackBufferSize.w=hmd->Resolution.w;
+	}
+
 	// TODO: Multisampling is not complete. Need to implement:
 	// http://ake.in.th/2013/04/02/offscreening-and-multisampling-with-opengl/
 	glcfg.OGL.Header.Multisample = 1;
@@ -464,8 +475,7 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	 *
 	 * See OVR_CAPI.h for additional options
 	 */
-	unsigned int distort_caps = ovrDistortionCap_Chromatic | ovrDistortionCap_TimeWarp | ovrDistortionCap_Overdrive | ovrDistortionCap_Vignette;
-	// ovrDistortionCap_LinuxDevFullscreen
+	unsigned int distort_caps = ovrDistortionCap_Chromatic | ovrDistortionCap_TimeWarp | ovrDistortionCap_Overdrive | ovrDistortionCap_Vignette | ovrDistortionCap_LinuxDevFullscreen;
 	
 	if(!ovrHmd_ConfigureRendering(hmd, &glcfg.Config, distort_caps, hmd->DefaultEyeFov, eye_rdesc)) {
 		kuhl_errmsg("Failed to configure distortion renderer.\n");

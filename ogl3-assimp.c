@@ -64,6 +64,12 @@ void keyboard(unsigned char key, int x, int y)
 		case 27: // ASCII code for Escape key
 			exit(0);
 			break;
+		case 'f': // full screen
+			glutFullScreen();
+			break;
+		case 'F': // switch to window from full screen mode
+			glutPositionWindow(0,0);
+			break;
 		case 'r':
 		{
 			// Reload GLSL program from disk
