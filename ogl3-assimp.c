@@ -325,8 +325,6 @@ void display()
 		glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 
-
-
 		/* Get the view or camera matrix; update the frustum values if needed. */
 		float viewMat[16], perspective[16];
 		viewmat_get(viewMat, perspective, viewportID);
@@ -355,7 +353,7 @@ void display()
 		float f[6]; // left, right, top, bottom, near>0, far>0
 		projmat_get_frustum(f, viewport[2], viewport[3]);
 		glUniform1f(kuhl_get_uniform("farPlane"), f[5]);
-		
+
 		kuhl_errorcheck();
 		kuhl_geometry_draw(modelgeom); /* Draw the model */
 		kuhl_errorcheck();
@@ -390,7 +388,7 @@ void display()
 			glEnable(GL_DEPTH_TEST);
 			kuhl_errorcheck();
 		}
-		
+
 		glUseProgram(0); // stop using a GLSL program.
 
 	} // finish viewport loop
@@ -476,6 +474,7 @@ int main(int argc, char** argv)
 	/* set up our GLUT window */
 	glutInit(&argc, argv);
 	glutInitWindowSize(512, 512);
+	glutSetOption(GLUT_MULTISAMPLE, 4); // set msaa samples; default to 4
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
 #ifdef __APPLE__
@@ -523,7 +522,6 @@ int main(int argc, char** argv)
 	// Clear the screen while things might be loading
 	glClearColor(.2,.2,.2,1);
 	glClear(GL_COLOR_BUFFER_BIT);
-	glutSwapBuffers();
 
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);

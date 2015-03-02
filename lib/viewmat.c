@@ -48,13 +48,14 @@
 OVR_EXPORT void ovrhmd_EnableHSWDisplaySDKRender(ovrHmd hmd, ovrBool enable);
 
 ovrHmd hmd;
-GLuint leftTexture,rightTexture;
-GLint leftFramebuffer, rightFramebuffer;
+GLint leftFramebuffer, rightFramebuffer, leftFramebufferAA, rightFramebufferAA;
+ovrSizei recommendTexSizeL,recommendTexSizeR;
 ovrGLTexture EyeTexture[2];
 ovrEyeRenderDesc eye_rdesc[2];
 ovrFrameTiming timing;
 ovrPosef pose[2];
 float oculus_initialPos[3];
+union ovrGLConfig glcfg;
 #endif
 
 
@@ -95,6 +96,17 @@ void viewmat_end_frame(void)
 {
 	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
 	{
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, leftFramebufferAA);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, leftFramebuffer);
+		glBlitFramebuffer(0, 0, recommendTexSizeL.w, recommendTexSizeL.h,
+		                  0, 0, recommendTexSizeL.w, recommendTexSizeL.h,
+		                  GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, rightFramebufferAA);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, rightFramebuffer);
+		glBlitFramebuffer(0, 0, recommendTexSizeR.w, recommendTexSizeR.h,
+		                  0, 0, recommendTexSizeR.w, recommendTexSizeR.h,
+		                  GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		kuhl_errorcheck();
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #ifndef MISSING_OVR
 		ovrHmd_EndFrame(hmd, pose, &EyeTexture[0].Texture);
@@ -130,9 +142,9 @@ void viewmat_begin_eye(int viewportID)
 	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
 	{
 		if(viewportID == 0)
-			glBindFramebuffer(GL_FRAMEBUFFER, leftFramebuffer);
+			glBindFramebuffer(GL_FRAMEBUFFER, leftFramebufferAA);
 		else if(viewportID == 1)
-			glBindFramebuffer(GL_FRAMEBUFFER, rightFramebuffer);
+			glBindFramebuffer(GL_FRAMEBUFFER, rightFramebufferAA);
 		else
 		{
 			kuhl_errmsg("Unknown viewport ID: %d\n",viewportID);
@@ -360,6 +372,7 @@ static void viewmat_init_hmd_oculus(float pos[3])
 #else
 	ovr_Initialize();
 
+	int useDebugMode = 0;
 	hmd = ovrHmd_Create(0);
 	if(!hmd)
 	{
@@ -374,6 +387,7 @@ static void viewmat_init_hmd_oculus(float pos[3])
 
 
 		hmd = ovrHmd_CreateDebug(ovrHmd_DK2);
+		useDebugMode = 1;
 		if(!hmd)
 		{
 			kuhl_errmsg("Oculus: Failed to create virtual debugging HMD\n");
@@ -382,7 +396,6 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	}
 	
 	kuhl_msg("Initialized HMD: %s - %s\n", hmd->Manufacturer, hmd->ProductName);
-	glutReshapeWindow(hmd->Resolution.w, hmd->Resolution.h);
 
 #if 0
 	printf("default fov tangents left eye:\n");
@@ -392,9 +405,21 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	printf("up=%f\n", hmd->DefaultEyeFov[ovrEye_Left].RightTan);
 #endif
 	
-	/* Create framebuffers which render directly to textures for the left and right eyes. */
-	ovrSizei recommendTexSizeL = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left,  hmd->DefaultEyeFov[ovrEye_Left],  1);
-	ovrSizei recommendTexSizeR = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right, hmd->DefaultEyeFov[ovrEye_Right], 1);
+
+	/* pixelDensity can range between 0 to 1 (where 1 has the highest
+	 * resolution). Using smaller values will result in smaller
+	 * textures that each eye is rendered into. */
+	float pixelDensity = .5;
+	/* Number of multisample antialiasing while rendering the scene
+	 * for each eye. */
+	GLint msaa_samples = 4;
+	recommendTexSizeL = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left,  hmd->DefaultEyeFov[ovrEye_Left],  pixelDensity);
+	recommendTexSizeR = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right, hmd->DefaultEyeFov[ovrEye_Right], pixelDensity);
+	
+	GLuint leftTextureAA,rightTextureAA;
+//	leftFramebufferAA  = kuhl_gen_framebuffer_msaa(recommendTexSizeL.w, recommendTexSizeL.h, &leftTextureAA, NULL, msaa_samples);
+//	rightFramebufferAA = kuhl_gen_framebuffer_msaa(recommendTexSizeR.w, recommendTexSizeR.h, &rightTextureAA, NULL, msaa_samples);
+	GLuint leftTexture,rightTexture;
 	leftFramebuffer  = kuhl_gen_framebuffer(recommendTexSizeL.w, recommendTexSizeL.h, &leftTexture,  NULL);
 	rightFramebuffer = kuhl_gen_framebuffer(recommendTexSizeR.w, recommendTexSizeR.h, &rightTexture, NULL);
 	//printf("Left recommended texture size: %d %d\n", recommendTexSizeL.w, recommendTexSizeL.h);
@@ -419,10 +444,12 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	EyeTexture[0].OGL.TexId = leftTexture;
 	EyeTexture[1].OGL.TexId = rightTexture;
 
-	union ovrGLConfig glcfg;
 	memset(&glcfg, 0, sizeof(glcfg));
 	glcfg.OGL.Header.API=ovrRenderAPI_OpenGL;
-	if(hmd->Type == ovrHmd_DK2)
+	glcfg.OGL.Header.Multisample = 0;
+	glcfg.OGL.Disp = glXGetCurrentDisplay();
+	
+	if(hmd->Type == ovrHmd_DK2 && useDebugMode == 0)
 	{
 		/* Since the DK2 monitor is rotated, we need to swap the width
 		 * and height here so that the final image correctly fills the
@@ -434,11 +461,9 @@ static void viewmat_init_hmd_oculus(float pos[3])
 		glcfg.OGL.Header.BackBufferSize.h=hmd->Resolution.h;
 		glcfg.OGL.Header.BackBufferSize.w=hmd->Resolution.w;
 	}
+	glutReshapeWindow(glcfg.OGL.Header.BackBufferSize.w,
+	                  glcfg.OGL.Header.BackBufferSize.h);
 
-	// TODO: Multisampling is not complete. Need to implement:
-	// http://ake.in.th/2013/04/02/offscreening-and-multisampling-with-opengl/
-	glcfg.OGL.Header.Multisample = 1;
-	glcfg.OGL.Disp = glXGetCurrentDisplay();
 
 #if 0
 	/* We have only tested the Oculus in Extended Desktop mode on Linux. */
@@ -458,9 +483,17 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	ovrHmd_ConfigureTracking(hmd, ovrTrackingCap_Orientation |
 	                         ovrTrackingCap_MagYawCorrection |
 	                         ovrTrackingCap_Position, 0);
-	
-	/* Enable low-persistence display and dynamic prediction for latency compensation */
-	unsigned int hmd_caps = ovrHmdCap_LowPersistence | ovrHmdCap_DynamicPrediction;
+
+	/* Enable low-persistence display and dynamic prediction for
+	 * latency compensation.
+	 *
+	 * I have found that on Ubuntu with the Unity window manager,
+	 * using ovrHmdCap_NoVSync does not cause any noticeable amounts
+	 * of tearing even when vsync is turned off in both
+	 * nvidia-settings and in the compiz OpenGL plugin (the "ccsm"
+	 * program). It also can significantly improve the frame rate.
+	 */
+	unsigned int hmd_caps = ovrHmdCap_LowPersistence | ovrHmdCap_DynamicPrediction | ovrHmdCap_NoVSync;
 	ovrHmd_SetEnabledCaps(hmd, hmd_caps);
 
 	/* configure SDK-rendering and enable chromatic abberation correction, vignetting, and
@@ -475,10 +508,11 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	 *
 	 * See OVR_CAPI.h for additional options
 	 */
-	unsigned int distort_caps = ovrDistortionCap_Chromatic | ovrDistortionCap_TimeWarp | ovrDistortionCap_Overdrive | ovrDistortionCap_Vignette | ovrDistortionCap_LinuxDevFullscreen;
+	unsigned int distort_caps = ovrDistortionCap_Chromatic | ovrDistortionCap_Vignette | ovrDistortionCap_Vignette | ovrDistortionCap_LinuxDevFullscreen | ovrDistortionCap_TimeWarp;
 	
 	if(!ovrHmd_ConfigureRendering(hmd, &glcfg.Config, distort_caps, hmd->DefaultEyeFov, eye_rdesc)) {
 		kuhl_errmsg("Failed to configure distortion renderer.\n");
+		exit(EXIT_FAILURE);
 	}
 
 	/* disable health and safety warning */

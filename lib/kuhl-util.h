@@ -216,6 +216,8 @@ kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDir
 void kuhl_bbox_fit(float result[16], const float bbox[6], int sitOnXZPlane);
 	
 GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depthTexture);
+GLint kuhl_gen_framebuffer_msaa(int width, int height, GLuint *texture, GLuint *depthTexture, GLint samples);
+
 void kuhl_play_sound(const char *filename);
 
 #ifdef __cplusplus

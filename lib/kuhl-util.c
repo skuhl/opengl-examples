@@ -2984,6 +2984,16 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 	glGetIntegerv(GL_TEXTURE_BINDING_2D,   &origBoundTexture);
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING,  &origBoundFrameBuffer);
 	glGetIntegerv(GL_RENDERBUFFER_BINDING, &origBoundRenderBuffer);
+
+	GLint maxTextureSize;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+	if(width < 0 || width > maxTextureSize ||
+	   height< 0 || height> maxTextureSize)
+	{
+		kuhl_errmsg("Requested %d x %d texture but maximum allowed is %d\n",
+		            width, height, maxTextureSize);
+		exit(EXIT_FAILURE);
+	}
 	
 	// set up texture
 	if(texture != NULL)
@@ -3095,6 +3105,150 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 	kuhl_errorcheck();
 	return framebuffer;
 }
+
+GLint kuhl_gen_framebuffer_msaa(int width, int height, GLuint *texture, GLuint *depthTexture, GLint samples)
+{
+	GLint origBoundTexture,origBoundFrameBuffer,origBoundRenderBuffer;;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D,   &origBoundTexture);
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING,  &origBoundFrameBuffer);
+	glGetIntegerv(GL_RENDERBUFFER_BINDING, &origBoundRenderBuffer);
+	kuhl_errorcheck();
+
+	GLint maxSamples;
+	glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
+	if(samples > GL_MAX_SAMPLES || samples < 1)
+	{
+		kuhl_errmsg("Requested %d samples but maximum allowed is %d\n", samples,
+		            maxSamples);
+		exit(EXIT_FAILURE);
+	}
+	GLint maxTextureSize;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+	if(width < 0 || width > maxTextureSize ||
+	   height< 0 || height> maxTextureSize)
+	{
+		kuhl_errmsg("Requested %d x %d texture but maximum allowed is %d\n",
+		            width, height, maxTextureSize);
+		exit(EXIT_FAILURE);
+	}
+		
+	
+	// set up texture
+	if(texture != NULL)
+	{
+		glGenTextures(1, texture);
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, *texture);
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB8,
+		                        width, height, GL_TRUE);
+		kuhl_errorcheck();
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
+	kuhl_errorcheck();
+	if(depthTexture != NULL)
+	{
+		glGenTextures(1, depthTexture);
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, *depthTexture);
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_DEPTH_COMPONENT16,
+		                        width, height, GL_TRUE);
+		kuhl_errorcheck();
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
+	kuhl_errorcheck();
+
+	// set up frame buffer object (FBO)
+	GLuint framebuffer = 0;
+	glGenFramebuffers(1, &framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+	// setup depth buffer
+	GLuint depthbuffer = 0;
+	glGenRenderbuffers(1, &depthbuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT, width, height);
+	
+	// Connect FBO to depth buffer
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+	                          GL_DEPTH_ATTACHMENT,
+	                          GL_RENDERBUFFER,
+	                          depthbuffer);
+	kuhl_errorcheck();
+	if(texture != NULL)
+	{
+		// Connect FBO to texture
+		glFramebufferTexture2D(GL_FRAMEBUFFER,
+		                       GL_COLOR_ATTACHMENT0,
+		                       GL_TEXTURE_2D_MULTISAMPLE,
+		                       *texture,      // texture id
+		                       0);            // mipmap level
+		kuhl_errorcheck();
+	}
+	else
+		glDrawBuffer(GL_NONE);
+
+	kuhl_errorcheck();
+
+	if(depthTexture != NULL)
+	{
+		glFramebufferTexture2D(GL_FRAMEBUFFER,
+		                       GL_DEPTH_ATTACHMENT,
+		                       GL_TEXTURE_2D_MULTISAMPLE,
+		                       *depthTexture,      // texture id
+		                       0);            // mipmap level
+	}
+	kuhl_errorcheck();
+
+	GLenum fbStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if(fbStatus != GL_FRAMEBUFFER_COMPLETE)
+	{
+		printf("%s: glCheckFramebufferStatus() indicated a the following problem with the framebuffer:\n", __func__);
+		switch(fbStatus)
+		{
+			case GL_FRAMEBUFFER_UNDEFINED:
+				printf("%s: GL_FRAMEBUFFER_UNDEFINED\n", __func__);
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT\n", __func__);
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT\n", __func__);
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER\n", __func__);
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER\n", __func__);
+				break;
+			case GL_FRAMEBUFFER_UNSUPPORTED:
+				printf("%s: GL_FRAMEBUFFER_UNSUPPORTED\n", __func__);
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE\n", __func__);
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
+				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS\n", __func__);
+				break;
+			default:
+				printf("%s: Unknown error.\n", __func__);
+				break;
+		}
+		exit(EXIT_FAILURE);
+	}
+	kuhl_errorcheck();
+
+	// Restore binding
+	glBindTexture(GL_TEXTURE_2D, origBoundTexture);
+	glBindFramebuffer(GL_FRAMEBUFFER, origBoundFrameBuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, origBoundRenderBuffer);
+	kuhl_errorcheck();
+	return framebuffer;
+}
+
 
 
 
