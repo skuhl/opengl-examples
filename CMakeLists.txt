@@ -19,7 +19,7 @@ set(NEED_ASSIMP_AND_IM  ogl3-assimp ogl3-slerp ogl3-explode)
 # Programs that only need ImageMagick
 set(NEED_IM ogl2-slideshow ogl2-texture ogl3-texture)
 # Programs that don't rely on libraries
-set(NEED_NOTHING ogl2-triangle ogl3-triangle ogl3-triangle-color ogl3-triangle-shade ogl3-prerend ogl3-picker)
+set(NEED_NOTHING ogl2-triangle ogl3-triangle ogl3-triangle-color ogl3-triangle-shade ogl3-prerend ogl3-picker ogl3-teartest)
 
 
 # use color messages

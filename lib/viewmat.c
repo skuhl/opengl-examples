@@ -417,8 +417,8 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	recommendTexSizeR = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right, hmd->DefaultEyeFov[ovrEye_Right], pixelDensity);
 	
 	GLuint leftTextureAA,rightTextureAA;
-//	leftFramebufferAA  = kuhl_gen_framebuffer_msaa(recommendTexSizeL.w, recommendTexSizeL.h, &leftTextureAA, NULL, msaa_samples);
-//	rightFramebufferAA = kuhl_gen_framebuffer_msaa(recommendTexSizeR.w, recommendTexSizeR.h, &rightTextureAA, NULL, msaa_samples);
+	leftFramebufferAA  = kuhl_gen_framebuffer_msaa(recommendTexSizeL.w, recommendTexSizeL.h, &leftTextureAA, NULL, msaa_samples);
+	rightFramebufferAA = kuhl_gen_framebuffer_msaa(recommendTexSizeR.w, recommendTexSizeR.h, &rightTextureAA, NULL, msaa_samples);
 	GLuint leftTexture,rightTexture;
 	leftFramebuffer  = kuhl_gen_framebuffer(recommendTexSizeL.w, recommendTexSizeL.h, &leftTexture,  NULL);
 	rightFramebuffer = kuhl_gen_framebuffer(recommendTexSizeR.w, recommendTexSizeR.h, &rightTexture, NULL);
@@ -486,14 +486,8 @@ static void viewmat_init_hmd_oculus(float pos[3])
 
 	/* Enable low-persistence display and dynamic prediction for
 	 * latency compensation.
-	 *
-	 * I have found that on Ubuntu with the Unity window manager,
-	 * using ovrHmdCap_NoVSync does not cause any noticeable amounts
-	 * of tearing even when vsync is turned off in both
-	 * nvidia-settings and in the compiz OpenGL plugin (the "ccsm"
-	 * program). It also can significantly improve the frame rate.
 	 */
-	unsigned int hmd_caps = ovrHmdCap_LowPersistence | ovrHmdCap_DynamicPrediction | ovrHmdCap_NoVSync;
+	unsigned int hmd_caps = ovrHmdCap_LowPersistence | ovrHmdCap_DynamicPrediction; // | ovrHmdCap_NoVSync;
 	ovrHmd_SetEnabledCaps(hmd, hmd_caps);
 
 	/* configure SDK-rendering and enable chromatic abberation correction, vignetting, and
