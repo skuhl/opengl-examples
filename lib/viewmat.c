@@ -141,9 +141,13 @@ void viewmat_begin_eye(int viewportID)
 #ifndef MISSING_OVR
 	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
 	{
-		if(viewportID == 0)
+		/* The EyeRenderOrder array indicates which eye should be
+		 * rendered first. This code assumes that lower viewport IDs
+		 * are drawn before higher numbers. */
+		ovrEyeType eye = hmd->EyeRenderOrder[viewportID];
+		if(eye == ovrEye_Left)
 			glBindFramebuffer(GL_FRAMEBUFFER, leftFramebufferAA);
-		else if(viewportID == 1)
+		else if(eye == ovrEye_Right)
 			glBindFramebuffer(GL_FRAMEBUFFER, rightFramebufferAA);
 		else
 		{
@@ -660,7 +664,12 @@ static void viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
 void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 {
 #ifndef MISSING_OVR
-	pose[viewportID] = ovrHmd_GetHmdPosePerEye(hmd, viewportID);
+	/* Oculus recommends the order that we should render eyes. We assume
+	 * that smaller viewportIDs are rendered first. So, we need to map
+	 * the viewportIDs to the specific Oculus HMD eye. */
+	ovrEyeType eye = hmd->EyeRenderOrder[viewportID];
+
+	pose[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
 
 	float offsetMat[16], rotMat[16], posMat[16];
 	mat4f_identity(offsetMat);
@@ -670,26 +679,26 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 	/* Construct a matrix which represents the amount to offset each
 	 * eye. For the DK1, this seems to only be the IPD offset. */
 	mat4f_translate_new(offsetMat,
-	                    eye_rdesc[viewportID].HmdToEyeViewOffset.x,
-	                    eye_rdesc[viewportID].HmdToEyeViewOffset.y,
-	                    eye_rdesc[viewportID].HmdToEyeViewOffset.z);
+	                    eye_rdesc[eye].HmdToEyeViewOffset.x,
+	                    eye_rdesc[eye].HmdToEyeViewOffset.y,
+	                    eye_rdesc[eye].HmdToEyeViewOffset.z);
 
 	
 	/* Construct a rotation matrix based on the Oculus orientation
 	 * sensor */
 	mat4f_rotateQuat_new(rotMat,
-	                     pose[viewportID].Orientation.x,
-	                     pose[viewportID].Orientation.y,
-	                     pose[viewportID].Orientation.z,
-	                     pose[viewportID].Orientation.w);
+	                     pose[eye].Orientation.x,
+	                     pose[eye].Orientation.y,
+	                     pose[eye].Orientation.z,
+	                     pose[eye].Orientation.w);
 	mat4f_transpose(rotMat); /* orientation sensor rotates camera, not world */
 
 	/* Matrix which translates the world to account for the position
 	 * of the HMD (from the Oculus tracker). */
 	mat4f_translate_new(posMat,
-	                    -pose[viewportID].Position.x,
-	                    -pose[viewportID].Position.y,
-	                    -pose[viewportID].Position.z);
+	                    -pose[eye].Position.x,
+	                    -pose[eye].Position.y,
+	                    -pose[eye].Position.z);
 
 	// Translate the world based on the initial camera position
 	// specified in viewmat_init(). You may choose to initialize the
@@ -703,6 +712,7 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 
 	if(0)
 	{
+		printf("ViewportID=%d; eye=%s\n", viewportID, eye == ovrEye_Left ? "left" : "right");
 		printf("OVR eye offset: ");
 		mat4f_print(offsetMat);
 		printf("OVR rotation sensing: ");
