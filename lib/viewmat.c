@@ -590,6 +590,12 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	}
 
 	viewmat_refresh_viewports();
+
+	// If there are two "viewports" then it is likely that we are
+	// doing stereoscopic rendering. Displaying the mouse cursor can
+	// interfere with stereo images, so we disable the cursor here.
+	if(viewports_size == 2)
+		glutSetCursor(GLUT_CURSOR_NONE);
 }
 
 /** Get the view matrix from the mouse.
