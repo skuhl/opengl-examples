@@ -74,7 +74,7 @@ void display()
 		glScissor(viewport[0], viewport[1], viewport[2], viewport[3]);
 		glEnable(GL_SCISSOR_TEST);
 		glClearColor(.2,.2,.2,0); // set clear color to grey
-		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		glDisable(GL_SCISSOR_TEST);
 		glEnable(GL_DEPTH_TEST); // turn on depth testing
 		kuhl_errorcheck();
@@ -117,18 +117,20 @@ void display()
 		                   0, // transpose
 		                   modelview); // value
 		kuhl_errorcheck();
-		/* Draw the geometry using the matrices that we sent to the
-		 * vertex programs immediately above. Use the stencil buffer
-		 * to keep track of which object appears on top. */
-		glEnable(GL_STENCIL_TEST);
+
+			/* Draw the geometry using the matrices that we sent to the
+			 * vertex programs immediately above. Use the stencil buffer
+			 * to keep track of which object appears on top. */
+		if(viewportID == 0)
+			glEnable(GL_STENCIL_TEST);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 		glStencilFunc(GL_ALWAYS, 1, -1);
 		kuhl_geometry_draw(&triangle);
-
+		
 		glStencilFunc(GL_ALWAYS, 2, -1);
 		kuhl_geometry_draw(&quad);
 		glDisable(GL_STENCIL_TEST);
-
+		
 		/* If we have multiple viewports, only draw cursor in the
 		 * first viewport. */
 		if(viewportID==0)
