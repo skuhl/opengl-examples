@@ -29,6 +29,16 @@ fi
 # Add local directory to our PATH so user can use "exectuable" instead of "./executable"
 PATH=.:$PATH
 
+if [[ `hostname` == "aurora" ]]; then
+	# Scott - desktop
+	nvidia-settings --assign CurrentMetaMode="DVI-I-1: nvidia-auto-select {ForceFullCompositionPipeline=On}, DP-0: nvidia-auto-select +1600+0 {ForceFullCompositionPipeline=On}"
+	export __GL_SYNC_TO_VBLANK=1
+	export __GL_SYNC_DISPLAY_DEVICE=DFP-1
+	sleep 1
+	export PROJMAT_WINDOW_POS="1500 0"
+	export PROJMAT_FULLSCREEN="1"
+fi
+
 export VIEWMAT_MODE="oculus"
 "${@}"
 
