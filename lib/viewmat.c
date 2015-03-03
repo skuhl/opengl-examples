@@ -412,7 +412,7 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	float pixelDensity = .5;
 	/* Number of multisample antialiasing while rendering the scene
 	 * for each eye. */
-	GLint msaa_samples = 4;
+	GLint msaa_samples = 2;
 	recommendTexSizeL = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left,  hmd->DefaultEyeFov[ovrEye_Left],  pixelDensity);
 	recommendTexSizeR = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right, hmd->DefaultEyeFov[ovrEye_Right], pixelDensity);
 	
@@ -461,8 +461,9 @@ static void viewmat_init_hmd_oculus(float pos[3])
 		glcfg.OGL.Header.BackBufferSize.h=hmd->Resolution.h;
 		glcfg.OGL.Header.BackBufferSize.w=hmd->Resolution.w;
 	}
-	glutReshapeWindow(glcfg.OGL.Header.BackBufferSize.w,
-	                  glcfg.OGL.Header.BackBufferSize.h);
+// interferes with PROJAT_FULLSCREEN
+//	glutReshapeWindow(glcfg.OGL.Header.BackBufferSize.w,
+//	                  glcfg.OGL.Header.BackBufferSize.h);
 
 
 #if 0
@@ -480,29 +481,34 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	}
 #endif
 
-	ovrHmd_ConfigureTracking(hmd, ovrTrackingCap_Orientation |
-	                         ovrTrackingCap_MagYawCorrection |
-	                         ovrTrackingCap_Position, 0);
+	unsigned int trackingcap = 0;
+	trackingcap |= ovrTrackingCap_Orientation; // orientation tracking
+	trackingcap |= ovrTrackingCap_Position; // position tracking
+	trackingcap |= ovrTrackingCap_MagYawCorrection;
+	ovrHmd_ConfigureTracking(hmd, trackingcap, 0);
 
-	/* Enable low-persistence display and dynamic prediction for
-	 * latency compensation.
-	 */
-	unsigned int hmd_caps = ovrHmdCap_LowPersistence | ovrHmdCap_DynamicPrediction; // | ovrHmdCap_NoVSync;
+	
+	unsigned int hmd_caps = 0;
+	hmd_caps |= ovrHmdCap_DynamicPrediction; // enable internal latency feedback
+	// disable vsync; allow frame rate higher than display refresh rate, can cause tearing
+	//hmd_caps |= ovrHmdCap_NoVSync;
+	hmd_caps |= ovrHmdCap_LowPersistence; // Less blur during rotation; dimmer screen
+	
 	ovrHmd_SetEnabledCaps(hmd, hmd_caps);
 
-	/* configure SDK-rendering and enable chromatic abberation correction, vignetting, and
-	 * timewrap, which shifts the image before drawing to counter any lattency between the call
-	 * to ovrHmd_GetEyePose and ovrHmd_EndFrame.
-	 *
-	 * Chromatic - Chromatic aberration correction
-	 * TimeWarp  - Simulate rotation by moving image on screen if fps is low.
-	 * Overdrive - Overdrive brightness transitions to compensate for DK2 artifacts
-	 * Vignette  - Change brightness at edges of image
-	 * LinuxDevFullscreen - Screen rotation for DK2
-	 *
+	/* Distortion options
 	 * See OVR_CAPI.h for additional options
 	 */
-	unsigned int distort_caps = ovrDistortionCap_Chromatic | ovrDistortionCap_Vignette | ovrDistortionCap_Vignette | ovrDistortionCap_LinuxDevFullscreen | ovrDistortionCap_TimeWarp;
+	unsigned int distort_caps = 0;
+	distort_caps |= ovrDistortionCap_LinuxDevFullscreen; // Screen rotation for DK2
+	distort_caps |= ovrDistortionCap_Chromatic; // Chromatic aberration correction
+	distort_caps |= ovrDistortionCap_Vignette; // Apply gradient to edge of image
+	// distort_caps |= ovrDistortionCap_OverDrive; // Overdrive brightness transitions to compensate for DK2 artifacts
+
+	/* Shift image based on time difference between
+	 * ovrHmd_GetEyePose() and ovrHmd_EndFrame(). This option seems to
+	 * reduce FPS on at least one machine. */
+	//distort_caps |= ovrDistortionCap_TimeWarp; 
 	
 	if(!ovrHmd_ConfigureRendering(hmd, &glcfg.Config, distort_caps, hmd->DefaultEyeFov, eye_rdesc)) {
 		kuhl_errmsg("Failed to configure distortion renderer.\n");
