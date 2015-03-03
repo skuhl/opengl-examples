@@ -41,7 +41,6 @@ static void projmat_init_window()
 	{
 		kuhl_msg("Setting window size %d %d\n", windowSize[0], windowSize[1]);
 		glutReshapeWindow(windowSize[0], windowSize[1]);
-		// glutInitWindowSize(windowSize[0], windowSize[1]);
 	}
 
 	/* Change position of window if we were asked to. */
@@ -52,13 +51,15 @@ static void projmat_init_window()
 	{
 		kuhl_msg("Setting window position %d %d\n", windowPos[0], windowPos[1]);
 		glutPositionWindow(windowPos[0], windowPos[1]);
-		// glutInitWindowPosition(windowPos[0], windowPos[1]);
 	}
 
 	/* Change to fullscreen mode if we were asked to. */
 	const char* fullscreenString = getenv("PROJMAT_FULLSCREEN");
 	if(fullscreenString && strlen(fullscreenString) > 0)
+	{
+		kuhl_msg("Requesting fullscreen\n");
 		glutFullScreen();
+	}
 }
 
 
@@ -125,6 +126,7 @@ void projmat_init()
 		kuhl_errmsg("projmat is confused.\n");
 		exit(EXIT_FAILURE);
 	}
+
 }
 
 
