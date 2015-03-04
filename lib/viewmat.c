@@ -96,19 +96,24 @@ void viewmat_end_frame(void)
 {
 	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
 	{
+#ifndef MISSING_OVR
+		/* Copy the prerendered image from a multisample antialiasing
+		   texture into a normal OpenGL texture. This section of code
+		   is not necessary if we are rendering directly into the
+		   normal (non-antialiased) OpenGL texture. */
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, leftFramebufferAA);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, leftFramebuffer);
-		glBlitFramebuffer(0, 0, recommendTexSizeL.w, recommendTexSizeL.h,
-		                  0, 0, recommendTexSizeL.w, recommendTexSizeL.h,
-		                  GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBlitFramebuffer(0, 0, recommendTexSizeL.w,
+		                  recommendTexSizeL.h, 0, 0, recommendTexSizeL.w,
+		                  recommendTexSizeL.h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, rightFramebufferAA);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, rightFramebuffer);
-		glBlitFramebuffer(0, 0, recommendTexSizeR.w, recommendTexSizeR.h,
-		                  0, 0, recommendTexSizeR.w, recommendTexSizeR.h,
-		                  GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBlitFramebuffer(0, 0, recommendTexSizeR.w,
+		                  recommendTexSizeR.h, 0, 0, recommendTexSizeR.w,
+		                  recommendTexSizeR.h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 		kuhl_errorcheck();
+		
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-#ifndef MISSING_OVR
 		ovrHmd_EndFrame(hmd, pose, &EyeTexture[0].Texture);
 #endif
 	}
