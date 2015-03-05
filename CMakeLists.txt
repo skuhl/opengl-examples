@@ -231,8 +231,7 @@ if(ASSIMP_FOUND AND ImageMagick_FOUND)
 else()
 	message(WARNING "ASSIMP and/or ImageMagick libraries were not found, not compiling: ${NEED_ASSIMP_AND_IM}")
 endif()
-if(ImageMagick_FOUND)ing all files that we regularly use.
-
+if(ImageMagick_FOUND)
 	set(PROGRAMS_TO_MAKE ${PROGRAMS_TO_MAKE} ${NEED_IM})
 else()
 	message(WARNING "ImageMagick library was not found, not compiling: ${NEED_IM}")
