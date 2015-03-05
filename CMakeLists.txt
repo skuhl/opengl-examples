@@ -54,7 +54,7 @@ if(BUILD_DOCUMENTATION)
 	find_package(Doxygen)
 	if(DOXYGEN_FOUND)
 	#-- Add a custom target to run Doxygen when ever the project is built
-	add_custom_target (docs 
+	add_custom_target (docs
 		COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Doxyfile
 		SOURCES ${CMAKE_SOURCE_DIR}/Doxyfile)
 	# Add or remove 'ALL' after 'docs' above to enable/disable doxygen generation when running "make"
@@ -182,7 +182,7 @@ endif()
 
 # --- pthreads (required for DGR) ---
 find_package(Threads)
-# find_packge(Threads) seems to fail on CCSR, try to find it ourselves: 
+# find_packge(Threads) seems to fail on CCSR, try to find it ourselves:
 #if(NOT Threads_FOUND)
 #find_library(CMAKE_THREAD_LIBS_INIT NAMES pthread PATHS "/lib64" "/lib" "/usr/lib" )
 #message("Last attempt to find pthreads: " ${CMAKE_THREAD_LIBS_INIT})
@@ -198,6 +198,9 @@ set(CMAKE_INCLUDE_PATH "/home/campus11/kuhl/public-cs4611/ovr_sdk_linux_0.4.4/Li
 set(CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR/Lib/Linux/Release/x86_64" ${CMAKE_LIBRARY_PATH})
 set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR/Include" ${CMAKE_INCLUDE_PATH})
 set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR/Src" ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../OculusSDK/LibOVR/Lib/Linux/Release/x86_64" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../OculusSDK/LibOVR/Include" ${CMAKE_INCLUDE_PATH})
+set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../OculusSDK/LibOVR/Src" ${CMAKE_INCLUDE_PATH})
 
 find_package(OVR)
 if(OVR_FOUND)
@@ -220,16 +223,6 @@ endif()
 # Set the preprocessor flags.
 set(PREPROC_DEFINE "MOUSEMOVE_GLUT;${ASSIMP_FOUND_DEFINITION};${IMAGEMAGICK_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION}")
 
-# Create a static library containing all files that we regularly use.
-include_directories("lib")
-set(FILES_IN_LIBKUHL lib/kuhl-util.c lib/vecmat.c lib/dgr.c lib/mousemove.c lib/hmd-dsight-orient.c lib/projmat.c lib/viewmat.c lib/vrpn-help.cpp)
-if(ImageMagick_FOUND)
-	set(FILES_IN_LIBKUHL ${FILES_IN_LIBKUHL} lib/imageio.c)
-endif()
-add_library(kuhl STATIC ${FILES_IN_LIBKUHL})
-set_target_properties(kuhl PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
-
-
 # Construct a list of programs that we want to compile based on which libraries are available.
 set(PROGRAMS_TO_MAKE ${NEED_NOTHING})
 if(ASSIMP_FOUND AND ImageMagick_FOUND)
@@ -243,6 +236,15 @@ else()
 	message(WARNING "ImageMagick library was not found, not compiling: ${NEED_IM}")
 endif()
 
+# Create a static library containing all files that we regularly use.
+include_directories("lib")
+set(FILES_IN_LIBKUHL lib/kuhl-util.c lib/vecmat.c lib/dgr.c lib/mousemove.c lib/hmd-dsight-orient.c lib/projmat.c lib/viewmat.c lib/vrpn-help.cpp)
+if(ImageMagick_FOUND)
+	set(FILES_IN_LIBKUHL ${FILES_IN_LIBKUHL} lib/imageio.c)
+endif()
+add_library(kuhl STATIC ${FILES_IN_LIBKUHL})
+set_target_properties(kuhl PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
+
 # Compile the list of programs.
 foreach(arg ${PROGRAMS_TO_MAKE})
 	if(EXISTS ${arg}.cpp)   # Figure out if the program is a c or cpp file
@@ -254,7 +256,7 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 	target_link_libraries(${arg} kuhl ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES})
 	set_target_properties(${arg} PROPERTIES LINKER_LANGUAGE "CXX")
 	set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
-	add_dependencies(${arg} libkuhl.a)
+	add_dependencies(${arg} kuhl)
 endforeach()
 
 
