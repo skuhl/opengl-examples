@@ -198,6 +198,7 @@ set(CMAKE_INCLUDE_PATH "/home/campus11/kuhl/public-cs4611/ovr_sdk_linux_0.4.4/Li
 set(CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR/Lib/Linux/Release/x86_64" ${CMAKE_LIBRARY_PATH})
 set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR/Include" ${CMAKE_INCLUDE_PATH})
 set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR/Src" ${CMAKE_INCLUDE_PATH})
+# An alternative directory name that OVR could be installed in (same style as: https://github.com/jherico/OculusSDK )
 set(CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../OculusSDK/LibOVR/Lib/Linux/Release/x86_64" ${CMAKE_LIBRARY_PATH})
 set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../OculusSDK/LibOVR/Include" ${CMAKE_INCLUDE_PATH})
 set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../OculusSDK/LibOVR/Src" ${CMAKE_INCLUDE_PATH})
@@ -230,7 +231,8 @@ if(ASSIMP_FOUND AND ImageMagick_FOUND)
 else()
 	message(WARNING "ASSIMP and/or ImageMagick libraries were not found, not compiling: ${NEED_ASSIMP_AND_IM}")
 endif()
-if(ImageMagick_FOUND)
+if(ImageMagick_FOUND)ing all files that we regularly use.
+
 	set(PROGRAMS_TO_MAKE ${PROGRAMS_TO_MAKE} ${NEED_IM})
 else()
 	message(WARNING "ImageMagick library was not found, not compiling: ${NEED_IM}")
