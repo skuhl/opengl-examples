@@ -29,7 +29,7 @@ fi
 # Add local directory to our PATH so user can use "exectuable" instead of "./executable"
 PATH=.:$PATH
 
-if [[ `hostname` == "aurora" ]]; then
+if [[ `hostname` == "aurora" && ${USER} == "kuhl" ]]; then
 	# Scott - desktop
 	nvidia-settings --assign CurrentMetaMode="DVI-I-1: nvidia-auto-select {ForceFullCompositionPipeline=On}, DP-0: nvidia-auto-select +1600+0 {ForceFullCompositionPipeline=On}"
 	export __GL_SYNC_TO_VBLANK=1
@@ -37,12 +37,16 @@ if [[ `hostname` == "aurora" ]]; then
 	sleep 1
 	export PROJMAT_WINDOW_POS="1500 0"
 	export PROJMAT_FULLSCREEN="1"
-elif [[ `hostname` == "newell" ]]; then
+elif [[ `hostname` == "newell" && ${USER} == "kuhl" ]]; then
 	# Scott - office
 	nvidia-settings --assign CurrentMetaMode="HDMI-0: nvidia-auto-select @1920x1080 +0+260 {ForceFullCompositionPipeline=On}, DVI-I-1: nvidia-auto-select @1050x1680 +1920+0 {ForceFullCompositionPipeline=On,Rotation=90}, DP-0: nvidia-auto-select +2970+0 {ForceFullCompositionPipeline=On}"
 	# Assign primary monitor (that the panel should appear on)
 	nvidia-settings --assign XineramaInfoOrder="HDMI-0"
 	export PROJMAT_WINDOW_POS="2970 0"
+	export PROJMAT_FULLSCREEN="1"
+elif [[ `hostname` == "humility" && ${USER} == "kuhl" ]]; then
+	# Scott - laptop
+	export PROJMAT_WINDOW_POS="1366 0"
 	export PROJMAT_FULLSCREEN="1"
 fi
 
