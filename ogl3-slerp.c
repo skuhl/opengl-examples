@@ -265,6 +265,9 @@ void display()
 
 int main(int argc, char** argv)
 {
+	char *modelFilename    = NULL;
+	char *modelTexturePath = NULL;
+	
 	if(argc == 2)
 	{
 		modelFilename = argv[1];
