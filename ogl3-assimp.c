@@ -23,6 +23,7 @@
 GLuint fpsLabel = 0;
 float fpsLabelAspectRatio = 0;
 kuhl_geometry labelQuad;
+int renderStyle = 0;
 
 GLuint program = 0; // id value for the GLSL program
 kuhl_geometry *modelgeom = NULL;
@@ -32,10 +33,10 @@ float bbox[6];
  * model and translate it so that we can see the entire model. This is
  * a useful setting to use when you are loading a new model that you
  * are unsure about the units and position of the model geometry. */
-#define FIT_TO_VIEW_AND_ROTATE 0
-/** If FIT_TO_VIEW_AND_ROTATE is set, this is the place to put the
+#define FIT_TO_VIEW 0
+/** If FIT_TO_VIEW is set, this is the place to put the
  * center of the bottom face of the bounding box. If
- * FIT_TO_VIEW_AND_ROTATE is not set, this is the location in world
+ * FIT_TO_VIEW is not set, this is the location in world
  * coordinates that we want to model's origin to appear at. */
 float placeToPutModel[3] = { 0, 0, 0 };
 /** SketchUp produces files that older versions of ASSIMP think 1 unit
@@ -44,12 +45,6 @@ float placeToPutModel[3] = { 0, 0, 0 };
  * meters. Newer versions of ASSIMP correctly read the same files and
  * give us units in meters. */
 #define INCHES_TO_METERS 0
-
-GLuint scene_list = 0; // display list for model
-char *modelFilename = NULL;
-char *modelTexturePath = NULL;
-int renderStyle = 0;
-
 
 #define GLSL_VERT_FILE "ogl3-assimp.vert"
 #define GLSL_FRAG_FILE "ogl3-assimp.frag"
@@ -211,7 +206,7 @@ void keyboard(unsigned char key, int x, int y)
 void get_model_matrix(float result[16])
 {
 	mat4f_identity(result);
-	if(FIT_TO_VIEW_AND_ROTATE == 0)
+	if(FIT_TO_VIEW == 0)
 	{
 		/* Translate the model to where we were asked to put it */
 		float translate[16];
@@ -452,6 +447,9 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint program)
 
 int main(int argc, char** argv)
 {
+	char *modelFilename    = NULL;
+	char *modelTexturePath = NULL;
+	
 	if(argc == 2)
 	{
 		modelFilename = argv[1];
@@ -530,10 +528,10 @@ int main(int argc, char** argv)
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */
 	glutMainLoop();
-    /* // An alternative approach:
-    while(1)
-       glutMainLoopEvent();
-    */
+	/* // An alternative approach:
+	   while(1)
+	   glutMainLoopEvent();
+	*/
 
 	exit(EXIT_SUCCESS);
 }
