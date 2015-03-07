@@ -35,7 +35,7 @@ float bbox[6];
  * model and translate it so that we can see the entire model. This is
  * a useful setting to use when you are loading a new model that you
  * are unsure about the units and position of the model geometry. */
-#define FIT_TO_VIEW 0
+#define FIT_TO_VIEW 1
 /** If FIT_TO_VIEW is set, this is the place to put the
  * center of the bottom face of the bounding box. If
  * FIT_TO_VIEW is not set, this is the location in world
@@ -77,6 +77,9 @@ void explode()
 			// Start by setting the velocity equal to the normal to
 			// make the particles move out.
 			vec3f_copy(particles[i][j].velocity, &norm[j*3]);
+
+			// Scale the initial velocity
+			vec3f_scalarMult(particles[i][j].velocity, 10);
 
 			// Instead of moving the particles only in the direction
 			// of the normal, make them move 'up' (in object
@@ -120,9 +123,25 @@ void update()
 				pos[j*3+k] += timestep * (particles[i][j].velocity[k] + timestep * accel[k]/2);
 				particles[i][j].velocity[k] += timestep * accel[k];
 			}
+#if 1   /* Bounce the particles off the xz-plane. */
+			if(pos[j*3+1] < 0)
+			{
+				/* How much velocity is lost when a bounce occurs? */
+				float velocityLossFactor = .4;
+				/* If particle fell through floor, negate its position */
+				pos[j*3+1] *= -velocityLossFactor;
+				/* Negative the Y velocity */
+				particles[i][j].velocity[1] *= -1;
+				/* Scale velocity in all directions */
+				vec3f_scalarMult(particles[i][j].velocity, velocityLossFactor); // lose energy on bounce
+			}
+#endif
 		}
 		g = g->next;
 	}
+
+
+	
 }
 
 
