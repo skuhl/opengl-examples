@@ -59,12 +59,14 @@ SITE_NAME(HOSTNAME)
 option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" ON)
 if(BUILD_DOCUMENTATION)
 	find_package(Doxygen)
-	if(DOXYGEN_FOUND)
-	#-- Add a custom target to run Doxygen when ever the project is built
-	add_custom_target (docs
-		COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Doxyfile
-		SOURCES ${CMAKE_SOURCE_DIR}/Doxyfile)
-	# Add or remove 'ALL' after 'docs' above to enable/disable doxygen generation when running "make"
+	if(DOXYGEN_FOUND AND EXISTS ${CMAKE_SOURCE_DIR}/Doxyfile)
+		#-- Add a custom target to run Doxygen when ever the project is built
+		add_custom_target (docs
+		    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Doxyfile
+		    SOURCES ${CMAKE_SOURCE_DIR}/Doxyfile)
+		# Add or remove 'ALL' after 'docs' above to enable/disable doxygen generation when running "make"
+		
+		# Don't print warning if Doxygen doesn't work since many people don't use them.
 	endif()
 endif()
 
