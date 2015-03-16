@@ -189,7 +189,7 @@ endif()
 
 # --- pthreads (required for DGR) ---
 set(CMAKE_THREADS_PREFER_PTHREAD TRUE)   # prefer pthread over other threading libraries
-set(THREADS_PREFER_PTHREAD_FLAG TRUE)   # prefer -pthread compiler flag over just using -lpthread
+# set(THREADS_PREFER_PTHREAD_FLAG TRUE)   # prefer -pthread compiler flag over just using -lpthread, but it might not be supported by all compilers.
 find_package(Threads)
 # find_packge(Threads) seems to fail on CCSR, try to find it ourselves:
 #if(NOT Threads_FOUND)
