@@ -221,15 +221,6 @@ else()
 endif()
 
 
-# Collect libraries that all programs use together into one cmake variable
-set(COMMON_LIBRARIES ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} ${M_LIB})
-if(VRPN_FOUND)  # Add VRPN to the list if it is available
-	set(COMMON_LIBRARIES ${COMMON_LIBRARIES} ${VRPN_LIBRARIES})
-endif()
-if(OVR_FOUND) # Add Oculus LibOVR to the list if it is available
-	set(COMMON_LIBRARIES ${COMMON_LIBRARIES} ${OVR_LIBRARIES})
-endif()
-
 # Set the preprocessor flags.
 set(PREPROC_DEFINE "MOUSEMOVE_GLUT;${ASSIMP_FOUND_DEFINITION};${IMAGEMAGICK_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION}")
 
@@ -263,7 +254,23 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 		set(SOURCE_FILE ${arg}.c)
 	endif()
 	add_executable(${arg} ${SOURCE_FILE})
-	target_link_libraries(${arg} kuhl ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES})
+
+	target_link_libraries(${arg} kuhl)
+	if(VRPN_FOUND)  # Add VRPN to the list if it is available
+		target_link_libraries(${arg} ${VRPN_LIBRARIES})
+	endif()
+	if(OVR_FOUND) # Add Oculus LibOVR to the list if it is available
+		target_link_libraries(${arg} ${OVR_LIBRARIES})
+	endif()
+	if(ImageMagick_FOUND)
+		target_link_libraries(${arg} ${ImageMagick_LIBRARIES})
+	endif()
+	if(ASSIMP_FOUND)
+		target_link_libraries(${arg} ${ASSIMP_LIBRARIES})
+	endif()
+
+	target_link_libraries(${arg} ${GLEW_LIBRARIES} ${M_LIB} ${GLUT_LIBRARIES} ${OPENGL_LIBRARIES} )
+
 	set_target_properties(${arg} PROPERTIES LINKER_LANGUAGE "CXX")
 	set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
 	add_dependencies(${arg} kuhl)
