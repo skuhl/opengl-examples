@@ -188,6 +188,8 @@ else()
 endif()
 
 # --- pthreads (required for DGR) ---
+set(CMAKE_THREADS_PREFER_PTHREAD TRUE)   # prefer pthread over other threading libraries
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)   # prefer -pthread compiler flag over just using -lpthread
 find_package(Threads)
 # find_packge(Threads) seems to fail on CCSR, try to find it ourselves:
 #if(NOT Threads_FOUND)
@@ -266,7 +268,6 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 	set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
 	add_dependencies(${arg} kuhl)
 endforeach()
-
 
 
 # Build dgr-relay
