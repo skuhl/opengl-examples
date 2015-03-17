@@ -492,8 +492,8 @@ static void viewmat_init_hmd_oculus(float pos[3])
 
 	unsigned int trackingcap = 0;
 	trackingcap |= ovrTrackingCap_Orientation; // orientation tracking
-	trackingcap |= ovrTrackingCap_Position; // position tracking
-	trackingcap |= ovrTrackingCap_MagYawCorrection;
+	trackingcap |= ovrTrackingCap_Position;    // position tracking
+	trackingcap |= ovrTrackingCap_MagYawCorrection; // use magnetic compass
 	ovrHmd_ConfigureTracking(hmd, trackingcap, 0);
 
 	
@@ -669,9 +669,12 @@ static void viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
 void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 {
 #ifndef MISSING_OVR
-	/* Oculus recommends the order that we should render eyes. We assume
-	 * that smaller viewportIDs are rendered first. So, we need to map
-	 * the viewportIDs to the specific Oculus HMD eye. */
+	/* Oculus recommends the order that we should render eyes. We
+	 * assume that smaller viewportIDs are rendered first. So, we need
+	 * to map the viewportIDs to the specific Oculus HMD eye. The
+	 * "eye" variable will be set to either ovrEye_Left (if we are
+	 * rendering the left eye) or ovrEye_Right (if we are rendering
+	 * the right eye). */
 	ovrEyeType eye = hmd->EyeRenderOrder[viewportID];
 
 	pose[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
