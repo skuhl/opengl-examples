@@ -10,4 +10,4 @@ FindGLUT.cmake
 FindOVR.cmake
 FindASSIMP.cmake
 FindVRPN.cmake
-  - There is no FindVRPN cmake file installed on most Linux systems.
+  - These files are not installed by default on most Linux systems.
