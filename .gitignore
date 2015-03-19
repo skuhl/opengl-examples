@@ -5,6 +5,9 @@
 /cmake_install.cmake
 /doxygen-docs
 
+# Generated libraries
+/libkuhl.a
+
 # Generated Binaries
 /dgr-relay
 /ogl2-slideshow
@@ -19,3 +22,4 @@
 /ogl3-picker
 /ogl3-slerp
 /ogl3-explode
+/ogl3-teartest

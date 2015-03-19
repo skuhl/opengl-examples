@@ -16,7 +16,9 @@
 GLuint program = 0; // id value for the GLSL program
 GLuint prerendProgram = 0;
 
+#define USE_MSAA 1
 GLuint prerenderFrameBuffer = 0;
+GLuint prerenderFrameBufferAA = 0;
 GLuint prerenderTexID = 0;
 
 kuhl_geometry triangle;
@@ -51,35 +53,38 @@ void display()
 	 * processes/computers synchronized. */
 	dgr_update();
 
-	glClearColor(.2,.2,.2,0); // set clear color to grey
-	// Clear the screen to black, clear the depth buffer
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST); // turn on depth testing
-	kuhl_errorcheck();
 
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will
 	 * run twice for HMDs (once for the left eye and once for the
 	 * right. */
+	viewmat_begin_frame();
 	for(int viewportID=0; viewportID<viewmat_num_viewports(); viewportID++)
 	{
+		viewmat_begin_eye(viewportID);
+
 		/* Where is the viewport that we are drawing onto and what is its size? */
 		int viewport[4]; // x,y of lower left corner, width, height
 		viewmat_get_viewport(viewport, viewportID);
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
-		/* Get the frustum information which will be later used to generate a perspective projection matrix. */
-		float f[6]; // left, right, top, bottom, near>0, far>0
-		projmat_get_frustum(f, viewport[2], viewport[3]);
-	    
-		/* Get the view or camera matrix; update the frustum values if needed. */
-		float viewMat[16];
-		viewmat_get(viewMat, f, viewportID);
+		/* Clear the current viewport. Without glScissor(), glClear()
+		 * clears the entire screen. We could call glClear() before
+		 * this viewport loop---but on order for all variations of
+		 * this code to work (Oculus support, etc), we can only draw
+		 * after viewmat_begin_eye(). */
+		glScissor(viewport[0], viewport[1], viewport[2], viewport[3]);
+		glEnable(GL_SCISSOR_TEST);
+		glClearColor(.2,.2,.2,0); // set clear color to grey
+		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+		glDisable(GL_SCISSOR_TEST);
+		glEnable(GL_DEPTH_TEST); // turn on depth testing
+		kuhl_errorcheck();
 
-		/* Create a 4x4 perspective projection matrix from the frustum values. */
-		float perspective[16];
-		mat4f_frustum_new(perspective,f[0], f[1], f[2], f[3], f[4], f[5]);
-	    
+		/* Get the view or camera matrix; update the frustum values if needed. */
+		float viewMat[16], perspective[16];
+		viewmat_get(viewMat, perspective, viewportID);
+
 		/* Calculate an angle to rotate the
 		 * object. glutGet(GLUT_ELAPSED_TIME) is the number of
 		 * milliseconds since glutInit() was called. */
@@ -119,15 +124,26 @@ void display()
 		 * framebuffer object for subsequent draw commands). */
 		if(prerenderFrameBuffer == 0)
 		{
+#if USE_MSAA==1
+			/* Generate a MSAA framebuffer + texture */
+			GLuint prerenderTexIDAA;
+			prerenderFrameBufferAA = kuhl_gen_framebuffer_msaa(viewport[2], viewport[3],
+			                                                   &prerenderTexIDAA,
+			                                                   NULL, 16);
+#endif
 			prerenderFrameBuffer = kuhl_gen_framebuffer(viewport[2], viewport[3],
-			                                            &prerenderTexID,
-			                                            NULL);
+			                                                   &prerenderTexID,
+			                                                   NULL);
 			/* Apply the texture to our geometry and draw the quad. */
 			kuhl_geometry_texture(&prerendQuad, prerenderTexID, "tex", 1);
 		}
-		/* Switch to framebuffer and set the OpenGL viewport to coverprerenderTexID
+		/* Switch to framebuffer and set the OpenGL viewport to cover
 		 * the entire framebuffer. */
+#if USE_MSAA==1
+		glBindFramebuffer(GL_FRAMEBUFFER, prerenderFrameBufferAA);
+#else
 		glBindFramebuffer(GL_FRAMEBUFFER, prerenderFrameBuffer);
+#endif
 		glViewport(0,0,viewport[2], viewport[3]);
 		kuhl_errorcheck();
 
@@ -142,6 +158,18 @@ void display()
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glUseProgram(0);
 		kuhl_errorcheck();
+		
+#if USE_MSAA==1
+		/* Copy the MSAA framebuffer into the normal framebuffer */
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, prerenderFrameBufferAA);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, prerenderFrameBuffer);
+		glBlitFramebuffer(0,0,viewport[2],viewport[3],
+		                  0,0,viewport[2],viewport[3],
+		                  GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER,0);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER,0);
+		kuhl_errorcheck();
+#endif
 
 		/* Set up the viewport to draw on the screen */
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
@@ -150,13 +178,11 @@ void display()
 		kuhl_geometry_draw(&prerendQuad);
 		
 	} // finish viewport loop
+	viewmat_end_frame();
 
 	/* Check for errors. If there are errors, consider adding more
 	 * calls to kuhl_errorcheck() in your code. */
 	kuhl_errorcheck();
-    
-	/* Display the buffer we just drew (necessary for double buffering). */
-	glutSwapBuffers();
 
 	/* Ask GLUT to call display() again. We shouldn't call display()
 	 * ourselves recursively because it will not leave time for GLUT

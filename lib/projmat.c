@@ -39,9 +39,8 @@ static void projmat_init_window()
 	if(windowSizeString != NULL &&
 	   sscanf(windowSizeString, "%d %d", &(windowSize[0]), &(windowSize[1])) == 2)
 	{
-		printf("projmat: Setting window size %d %d\n", windowSize[0], windowSize[1]);
+		kuhl_msg("Setting window size %d %d\n", windowSize[0], windowSize[1]);
 		glutReshapeWindow(windowSize[0], windowSize[1]);
-		// glutInitWindowSize(windowSize[0], windowSize[1]);
 	}
 
 	/* Change position of window if we were asked to. */
@@ -50,16 +49,17 @@ static void projmat_init_window()
 	if(windowPosString != NULL &&
 	   sscanf(windowPosString, "%d %d", &(windowPos[0]), &(windowPos[1])) == 2)
 	{
-		printf("projmat: Setting window position %d %d\n", windowPos[0], windowPos[1]);
+		kuhl_msg("Setting window position %d %d\n", windowPos[0], windowPos[1]);
 		glutPositionWindow(windowPos[0], windowPos[1]);
-		// glutInitWindowPosition(windowPos[0], windowPos[1]);
 	}
 
 	/* Change to fullscreen mode if we were asked to. */
 	const char* fullscreenString = getenv("PROJMAT_FULLSCREEN");
 	if(fullscreenString && strlen(fullscreenString) > 0)
+	{
+		kuhl_msg("Requesting fullscreen\n");
 		glutFullScreen();
-
+	}
 }
 
 
@@ -80,7 +80,7 @@ void projmat_init()
 		          &(projmat_frustum[0]), &(projmat_frustum[1]), &(projmat_frustum[2]),
 		          &(projmat_frustum[3]), &(projmat_frustum[4]), &(projmat_frustum[5])) != 6)
 		{
-			fprintf(stderr, "projmat: Unable to parse PROJMAT_FRUSTUM environment variable.\n");
+			kuhl_errmsg("Unable to parse PROJMAT_FRUSTUM environment variable.\n");
 			projmat_mode = -1;
 		}
 
@@ -99,7 +99,7 @@ void projmat_init()
 			for(int i=0; i<6; i++)
 				projmat_master_frustum[i] = projmat_frustum[i];
 
-			fprintf(stderr, "projmat: Error parsing master frustum.\n");
+			kuhl_errmsg("Error parsing master frustum.\n");
 		}
 
 	}
@@ -110,22 +110,23 @@ void projmat_init()
 		projmat_mode = 0;
 		if(sscanf(vfovString, "%f", &projmat_vfov) != 1)
 		{
-			fprintf(stderr, "projmat: Unable to parse PROJMAT_VFOV environment variable.\n");
+			kuhl_errmsg("Unable to parse PROJMAT_VFOV environment variable.\n");
 			projmat_vfov = -1;
 		}
 	}
 
 	if(projmat_mode == -1)
-		printf("projmat: Using default perspective projection.\n");
+		kuhl_msg("Using default perspective projection.\n");
 	else if(projmat_mode == 0)
-		printf("projmat: Using a simple perspective projection (vfov=%f degrees).\n", projmat_vfov);
+		kuhl_msg("Using a simple perspective projection (vfov=%f degrees).\n", projmat_vfov);
 	else if(projmat_mode == 1)
-		printf("projmat: Using a view frustum.\n");
+		kuhl_msg("Using a view frustum.\n");
 	else
 	{
-		printf("projmat is confused.\n");
+		kuhl_errmsg("projmat is confused.\n");
 		exit(EXIT_FAILURE);
 	}
+
 }
 
 
@@ -206,4 +207,3 @@ void projmat_get_master_frustum(float result[6])
 	for(int i=0; i<6; i++)
 		result[i] = projmat_master_frustum[i];
 }
-

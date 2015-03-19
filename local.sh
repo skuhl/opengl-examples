@@ -9,6 +9,7 @@ cleanup() {
 	kill -TERM `jobs -p` &> /dev/null
 }
 
+# Ensure that we were called with the correct parameters.
 if [[ $# -lt 1 ]]; then
 	echo "Usage:"
 	echo "$0 opengl-dgr-program arguments to program"
@@ -28,15 +29,6 @@ if [[ "${SCRIPT_DIRECTORY}" != "${PWD}" ]]; then
     exit 1
 fi
 
-# Ensure that we were called with the correct parameters.
-if [[ $# -lt 1 ]]; then
-    echo "Usage:"
-    echo "$0 opengl-dgr-program arguments to program"
-	echo
-	echo "If you had a program called 'model' that loaded a model file and had DGR support, you would run:"
-	echo "$0 model /path/to/model.file"
-    exit 1
-fi
 
 # Make sure that the dgr-relay and the program we want to execute exist and are executable.
 if [[ ! -x dgr-relay ]]; then

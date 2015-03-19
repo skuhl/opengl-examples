@@ -31,9 +31,12 @@
 extern "C" {
 #endif
 
-
+void viewmat_begin_frame(void);
+void viewmat_begin_eye(int viewportID);
+void viewmat_end_frame(void);
+	
 void viewmat_init(float pos[3], float look[3], float up[3]);
-void viewmat_get(float viewmatrix[16], float frustum[6], int viewportNum);
+void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportNum);
 int viewmat_num_viewports();
 void viewmat_get_viewport(int viewportValue[4], int viewportNum);
 

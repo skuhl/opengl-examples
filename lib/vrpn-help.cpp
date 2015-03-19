@@ -110,6 +110,8 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 		// printf("%s: Found in %s: %s\n", __func__, path, vrpnString);
 		hostnamecpp = vrpnString;
 	}
+	else
+		hostnamecpp = hostname;
 
 	objectcpp = object;
 	std::string fullname = objectcpp + "@" + hostnamecpp;

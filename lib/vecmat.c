@@ -1109,14 +1109,14 @@ void mat3d_rotateQuat_new(double matrix[9], double x, double y, double z, double
 void mat4f_rotateQuat_new(float matrix[16], float x, float y, float z, float w)
 {
 	float quat[4] = { x,y,z,w };
-	mat3f_rotateQuatVec_new(matrix, quat);
+	mat4f_rotateQuatVec_new(matrix, quat);
 }
 /** Creates a 4x4 rotation matrix from a quaternion (x,y,z,w). For
  * full documentation, see mat4f_rotateQuatVec_new() */
 void mat4d_rotateQuat_new(double matrix[16], double x, double y, double z, double w)
 {
 	double quat[4] = { x,y,z,w };
-	mat3d_rotateQuatVec_new(matrix, quat);
+	mat4d_rotateQuatVec_new(matrix, quat);
 }
 
 /** Creates a unit quaternion (x,y,z,w) from a rotation matrix.

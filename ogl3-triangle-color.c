@@ -44,35 +44,37 @@ void display()
 	 * processes/computers synchronized. */
 	dgr_update();
 
-	glClearColor(.2,.2,.2,0); // set clear color to grey
-	// Clear the screen to black, clear the depth buffer
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST); // turn on depth testing
-	kuhl_errorcheck();
-
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will
 	 * run twice for HMDs (once for the left eye and once for the
 	 * right. */
+	viewmat_begin_frame();
 	for(int viewportID=0; viewportID<viewmat_num_viewports(); viewportID++)
 	{
+		viewmat_begin_eye(viewportID);
+
 		/* Where is the viewport that we are drawing onto and what is its size? */
 		int viewport[4]; // x,y of lower left corner, width, height
 		viewmat_get_viewport(viewport, viewportID);
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
-		/* Get the frustum information which will be later used to generate a perspective projection matrix. */
-		float f[6]; // left, right, top, bottom, near>0, far>0
-		projmat_get_frustum(f, viewport[2], viewport[3]);
-	    
-		/* Get the view or camera matrix; update the frustum values if needed. */
-		float viewMat[16];
-		viewmat_get(viewMat, f, viewportID);
+		/* Clear the current viewport. Without glScissor(), glClear()
+		 * clears the entire screen. We could call glClear() before
+		 * this viewport loop---but on order for all variations of
+		 * this code to work (Oculus support, etc), we can only draw
+		 * after viewmat_begin_eye(). */
+		glScissor(viewport[0], viewport[1], viewport[2], viewport[3]);
+		glEnable(GL_SCISSOR_TEST);
+		glClearColor(.2,.2,.2,0); // set clear color to grey
+		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+		glDisable(GL_SCISSOR_TEST);
+		glEnable(GL_DEPTH_TEST); // turn on depth testing
+		kuhl_errorcheck();
 
-		/* Create a 4x4 perspective projection matrix from the frustum values. */
-		float perspective[16];
-		mat4f_frustum_new(perspective,f[0], f[1], f[2], f[3], f[4], f[5]);
-	    
+		/* Get the view or camera matrix; update the frustum values if needed. */
+		float viewMat[16], perspective[16];
+		viewmat_get(viewMat, perspective, viewportID);
+
 		/* Calculate an angle to rotate the
 		 * object. glutGet(GLUT_ELAPSED_TIME) is the number of
 		 * milliseconds since glutInit() was called. */
@@ -114,13 +116,11 @@ void display()
 		glUseProgram(0); // stop using a GLSL program.
 
 	} // finish viewport loop
+	viewmat_end_frame();
 
 	/* Check for errors. If there are errors, consider adding more
 	 * calls to kuhl_errorcheck() in your code. */
 	kuhl_errorcheck();
-    
-	/* Display the buffer we just drew (necessary for double buffering). */
-	glutSwapBuffers();
 
 	/* Ask GLUT to call display() again. We shouldn't call display()
 	 * ourselves recursively because it will not leave time for GLUT
@@ -158,13 +158,14 @@ int main(int argc, char** argv)
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
 #ifdef __APPLE__
-	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
 #else
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
 	glutInitContextVersion(3,2);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 #endif
 	glutCreateWindow(argv[0]); // set window title to executable name
+	glEnable(GL_MULTISAMPLE);
 
 	/* Initialize GLEW */
 	glewExperimental = GL_TRUE;

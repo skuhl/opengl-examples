@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# Ensure that we were called with the correct parameters.
 if [[ $# -lt 1 ]]; then
 	echo "Usage:"
 	echo "$0 opengl-dgr-program arguments to program"
@@ -16,16 +17,6 @@ if [[ "${SCRIPT_DIRECTORY}" != "${PWD}" ]]; then
     echo "You are currently in '${PWD}'."
     echo
     echo "Use 'cd $SCRIPT_DIRECTORY' to change into the same directory as this script and try again."
-    exit 1
-fi
-
-# Ensure that we were called with the correct parameters.
-if [[ $# -lt 1 ]]; then
-    echo "Usage:"
-    echo "$0 opengl-dgr-program arguments to program"
-	echo
-	echo "If you had a program called 'model' that loaded a model file and had DGR support, you would run:"
-	echo "$0 model /path/to/model.file"
     exit 1
 fi
 
