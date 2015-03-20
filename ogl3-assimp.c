@@ -33,7 +33,7 @@ float bbox[6];
  * model and translate it so that we can see the entire model. This is
  * a useful setting to use when you are loading a new model that you
  * are unsure about the units and position of the model geometry. */
-#define FIT_TO_VIEW 0
+#define FIT_TO_VIEW 1
 /** If FIT_TO_VIEW is set, this is the place to put the
  * center of the bottom face of the bounding box. If
  * FIT_TO_VIEW is not set, this is the location in world
@@ -521,9 +521,6 @@ int main(int argc, char** argv)
 	glClearColor(.2,.2,.2,1);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
-	
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
 	init_geometryQuad(&labelQuad, program);
