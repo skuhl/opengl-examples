@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 2.6)
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER "g++")
 
+#set(CMAKE_C_COMPILER "clang")
+#set(CMAKE_CXX_COMPILER "clang++")
+
 project("opengl-examples" C CXX)  # This project uses C and C++
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Wextra -g -Wno-unused-parameter -Wno-unused-function")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")
@@ -161,7 +164,6 @@ if(ASSIMP_FOUND AND ImageMagick_FOUND)  # only use Assimp if imagemagick is also
 else()
 	set(ASSIMP_FOUND_DEFINITION "")
 endif()
-
 
 
 # --- VRPN ---
