@@ -16,7 +16,9 @@
 GLuint program = 0; // id value for the GLSL program
 GLuint prerendProgram = 0;
 
+#define USE_MSAA 1
 GLuint prerenderFrameBuffer = 0;
+GLuint prerenderFrameBufferAA = 0;
 GLuint prerenderTexID = 0;
 
 kuhl_geometry triangle;
@@ -122,15 +124,26 @@ void display()
 		 * framebuffer object for subsequent draw commands). */
 		if(prerenderFrameBuffer == 0)
 		{
+#if USE_MSAA==1
+			/* Generate a MSAA framebuffer + texture */
+			GLuint prerenderTexIDAA;
+			prerenderFrameBufferAA = kuhl_gen_framebuffer_msaa(viewport[2], viewport[3],
+			                                                   &prerenderTexIDAA,
+			                                                   NULL, 16);
+#endif
 			prerenderFrameBuffer = kuhl_gen_framebuffer(viewport[2], viewport[3],
-			                                            &prerenderTexID,
-			                                            NULL);
+			                                                   &prerenderTexID,
+			                                                   NULL);
 			/* Apply the texture to our geometry and draw the quad. */
 			kuhl_geometry_texture(&prerendQuad, prerenderTexID, "tex", 1);
 		}
-		/* Switch to framebuffer and set the OpenGL viewport to coverprerenderTexID
+		/* Switch to framebuffer and set the OpenGL viewport to cover
 		 * the entire framebuffer. */
+#if USE_MSAA==1
+		glBindFramebuffer(GL_FRAMEBUFFER, prerenderFrameBufferAA);
+#else
 		glBindFramebuffer(GL_FRAMEBUFFER, prerenderFrameBuffer);
+#endif
 		glViewport(0,0,viewport[2], viewport[3]);
 		kuhl_errorcheck();
 
@@ -145,6 +158,18 @@ void display()
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glUseProgram(0);
 		kuhl_errorcheck();
+		
+#if USE_MSAA==1
+		/* Copy the MSAA framebuffer into the normal framebuffer */
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, prerenderFrameBufferAA);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, prerenderFrameBuffer);
+		glBlitFramebuffer(0,0,viewport[2],viewport[3],
+		                  0,0,viewport[2],viewport[3],
+		                  GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER,0);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER,0);
+		kuhl_errorcheck();
+#endif
 
 		/* Set up the viewport to draw on the screen */
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);

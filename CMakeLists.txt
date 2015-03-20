@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 2.6)
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER "g++")
 
+#set(CMAKE_C_COMPILER "clang")
+#set(CMAKE_CXX_COMPILER "clang++")
+
 project("opengl-examples" C CXX)  # This project uses C and C++
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Wextra -g -Wno-unused-parameter -Wno-unused-function")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")
@@ -19,7 +22,7 @@ set(NEED_ASSIMP_AND_IM  ogl3-assimp ogl3-slerp ogl3-explode)
 # Programs that only need ImageMagick
 set(NEED_IM ogl2-slideshow ogl2-texture ogl3-texture)
 # Programs that don't rely on libraries
-set(NEED_NOTHING ogl2-triangle ogl3-triangle ogl3-triangle-color ogl3-triangle-shade ogl3-prerend ogl3-picker)
+set(NEED_NOTHING ogl2-triangle ogl3-triangle ogl3-triangle-color ogl3-triangle-shade ogl3-prerend ogl3-picker ogl3-teartest)
 
 
 # use color messages
@@ -31,6 +34,13 @@ include(${CMAKE_SOURCE_DIR}/CMakeModules/colorMessage.cmake)
 find_file(GLXINFO glxinfo)
 find_file(GLEWINFO glewinfo)
 if(UNIX AND NOT APPLE AND (GLXINFO OR GLEWINFO))
+	# Print out graphics card information
+	execute_process(COMMAND ${GLXINFO} COMMAND grep "OpenGL renderer string" COMMAND cut -d ":" -f 2 OUTPUT_VARIABLE openglrenderingstring OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+	if(openglrenderingstring)
+		message("OpenGL renderer -${openglrenderingstring}")
+	endif()
+
+	# Check if the supported OpenGL version is sufficient using either glxinfo or glewinfo commands
 	execute_process(COMMAND ${GLXINFO} COMMAND grep "OpenGL core profile version string" COMMAND cut -d " " -f 6 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 	if(NOT openglversion AND GLEWINFO)
 		execute_process(COMMAND ${GLEWINFO} COMMAND grep "OpenGL version " COMMAND cut -d " " -f 3 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
@@ -52,12 +62,14 @@ SITE_NAME(HOSTNAME)
 option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" ON)
 if(BUILD_DOCUMENTATION)
 	find_package(Doxygen)
-	if(DOXYGEN_FOUND)
-	#-- Add a custom target to run Doxygen when ever the project is built
-	add_custom_target (docs 
-		COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Doxyfile
-		SOURCES ${CMAKE_SOURCE_DIR}/Doxyfile)
-	# Add or remove 'ALL' after 'docs' above to enable/disable doxygen generation when running "make"
+	if(DOXYGEN_FOUND AND EXISTS ${CMAKE_SOURCE_DIR}/Doxyfile)
+		#-- Add a custom target to run Doxygen when ever the project is built
+		add_custom_target (docs
+		    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Doxyfile
+		    SOURCES ${CMAKE_SOURCE_DIR}/Doxyfile)
+		# Add or remove 'ALL' after 'docs' above to enable/disable doxygen generation when running "make"
+		
+		# Don't print warning if Doxygen doesn't work since many people don't use them.
 	endif()
 endif()
 
@@ -154,7 +166,6 @@ else()
 endif()
 
 
-
 # --- VRPN ---
 # Search paths for CCSR
 set(CMAKE_LIBRARY_PATH /home/kuhl/public-vrlab/vrpn/build ${CMAKE_LIBRARY_PATH})
@@ -181,8 +192,10 @@ else()
 endif()
 
 # --- pthreads (required for DGR) ---
+set(CMAKE_THREADS_PREFER_PTHREAD TRUE)   # prefer pthread over other threading libraries
+# set(THREADS_PREFER_PTHREAD_FLAG TRUE)   # prefer -pthread compiler flag over just using -lpthread, but it might not be supported by all compilers.
 find_package(Threads)
-# find_packge(Threads) seems to fail on CCSR, try to find it ourselves: 
+# find_packge(Threads) seems to fail on CCSR, try to find it ourselves:
 #if(NOT Threads_FOUND)
 #find_library(CMAKE_THREAD_LIBS_INIT NAMES pthread PATHS "/lib64" "/lib" "/usr/lib" )
 #message("Last attempt to find pthreads: " ${CMAKE_THREAD_LIBS_INIT})
@@ -198,6 +211,10 @@ set(CMAKE_INCLUDE_PATH "/home/campus11/kuhl/public-cs4611/ovr_sdk_linux_0.4.4/Li
 set(CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR/Lib/Linux/Release/x86_64" ${CMAKE_LIBRARY_PATH})
 set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR/Include" ${CMAKE_INCLUDE_PATH})
 set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR/Src" ${CMAKE_INCLUDE_PATH})
+# An alternative directory name that OVR could be installed in (same style as: https://github.com/jherico/OculusSDK )
+set(CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../OculusSDK/LibOVR/Lib/Linux/Release/x86_64" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../OculusSDK/LibOVR/Include" ${CMAKE_INCLUDE_PATH})
+set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../OculusSDK/LibOVR/Src" ${CMAKE_INCLUDE_PATH})
 
 find_package(OVR)
 if(OVR_FOUND)
@@ -208,26 +225,8 @@ else()
 endif()
 
 
-# Collect libraries that all programs use together into one cmake variable
-set(COMMON_LIBRARIES ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} ${M_LIB})
-if(VRPN_FOUND)  # Add VRPN to the list if it is available
-	set(COMMON_LIBRARIES ${COMMON_LIBRARIES} ${VRPN_LIBRARIES})
-endif()
-if(OVR_FOUND) # Add Oculus LibOVR to the list if it is available
-	set(COMMON_LIBRARIES ${COMMON_LIBRARIES} ${OVR_LIBRARIES})
-endif()
-
 # Set the preprocessor flags.
 set(PREPROC_DEFINE "MOUSEMOVE_GLUT;${ASSIMP_FOUND_DEFINITION};${IMAGEMAGICK_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION}")
-
-# Create a static library containing all files that we regularly use.
-set(FILES_IN_LIBKUHL kuhl-util.c vecmat.c dgr.c mousemove.c hmd-dsight-orient.c projmat.c viewmat.c vrpn-help.cpp)
-if(ImageMagick_FOUND)
-	set(FILES_IN_LIBKUHL ${FILES_IN_LIBKUHL} imageio.c)
-endif()
-add_library(kuhl STATIC ${FILES_IN_LIBKUHL})
-set_target_properties(kuhl PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
-
 
 # Construct a list of programs that we want to compile based on which libraries are available.
 set(PROGRAMS_TO_MAKE ${NEED_NOTHING})
@@ -242,6 +241,15 @@ else()
 	message(WARNING "ImageMagick library was not found, not compiling: ${NEED_IM}")
 endif()
 
+# Create a static library containing all files that we regularly use.
+include_directories("lib")
+set(FILES_IN_LIBKUHL lib/kuhl-util.c lib/vecmat.c lib/dgr.c lib/mousemove.c lib/hmd-dsight-orient.c lib/projmat.c lib/viewmat.c lib/vrpn-help.cpp)
+if(ImageMagick_FOUND)
+	set(FILES_IN_LIBKUHL ${FILES_IN_LIBKUHL} lib/imageio.c)
+endif()
+add_library(kuhl STATIC ${FILES_IN_LIBKUHL})
+set_target_properties(kuhl PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
+
 # Compile the list of programs.
 foreach(arg ${PROGRAMS_TO_MAKE})
 	if(EXISTS ${arg}.cpp)   # Figure out if the program is a c or cpp file
@@ -250,12 +258,27 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 		set(SOURCE_FILE ${arg}.c)
 	endif()
 	add_executable(${arg} ${SOURCE_FILE})
-	target_link_libraries(${arg} kuhl ${COMMON_LIBRARIES} ${GLUT_LIBRARIES} ${ASSIMP_LIBRARIES} ${ImageMagick_LIBRARIES})
+
+	target_link_libraries(${arg} kuhl)
+	if(VRPN_FOUND)  # Add VRPN to the list if it is available
+		target_link_libraries(${arg} ${VRPN_LIBRARIES})
+	endif()
+	if(OVR_FOUND) # Add Oculus LibOVR to the list if it is available
+		target_link_libraries(${arg} ${OVR_LIBRARIES})
+	endif()
+	if(ImageMagick_FOUND)
+		target_link_libraries(${arg} ${ImageMagick_LIBRARIES})
+	endif()
+	if(ASSIMP_FOUND)
+		target_link_libraries(${arg} ${ASSIMP_LIBRARIES})
+	endif()
+
+	target_link_libraries(${arg} ${GLEW_LIBRARIES} ${M_LIB} ${GLUT_LIBRARIES} ${OPENGL_LIBRARIES} )
+
 	set_target_properties(${arg} PROPERTIES LINKER_LANGUAGE "CXX")
 	set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
-	add_dependencies(${arg} libkuhl.a)
+	add_dependencies(${arg} kuhl)
 endforeach()
-
 
 
 # Build dgr-relay

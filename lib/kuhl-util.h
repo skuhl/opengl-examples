@@ -28,7 +28,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <GL/gl.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -142,6 +142,17 @@ typedef struct _kuhl_geometry_
  * allocate 0 bytes). */
 #define kuhl_malloc(size) kuhl_mallocFileLine(size, __FILE__, __LINE__)
 
+/** Print an error message to stderr with file and line number
+ * information. */
+#define kuhl_errmsg(M, ...) fprintf(stderr, "ERROR: %s():%d: " M, __func__, __LINE__, ##__VA_ARGS__)
+/** Print a warning message to stderr with file and line number
+ * information. */
+#define kuhl_warnmsg(M, ...) fprintf(stderr, "WARNING: %s():%d: " M, __func__, __LINE__, ##__VA_ARGS__)
+/** Print a message to stdout with file and line number
+ * information. */
+#define kuhl_msg(M, ...) fprintf(stdout, "%s():%d: " M, __func__, __LINE__, ##__VA_ARGS__)
+
+	
 // kuhl_errorcheck() calls this C function:
 int kuhl_errorcheckFileLine(const char *file, int line);
 // kuhl_malloc() calls this C function:
@@ -205,6 +216,8 @@ kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDir
 void kuhl_bbox_fit(float result[16], const float bbox[6], int sitOnXZPlane);
 	
 GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depthTexture);
+GLint kuhl_gen_framebuffer_msaa(int width, int height, GLuint *texture, GLuint *depthTexture, GLint samples);
+
 void kuhl_play_sound(const char *filename);
 
 #ifdef __cplusplus

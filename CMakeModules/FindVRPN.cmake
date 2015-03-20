@@ -22,7 +22,7 @@ find_package_handle_standard_args(VRPN DEFAULT_MSG
 else()
 find_package_handle_standard_args(VRPN DEFAULT_MSG
     VRPN_LIBRARY_VRPN VRPN_LIBRARY_QUAT VRPN_LIBRARIES 
-    CMAKE_THREAD_LIBS_INIT
+    Threads_FOUND
     VRPN_INCLUDE_DIRS VRPN_INCLUDE_VRPN VRPN_INCLUDE_QUAT
 )
 endif()

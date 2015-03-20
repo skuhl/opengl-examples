@@ -27,10 +27,11 @@ float bbox[6];
  * model and translate it so that we can see the entire model. This is
  * a useful setting to use when you are loading a new model that you
  * are unsure about the units and position of the model geometry. */
-#define FIT_TO_VIEW_AND_ROTATE 1
-/** The location in 3D space that we want the center of the bounding
- * box to be (if FIT_TO_VIEW_AND_ROTATE is set) or the location that
- * we should put the origin of the model */
+#define FIT_TO_VIEW 0
+/** If FIT_TO_VIEW is set, this is the place to put the
+ * center of the bottom face of the bounding box. If
+ * FIT_TO_VIEW is not set, this is the location in world
+ * coordinates that we want to model's origin to appear at. */
 float placeToPutModel[3] = { 0, 0, 0 };
 /** SketchUp produces files that older versions of ASSIMP think 1 unit
  * is 1 inch. However, all of this software assumes that 1 unit is 1
@@ -39,9 +40,6 @@ float placeToPutModel[3] = { 0, 0, 0 };
  * give us units in meters. */
 #define INCHES_TO_METERS 0
 
-GLuint scene_list = 0; // display list for model
-char *modelFilename = NULL;
-char *modelTexturePath = NULL;
 int rotateStyle = 0;
 
 #define GLSL_VERT_FILE "ogl3-assimp.vert"
@@ -91,7 +89,7 @@ void keyboard(unsigned char key, int x, int y)
 void get_model_matrix(float result[16])
 {
 	mat4f_identity(result);
-	if(FIT_TO_VIEW_AND_ROTATE == 0)
+	if(FIT_TO_VIEW == 0)
 	{
 		/* Translate the model to where we were asked to put it */
 		float translate[16];
@@ -161,7 +159,9 @@ void get_model_matrix(float result[16])
 	}
 	
 	/* Get a matrix to scale+translate the model based on the bounding
-	 * box */
+	 * box. If the last parameter is 1, the bounding box will sit on
+	 * the XZ plane. If it is set to 0, the bounding box will be
+	 * centered at the specified point. */
 	float fitMatrix[16];
 	kuhl_bbox_fit(fitMatrix, bbox, 1);
 
@@ -212,8 +212,6 @@ void display()
 		glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 
-
-
 		/* Get the view or camera matrix; update the frustum values if needed. */
 		float viewMat[16], perspective[16];
 		viewmat_get(viewMat, perspective, viewportID);
@@ -242,7 +240,7 @@ void display()
 		float f[6]; // left, right, top, bottom, near>0, far>0
 		projmat_get_frustum(f, viewport[2], viewport[3]);
 		glUniform1f(kuhl_get_uniform("farPlane"), f[5]);
-		
+
 		kuhl_errorcheck();
 		kuhl_geometry_draw(modelgeom); /* Draw the model */
 		kuhl_errorcheck();
@@ -267,6 +265,9 @@ void display()
 
 int main(int argc, char** argv)
 {
+	char *modelFilename    = NULL;
+	char *modelTexturePath = NULL;
+	
 	if(argc == 2)
 	{
 		modelFilename = argv[1];
@@ -289,6 +290,7 @@ int main(int argc, char** argv)
 	/* set up our GLUT window */
 	glutInit(&argc, argv);
 	glutInitWindowSize(512, 512);
+	glutSetOption(GLUT_MULTISAMPLE, 4); // set msaa samples; default to 4
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
 #ifdef __APPLE__
@@ -328,7 +330,7 @@ int main(int argc, char** argv)
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
 
-	float initCamPos[3]  = {0,1,2}; // location of camera
+	float initCamPos[3]  = {0,1.55,2}; // 1.55m is a good approx eyeheight
 	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
 	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
 	viewmat_init(initCamPos, initCamLook, initCamUp);
@@ -336,7 +338,6 @@ int main(int argc, char** argv)
 	// Clear the screen while things might be loading
 	glClearColor(.2,.2,.2,1);
 	glClear(GL_COLOR_BUFFER_BIT);
-	glutSwapBuffers();
 
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
@@ -344,10 +345,10 @@ int main(int argc, char** argv)
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */
 	glutMainLoop();
-    /* // An alternative approach:
-    while(1)
-       glutMainLoopEvent();
-    */
+	/* // An alternative approach:
+	   while(1)
+	   glutMainLoopEvent();
+	*/
 
 	exit(EXIT_SUCCESS);
 }

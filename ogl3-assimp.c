@@ -23,6 +23,7 @@
 GLuint fpsLabel = 0;
 float fpsLabelAspectRatio = 0;
 kuhl_geometry labelQuad;
+int renderStyle = 0;
 
 GLuint program = 0; // id value for the GLSL program
 kuhl_geometry *modelgeom = NULL;
@@ -32,10 +33,10 @@ float bbox[6];
  * model and translate it so that we can see the entire model. This is
  * a useful setting to use when you are loading a new model that you
  * are unsure about the units and position of the model geometry. */
-#define FIT_TO_VIEW_AND_ROTATE 1
-/** If FIT_TO_VIEW_AND_ROTATE is set, this is the place to put the
+#define FIT_TO_VIEW 0
+/** If FIT_TO_VIEW is set, this is the place to put the
  * center of the bottom face of the bounding box. If
- * FIT_TO_VIEW_AND_ROTATE is not set, this is the location in world
+ * FIT_TO_VIEW is not set, this is the location in world
  * coordinates that we want to model's origin to appear at. */
 float placeToPutModel[3] = { 0, 0, 0 };
 /** SketchUp produces files that older versions of ASSIMP think 1 unit
@@ -44,12 +45,6 @@ float placeToPutModel[3] = { 0, 0, 0 };
  * meters. Newer versions of ASSIMP correctly read the same files and
  * give us units in meters. */
 #define INCHES_TO_METERS 0
-
-GLuint scene_list = 0; // display list for model
-char *modelFilename = NULL;
-char *modelTexturePath = NULL;
-int renderStyle = 0;
-
 
 #define GLSL_VERT_FILE "ogl3-assimp.vert"
 #define GLSL_FRAG_FILE "ogl3-assimp.frag"
@@ -63,6 +58,12 @@ void keyboard(unsigned char key, int x, int y)
 		case 'Q':
 		case 27: // ASCII code for Escape key
 			exit(0);
+			break;
+		case 'f': // full screen
+			glutFullScreen();
+			break;
+		case 'F': // switch to window from full screen mode
+			glutPositionWindow(0,0);
 			break;
 		case 'r':
 		{
@@ -178,19 +179,20 @@ void keyboard(unsigned char key, int x, int y)
 		
 		case ' ': // Toggle different sections of the GLSL fragment shader
 			renderStyle++;
-			if(renderStyle > 8)
+			if(renderStyle > 9)
 				renderStyle = 0;
 			switch(renderStyle)
 			{
 				case 0: printf("Render style: Diffuse (headlamp light)\n"); break;
 				case 1: printf("Render style: Texture (color is used on non-textured geometry)\n"); break;
-				case 2: printf("Render style: Vertex color\n"); break;
-				case 3: printf("Render style: Vertex color + diffuse (headlamp light)\n"); break;
-				case 4: printf("Render style: Normals\n"); break;
-				case 5: printf("Render style: Texture coordinates\n"); break;
-				case 6: printf("Render style: Front (green) and back (red) faces based on winding\n"); break;
-				case 7: printf("Render style: Front (green) and back (red) based on normals\n"); break;
-				case 8: printf("Render style: Depth (white=far; black=close)\n"); break;
+				case 2: printf("Render style: Texture+diffuse (color is used on non-textured geometry)\n"); break;
+				case 3: printf("Render style: Vertex color\n"); break;
+				case 4: printf("Render style: Vertex color + diffuse (headlamp light)\n"); break;
+				case 5: printf("Render style: Normals\n"); break;
+				case 6: printf("Render style: Texture coordinates\n"); break;
+				case 7: printf("Render style: Front (green) and back (red) faces based on winding\n"); break;
+				case 8: printf("Render style: Front (green) and back (red) based on normals\n"); break;
+				case 9: printf("Render style: Depth (white=far; black=close)\n"); break;
 			}
 			break;
 	}
@@ -204,7 +206,7 @@ void keyboard(unsigned char key, int x, int y)
 void get_model_matrix(float result[16])
 {
 	mat4f_identity(result);
-	if(FIT_TO_VIEW_AND_ROTATE == 0)
+	if(FIT_TO_VIEW == 0)
 	{
 		/* Translate the model to where we were asked to put it */
 		float translate[16];
@@ -318,8 +320,6 @@ void display()
 		glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 
-
-
 		/* Get the view or camera matrix; update the frustum values if needed. */
 		float viewMat[16], perspective[16];
 		viewmat_get(viewMat, perspective, viewportID);
@@ -348,7 +348,7 @@ void display()
 		float f[6]; // left, right, top, bottom, near>0, far>0
 		projmat_get_frustum(f, viewport[2], viewport[3]);
 		glUniform1f(kuhl_get_uniform("farPlane"), f[5]);
-		
+
 		kuhl_errorcheck();
 		kuhl_geometry_draw(modelgeom); /* Draw the model */
 		kuhl_errorcheck();
@@ -383,7 +383,7 @@ void display()
 			glEnable(GL_DEPTH_TEST);
 			kuhl_errorcheck();
 		}
-		
+
 		glUseProgram(0); // stop using a GLSL program.
 
 	} // finish viewport loop
@@ -447,6 +447,9 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint program)
 
 int main(int argc, char** argv)
 {
+	char *modelFilename    = NULL;
+	char *modelTexturePath = NULL;
+	
 	if(argc == 2)
 	{
 		modelFilename = argv[1];
@@ -469,6 +472,7 @@ int main(int argc, char** argv)
 	/* set up our GLUT window */
 	glutInit(&argc, argv);
 	glutInitWindowSize(512, 512);
+	glutSetOption(GLUT_MULTISAMPLE, 4); // set msaa samples; default to 4
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
 #ifdef __APPLE__
@@ -516,7 +520,6 @@ int main(int argc, char** argv)
 	// Clear the screen while things might be loading
 	glClearColor(.2,.2,.2,1);
 	glClear(GL_COLOR_BUFFER_BIT);
-	glutSwapBuffers();
 
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
@@ -525,10 +528,10 @@ int main(int argc, char** argv)
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */
 	glutMainLoop();
-    /* // An alternative approach:
-    while(1)
-       glutMainLoopEvent();
-    */
+	/* // An alternative approach:
+	   while(1)
+	   glutMainLoopEvent();
+	*/
 
 	exit(EXIT_SUCCESS);
 }

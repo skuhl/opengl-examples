@@ -3,8 +3,8 @@ is available in homebrew on OSX.
 
 To install, follow these steps:
 
-wget 'http://www.cs.unc.edu/Research/vrpn/downloads/vrpn_07_31.zip'
-unzip vrpn_07_31.zip
+wget 'http://www.cs.unc.edu/Research/vrpn/downloads/vrpn_07_33.zip'
+unzip vrpn_07_33.zip
 cd vrpn
 mkdir build
 cd build

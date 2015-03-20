@@ -27,29 +27,34 @@ Check out model loading and texturing capabilities
 
     ./ogl3-assimp models/duck.dae
 
-Run code for an HMD:
+Run code for an HMD (left/right eye screens side-by-side):
 
     ./hmd.sh ./ogl3-triangle
-
-Run code on the IVS display wall (if you have permission to do so)
-
-    ./ivs.sh ./ogl3-triangle
-
-Test to see if program will work on IVS without access to the IVS display wall.
-
-    ./local.sh ./ogl3-triangle
-
-Run code on the IVS display wall and update the viewport based on tracking the user's head (if you have permission to do so)
-
-    ./ivs-track.sh ./ogl3-triangle
-
-Run code on the IVS display wall and account for the screen bezels (if you have permission to do so)
-
-    ./ivs3.sh ./ogl3-triangle
 
 Run the code using the Oculus HMD
 
     ./oculus.sh ./ogl3-triangle
+
+Run the code with red/cyan anaglyph 3D:
+
+    ./anaglyph.sh ./ogl3-triangle
+
+Michigan Tech: Run code on the IVS display wall (if you have permission to do so)
+
+    ./ivs.sh ./ogl3-triangle
+
+Michigan Tech: Test to see if program will work on IVS without access to the IVS display wall.
+
+    ./local.sh ./ogl3-triangle
+
+Michigan Tech: Run code on the IVS display wall and update the viewport based on tracking the user's head (if you have permission to do so)
+
+    ./ivs-track.sh ./ogl3-triangle
+
+Michigan Tech: Run code on the IVS display wall and account for the screen bezels (if you have permission to do so)
+
+    ./ivs3.sh ./ogl3-triangle
+
 
 
 ===

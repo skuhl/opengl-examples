@@ -178,6 +178,7 @@ int main(int argc, char** argv)
 	/* set up our GLUT window */
 	glutInit(&argc, argv);
 	glutInitWindowSize(512, 512);
+	glutSetOption(GLUT_MULTISAMPLE, 4); // set msaa samples; default to 4
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
 #ifdef __APPLE__
@@ -216,7 +217,7 @@ int main(int argc, char** argv)
 	glUseProgram(program);
 	kuhl_errorcheck();
 	/* Set the uniform variable in the shader that is named "red" to the value 1. */
-	glUniform1i(kuhl_get_uniform("red"), 1);
+	glUniform1i(kuhl_get_uniform("red"), 0);
 	kuhl_errorcheck();
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);
