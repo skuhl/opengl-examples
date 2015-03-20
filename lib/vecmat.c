@@ -1746,8 +1746,8 @@ void mat4d_ortho_new(double result[16], double left, double right, double bottom
  */
 void mat4f_perspective_new(float result[16], float  fovy, float  aspect, float  near, float  far)
 {
-	near = fabs(near);
-	far = fabs(far);
+	near = fabsf(near);
+	far = fabsf(far);
 	if(near == 0)
 	{
 		fprintf(stderr, "%s: Invalid perspective projection matrix.\n", __func__);
@@ -1772,8 +1772,8 @@ void mat4f_perspective_new(float result[16], float  fovy, float  aspect, float  
  */
 void mat4d_perspective_new(double result[16], double fovy, double aspect, double near, double far)
 {
-	near = abs(near);
-	far = abs(far);
+	near = fabs(near);
+	far = fabs(far);
 	if(near == 0)
 	{
 		fprintf(stderr, "%s: Invalid perspective projection matrix.\n", __func__);
