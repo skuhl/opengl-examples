@@ -521,6 +521,9 @@ int main(int argc, char** argv)
 	glClearColor(.2,.2,.2,1);
 	glClear(GL_COLOR_BUFFER_BIT);
 
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
 	init_geometryQuad(&labelQuad, program);
