@@ -2083,10 +2083,10 @@ static void kuhl_print_aiScene_info(const char *modelFilename, const struct aiSc
 		       mesh->mNumVertices,
 		       mesh->mNumFaces,
 		       mesh->mNumBones,
-		       mesh->mNormals != NULL ? "yes" : "no ",
-		       mesh->mTangents != NULL ? "yes" : "no ",
-		       mesh->mBitangents != NULL ? "yes" : "no ",
-		       mesh->mTextureCoords != NULL ? "yes" : "no ",
+		       mesh->mNormals          != NULL ? "yes" : "no ",
+		       mesh->mTangents         != NULL ? "yes" : "no ",
+		       mesh->mBitangents       != NULL ? "yes" : "no ",
+		       mesh->mTextureCoords[0] != NULL ? "yes" : "no ", // mTextureCoords is an array of pointers
 		       mesh->mName.data
 			);
 
@@ -2568,7 +2568,8 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		}
 
 		/* Store the vertex color attribute */
-		if(mesh->mColors != NULL && mesh->mColors[0] != NULL)
+		// Note: mesh->mColors is a C array, not a pointer
+		if(mesh->mColors[0] != NULL)
 		{
 			float *colors = kuhl_malloc(sizeof(float)*mesh->mNumVertices*3);
 			for(unsigned int i=0; i<mesh->mNumVertices; i++)
@@ -2604,7 +2605,8 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		}
 		
 		/* Store the texture coordinate attribute */
-		if(mesh->mTextureCoords != NULL && mesh->mTextureCoords[0] != NULL)
+		// Note: mesh->mTextureCoords is a C array, not a pointer
+		if(mesh->mTextureCoords[0] != NULL)
 		{
 			float *texCoord = kuhl_malloc(sizeof(float)*mesh->mNumVertices*2);
 			for(unsigned int i=0; i<mesh->mNumVertices; i++)
@@ -2745,8 +2747,8 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		       mesh->mNumFaces*meshPrimitiveType,
 		       meshPrimitiveType,
 		       mesh->mNormals       == NULL ? "no" : "yes",
-		       mesh->mColors==NULL || mesh->mColors[0]==NULL ? "no" : "yes",
-		       mesh->mTextureCoords == NULL ? "no" : "yes",
+		       mesh->mColors[0]==NULL ? "no" : "yes", // mColors is an array of pointers
+		       mesh->mTextureCoords[0] == NULL ? "no" : "yes",   // mTextureCoords is an array of pointers
 		       mesh->mNumBones,
 		       geom->texture_count == 0 ? "(null)" : texPath.data);
 	} // end for each mesh in node
