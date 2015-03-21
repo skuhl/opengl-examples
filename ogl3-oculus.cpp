@@ -20,6 +20,8 @@
 #include "projmat.h"
 #include "viewmat.h"
 
+#ifndef MISSING_OVR
+
 #include "OVR.h"
 #include "OVR_CAPI_GL.h"
 ovrHmd hmd;
@@ -669,9 +671,11 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint program)
 	kuhl_errorcheck();
 }
 
+#endif
 
 int main(int argc, char** argv)
 {
+#ifndef MISSING_OVR
 	if(argc == 2)
 	{
 		modelFilename = argv[1];
@@ -764,4 +768,5 @@ int main(int argc, char** argv)
 	ovr_Shutdown();
 	
 	exit(EXIT_SUCCESS);
+#endif
 }

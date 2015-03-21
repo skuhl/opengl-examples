@@ -6,7 +6,7 @@ set(CMAKE_CXX_COMPILER "g++")
 project("opengl-examples" C CXX)  # This project uses C and C++
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Wextra -g -Wno-unused-parameter -Wno-unused-function")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/CMakeModules)
 
 ####################################
 # Edit the following areas to add or remove programs to compile
@@ -14,12 +14,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
 # If you add a new name here, there must be an .c file with the same
 # name that contains a main() function.
 ####################################
-# Programs that need ASSIMP and ImageMagick
-set(NEED_ASSIMP_AND_IM ogl3-oculus ogl3-assimp ogl3-slerp ogl3-explode)
-# Programs that only need ImageMagick
-set(NEED_IM ogl2-slideshow ogl2-texture ogl3-texture)
+# Programs that need ASSIMP
+set(NEED_ASSIMP ogl3-oculus ogl3-assimp ogl3-slerp ogl3-explode)
 # Programs that don't rely on libraries
-set(NEED_NOTHING ogl2-triangle ogl3-triangle ogl3-triangle-color ogl3-triangle-shade ogl3-prerend ogl3-picker ogl3-teartest)
+set(NEED_NOTHING ogl3-triangle ogl3-triangle-color ogl3-triangle-shade ogl3-prerend ogl3-picker ogl3-teartest ogl3-texture) # ogl2-triangle ogl2-slideshow ogl2-texture
 
 
 # use color messages
@@ -51,6 +49,28 @@ if(UNIX AND NOT APPLE AND (GLXINFO OR GLEWINFO))
 	endif()
 endif()
 
+# Get custom Windows library installation paths
+if (WIN32)
+	include(Windows.cmake)
+	
+	# GLUT installation
+	set(GLUT_ROOT_PATH "${WINDOWS_LIBRARY_PATH}${WINDOWS_GLUT_FOLDER}/" ${GLUT_ROOT_PATH})
+
+	# GLEW installation
+	set(GLEW_ROOT_PATH "${WINDOWS_LIBRARY_PATH}${WINDOWS_GLEW_FOLDER}/")
+	set(CMAKE_LIBRARY_PATH "${GLEW_ROOT_PATH}lib" ${CMAKE_LIBRARY_PATH})
+	set(CMAKE_INCLUDE_PATH "${GLEW_ROOT_PATH}include" ${CMAKE_INCLUDE_PATH})
+
+	# ASSIMP installation
+	set(ASSIMP_ROOT_PATH "${WINDOWS_LIBRARY_PATH}${WINDOWS_ASSIMP_FOLDER}/")
+	set(CMAKE_LIBRARY_PATH "${ASSIMP_ROOT_PATH}lib" ${CMAKE_LIBRARY_PATH})
+	set(CMAKE_INCLUDE_PATH "${ASSIMP_ROOT_PATH}include" ${CMAKE_INCLUDE_PATH})
+
+	# FreeType installation
+	set(FREETYPE_ROOT_PATH "${WINDOWS_LIBRARY_PATH}${WINDOWS_FREETYPE_FOLDER}/")
+	set(CMAKE_LIBRARY_PATH "${FREETYPE_ROOT_PATH}" ${CMAKE_LIBRARY_PATH})
+	set(CMAKE_INCLUDE_PATH "${FREETYPE_ROOT_PATH}include" ${CMAKE_INCLUDE_PATH})
+endif()
 
 # SITE_NAME sets the HOSTNAME variable to the name of this computer.
 SITE_NAME(HOSTNAME)
@@ -59,7 +79,7 @@ SITE_NAME(HOSTNAME)
 option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" ON)
 if(BUILD_DOCUMENTATION)
 	find_package(Doxygen)
-	if(DOXYGEN_FOUND AND EXISTS ${CMAKE_SOURCE_DIR}/Doxyfile)
+	if(DOXYGEN_FOUND AND (NOT (${DOXYGEN_EXECUTABLE} MATCHES "DOXYGEN_EXECUTABLE-NOTFOUND")) AND EXISTS ${CMAKE_SOURCE_DIR}/Doxyfile)
 		#-- Add a custom target to run Doxygen when ever the project is built
 		add_custom_target (docs
 		    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Doxyfile
@@ -70,10 +90,11 @@ if(BUILD_DOCUMENTATION)
 	endif()
 endif()
 
-
-# === Libraries that we use ===
-# --- math library ---
-find_library(M_LIB m)
+if (NOT WIN32)
+	# === Libraries that we use ===
+	# --- math library ---
+	find_library(M_LIB m)
+endif()
 
 # --- OpenGL ---
 find_package(OpenGL REQUIRED)
@@ -120,28 +141,6 @@ if(NOT GLEW_NEW_ENOUGH)
 	message(FATAL_ERROR "glew version 1.5.6 or higher is required.")
 endif()
 
-# --- ImageMagick (recommended, optional) ---
-# ImageMagick 6.7.5-5 is recommended for colorspaces to be handled correctly.
-
-# IVS - installed version is too old.
-set(CMAKE_LIBRARY_PATH "/research/kuhl/public-vrlab/ImageMagick-6.8.9-5/magick/.libs/" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "/research/kuhl/public-vrlab/ImageMagick-6.8.9-5/" ${CMAKE_INCLUDE_PATH})
-# CCSR - installed version is too old.
-set(CMAKE_LIBRARY_PATH "/home/kuhl/public-vrlab/ImageMagick-6.8.9-6/magick/.libs/" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "/home/kuhl/public-vrlab/ImageMagick-6.8.9-6/" ${CMAKE_INCLUDE_PATH})
-
-find_package(ImageMagick COMPONENTS MagickCore)
-
-
-if(ImageMagick_FOUND)
-	include_directories(${ImageMagick_INCLUDE_DIRS})
-	set(IMAGEMAGICK_FOUND_DEFINITION "KUHL_UTIL_USE_IMAGEMAGICK")
-else()
-	set(IMAGEMAGICK_FOUND_DEFINITION "")
-endif()
-
-
-
 # --- ASSIMP (recommended, optional) ---
 # Search paths for CCSR
 set(CMAKE_LIBRARY_PATH /home/kuhl/public-vrlab/assimp/lib ${CMAKE_LIBRARY_PATH})
@@ -155,7 +154,7 @@ set(CMAKE_INCLUDE_PATH /home/campus11/kuhl/public-cs4611/assimp/include ${CMAKE_
 
 
 find_package(ASSIMP)
-if(ASSIMP_FOUND AND ImageMagick_FOUND)  # only use Assimp if imagemagick is also found (imagemagick is needed for textures)
+if(ASSIMP_FOUND)
 	include_directories(${ASSIMP_INCLUDE_DIRS})
 	set(ASSIMP_FOUND_DEFINITION "KUHL_UTIL_USE_ASSIMP")
 else()
@@ -223,27 +222,19 @@ endif()
 
 
 # Set the preprocessor flags.
-set(PREPROC_DEFINE "MOUSEMOVE_GLUT;${ASSIMP_FOUND_DEFINITION};${IMAGEMAGICK_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION}")
+set(PREPROC_DEFINE "MOUSEMOVE_GLUT;${ASSIMP_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION}")
 
 # Construct a list of programs that we want to compile based on which libraries are available.
 set(PROGRAMS_TO_MAKE ${NEED_NOTHING})
-if(ASSIMP_FOUND AND ImageMagick_FOUND)
-	set(PROGRAMS_TO_MAKE ${PROGRAMS_TO_MAKE} ${NEED_ASSIMP_AND_IM})
+if(ASSIMP_FOUND)
+	set(PROGRAMS_TO_MAKE ${PROGRAMS_TO_MAKE} ${NEED_ASSIMP})
 else()
-	message(WARNING "ASSIMP and/or ImageMagick libraries were not found, not compiling: ${NEED_ASSIMP_AND_IM}")
-endif()
-if(ImageMagick_FOUND)
-	set(PROGRAMS_TO_MAKE ${PROGRAMS_TO_MAKE} ${NEED_IM})
-else()
-	message(WARNING "ImageMagick library was not found, not compiling: ${NEED_IM}")
+	message(WARNING "ASSIMP was not found, not compiling: ${NEED_ASSIMP}")
 endif()
 
 # Create a static library containing all files that we regularly use.
 include_directories("lib")
 set(FILES_IN_LIBKUHL lib/kuhl-util.c lib/vecmat.c lib/dgr.c lib/mousemove.c lib/hmd-dsight-orient.c lib/projmat.c lib/viewmat.c lib/vrpn-help.cpp)
-if(ImageMagick_FOUND)
-	set(FILES_IN_LIBKUHL ${FILES_IN_LIBKUHL} lib/imageio.c)
-endif()
 add_library(kuhl STATIC ${FILES_IN_LIBKUHL})
 set_target_properties(kuhl PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
 
@@ -262,9 +253,6 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 	endif()
 	if(OVR_FOUND) # Add Oculus LibOVR to the list if it is available
 		target_link_libraries(${arg} ${OVR_LIBRARIES})
-	endif()
-	if(ImageMagick_FOUND)
-		target_link_libraries(${arg} ${ImageMagick_LIBRARIES})
 	endif()
 	if(ASSIMP_FOUND)
 		target_link_libraries(${arg} ${ASSIMP_LIBRARIES})

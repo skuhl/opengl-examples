@@ -1,6 +1,6 @@
 include(FindPackageHandleStandardArgs)
 
-FIND_LIBRARY(ASSIMP_LIBRARIES assimp)
+FIND_LIBRARY(ASSIMP_LIBRARIES assimp zlib)
 FIND_PATH(ASSIMP_INCLUDE_DIRS assimp/mesh.h)
 
 

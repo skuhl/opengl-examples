@@ -10,3 +10,4 @@ rm -vf CMakeCache.txt
 rm -vf Makefile
 rm -vf *~
 rm -vf \#*\#
+rm -vf *.exe

@@ -100,7 +100,11 @@ static void swapEndianessFloat(float* data, const int n)
 HmdControlState initHmdControl(const char* deviceFile)
 {
 	HmdControlState result;
+#ifndef __MINGW32__
 	result.fd = open(deviceFile, O_RDWR | O_NOCTTY);
+#else
+	result.fd = open(deviceFile, O_RDWR);
+#endif
 	if (result.fd == -1)
 	{
 		kuhl_errmsg("Could not open %s for HMD rotation sensor driver\n", deviceFile);

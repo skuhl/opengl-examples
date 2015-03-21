@@ -6,12 +6,13 @@
 // James Walker   jwwalker at mtu dot edu
 // Scott A. Kuhl  kuhl at mtu dot edu
 
+#ifndef __MINGW32__
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -72,9 +73,11 @@ void * receiver(void *) {
 		}
 	}
 }
+#endif
 
 
 int main(int argc, char **argv) {
+#ifndef __MINGW32__
 	if (argc < 4) {
 		printf("USAGE: %s port-in ipaddr-out port-out [ port2-out .. ]\n", argv[0]);
 		printf("This program will listen on a specific port for UDP packets. When one is received, it will be sent to the specified IP address. If more than one port is specified, it will send the packet to multiple ports at that IP address.\n");
@@ -156,4 +159,5 @@ int main(int argc, char **argv) {
 			exit(EXIT_SUCCESS);
 		}
 	}
+#endif
 }

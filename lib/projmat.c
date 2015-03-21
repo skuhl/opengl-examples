@@ -158,20 +158,20 @@ void projmat_get_frustum(float result[6], int viewportWidth, int viewportHeight)
 		if(viewportHeight < 0)
 			viewportHeight  = glutGet(GLUT_WINDOW_HEIGHT);
 		float aspect = viewportWidth/(float)viewportHeight;
-		float near = .1;
-		float far = 30;
+		float nearPlane = 0.1;
+		float farPlane = 30;
 		float vfov = 65;
 		if(projmat_mode == 0)
 			vfov = projmat_vfov;
 		float fovyRad = vfov * M_PI/180.0f;
-		float height = near * tanf(fovyRad/2.0f);
+		float height = nearPlane * tanf(fovyRad/2.0f);
 		float width = height * aspect;
 		result[0] = -width;
 		result[1] = width;
 		result[2] = -height;
 		result[3] = height;
-		result[4] = near;
-		result[5] = far;
+		result[4] = nearPlane;
+		result[5] = farPlane;
 
 		// Save the frustum in proj_master_frustum and proj_frustum to
 		// reduce any confusion. Since there are no slaves (which is
