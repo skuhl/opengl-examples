@@ -1,0 +1,28 @@
+Windows Installation:
+
+Setup:
+Install Git
+	Avoid installing the git-cheetah plugin if you can. It messes with your path environment variable.
+Install CMake
+Install MinGW
+Install DirectX SDK
+
+Modify Environment:
+To modify your environment variables: http://www.computerhope.com/issues/ch000549.htm
+You'll need to modify your PATH environment variable as such. The order IS important.
+	<path_to_mingw_installation>\bin;<path_to_mingw_installation>\msys\1.0\bin;<path_to_cmake_installation>\bin;<path_to_git_installation>\bin;<ORIGINAL_PATH_VARIABLE>
+You may need to set the DXSDK_DIR environment variable to the directory you installed in. This is so ASSIMP can compile its tools.
+	Example: D:\Env\Libraries\Microsoft DirectX SDK (June 2010)\
+	
+Installing Libraries:
+Create a folder where you'd like libraries to be installed (ex: C:\Libraries)
+Open Windows.cmake and edit the WINDOWS_LIBRARY_PATH variable to match the libraries folder you created.
+Open Windows command line in opengl-examples by holding shit, right clicking in the folder, and selecting "Open Command Window Here".
+Run install.bat <path_to_libraries_folder> <path_to_mingw_installation>
+Example: install.bat D:\Env\Libraries\ D:\Env\MinGW\
+It's important that the path arguments you provide use \ instead of / and have a \ at the end of each path.
+
+Compiling:
+To build opengl-examples:
+Run cmake -G "MinGW Makefiles" .
+Run mingw32-make

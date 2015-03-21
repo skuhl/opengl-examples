@@ -6,8 +6,8 @@ set(WINDOWS_LIBRARY_PATH "D:/Env/Libraries/")
 
 # These are the folder names for the libraries you downloaded.
 # If you downloaded a different version than the ones listed here, you'll probably need to edit these.
-set(WINDOWS_GLUT_FOLDER "freeglut")
+set(WINDOWS_GLUT_FOLDER "freeglut-3.0.0")
 set(WINDOWS_GLEW_FOLDER "glew-1.12.0")
-set(WINDOWS_FREETYPE_FOLDER "freetype-2.5.5")
+#set(WINDOWS_FREETYPE_FOLDER "freetype-2.5.5")
 set(WINDOWS_ASSIMP_FOLDER "assimp")
 
