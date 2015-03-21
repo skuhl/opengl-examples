@@ -1,6 +1,7 @@
 Windows Installation:
 
 Setup:
+Install 7Zip
 Install Git
 	Avoid installing the git-cheetah plugin if you can. It messes with your path environment variable.
 Install CMake

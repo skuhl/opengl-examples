@@ -1,8 +1,26 @@
 setlocal
+@echo off
 :: Install Git, CMake, MinGW, and the DirectX SDK (you also might need to set an env var)
 set repository_folder=%~dp0
 set libraries_folder=%1
 set mingw_folder=%2
+
+if [%libraries_folder%]==[] (
+	echo Must have valid libraries folder
+	goto :eof
+)
+if NOT EXIST %libraries_folder%  (
+	echo Must have valid libraries folder
+	goto :eof
+)
+if [%mingw_folder%]==[] (
+	echo Must have valid MinGW folder
+	goto :eof
+)
+if NOT EXIST %mingw_folder%  (
+	echo Must have valid MinGW folder
+	goto :eof
+)
 
 set path=%mingw_folder%bin;%mingw_folder%msys\1.0\bin;%path%
 
