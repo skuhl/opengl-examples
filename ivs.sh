@@ -138,9 +138,9 @@ rsync -ah -e ssh --exclude=.svn --exclude=.git --exclude=CMakeCache.txt --exclud
 printMessage "Checking that tile nodes are accessible from IVS..."
 for i in ${ALL_TILES}; do
 	echo "Testing connection to tile $i"
-	if ! ${SSH_CMD} ssh $i 'exit'; then
-		echo "ERROR: Unable to establish an ssh connection with tile: $i"
-		echo "Perhaps the tile is turned off or you can't ssh to it?"
+	if ! ${SSH_CMD} ssh $i "touch ${IVS_TEMP_DIR}/.ivs.connection.test"; then
+		echo "ERROR: Unable to establish an ssh connection to tile $i and write a file in ${IVS_TEMP_DIR}"
+		echo "Perhaps the tile is turned off or you can't ssh to it? Is /research mounted?"
 		echo "To run without a specific tile, remove the tile from the ALL_TILES variable."
 		exit 1
 	fi

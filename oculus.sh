@@ -42,6 +42,7 @@ elif [[ `hostname` == "newell" && ${USER} == "kuhl" ]]; then
 	nvidia-settings --assign CurrentMetaMode="HDMI-0: nvidia-auto-select @1920x1080 +0+260 {ForceFullCompositionPipeline=On}, DVI-I-1: nvidia-auto-select @1050x1680 +1920+0 {ForceFullCompositionPipeline=On,Rotation=90}, DP-0: nvidia-auto-select +2970+0 {ForceFullCompositionPipeline=On}"
 	# Assign primary monitor (that the panel should appear on)
 	nvidia-settings --assign XineramaInfoOrder="HDMI-0"
+	sleep .2
 	export PROJMAT_WINDOW_POS="2970 0"
 	export PROJMAT_FULLSCREEN="1"
 elif [[ `hostname` == "humility" && ${USER} == "kuhl" ]]; then
