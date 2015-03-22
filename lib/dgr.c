@@ -26,7 +26,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <poll.h>
-#endif
+#endif // __MINGW32__
 
 #include <errno.h>
 #include <time.h>
@@ -120,7 +120,7 @@ static void dgr_init_master()
 	}
 
 	dgr_addrinfo = p;
-#endif
+#endif // __MINGW32__
 }
 
 /** Initializes a DGR slave process which will receive packets from a master process. */
@@ -171,7 +171,7 @@ static void dgr_init_slave()
 	}
 
 	freeaddrinfo(servinfo);
-#endif
+#endif // __MINGW32__
 }
 
 
@@ -473,7 +473,7 @@ static void dgr_send()
 		fprintf(stderr, "DGR Master: Error sending all of the bytes in the message.");
 		exit(1);
 	}
-#endif
+#endif // __MINGW32__
 }
 
 /** Receives DGR data from the network.
@@ -550,7 +550,7 @@ static void dgr_receive(int timeout)
 	dgr_time_lastreceive = time(NULL);
 	
 	dgr_unserialize(numbytes, serialized);
-#endif
+#endif // __MINGW32__
 }
 
 /** Send or receive data depending on DGR configuration. If we are a
