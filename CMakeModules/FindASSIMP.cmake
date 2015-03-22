@@ -1,6 +1,9 @@
 include(FindPackageHandleStandardArgs)
 
-FIND_LIBRARY(ASSIMP_LIBRARIES assimp zlib)
+# The assimp library is linked to zlib
+FIND_PACKAGE(ZLIB)
+FIND_LIBRARY(ASSIMP_LIBRARIES assimp)
+
 FIND_PATH(ASSIMP_INCLUDE_DIRS assimp/mesh.h)
 
 
@@ -13,6 +16,7 @@ else()
 find_package_handle_standard_args(ASSIMP DEFAULT_MSG
     ASSIMP_LIBRARIES
     ASSIMP_INCLUDE_DIRS
+    ZLIB_LIBRARIES
 )
 endif()
 
