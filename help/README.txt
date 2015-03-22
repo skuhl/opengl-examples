@@ -93,11 +93,10 @@ may not work with this code.
  - Homepage: http://freeglut.sourceforge.net/
  - Freeglut license: https://github.com/dcnieho/FreeGLUT/blob/git_master/freeglut/freeglut/COPYING
 
-ImageMagick's MagickCore library (optional, necessary to load textures
-from image file) - OpenGL doesn't provide a way for you to load common
-image files. If you want textures, your program must read, parse and
-interpret different image file types. ImageMagick supports nearly
-every kind of image file format you can find.
+ImageMagick's MagickCore library (optional) - By default, this
+codebase uses STB (code included in this repository) to load some
+types of JPG, PNG and other file formats. However, ImageMagick
+supports nearly every possible file format.
 
  - For a guide to install ImageMagick, see IMAGEMAGICK-INSTALL.txt
  - Version 6.7.5-5 (circa 2012) or higher is recommended; the brightness of images in older versions may be incorrect.

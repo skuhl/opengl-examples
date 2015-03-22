@@ -6,7 +6,7 @@ Brent Nix
 
 Bug fixes & feature additions:
 Kaleb Elwert (OSX improvements)
-Samuel Seltzer-Johnston
+Samuel Seltzer-Johnston (Bug fixes, Windows support)
 Hurricane Hamilton (mouse wheel support)
 Tim Bradt (cmake updates)
 Andrea Velosa (OSX instructions)

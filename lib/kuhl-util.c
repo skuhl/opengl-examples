@@ -1713,8 +1713,6 @@ GLuint kuhl_read_texture_rgba_array(const unsigned char* array, int width, int h
 }
 
 
-#ifdef KUHL_UTIL_USE_IMAGEMAGICK
-
 /** Creates a texture from a string of text. For example, if you want
  * a texture that says "hello world" in red on a transparent
  * background, this method can easily create that texture directly
@@ -1735,9 +1733,10 @@ GLuint kuhl_read_texture_rgba_array(const unsigned char* array, int width, int h
  *
  * @param pointsize The size of the text in points. Use a larger value for higher resolution text.
  *
- * @return The aspect ratio of the texture. If an error occurs, the function prints a message and exits. */
+ * @return The aspect ratio of the texture. texName is set to 0 and an aspect ratio of 1 is returned. */
 float kuhl_make_label(const char *label, GLuint *texName, float color[3], float bgcolor[4], float pointsize)
 {
+#ifdef KUHL_UTIL_USE_IMAGEMAGICK
 	int width = 0;
 	int height = 0;
 	char *image = image_label(label, &width, &height, color, bgcolor, pointsize);
@@ -1746,27 +1745,28 @@ float kuhl_make_label(const char *label, GLuint *texName, float color[3], float 
 	free(image);
 	
 	if(*texName == 0)
-	{
-		fprintf(stderr, "Failed to create label: %s\n", label);
-		exit(EXIT_FAILURE);
-	}
+		return 1.0f;
 	return width/(float)height;
+#else
+	*texName = 0;
+	return 1.0f;
+#endif
 }
-#endif // KUHL_UTIL_USE_IMAGEMAGICK
+
 
 
 /** STB defaults with the first pixel at the upper left
  * corner. OpenGL and other packages put the first pixel at the bottom
  * left corner.  This code flips the image. */
-static void kuhl_flip_texture_rgba_array(unsigned char *image, const int width, const int height, const int bytesPerPixel) {
-	printf("Flipping texture with width = %d, height = %d\n", width, height);
-	int bytesPerRow = bytesPerPixel * width;
+static void kuhl_flip_texture_rgba_array(unsigned char *image, const int width, const int height, const int components) {
+	// printf("Flipping texture with width = %d, height = %d\n", width, height);
+	int bytesPerRow = components * width; // 1 byte per component
 	int pivot = height/2;
 	for (unsigned i = 0; i < pivot; ++i) 
 	{
 		unsigned char *lineTop = (image + i * bytesPerRow);
 		unsigned char *lineBottom = (image + (height - i - 1) * bytesPerRow);
-		printf("Swapping %d with %d\n", i, height-i-1);
+		// printf("Swapping %d with %d\n", i, height-i-1);
 		for (unsigned j = 0; j < bytesPerRow; ++j)
 		{
 			unsigned char a = *lineTop;
@@ -1780,7 +1780,7 @@ static void kuhl_flip_texture_rgba_array(unsigned char *image, const int width, 
 }
 
 
-
+#ifdef KUHL_UTIL_USE_IMAGEMAGICK
 static float kuhl_read_texture_file_im(const char *filename, GLuint *texName)
 {
 	char *newFilename = kuhl_find_file(filename);
@@ -1827,13 +1827,14 @@ static float kuhl_read_texture_file_im(const char *filename, GLuint *texName)
 
 	return aspectRatio;
 }
+#endif // KUHL_UTIL_USE_IMAGEMAGICK
 
 static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName)
 {
 	char *newFilename = kuhl_find_file(filename);
 	
     /* It is generally best to just load images in RGBA8 format even
-     * if we don't need the alpha component. ImageMagick will fill the
+     * if we don't need the alpha component. STB will fill the
      * alpha component in correctly (opaque if there is no alpha
      * component in the file or with the actual alpha data. For more
      * information about why we use RGBA by default, see:
@@ -1842,15 +1843,15 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName)
 	int width  = -1;
 	int height = -1;
 	int comp = -1;
-	int bytesPerPixel = STBI_rgb_alpha;
-	unsigned char *image = (unsigned char*) stbi_load(newFilename, &width, &height, &comp, bytesPerPixel);
+	int requestedComponents = STBI_rgb_alpha;
+	unsigned char *image = (unsigned char*) stbi_load(newFilename, &width, &height, &comp, requestedComponents);
 	free(newFilename);
 	if(image == NULL)
 	{
 		fprintf(stderr, "%s: ERROR: Unable to read '%s'.\n", __func__, filename);
 		return -1;
 	}
-	kuhl_flip_texture_rgba_array(image, width, height, bytesPerPixel);
+	kuhl_flip_texture_rgba_array(image, width, height, requestedComponents);
 
 	/* "image" is a 1D array of characters (unsigned bytes) with four
 	 * bytes for each pixel (red, green, blue, alpha). The data in "image"
@@ -1896,6 +1897,7 @@ float kuhl_read_texture_file(const char *filename, GLuint *texName)
 #endif
 }
 
+#ifdef KUHL_UTIL_USE_IMAGEMAGICK
 static void kuhl_screenshot_im(const char *outputImageFilename)
 {
 	// Get window size
@@ -1923,6 +1925,7 @@ static void kuhl_screenshot_im(const char *outputImageFilename)
 	imageout(&info_out, data);
 	free(info_out.filename); // cleanup
 }
+#endif // KUHL_UTIL_USE_IMAGEMAGICK
 
 static void kuhl_screenshot_stb(const char *outputImageFilename)
 {
@@ -1932,13 +1935,23 @@ static void kuhl_screenshot_stb(const char *outputImageFilename)
 	int comp = 3; // 3 = RGB, 4 = RGBA
 	int stride_in_bytes = windowWidth*comp*sizeof(char);
 	// Allocate space for data from window
-	char data[stride_in_bytes*windowHeight];
+	unsigned char data[stride_in_bytes*windowHeight];
 	// Read pixels from the window
 	glReadPixels(0,0,windowWidth,windowHeight,
 	             GL_RGB,GL_UNSIGNED_BYTE, data);
 	kuhl_errorcheck();
+
+	kuhl_flip_texture_rgba_array(data, windowWidth, windowHeight, 3);
+
+	int ok=0;
+	const char *s = outputImageFilename;
+	if(strlen(s) > 4 && !strcmp(s + strlen(s) - 4, ".png"))
+		ok = stbi_write_png(s, windowWidth, windowHeight, comp, data, stride_in_bytes);
+	else if(strlen(s) > 4 && !strcmp(s + strlen(s) - 4, ".tga"))
+		ok = stbi_write_tga(s, windowWidth, windowHeight, comp, data);
+	else if(strlen(s) > 4 && !strcmp(s + strlen(s) - 4, ".bmp"))
+		ok = stbi_write_bmp(s, windowWidth, windowHeight, comp, data);
 	
-	int ok = stbi_write_png(outputImageFilename, windowWidth, windowHeight, comp, data, stride_in_bytes);
 	if (!ok)
 	{
 		fprintf(stderr, "%s: ERROR: Failed write screenshot to %s\n", __func__, outputImageFilename);
@@ -1982,7 +1995,13 @@ static suseconds_t kuhl_video_record_prev_usec = 0; // time of previous frame us
  */
 void kuhl_video_record(const char *fileLabel, int fps)
 {
-	// Get current time
+#ifdef KUHL_UTIL_USE_IMAGEMAGICK
+	char *exten = "tif";
+#else
+	char *exten = "bmp";
+#endif
+
+// Get current time
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 
@@ -1992,9 +2011,9 @@ void kuhl_video_record(const char *fileLabel, int fps)
 		kuhl_video_record_prev_usec = tv.tv_usec;
 		printf("%s: Recording %d frames per second\n", __func__, fps);
 		printf("Use either of the following commands to assemble Ogg video (Ogg video files are widely supported and not encumbered by patent restrictions):\n");
-		printf("ffmpeg -r %d -f image2 -i %s-%%08d.tif -qscale:v 7 %s.ogv\n", fps, fileLabel, fileLabel);
+		printf("ffmpeg -r %d -f image2 -i %s-%%08d.%s -qscale:v 7 %s.ogv\n", fps, fileLabel, exten, fileLabel);
 		printf(" - or -\n");
-		printf("avconv -r %d -f image2 -i %s-%%08d.tif -qscale:v 7 %s.ogv\n", fps, fileLabel, fileLabel);
+		printf("avconv -r %d -f image2 -i %s-%%08d.%s -qscale:v 7 %s.ogv\n", fps, fileLabel, exten, fileLabel);
 		printf("In either program, the -qscale:v parameter sets the quality: 0 (lowest) to 10 (highest)\n");
 	}
 
@@ -2016,7 +2035,7 @@ void kuhl_video_record(const char *fileLabel, int fps)
 		kuhl_video_record_prev_sec  = sec;
 		kuhl_video_record_prev_usec = usec;
 		char filename[1024];
-		snprintf(filename, 1024, "%s-%08d.tif", fileLabel, kuhl_video_record_frame);
+		snprintf(filename, 1024, "%s-%08d.%s", fileLabel, kuhl_video_record_frame, exten);
 		kuhl_screenshot(filename); // TODO: Should we check if the screenshot writes?
 		kuhl_video_record_frame++;
 	}

@@ -52,9 +52,10 @@ if(UNIX AND NOT APPLE AND (GLXINFO OR GLEWINFO))
 	endif()
 endif()
 
+
 # Get custom Windows library installation paths
 if (WIN32)
-	include(Windows.cmake)
+	include(CMakeModules/Windows.cmake)
 	
 	# GLUT installation
 	set(GLUT_ROOT_PATH "${WINDOWS_LIBRARY_PATH}${WINDOWS_GLUT_FOLDER}/" ${GLUT_ROOT_PATH})

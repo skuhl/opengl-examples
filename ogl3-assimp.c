@@ -276,7 +276,8 @@ void display()
 			fpsLabelAspectRatio = kuhl_make_label(label,
 			                                      &fpsLabel,
 			                                      labelColor, labelBg, 128);
-			kuhl_geometry_texture(&labelQuad, fpsLabel, "tex", 1);
+			if(fpsLabel != 0)
+				kuhl_geometry_texture(&labelQuad, fpsLabel, "tex", 1);
 		}
 		framesTillFpsUpdate--;
 	}
@@ -399,7 +400,7 @@ void display()
 	 * calls to kuhl_errorcheck() in your code. */
 	kuhl_errorcheck();
 
-	// kuhl_video_record("videoout", 30);
+	kuhl_video_record("videoout", 30);
 	
 	/* Ask GLUT to call display() again. We shouldn't call display()
 	 * ourselves recursively because it will not leave time for GLUT

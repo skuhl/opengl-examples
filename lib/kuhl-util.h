@@ -201,12 +201,10 @@ int kuhl_randomInt(int min, int max);
 void kuhl_shuffle(void *array, int n, int size);
 
 
-#ifdef KUHL_UTIL_USE_IMAGEMAGICK
 float kuhl_make_label(const char *label, GLuint *texName, float color[3], float bgcolor[4], float pointsize);
 float kuhl_read_texture_file(const char *filename, GLuint *texName);
 void kuhl_screenshot(const char *outputImageFilename);
 void kuhl_video_record(const char *fileLabel, int fps);
-#endif // end use imagemagick
 
 #ifdef KUHL_UTIL_USE_ASSIMP
 void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, float time);
