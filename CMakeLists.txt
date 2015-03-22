@@ -146,6 +146,28 @@ if(NOT GLEW_NEW_ENOUGH)
 	message(FATAL_ERROR "glew version 1.5.6 or higher is required.")
 endif()
 
+# --- ImageMagick (recommended, optional) ---
+# ImageMagick 6.7.5-5 is recommended for colorspaces to be handled correctly.
+
+# IVS - installed version is too old.
+set(CMAKE_LIBRARY_PATH "/research/kuhl/public-vrlab/ImageMagick-6.8.9-5/magick/.libs/" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "/research/kuhl/public-vrlab/ImageMagick-6.8.9-5/" ${CMAKE_INCLUDE_PATH})
+# CCSR - installed version is too old.
+set(CMAKE_LIBRARY_PATH "/home/kuhl/public-vrlab/ImageMagick-6.8.9-6/magick/.libs/" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "/home/kuhl/public-vrlab/ImageMagick-6.8.9-6/" ${CMAKE_INCLUDE_PATH})
+
+find_package(ImageMagick COMPONENTS MagickCore)
+
+
+if(ImageMagick_FOUND)
+	include_directories(${ImageMagick_INCLUDE_DIRS})
+	set(IMAGEMAGICK_FOUND_DEFINITION "KUHL_UTIL_USE_IMAGEMAGICK")
+else()
+	set(IMAGEMAGICK_FOUND_DEFINITION "")
+endif()
+
+
+
 # --- ASSIMP (recommended, optional) ---
 # Search paths for CCSR
 set(CMAKE_LIBRARY_PATH /home/kuhl/public-vrlab/assimp/lib ${CMAKE_LIBRARY_PATH})
@@ -226,7 +248,7 @@ endif()
 
 
 # Set the preprocessor flags.
-set(PREPROC_DEFINE "MOUSEMOVE_GLUT;${ASSIMP_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION}")
+set(PREPROC_DEFINE "MOUSEMOVE_GLUT;${ASSIMP_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION};${IMAGEMAGICK_FOUND_DEFINITION}")
 
 # Construct a list of programs that we want to compile based on which libraries are available.
 set(PROGRAMS_TO_MAKE ${NEED_NOTHING})
@@ -239,6 +261,9 @@ endif()
 # Create a static library containing all files that we regularly use.
 include_directories("lib")
 set(FILES_IN_LIBKUHL lib/kuhl-util.c lib/vecmat.c lib/dgr.c lib/mousemove.c lib/hmd-dsight-orient.c lib/projmat.c lib/viewmat.c lib/vrpn-help.cpp)
+if(ImageMagick_FOUND)
+	set(FILES_IN_LIBKUHL ${FILES_IN_LIBKUHL} lib/imageio.c)
+endif()
 add_library(kuhl STATIC ${FILES_IN_LIBKUHL})
 set_target_properties(kuhl PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
 
@@ -257,6 +282,9 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 	endif()
 	if(OVR_FOUND) # Add Oculus LibOVR to the list if it is available
 		target_link_libraries(${arg} ${OVR_LIBRARIES})
+	endif()
+	if(ImageMagick_FOUND)
+		target_link_libraries(${arg} ${ImageMagick_LIBRARIES})
 	endif()
 	if(ASSIMP_FOUND)
 		target_link_libraries(${arg} ${ASSIMP_LIBRARIES})

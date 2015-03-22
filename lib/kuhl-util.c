@@ -112,6 +112,9 @@ void srand48(long seed){
 
 #include "kuhl-util.h"
 #include "vecmat.h"
+#ifdef KUHL_UTIL_USE_IMAGEMAGICK
+#include "imageio.h"
+#endif
 
 
 #ifdef KUHL_UTIL_USE_ASSIMP
@@ -149,7 +152,7 @@ void *kuhl_mallocFileLine(size_t size, const char *file, int line)
 		fprintf(stderr, "!!!!! malloc Warning !!!!! - Size 0 passed to malloc at %s:%d\n", file, line);
 	void *ret = malloc(size);
 	if(ret == NULL)
-		fprintf(stderr, "!!!!! malloc Error !!!!! - Failed to allocate %du bytes at %s:%d\n", size, file, line);
+		fprintf(stderr, "!!!!! malloc Error !!!!! - Failed to allocate %du bytes at %s:%d\n", (int) size, file, line);
 	return ret;
 }
 
@@ -1614,7 +1617,6 @@ void kuhl_geometry_delete(kuhl_geometry *geom)
  */
 GLuint kuhl_read_texture_rgba_array(const unsigned char* array, int width, int height)
 {
-	printf("Reading texture array...\n");
 	GLuint texName = 0;
 	if(!GLEW_VERSION_2_0)
 	{
@@ -1626,18 +1628,14 @@ GLuint kuhl_read_texture_rgba_array(const unsigned char* array, int width, int h
 		return 0;
 	}
 	kuhl_errorcheck();
-	printf("Generating texture...\n");
 	glGenTextures(1, &texName);
-	printf("Binding texture...\n");
 	glBindTexture(GL_TEXTURE_2D, texName);
-	printf("Setting texture params...\n");
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	kuhl_errorcheck();
 	
-	printf("Checking for anisotropic support...\n");
 	/* If anisotropic filtering is available, turn it on.  This does not
 	 * override the MIN_FILTER. The MIN_FILTER setting may affect how the
 	 * videocard decides to do anisotropic filtering, however.  For more info:
@@ -1658,7 +1656,6 @@ GLuint kuhl_read_texture_rgba_array(const unsigned char* array, int width, int h
 
 	kuhl_errorcheck();
 	
-	printf("Checking if OpenGL will accept texture...\n");
 	/* Try to see if OpenGL will accept this texture.  If the dimensions of
 	 * the file are too big, OpenGL might not load it. NOTE: The parameters
 	 * here should match the parameters of the actual (non-proxy) calls to
@@ -1677,40 +1674,31 @@ GLuint kuhl_read_texture_rgba_array(const unsigned char* array, int width, int h
 		glBindTexture(GL_TEXTURE_2D, 0);
 		return 0;
 	}
-	
-	printf("Generating mipmaps...\n");
+
 	/* The recommended way to produce mipmaps depends on your OpenGL
 	 * version. */
 	if (glGenerateMipmap != NULL)
 	{
-		printf("Using glTexImage2D and glGenerateMipmap...\n");
 		/* In OpenGL 3.0 or newer, it is recommended that you use
 		 * glGenerateMipmaps().  Older versions of OpenGL that provided the
 		 * same capability as an extension, called it
 		 * glGenerateMipmapsEXT(). */
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height,
 		             0, GL_RGBA, GL_UNSIGNED_BYTE, array);
-		printf("\tglTexImage2D done!\n");
 		glGenerateMipmap(GL_TEXTURE_2D);
-		printf("\tglGenerateMipmap done!\n");
 	}
 	else // if(glewIsSupported("GL_SGIS_generate_mipmap"))
 	{
-		printf("Using glTexParameteri and glTexImage2D...\n");
 		/* Should be used for 1.4 <= OpenGL version < 3.   */
 		glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-		printf("\tglTexParameteri done!\n");
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height,
 		             0, GL_RGBA, GL_UNSIGNED_BYTE, array);
-		printf("\tglTexImage2D done!\n");
 	}
-	printf("Mipmap generated!\n");
 
 	/* render textures perspectively correct---instead of interpolating
 	   textures in screen-space. */
 	kuhl_errorcheck();
 
-	printf("Doing OGL 1&2 stuff...\n");
 	/* The following two lines of code are only useful for OpenGL 1 or
 	 * 2 programs. They may cause an error message when called in a
 	 * newer version of OpenGL. */
@@ -1718,7 +1706,6 @@ GLuint kuhl_read_texture_rgba_array(const unsigned char* array, int width, int h
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 	glGetError(); // discard any error messages.
 
-	printf("Unbinding texture...\n");
 	// Unbind the texture, make the caller bind it when they want to use it. More details:
 	// http://stackoverflow.com/questions/15273674
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -1726,11 +1713,14 @@ GLuint kuhl_read_texture_rgba_array(const unsigned char* array, int width, int h
 }
 
 
+#ifdef KUHL_UTIL_USE_IMAGEMAGICK
+
 /** Creates a texture from a string of text. For example, if you want
  * a texture that says "hello world" in red on a transparent
  * background, this method can easily create that texture directly
  * using ImageMagick. The text will be written in a normal font and
- * will be one line of text.
+ * will be one line of text. The preprocessor variable
+ * KUHL_UTIL_USE_IMAGEMAGICK must be defined to use this function.
  *
  * @param label The text that you want to render.
  *
@@ -1748,7 +1738,7 @@ GLuint kuhl_read_texture_rgba_array(const unsigned char* array, int width, int h
  * @return The aspect ratio of the texture. If an error occurs, the function prints a message and exits. */
 float kuhl_make_label(const char *label, GLuint *texName, float color[3], float bgcolor[4], float pointsize)
 {
-	/*int width = 0;
+	int width = 0;
 	int height = 0;
 	char *image = image_label(label, &width, &height, color, bgcolor, pointsize);
 //	printf("Label texture dimensions: %d %d\n", width, height);
@@ -1760,9 +1750,10 @@ float kuhl_make_label(const char *label, GLuint *texName, float color[3], float 
 		fprintf(stderr, "Failed to create label: %s\n", label);
 		exit(EXIT_FAILURE);
 	}
-	return width/(float)height;*/
-	return 0.0;
+	return width/(float)height;
 }
+#endif // KUHL_UTIL_USE_IMAGEMAGICK
+
 
 /** STB defaults with the first pixel at the upper left
  * corner. OpenGL and other packages put the first pixel at the bottom
@@ -1788,20 +1779,56 @@ static void kuhl_flip_texture_rgba_array(unsigned char *image, const int width, 
 	}
 }
 
-/** Uses imageio to read in an image, and binds it to an OpenGL
- * texture name.  Requires OpenGL 2.0 or better.
- *
- * @param filename name of file to load
- *
- * @param texName A pointer to where the OpenGL texture name should be stored.
- * (Remember that the "texture name" is really just some unsigned int).
- *
- * @returns The aspect ratio of the image in the file. Since texture
- * coordinates range from 0 to 1, the caller doesn't really need to
- * know how large the image actually is. Returns a negative number on
- * error.
- */
-float kuhl_read_texture_file(const char *filename, GLuint *texName)
+
+
+static float kuhl_read_texture_file_im(const char *filename, GLuint *texName)
+{
+	char *newFilename = kuhl_find_file(filename);
+	
+    /* It is generally best to just load images in RGBA8 format even
+     * if we don't need the alpha component. ImageMagick will fill the
+     * alpha component in correctly (opaque if there is no alpha
+     * component in the file or with the actual alpha data. For more
+     * information about why we use RGBA by default, see:
+     * http://www.opengl.org/wiki/Common_Mistakes#Image_precision
+     */
+	imageio_info iioinfo;
+	iioinfo.filename   = newFilename;
+	iioinfo.type       = CharPixel;
+	iioinfo.map        = (char*) "RGBA";
+	iioinfo.colorspace = sRGBColorspace;
+	char *image = (char*) imagein(&iioinfo);
+	free(newFilename);
+	if(image == NULL)
+	{
+		fprintf(stderr, "%s: ERROR: Unable to read '%s'.\n", __func__, filename);
+		return -1;
+	}
+
+	/* "image" is a 1D array of characters (unsigned bytes) with four
+	 * bytes for each pixel (red, green, blue, alpha). The data in "image"
+	 * is in row major order. The first 4 bytes are the color information
+	 * for the lowest left pixel in the texture. */
+	int width  = (int)iioinfo.width;
+	int height = (int)iioinfo.height;
+	float aspectRatio = (float)width/height;
+    printf("%s: Finished reading, dimensions are %dx%d\n", filename, width, height);
+	*texName = kuhl_read_texture_rgba_array(image, width, height);
+
+	if(iioinfo.comment)
+		free(iioinfo.comment);
+	free(image);
+	
+	if(*texName == 0)
+	{
+		fprintf(stderr, "%s: ERROR: Failed to create OpenGL texture from %s\n", __func__, filename);
+		return -1;
+	}
+
+	return aspectRatio;
+}
+
+static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName)
 {
 	char *newFilename = kuhl_find_file(filename);
 	
@@ -1844,11 +1871,60 @@ float kuhl_read_texture_file(const char *filename, GLuint *texName)
 	return aspectRatio;
 }
 
-/** Takes a screenshot of the current OpenGL screen and writes it to an image file.
 
-    @param outputImageFilename The name of the image file that you want to record the screenshot in. The type of image file is determined by the filename extension. This function will allow you to write to any image format that ImageMagick supports. Suggestion: PNG files often work best for screenshots; try "output.png".
-*/
-int kuhl_screenshot(const char *outputImageFilename)
+
+
+/** Uses imageio to read in an image, and binds it to an OpenGL
+ * texture name.  Requires OpenGL 2.0 or better.
+ *
+ * @param filename name of file to load
+ *
+ * @param texName A pointer to where the OpenGL texture name should be stored.
+ * (Remember that the "texture name" is really just some unsigned int).
+ *
+ * @returns The aspect ratio of the image in the file. Since texture
+ * coordinates range from 0 to 1, the caller doesn't really need to
+ * know how large the image actually is. Returns a negative number on
+ * error.
+ */
+float kuhl_read_texture_file(const char *filename, GLuint *texName)
+{
+#ifdef KUHL_UTIL_USE_IMAGEMAGICK
+	return kuhl_read_texture_file_im(filename, texName);
+#else
+	return kuhl_read_texture_file_stb(filename, texName);
+#endif
+}
+
+static void kuhl_screenshot_im(const char *outputImageFilename)
+{
+	// Get window size
+	int windowWidth  = glutGet(GLUT_WINDOW_WIDTH);
+	int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+
+	// Allocate space for data from window
+	char data[windowWidth*windowHeight*3];
+	// Read pixels from the window
+	glReadPixels(0,0,windowWidth,windowHeight,
+	             GL_RGB,GL_UNSIGNED_BYTE, data);
+	kuhl_errorcheck();
+	// Set up image output settings
+	imageio_info info_out;
+	info_out.width    = windowWidth;
+	info_out.height   = windowHeight;
+	info_out.depth    = 8; // bits/color in output image
+	info_out.quality  = 85;
+	info_out.colorspace = sRGBColorspace;
+	info_out.filename = strdup(outputImageFilename);
+	info_out.comment  = NULL;
+	info_out.type     = CharPixel;
+	info_out.map      = "RGB";
+	// Write image to disk
+	imageout(&info_out, data);
+	free(info_out.filename); // cleanup
+}
+
+static void kuhl_screenshot_stb(const char *outputImageFilename)
 {
 	// Get window size
 	int windowWidth  = glutGet(GLUT_WINDOW_WIDTH);
@@ -1866,8 +1942,22 @@ int kuhl_screenshot(const char *outputImageFilename)
 	if (!ok)
 	{
 		fprintf(stderr, "%s: ERROR: Failed write screenshot to %s\n", __func__, outputImageFilename);
-		return -1;
+		exit(1);
 	}
+
+}
+
+/** Takes a screenshot of the current OpenGL screen and writes it to an image file.
+
+    @param outputImageFilename The name of the image file that you want to record the screenshot in. The type of image file is determined by the filename extension. This function will allow you to write to any image format that ImageMagick supports. Suggestion: PNG files often work best for screenshots; try "output.png".
+*/
+void kuhl_screenshot(const char *outputImageFilename)
+{
+#ifdef KUHL_UTIL_USE_IMAGEMAGICK
+	kuhl_screenshot_im(outputImageFilename);
+#else
+	kuhl_screenshot_stb(outputImageFilename);
+#endif
 }
 
 static int kuhl_video_record_frame = 0; // frame that we have recorded.
