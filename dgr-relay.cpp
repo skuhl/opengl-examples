@@ -73,7 +73,7 @@ void * receiver(void *) {
 		}
 	}
 }
-#endif
+#endif // __MINGW32__
 
 
 int main(int argc, char **argv) {
@@ -159,5 +159,5 @@ int main(int argc, char **argv) {
 			exit(EXIT_SUCCESS);
 		}
 	}
-#endif
+#endif  // __MINGW32__
 }
