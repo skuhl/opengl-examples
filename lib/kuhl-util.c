@@ -1955,7 +1955,7 @@ static void kuhl_screenshot_stb(const char *outputImageFilename)
 	
 	if (!ok)
 	{
-		fprintf(stderr, "%s: ERROR: Failed write screenshot to %s\n", __func__, outputImageFilename);
+		kuhl_errmsg("Failed write screenshot to %s (note: STB can only write png, tga, and bmp files.)\n", outputImageFilename);
 		exit(1);
 	}
 
