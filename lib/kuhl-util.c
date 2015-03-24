@@ -30,10 +30,6 @@
 #include <signal.h>
 #endif
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
 // When compiling on windows, add suseconds_t and the rand48 functions.
 #ifdef __MINGW32__
 #include <windows.h>
@@ -114,6 +110,11 @@ void srand48(long seed){
 #include "vecmat.h"
 #ifdef KUHL_UTIL_USE_IMAGEMAGICK
 #include "imageio.h"
+#else /* use STB image loading if ImageMagick isn't available' */
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 #endif
 
 
@@ -1827,7 +1828,7 @@ static float kuhl_read_texture_file_im(const char *filename, GLuint *texName)
 
 	return aspectRatio;
 }
-#endif // KUHL_UTIL_USE_IMAGEMAGICK
+#else // KUHL_UTIL_USE_IMAGEMAGICK
 
 static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName)
 {
@@ -1871,7 +1872,7 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName)
 
 	return aspectRatio;
 }
-
+#endif // end else part of ifdef KUHL_UTIL_USE_IMAGEMAGICK
 
 
 
@@ -1925,7 +1926,7 @@ static void kuhl_screenshot_im(const char *outputImageFilename)
 	imageout(&info_out, data);
 	free(info_out.filename); // cleanup
 }
-#endif // KUHL_UTIL_USE_IMAGEMAGICK
+#else // KUHL_UTIL_USE_IMAGEMAGICK
 
 static void kuhl_screenshot_stb(const char *outputImageFilename)
 {
@@ -1959,6 +1960,7 @@ static void kuhl_screenshot_stb(const char *outputImageFilename)
 	}
 
 }
+#endif // end else part of ifdef KUHL_UTIL_USE_IMAGEMAGICK
 
 /** Takes a screenshot of the current OpenGL screen and writes it to an image file.
 
