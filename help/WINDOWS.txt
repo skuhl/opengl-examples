@@ -19,8 +19,8 @@ Installing Libraries:
 Create a folder where you'd like libraries to be installed (ex: C:\Libraries)
 Open Windows.cmake and edit the WINDOWS_LIBRARY_PATH variable to match the libraries folder you created.
 Open Windows command line in opengl-examples by holding shit, right clicking in the folder, and selecting "Open Command Window Here".
-Run wininstall.bat <path_to_libraries_folder> <path_to_mingw_installation>
-Example: wininstall.bat D:\Env\Libraries\ D:\Env\MinGW\
+Run wininstall.bat
+It will prompt you for folder paths. Make sure they are fully qualified paths (i.e. D:\Env\Libraries\ and D:\Env\MinGW\)
 It's important that the path arguments you provide use \ instead of / and have a \ at the end of each path.
 
 Compiling:

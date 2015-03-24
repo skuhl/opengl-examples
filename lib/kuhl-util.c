@@ -1739,7 +1739,7 @@ float kuhl_make_label(const char *label, GLuint *texName, float color[3], float 
 #ifdef KUHL_UTIL_USE_IMAGEMAGICK
 	int width = 0;
 	int height = 0;
-	char *image = image_label(label, &width, &height, color, bgcolor, pointsize);
+	unsigned char *image = (unsigned char*) image_label(label, &width, &height, color, bgcolor, pointsize);
 //	printf("Label texture dimensions: %d %d\n", width, height);
 	*texName = kuhl_read_texture_rgba_array(image, width, height);
 	free(image);
@@ -1760,8 +1760,8 @@ float kuhl_make_label(const char *label, GLuint *texName, float color[3], float 
  * left corner.  This code flips the image. */
 void kuhl_flip_texture_rgba_array(unsigned char *image, const int width, const int height, const int components) {
 	// printf("Flipping texture with width = %d, height = %d\n", width, height);
-	int bytesPerRow = components * width; // 1 byte per component
-	int pivot = height/2;
+	unsigned int bytesPerRow = components * width; // 1 byte per component
+	unsigned int pivot = height/2;
 	for (unsigned i = 0; i < pivot; ++i) 
 	{
 		unsigned char *lineTop = (image + i * bytesPerRow);
@@ -1797,7 +1797,7 @@ static float kuhl_read_texture_file_im(const char *filename, GLuint *texName)
 	iioinfo.type       = CharPixel;
 	iioinfo.map        = (char*) "RGBA";
 	iioinfo.colorspace = sRGBColorspace;
-	char *image = (char*) imagein(&iioinfo);
+	unsigned char *image = (unsigned char*) imagein(&iioinfo);
 	free(newFilename);
 	if(image == NULL)
 	{

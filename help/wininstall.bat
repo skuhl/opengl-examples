@@ -1,16 +1,17 @@
+:: TODO: Figure out how to tell 3rd party library CMake files to not build their tools.
 setlocal
 @echo off
 :: Install Git, CMake, MinGW, and the DirectX SDK (you also might need to set an env var)
-set repository_folder=%~dp0
-set libraries_folder=%1
-set mingw_folder=%2
+set repository_folder=%~dp0\..\
+set /p libraries_folder="Enter Directory for Library Installation: "
+set /p mingw_folder="Enter Directory of MinGW Installation: "
 
 if [%libraries_folder%]==[] (
 	echo Must have valid libraries folder
 	goto :eof
 )
 if NOT EXIST %libraries_folder%  (
-	echo Must have valid libraries folder
+	echo Library folder must exist
 	goto :eof
 )
 if [%mingw_folder%]==[] (
@@ -18,10 +19,11 @@ if [%mingw_folder%]==[] (
 	goto :eof
 )
 if NOT EXIST %mingw_folder%  (
-	echo Must have valid MinGW folder
+	echo MinGW folder must exist
 	goto :eof
 )
 
+:: Ensure the path variable have mingw and msys on top
 set path=%mingw_folder%bin;%mingw_folder%msys\1.0\bin;%path%
 
 pushd %repository_folder%
@@ -33,6 +35,7 @@ wget --no-check-certificate http://downloads.sourceforge.net/project/freeglut/fr
 7z x freeglut-3.0.0.tar
 rm freeglut-3.0.0.tar*
 pushd freeglut-3.0.0
+cmake -G "MinGW Makefiles" .
 cmake -G "MinGW Makefiles" .
 mingw32-make
 copy /y %libraries_folder%freeglut-3.0.0\bin\libfreeglut.dll %repository_folder%libfreeglut.dll
@@ -54,35 +57,25 @@ ar cr lib/libglew32mx.a src/glew.mx.o
 copy /y %libraries_folder%glew-1.12.0\lib\glew32.dll %repository_folder%glew32.dll
 popd
 
+:: Install zlib
+pushd %libraries_folder%
+git clone https://github.com/madler/zlib.git
+pushd zlib
+cmake -G "MinGW Makefiles" .
+cmake -G "MinGW Makefiles" .
+mingw32-make
+copy /y %libraries_folder%zlib\libzlib.dll %repository_folder%libzlib.dll
+popd
+set ZLIB_HOME=%libraries_folder%zlib
+
 :: Install assimp
 pushd %libraries_folder%
 git clone https://github.com/assimp/assimp
 pushd assimp
 cmake -G "MinGW Makefiles" .
+cmake -G "MinGW Makefiles" .
 mingw32-make
 copy /y %libraries_folder%assimp\bin\libassimp.dll %repository_folder%libassimp.dll
-popd
-
-pushd %repository_folder%
-:: pushd lib
-:: wget --no-check-certificate https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
-:: wget --no-check-certificate https://raw.githubusercontent.com/nothings/stb/master/stb_image_write.h
-:: popd
-
-:: Download ZLib binaries
-wget --no-check-certificate http://downloads.sourceforge.net/project/mingw/MinGW/Extension/zlib/zlib-1.2.5-1/libz-1.2.5-1-mingw32-dll-1.tar.lzma?r=&ts=1426965944&use_mirror=tcpdiag
-7z x libz-1.2.5-1-mingw32-dll-1.tar.lzma
-7z x libz-1.2.5-1-mingw32-dll-1.tar
-rm libz-1.2.5-1-mingw32-dll-1.tar*
-move /y bin\libz-1.dll libz-1.dll
-wget --no-check-certificate http://downloads.sourceforge.net/project/mingw/MinGW/Extension/bzip2/bzip2-1.0.6-4/libbz2-1.0.6-4-mingw32-dll-2.tar.lzma?r=&ts=1426965980&use_mirror=hivelocity
-7z x libbz2-1.0.6-4-mingw32-dll-2.tar.lzma
-7z x libbz2-1.0.6-4-mingw32-dll-2.tar
-rm libbz2-1.0.6-4-mingw32-dll-2.tar*
-move /y bin\libbz2-2.dll libbz2-2.dll
-
-rmdir bin
-
 popd
 
 endlocal
