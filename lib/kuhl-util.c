@@ -1758,7 +1758,7 @@ float kuhl_make_label(const char *label, GLuint *texName, float color[3], float 
 /** STB defaults with the first pixel at the upper left
  * corner. OpenGL and other packages put the first pixel at the bottom
  * left corner.  This code flips the image. */
-static void kuhl_flip_texture_rgba_array(unsigned char *image, const int width, const int height, const int components) {
+void kuhl_flip_texture_rgba_array(unsigned char *image, const int width, const int height, const int components) {
 	// printf("Flipping texture with width = %d, height = %d\n", width, height);
 	int bytesPerRow = components * width; // 1 byte per component
 	int pivot = height/2;

@@ -11,10 +11,13 @@
 #endif
 
 #include "kuhl-util.h"
-#include "imageio.h"
 #include "dgr.h"
 #include "projmat.h"
-
+#ifdef KUHL_UTIL_USE_IMAGEMAGICK
+#include "imageio.h"
+#else
+#include "stb_image.h"
+#endif
 
 #define SCROLL_SPEED 30  // number of seconds to scroll past one screen-width of image.
 #define MAX_TILES 100
@@ -50,12 +53,23 @@ float readfile(char *filename, GLuint *texName, GLuint *numTiles)
 	static int verbose=1;  // change this to 0 to print out less info
 
 	/* Try to load the image. */
+#if KUHL_UTIL_USE_IMAGEMAGICK
 	imageio_info iioinfo;
 	iioinfo.filename = filename;
 	iioinfo.type = CharPixel;
 	iioinfo.map = "RGBA";
 	iioinfo.colorspace = sRGBColorspace;
-	char *image = (char*) imagein(&iioinfo);
+	unsigned char *image = (unsigned char*) imagein(&iioinfo);
+	int width  = (int)iioinfo.width;
+	int height = (int)iioinfo.height;
+#else
+	int width  = -1;
+	int height = -1;
+	int comp = -1;
+	int requestedComponents = STBI_rgb_alpha;
+	unsigned char *image = (unsigned char*) stbi_load(filename, &width, &height, &comp, requestedComponents);
+	kuhl_flip_texture_rgba_array(image,width,height,requestedComponents);
+#endif
 
 	if(image == NULL)
 	{
@@ -67,8 +81,6 @@ float readfile(char *filename, GLuint *texName, GLuint *numTiles)
 	 * bytes for each pixel (red, green, blue, alpha). The data in "image"
 	 * is in row major order. The first 4 bytes are the color information
 	 * for the lowest left pixel in the texture. */
-	int width  = (int)iioinfo.width;
-	int height = (int)iioinfo.height;
 	float original_aspectRatio = (float)width/height;
 	if(verbose)
 		printf("%s: Finished reading, dimensions are %dx%d\n", filename, width, height);

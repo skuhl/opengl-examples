@@ -194,7 +194,7 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 
 
 
-
+void kuhl_flip_texture_rgba_array(unsigned char *image, const int width, const int height, const int components);
 GLuint kuhl_read_texture_rgba_array(const unsigned char *array, int width, int height);
 
 int kuhl_randomInt(int min, int max);
