@@ -81,6 +81,12 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 	printf("You are missing VRPN support.\n");
 	return 0;
 #else
+	if(object == NULL || strlen(object) == 0)
+	{
+		kuhl_msg("Empty or NULL object name was passed into this function.\n");
+		return 0;
+	}
+	
 	/* Construct an object@hostname string. */
 	std::string hostnamecpp;
 	std::string objectcpp;
