@@ -308,8 +308,10 @@ static void viewmat_refresh_viewports()
 void viewmat_init_ivs()
 {
 	/* Since the master process is the only one that talks to the VRPN
-	 * server, slaves don't need to do anything to initialize. */
-	if(dgr_is_master() == 0)
+	 * server, slaves don't need to do anything to initialize. Also,
+	 * if we somehow aren't using DGR, assume that we need to connect to
+	 * VRPN. */
+	if((dgr_is_enabled() && dgr_is_master()==0) || dgr_is_enabled()!=0)
 		return;
 	
 	const char* vrpnObjString = getenv("VIEWMAT_VRPN_OBJECT");
@@ -331,28 +333,33 @@ void viewmat_init_ivs()
 }
 
 
-/** Initialize mouse movement. */
+/** Initialize mouse movement. Or, if we have a VRPN object name we
+ * are supposed to be tracking, get ready to use that instead. */
 static void viewmat_init_mouse(float pos[3], float look[3], float up[3])
 {
-	glutMotionFunc(mousemove_glutMotionFunc);
-	glutMouseFunc(mousemove_glutMouseFunc);
-	mousemove_set(pos[0],pos[1],pos[2],
-	              look[0],look[1],look[2],
-	              up[0],up[1],up[2]);
-	mousemove_speed(0.05, 0.5);
+	const char* vrpnObjString = getenv("VIEWMAT_VRPN_OBJECT");
+	if(vrpnObjString != NULL && strlen(vrpnObjString) > 0)
+	{
+		viewmat_vrpn_obj = vrpnObjString;
+		kuhl_msg("View is following tracker object: %s\n", viewmat_vrpn_obj);
+		
+		/* Try to connect to VRPN server */
+		float vrpnPos[3];
+		float vrpnOrient[16];
+		vrpn_get(viewmat_vrpn_obj, NULL, vrpnPos, vrpnOrient);
+	}
+	else
+	{
+		kuhl_msg("Using mouse movement.\n");
+		glutMotionFunc(mousemove_glutMotionFunc);
+		glutMouseFunc(mousemove_glutMouseFunc);
+		mousemove_set(pos[0],pos[1],pos[2],
+		              look[0],look[1],look[2],
+		              up[0],up[1],up[2]);
+		mousemove_speed(0.05, 0.5);
+	}
 }
 
-/** Initialize view matrix for "hmd" mode. */
-static void viewmat_init_hmd(float pos[3], float look[3], float up[3])
-{
-	/* TODO: For now, we are using mouse movement for the HMD mode */
-	glutMotionFunc(mousemove_glutMotionFunc);
-	glutMouseFunc(mousemove_glutMouseFunc);
-	mousemove_set(pos[0],pos[1],pos[2],
-	              look[0],look[1],look[2],
-	              up[0],up[1],up[2]);
-	mousemove_speed(0.05, 0.5);
-}
 
 /** Initialize view matrix for "dSight" mode. */
 static void viewmat_init_hmd_dsight()
@@ -570,7 +577,7 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	else if(strcasecmp(modeString, "hmd") == 0)
 	{
 		viewmat_mode = VIEWMAT_HMD;
-		viewmat_init_hmd(pos, look, up);
+		viewmat_init_mouse(pos, look, up);
 		kuhl_msg("Using HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
 	}
 	else if(strcasecmp(modeString, "none") == 0)
@@ -617,25 +624,41 @@ void viewmat_init(float pos[3], float look[3], float up[3])
  **/
 static void viewmat_get_mouse(float viewmatrix[16], int viewportNum)
 {
-	float pos[3],look[3],up[3];
-	mousemove_get(pos, look, up);
+	if(viewmat_vrpn_obj == NULL) // if no VRPN object specified, use mouse movement
+	{
+		float pos[3],look[3],up[3];
+		mousemove_get(pos, look, up);
 
-	float eyeDist = 0.055;  // TODO: Make this configurable.
+		float eyeDist = 0.055;  // TODO: Make this configurable.
 
-	float lookVec[3], rightVec[3];
-	vec3f_sub_new(lookVec, look, pos);
-	vec3f_normalize(lookVec);
-	vec3f_cross_new(rightVec, lookVec, up);
-	vec3f_normalize(rightVec);
-	if(viewportNum == 0)
-		vec3f_scalarMult(rightVec, -eyeDist/2.0);
-	else
-		vec3f_scalarMult(rightVec, eyeDist/2.0);
+		float lookVec[3], rightVec[3];
+		vec3f_sub_new(lookVec, look, pos);
+		vec3f_normalize(lookVec);
+		vec3f_cross_new(rightVec, lookVec, up);
+		vec3f_normalize(rightVec);
+		if(viewportNum == 0)
+			vec3f_scalarMult(rightVec, -eyeDist/2.0);
+		else
+			vec3f_scalarMult(rightVec, eyeDist/2.0);
 
-	vec3f_add_new(look, look, rightVec);
-	vec3f_add_new(pos, pos, rightVec);
+		vec3f_add_new(look, look, rightVec);
+		vec3f_add_new(pos, pos, rightVec);
 
-	mat4f_lookatVec_new(viewmatrix, pos, look, up);
+		mat4f_lookatVec_new(viewmatrix, pos, look, up);
+	}
+	else // if VRPN object is specified, use that instead
+	{
+
+		float pos[3], orient[16];
+		vrpn_get(viewmat_vrpn_obj, NULL, pos, orient);
+		mat4f_transpose_new(viewmatrix, orient); // invert a rotation matrix
+		float pos4[4] = {-pos[0],-pos[1],-pos[2],1};
+		mat4f_setColumn(viewmatrix, pos4, 3);  // set last column
+
+		// TODO: eye separation for HMD
+	}
+
+	// mat4f_print(viewmatrix);
 
 	if(viewportNum == 0)
 		dgr_setget("!!viewMat0", viewmatrix, sizeof(float)*16);
@@ -823,7 +846,6 @@ void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 			// we haven't registered mouse movement callback
 			// functions, so mouse movement won't work.
 			viewmat_get_mouse(viewmatrix, viewportID);
-			break;
 			break;
 		default:
 			kuhl_errmsg("Unknown viewmat mode: %d\n", viewmat_mode);

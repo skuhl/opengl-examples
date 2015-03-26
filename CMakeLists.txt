@@ -312,3 +312,8 @@ if(Threads_FOUND)
 else()
 	message(WARNING "Not compiling dgr-relay because pthreads was not found on this system.")
 endif()
+
+if(VRPN_FOUND)
+    add_executable(vrpn-fake/fake vrpn-fake/fake.cpp)
+    target_link_libraries(vrpn-fake/fake ${VRPN_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+endif()
