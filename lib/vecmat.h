@@ -780,7 +780,12 @@ static inline void mat3d_getColumn(double result[3], const double m[ 9], const i
     @param n The size of the matrix (3 means 3x3 matrix and a 3-component output vector).
 */
 static inline void matNf_getRow(float  result[ ], const float  m[  ], const int row, const int n)
-{ for(int i=0; i<n; i++) result[i] = m[matN_getIndex(row, i, n)]; }
+{
+	if(row >= n)
+		printf("%s: Row %d must be less than %d\n", __func__, row, n);
+	for(int i=0; i<n; i++)
+		result[i] = m[matN_getIndex(row, i, n)];
+}
 /** Copy the values in a matrix row into a vector.
     @param result The vector containing the row from the matrix.
     @param m The matrix to copy a row from.
@@ -788,7 +793,12 @@ static inline void matNf_getRow(float  result[ ], const float  m[  ], const int 
     @param n The size of the matrix (3 means 3x3 matrix and a 3-component output vector).
 */
 static inline void matNd_getRow(double result[ ], const double m[  ], const int row, const int n)
-{ for(int i=0; i<n; i++) result[i] = m[matN_getIndex(row, i, n)]; }
+{
+	if(row >= n)
+		printf("%s: Row %d must be less than %d\n", __func__, row, n);
+	for(int i=0; i<n; i++)
+		result[i] = m[matN_getIndex(row, i, n)];
+}
 /** Copy the values in a 4x4 matrix row into a vector.
     @param result The vector containing the row from the matrix.
     @param m The matrix to copy a row from.
@@ -826,7 +836,12 @@ static inline void mat3d_getRow(double result[3], const double m[ 9], const int 
  @param n The size of the matrix (and the length of the vector v)
 */
 static inline void matNf_setColumn(float  matrix[  ], const float  v[ ], const int col, const int n)
-{ for(int row=0; row<n; row++) matrix[matN_getIndex(row, col, n)] = v[row]; }
+{
+	if(col >= n)
+		printf("%s: Column %d must be less than %d\n", __func__, col, n);
+	for(int row=0; row<n; row++)
+		matrix[matN_getIndex(row, col, n)] = v[row];
+}
 /** Set a column of an NxN double matrix to a specific set of values.
  @param matrix The matrix to be changed.
  @param v The values to be placed into a specific column of the matrix.
@@ -834,7 +849,12 @@ static inline void matNf_setColumn(float  matrix[  ], const float  v[ ], const i
  @param n The size of the matrix (and the length of the vector v)
 */
 static inline void matNd_setColumn(double matrix[  ], const double v[ ], const int col, const int n)
-{ for(int row=0; row<n; row++) matrix[matN_getIndex(row, col, n)] = v[row]; }
+{
+	if(col >= n)
+		printf("%s: Column %d must be less than %d\n", __func__, col, n);
+	for(int row=0; row<n; row++)
+		matrix[matN_getIndex(row, col, n)] = v[row];
+}
 
 /** Set a column of an 3x3 float matrix to a specific set of values.
  @param matrix The matrix to be changed.
