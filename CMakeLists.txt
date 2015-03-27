@@ -315,5 +315,7 @@ endif()
 
 if(VRPN_FOUND)
     add_executable(vrpn-fake/fake vrpn-fake/fake.cpp)
-    target_link_libraries(vrpn-fake/fake ${VRPN_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(vrpn-fake/fake kuhl ${VRPN_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+    add_dependencies(vrpn-fake/fake kuhl)
+
 endif()
