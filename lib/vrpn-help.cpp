@@ -167,7 +167,8 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 			 * Below, we convert the position and orientation
 			 * information into the OpenGL convention.
 			 */
-			if(strncmp(hostname, "141.219.", 8) == 0) // MTU vicon tracker
+#if 0
+			if(strlen(hostname) > 8 && strncmp(hostname, "141.219.", 8) == 0) // MTU vicon tracker
 			{
 				float viconTransform[16] = { 1,0,0,0,  // column major order!
 											 0,0,-1,0,
@@ -180,6 +181,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 				return 1; // we successfully collected some data
 			}
 			else // Non-Vicon tracker
+#endif
 			{
 				/* Don't transform other tracking systems */
 				// orient is already filled in
