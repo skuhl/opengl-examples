@@ -146,33 +146,46 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 			for(int i=0; i<16; i++)
 				orient[i] = (float) orientd[i];
 
-			/* IMPORTANT NOTE: The Vicon tracking system is normally
-			 * calibrated so that:
+			/* VICON in the MTU IVS lab is typically calibrated so that:
 			 * X = points to the right (while facing screen)
 			 * Y = points into the screen
 			 * Z = up
+			 * (left-handed coordinate system)
+			 *
+			 * PPT is typically calibrated so that:
+			 * X = the points to the wall that has two closets at both corners
+			 * Y = up
+			 * Z = points to the door
+			 * (right-handed coordinate system)
 			 *
 			 * By default, OpenGL assumes that:
-			 * X = points to the right (while facing screen)
+			 * X = points to the right (while facing screen in the IVS lab)
 			 * Y = up
-			 * Z = points OUT of the screen (i.e., -Z points into the screen)
+			 * Z = points OUT of the screen (i.e., -Z points into the screen in te IVS lab)
+			 * (right-handed coordinate system)
 			 *
-			 * Below, we convert the Vicon position and orientation
-			 * information into the OpenGL convention to make it
-			 * easier to add Vicon support to an OpenGL program.
-			 *
-			 * If you are using this file with a different tracking
-			 * system, this conversion may be wrong!
+			 * Below, we convert the position and orientation
+			 * information into the OpenGL convention.
 			 */
-			   
-			float zUpToYUp[16] = { 1,0,0,0,  // column major order!
-			                       0,0,-1,0,
-			                       0,1,0,0,
-			                       0,0,0,1 };
-			mat4f_mult_mat4f_new(orient, zUpToYUp, orient);
-			mat4f_mult_vec4f_new(pos4, zUpToYUp, pos4);
-			vec3f_copy(pos,pos4);
-			return 1; // we successfully collected some data
+			if(strncmp(hostname, "141.219.", 8) == 0) // MTU vicon tracker
+			{
+				float viconTransform[16] = { 1,0,0,0,  // column major order!
+											 0,0,-1,0,
+											 0,1,0,0,
+											 0,0,0,1 };
+				mat4f_identity(viconTransform);
+				mat4f_mult_mat4f_new(orient, viconTransform, orient);
+				mat4f_mult_vec4f_new(pos4, viconTransform, pos4);
+				vec3f_copy(pos,pos4);
+				return 1; // we successfully collected some data
+			}
+			else // Non-Vicon tracker
+			{
+				/* Don't transform other tracking systems */
+				// orient is already filled in
+				vec3f_copy(pos, pos4);
+				return 1; // we successfully collected some data
+			}
 		}
 	}
 	else
