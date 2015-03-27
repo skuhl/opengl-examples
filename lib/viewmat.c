@@ -648,13 +648,13 @@ static void viewmat_get_mouse(float viewmatrix[16], int viewportNum)
 	}
 	else // if VRPN object is specified, use that instead
 	{
-
 		float pos[3], orient[16];
 		vrpn_get(viewmat_vrpn_obj, NULL, pos, orient);
-		mat4f_transpose_new(viewmatrix, orient); // invert a rotation matrix
-		float pos4[4] = {-pos[0],-pos[1],-pos[2],1};
-		mat4f_setColumn(viewmatrix, pos4, 3);  // set last column
 
+		float pos4[4] = {pos[0],pos[1],pos[2],1};
+		mat4f_copy(viewmatrix, orient);
+		mat4f_setColumn(viewmatrix, pos4, 3);  // set last column
+		mat4f_invert(viewmatrix);
 		// TODO: eye separation for HMD
 	}
 
