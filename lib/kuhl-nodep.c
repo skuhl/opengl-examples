@@ -273,21 +273,27 @@ void kuhl_limitfps(int fps)
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 
-	// How many microseconds have elapsed since last called? */
+	// How many microseconds have elapsed since previous call to limitfps() was completed? */
 	suseconds_t elapsed_micro = (tv.tv_sec - limitfps_last.tv_sec)*1000000L + (tv.tv_usec - limitfps_last.tv_usec);
 	// printf("elapsed_micro %ld\n", elapsed_micro);
 	
 	// How many microseconds should elapse per frame?
 	float microspf = 1.0/fps * 1000000;
 	// printf("microsec per frame %f\n", microspf);
-	if(microspf > elapsed_micro)
+
+	// How many microseconds do we have to kill? 
+	suseconds_t microsec_sleep = (suseconds_t)microspf - elapsed_micro;
+	if(microsec_sleep > 0)
 	{
-		suseconds_t microsec_sleep = (suseconds_t)microspf - elapsed_micro;
 		// printf("sleeping %ld\n", microsec_sleep);
 		usleep(microsec_sleep);
 	}
+	else
+	{
+		// printf("Sleep not needed! We are %ld behind.\n", microsec_sleep);
+	}
 
-	limitfps_last = tv;
+	gettimeofday(&limitfps_last, NULL);
 }
 
 /** Returns the current time in milliseconds. 1 second = 1000
@@ -324,21 +330,25 @@ void kuhl_getfps_init(kuhl_fps_state *state)
  */
 float kuhl_getfps(kuhl_fps_state *state)
 {
-	/* Count this frame */
 	state->frame++;
-
-	// If a second has elapsed since our last estimation
+	
 	long now = kuhl_milliseconds();
-	if(now - state->timebase > 1000)
+	// printf("Frame at %ld\n", now);
+	
+	// If a second has elapsed since our last estimation
+	if(now - state->timebase >= 1000)
 	{
+		// printf("Frames from %ld to %ld: %d\n", state->timebase, now, state->frame);
+		
 		// Calculate frames per second
 		// Frames * 1000 ms/s / (elapsed ms) = frames/second
-		state->fps = state->frame*1000.0/(now-state->timebase);
+		state->fps = state->frame*1000.0/(now - state->timebase);
 		// Update the time that our estimation occurred
 		state->timebase = now;
 		// Reset our frame counter.
 		state->frame = 0;
 	}
+
 	return state->fps;
 }
 
