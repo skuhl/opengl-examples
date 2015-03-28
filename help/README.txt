@@ -39,6 +39,18 @@ Run the code with red/cyan anaglyph 3D:
 
     ./anaglyph.sh ./ogl3-triangle
 
+If you want to want to use VRPN to control the position and
+orientation of the camera, you need to:
+    
+    - Edit ~/.vrpn-server so that it contains the IP address or
+      hostname of the VRPN server.
+
+    - Set the VIEWMAT_VRPN_OBJECT environment variable to the name of
+      the tracked object.
+
+    - Run the program (such as ogl3-assimp) that you want to run.
+
+
 Michigan Tech: Run code on the IVS display wall (if you have permission to do so)
 
     ./ivs.sh ./ogl3-triangle
