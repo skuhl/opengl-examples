@@ -76,7 +76,7 @@ typedef enum
 static float viewports[MAX_VIEWPORTS][4]; /**< Contains one or more viewports. The values are the x coordinate, y coordinate, viewport width, and viewport height */
 static int viewports_size = 0; /**< Number of viewports in viewports array */
 static ViewmatModeType viewmat_mode = 0; /**< 0=mousemove, 1=IVS (using VRPN), 2=HMD (using VRPN), 3=none */
-static const char *viewmat_vrpn_obj; /**< Name of the VRPN object that we are tracking */
+static const char *viewmat_vrpn_obj = NULL; /**< Name of the VRPN object that we are tracking */
 static HmdControlState viewmat_hmd;
 
 
@@ -304,15 +304,14 @@ static void viewmat_refresh_viewports()
 	}
 }
 
-/** Initialize IVS view matrix calculations, connect to VRPN. */
-void viewmat_init_ivs()
+/** Checks if VIEWMAT_VRPN_OBJECT environment variable is set. If it
+    is, use VRPN to control the camera position and orientation.
+    
+    @return Returns 1 if VRPN is set up, 0 otherwise.
+*/
+static int viewmat_init_vrpn()
 {
-	/* Since the master process is the only one that talks to the VRPN
-	 * server, slaves don't need to do anything to initialize. Also,
-	 * if we somehow aren't using DGR, assume that we need to connect to
-	 * VRPN. */
-	if((dgr_is_enabled() && dgr_is_master()==0) || dgr_is_enabled()!=0)
-		return;
+	viewmat_vrpn_obj = NULL;
 	
 	const char* vrpnObjString = getenv("VIEWMAT_VRPN_OBJECT");
 	if(vrpnObjString != NULL && strlen(vrpnObjString) > 0)
@@ -324,10 +323,24 @@ void viewmat_init_ivs()
 		float vrpnPos[3];
 		float vrpnOrient[16];
 		vrpn_get(viewmat_vrpn_obj, NULL, vrpnPos, vrpnOrient);
+		return 1;
 	}
-	else
+	return 0;
+}
+
+/** Initialize IVS view matrix calculations, connect to VRPN. */
+void viewmat_init_ivs()
+{
+	/* Since the master process is the only one that talks to the VRPN
+	 * server, slaves don't need to do anything to initialize. Also,
+	 * if we somehow aren't using DGR, assume that we need to connect to
+	 * VRPN. */
+	if((dgr_is_enabled() && dgr_is_master()==0) || dgr_is_enabled()!=0)
+		return;
+
+	if(viewmat_init_vrpn() == 0)
 	{
-		kuhl_errmsg("Failed to setup IVS mode\n");
+		kuhl_errmsg("Failed to setup IVS mode because we could not connect to VRPN.\n");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -337,27 +350,18 @@ void viewmat_init_ivs()
  * are supposed to be tracking, get ready to use that instead. */
 static void viewmat_init_mouse(float pos[3], float look[3], float up[3])
 {
-	const char* vrpnObjString = getenv("VIEWMAT_VRPN_OBJECT");
-	if(vrpnObjString != NULL && strlen(vrpnObjString) > 0)
-	{
-		viewmat_vrpn_obj = vrpnObjString;
-		kuhl_msg("View is following tracker object: %s\n", viewmat_vrpn_obj);
+	// If using VRPN to control the camera, there is nothing we need
+	// to do.
+	if(viewmat_init_vrpn() == 1)
+		return;
 		
-		/* Try to connect to VRPN server */
-		float vrpnPos[3];
-		float vrpnOrient[16];
-		vrpn_get(viewmat_vrpn_obj, NULL, vrpnPos, vrpnOrient);
-	}
-	else
-	{
-		kuhl_msg("Using mouse movement.\n");
-		glutMotionFunc(mousemove_glutMotionFunc);
-		glutMouseFunc(mousemove_glutMouseFunc);
-		mousemove_set(pos[0],pos[1],pos[2],
-		              look[0],look[1],look[2],
-		              up[0],up[1],up[2]);
-		mousemove_speed(0.05, 0.5);
-	}
+	kuhl_msg("Using mouse movement.\n");
+	glutMotionFunc(mousemove_glutMotionFunc);
+	glutMouseFunc(mousemove_glutMouseFunc);
+	mousemove_set(pos[0],pos[1],pos[2],
+	              look[0],look[1],look[2],
+	              up[0],up[1],up[2]);
+	mousemove_speed(0.05, 0.5);
 }
 
 
@@ -400,7 +404,6 @@ static void viewmat_init_hmd_oculus(float pos[3])
 			kuhl_errmsg("fscanf error.\n");
 			exit(EXIT_FAILURE);
 		}
-
 
 		hmd = ovrHmd_CreateDebug(ovrHmd_DK2);
 		useDebugMode = 1;
@@ -535,6 +538,10 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	ovrhmd_EnableHSWDisplaySDKRender(hmd, 0);
 
 	vec3f_copy(oculus_initialPos, pos);
+
+	// Try to connect to VRPN
+	viewmat_init_vrpn();
+
 	
 	// TODO: We are supposed to do these things when we are done:
 	//ovrHmd_Destroy(hmd);
@@ -691,6 +698,21 @@ static void viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
 
 void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 {
+	/* If the camera is supposed to be controlled by VRPN object, use
+	 * that instead of the Oculus tracker. */
+	if(viewmat_vrpn_obj)
+	{
+		float pos[3], orient[16];
+		vrpn_get(viewmat_vrpn_obj, NULL, pos, orient);
+
+		float pos4[4] = {pos[0],pos[1],pos[2],1};
+		mat4f_copy(viewmatrix, orient);
+		mat4f_setColumn(viewmatrix, pos4, 3);  // set last column
+		mat4f_invert(viewmatrix);
+		// TODO: Handle eye offset
+		return;
+	}
+	
 #ifndef MISSING_OVR
 	/* Oculus recommends the order that we should render eyes. We
 	 * assume that smaller viewportIDs are rendered first. So, we need
@@ -758,6 +780,7 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 	mat4f_mult_mat4f_new(viewmatrix, offsetMat, rotMat);
 	mat4f_mult_mat4f_new(viewmatrix, viewmatrix, posMat);
 	mat4f_mult_mat4f_new(viewmatrix, viewmatrix, initPosMat);
+
 #endif
 }
 
