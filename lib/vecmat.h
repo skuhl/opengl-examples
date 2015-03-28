@@ -30,6 +30,7 @@ extern "C" {
 
 #include <stdio.h>
 #include <math.h>
+#include <string.h> /* needed for memcpy() */
 	
 /** Set the values in a 3-component float vector */
 static inline void   vec3f_set(float  v[3], float  a, float  b, float  c)
