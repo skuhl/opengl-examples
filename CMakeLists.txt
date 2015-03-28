@@ -266,7 +266,7 @@ endif()
 
 # Create a static library containing all files that we regularly use.
 include_directories("lib")
-set(FILES_IN_LIBKUHL lib/kuhl-util.c lib/vecmat.c lib/dgr.c lib/mousemove.c lib/hmd-dsight-orient.c lib/projmat.c lib/viewmat.c lib/vrpn-help.cpp)
+set(FILES_IN_LIBKUHL lib/kuhl-util.c lib/vecmat.c lib/dgr.c lib/mousemove.c lib/hmd-dsight-orient.c lib/projmat.c lib/viewmat.c lib/vrpn-help.cpp lib/kalman.c )
 if(ImageMagick_FOUND)
 	set(FILES_IN_LIBKUHL ${FILES_IN_LIBKUHL} lib/imageio.c)
 endif()

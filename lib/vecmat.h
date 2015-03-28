@@ -230,6 +230,120 @@ static inline float vec4f_dot(const float A[4], const float B[4])
 static inline double vec4d_dot(const double A[4], const double B[4])
 { return A[0]*B[0] + A[1]*B[1] + A[2]*B[2] + A[3]*B[3]; }
 
+
+/** Get the index of the value at a specific row and column in an NxN matrix.
+    @param row The row that the value is at in the matrix (0=first row).
+    @param col The column that the value is at in the matrix (0=first column).
+    @param n The size of the matrix (use 3 for a 3x3 matrix)
+    @return The index that the value is at in the matrix array. */
+static inline int matN_getIndex(const int row, const int col, const int n)
+{ return row+col*n; }
+/** Get the index of the value at a specific row and column in an 3x3 matrix.
+    @param row The row that the value is at in the matrix (0=first row).
+    @param col The column that the value is at in the matrix (0=first column).
+    @return The index that the value is at in the matrix array. */
+static inline int mat3_getIndex(const int row, const int col)
+{ return matN_getIndex(row, col, 3); }
+/** Get the index of the value at a specific row and column in an 4x4 matrix.
+    @param row The row that the value is at in the matrix (0=first row).
+    @param col The column that the value is at in the matrix (0=first column).
+    @return The index that the value is at in the matrix array. */
+static inline int mat4_getIndex(const int row, const int col)
+{ return matN_getIndex(row, col, 4); }
+/** Get the index of the value at a specific row and column in an 3x3 float matrix. Equivalent to mat3_getIndex().
+    @param row The row that the value is at in the matrix (0=first row).
+    @param col The column that the value is at in the matrix (0=first column).
+    @return The index that the value is at in the matrix array. */
+static inline int mat3f_getIndex(const int row, const int col)
+{ return matN_getIndex(row, col, 3); }
+/** Get the index of the value at a specific row and column in an 4x4 float matrix. Equivalent to mat4_getIndex().
+    @param row The row that the value is at in the matrix (0=first row).
+    @param col The column that the value is at in the matrix (0=first column).
+    @return The index that the value is at in the matrix array. */
+static inline int mat4f_getIndex(const int row, const int col)
+{ return matN_getIndex(row, col, 4); }
+/** Get the index of the value at a specific row and column in an 3x3 double matrix. Equivalent to mat3_getIndex().
+    @param row The row that the value is at in the matrix (0=first row).
+    @param col The column that the value is at in the matrix (0=first column).
+    @return The index that the value is at in the matrix array. */
+static inline int mat3d_getIndex(const int row, const int col)
+{ return matN_getIndex(row, col, 3); }
+/** Get the index of the value at a specific row and column in an 4x4 double matrix. Equivalent to mat4_getIndex().
+    @param row The row that the value is at in the matrix (0=first row).
+    @param col The column that the value is at in the matrix (0=first column).
+    @return The index that the value is at in the matrix array. */
+static inline int mat4d_getIndex(const int row, const int col)
+{ return matN_getIndex(row, col, 4); }
+
+	
+/** Multiplies a column vector by a row vector to produce a matrix.
+ *
+ * @param m The resulting matrix.
+ * @param A Column vector.
+ * @param B Row vector.
+ * @param n Number of components in the vector.
+ */
+static inline void vecNf_mult_vecNf(float  m[ ],  const float  A[ ], const float  B[ ], const int n)
+{
+	for(int i=0; i<n; i++){
+        for(int j=0; j<n; j++){
+	        m[matN_getIndex(i,j,n)] = A[i] * B[j];
+        }
+    }
+}
+/** Multiplies a column vector by a row vector to produce a matrix.
+ *
+ * @param m The resulting matrix.
+ * @param A Column vector.
+ * @param B Row vector.
+ * @param n Number of components in the vector.
+ */
+static inline void vecNd_mult_vecNd(double m[ ],  const double A[ ], const double B[ ], const int n)
+{
+	for(int i=0; i<n; i++){
+        for(int j=0; j<n; j++){
+	        m[matN_getIndex(i,j,n)] = A[i] * B[j];
+        }
+    }
+}
+/** Multiplies a column vector by a row vector to produce a matrix.
+ *
+ * @param m The resulting matrix.
+ * @param A Column vector.
+ * @param B Row vector.
+ * @param n Number of components in the vector.
+ */
+static inline void vec3f_mult_vec3f(float  m[9],  const float  A[3], const float  B[3])
+{ vecNf_mult_vecNf(m, A, B, 3); }
+/** Multiplies a column vector by a row vector to produce a matrix.
+ *
+ * @param m The resulting matrix.
+ * @param A Column vector.
+ * @param B Row vector.
+ * @param n Number of components in the vector.
+ */
+static inline void vec3d_mult_vec3d(double m[9],  const double A[3], const double B[3])
+{ vecNd_mult_vecNd(m, A, B, 3); }
+/** Multiplies a column vector by a row vector to produce a matrix.
+ *
+ * @param m The resulting matrix.
+ * @param A Column vector.
+ * @param B Row vector.
+ * @param n Number of components in the vector.
+ */
+static inline void vec4f_mult_vec4f(float  m[16], const float  A[4], const float  B[4])
+{ vecNf_mult_vecNf(m, A, B, 4); }
+/** Multiplies a column vector by a row vector to produce a matrix.
+ *
+ * @param m The resulting matrix.
+ * @param A Column vector.
+ * @param B Row vector.
+ * @param n Number of components in the vector.
+ */
+static inline void vec4d_mult_vec4d(double m[16], const double A[4], const double B[4])
+{ vecNd_mult_vecNd(m, A, B, 4); }
+
+	
 /** Calculate the norm squared or length squared of a 3-component float vector.
  * @param A The vector to calculate the length of.
  * @return The length*length of the vector.
@@ -683,49 +797,6 @@ static inline void vec4f_sub_new(float result[4], const float a[4], const float 
 static inline void vec4d_sub_new(double result[4], const double a[4], const double b[4])
 { vecNd_sub_new(result, a, b, 4); }
 
-/** Get the index of the value at a specific row and column in an NxN matrix.
-    @param row The row that the value is at in the matrix (0=first row).
-    @param col The column that the value is at in the matrix (0=first column).
-    @param n The size of the matrix (use 3 for a 3x3 matrix)
-    @return The index that the value is at in the matrix array. */
-static inline int matN_getIndex(const int row, const int col, const int n)
-{ return row+col*n; }
-/** Get the index of the value at a specific row and column in an 3x3 matrix.
-    @param row The row that the value is at in the matrix (0=first row).
-    @param col The column that the value is at in the matrix (0=first column).
-    @return The index that the value is at in the matrix array. */
-static inline int mat3_getIndex(const int row, const int col)
-{ return matN_getIndex(row, col, 3); }
-/** Get the index of the value at a specific row and column in an 4x4 matrix.
-    @param row The row that the value is at in the matrix (0=first row).
-    @param col The column that the value is at in the matrix (0=first column).
-    @return The index that the value is at in the matrix array. */
-static inline int mat4_getIndex(const int row, const int col)
-{ return matN_getIndex(row, col, 4); }
-/** Get the index of the value at a specific row and column in an 3x3 float matrix. Equivalent to mat3_getIndex().
-    @param row The row that the value is at in the matrix (0=first row).
-    @param col The column that the value is at in the matrix (0=first column).
-    @return The index that the value is at in the matrix array. */
-static inline int mat3f_getIndex(const int row, const int col)
-{ return matN_getIndex(row, col, 3); }
-/** Get the index of the value at a specific row and column in an 4x4 float matrix. Equivalent to mat4_getIndex().
-    @param row The row that the value is at in the matrix (0=first row).
-    @param col The column that the value is at in the matrix (0=first column).
-    @return The index that the value is at in the matrix array. */
-static inline int mat4f_getIndex(const int row, const int col)
-{ return matN_getIndex(row, col, 4); }
-/** Get the index of the value at a specific row and column in an 3x3 double matrix. Equivalent to mat3_getIndex().
-    @param row The row that the value is at in the matrix (0=first row).
-    @param col The column that the value is at in the matrix (0=first column).
-    @return The index that the value is at in the matrix array. */
-static inline int mat3d_getIndex(const int row, const int col)
-{ return matN_getIndex(row, col, 3); }
-/** Get the index of the value at a specific row and column in an 4x4 double matrix. Equivalent to mat4_getIndex().
-    @param row The row that the value is at in the matrix (0=first row).
-    @param col The column that the value is at in the matrix (0=first column).
-    @return The index that the value is at in the matrix array. */
-static inline int mat4d_getIndex(const int row, const int col)
-{ return matN_getIndex(row, col, 4); }
 
 /** Copy the values in a matrix column into a vector.
     @param result The vector containing the column from the matrix.

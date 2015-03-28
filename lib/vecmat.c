@@ -25,13 +25,25 @@ extern inline void vec4d_copy(double result[4], const double a[4]);
 extern inline void vec3f_cross_new(float  result[3], const float  A[3], const float  B[3]);
 extern inline void vec3d_cross_new(double result[3], const double A[3], const double B[3]);
 
-/* Vector dot products */
+/* Vector dot products.
+   Equivalent to multiplying a RowVec * ColVec = scalar */
 extern inline float  vecNf_dot(const float  A[ ], const float  B[ ], const int n);
 extern inline double vecNd_dot(const double A[ ], const double B[ ], const int n);
 extern inline float  vec3f_dot(const float  A[3], const float  B[3]);
 extern inline double vec3d_dot(const double A[3], const double B[3]);
 extern inline float  vec4f_dot(const float  A[4], const float  B[4]);
 extern inline double vec4d_dot(const double A[4], const double B[4]);
+
+/* Vector multiplication.
+   Multiply a ColVec * RowVec = Matrix */
+extern inline void vecNf_mult_vecNf(float  m[ ],  const float  A[ ], const float  B[ ], const int n);
+extern inline void vecNd_mult_vecNd(double m[ ],  const double A[ ], const double B[ ], const int n);
+extern inline void vec3f_mult_vec3f(float  m[9],  const float  A[3], const float  B[3]);
+extern inline void vec3d_mult_vec3d(double m[9],  const double A[3], const double B[3]);
+extern inline void vec4f_mult_vec4f(float  m[16], const float  A[4], const float  B[4]);
+extern inline void vec4d_mult_vec4d(double m[16], const double A[4], const double B[4]);
+
+
 
 /* Calculate the norm squared (i.e., length squared) of a vector. This
  * is different than normalizing a vector. */
