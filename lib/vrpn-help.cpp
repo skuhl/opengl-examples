@@ -28,35 +28,6 @@
 #ifndef MISSING_VRPN
 
 
-static int fps_frame=0; /**< Number of frames in this second. Used by kuhl_getfps() */
-static int fps_timebase=-1; /**< Time since we last updated FPS estimate. Used by kuhl_getfps() */
-static float fps_now=-1; /**< Current estimate of FPS? Used by kuhl_getfps() */
-
-/* Gets the number of records per second */
-float vrpn_getrps(int milliseconds)
-{
-	fps_frame++;
-
-	/* If it is the first time we're called, keep track of the current
-	 * time so we can calculate FPS once a second has elapsed. */
-	if(fps_timebase == -1)
-		fps_timebase = milliseconds;
-	
-	// If a second has elapsed since our last estimation
-	if(milliseconds - fps_timebase > 1000)
-	{
-		// Calculate frames per second
-		fps_now = fps_frame*1000.0/(milliseconds-fps_timebase);
-		// Update the time that our estimation occured
-		fps_timebase = milliseconds;
-		// Reset our frame counter.
-		fps_frame = 0;
-	}
-	return fps_now;
-}
-
-
-
 /** A mapping of object\@tracker strings to vrpn_Tracker_Remote objects
  * so we can quickly find the appropriate object given an
  * object\@tracker string. */
