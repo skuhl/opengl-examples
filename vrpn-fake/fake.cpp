@@ -35,11 +35,13 @@ class myTracker : public vrpn_Tracker
 
   protected:
 	struct timeval _timestamp;
+	kuhl_fps_state fps_state;
 };
 
 myTracker::myTracker( vrpn_Connection *c ) :
 	vrpn_Tracker( OBJECT_NAME, c )
 {
+	kuhl_getfps_init(&fps_state);
 }
 
 void myTracker::mainloop()
@@ -47,15 +49,11 @@ void myTracker::mainloop()
 	vrpn_gettimeofday(&_timestamp, NULL);
 	vrpn_Tracker::timestamp = _timestamp;
 
+	printf("\n");
+	printf("Records sent per second: %.1f\n", kuhl_getfps(&fps_state));
+
 	static float angle = 0;
 	angle += 0.01f;
-
-	double r[10]; // generate some random numbers to simulate imperfect tracking system.
-	for(int i=0; i<10; i++)
-	{
-		r[i] = 0;
-		r[i] = kuhl_gauss(); // generate some random numbers
-	}
 
 	// Position
 	pos[0] = sinf( angle );
@@ -63,6 +61,13 @@ void myTracker::mainloop()
 	pos[2] = 0.0f;
 
 #if 0
+	double r[10]; // generate some random numbers to simulate imperfect tracking system.
+	for(int i=0; i<10; i++)
+	{
+		r[i] = 0;
+		r[i] = kuhl_gauss(); // generate some random numbers
+	}
+	
 	// Add random noise to position
 	pos[0] += r[0] * .10;
 	pos[1] += r[1] * .01;
@@ -108,7 +113,6 @@ int main(int argc, char* argv[])
 		serverTracker->mainloop();
 		m_Connection->mainloop();
 
-		int second = 1000000;
-		usleep(second / 100); // 1 second
+		kuhl_limitfps(100);
 	}
 }

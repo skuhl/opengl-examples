@@ -42,10 +42,11 @@ static kalman_state kalman;
 
 static void smooth(vrpn_TRACKERCB &t)
 {
+#if 0
 	double smoothed = kalman_estimate(&kalman, t.pos[0]);
 	// printf("%ld, %lf, %lf\n", kuhl_milliseconds(), t.pos[0], smoothed);
-	// t.pos[0] = smoothed;
-	
+	t.pos[0] = smoothed;
+#endif
 }
 
 
