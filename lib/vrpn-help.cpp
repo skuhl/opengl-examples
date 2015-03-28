@@ -24,6 +24,7 @@
 
 #include "kuhl-util.h"
 #include "vecmat.h"
+#include "kalman.h"
 
 #ifndef MISSING_VRPN
 
@@ -37,10 +38,20 @@ std::map<std::string, vrpn_Tracker_Remote*> nameToTracker;
 std::map<std::string, vrpn_TRACKERCB> nameToCallbackData;
 
 static kuhl_fps_state fps_state;
+static kalman_state kalman;
+
+static void smooth(vrpn_TRACKERCB &t)
+{
+	double smoothed = kalman_estimate(&kalman, t.pos[0]);
+	// printf("%ld, %lf, %lf\n", kuhl_milliseconds(), t.pos[0], smoothed);
+	// t.pos[0] = smoothed;
+	
+}
+
 
 /** A callback function that will get called whenever the tracked
  * point moves. */
-static void VRPN_CALLBACK handle_tracker(void *name, const vrpn_TRACKERCB t)
+static void VRPN_CALLBACK handle_tracker(void *name, vrpn_TRACKERCB t)
 {
 	float fps = kuhl_getfps(&fps_state);
 	if(fps_state.frame == 0)
@@ -49,6 +60,7 @@ static void VRPN_CALLBACK handle_tracker(void *name, const vrpn_TRACKERCB t)
 	// Store the data in our map so that someone can use it later.
 	std::string s = (char*)name;
 	nameToCallbackData[s] = t;
+	smooth(nameToCallbackData[s]);
 }
 
 #endif
@@ -205,6 +217,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 		nameToTracker[fullname] = tkr;
 		tkr->register_change_handler((void*) fullname.c_str(), handle_tracker);
 		kuhl_getfps_init(&fps_state);
+		kalman_initialize(&kalman);
 	}
 	return 0;
 #endif

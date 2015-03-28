@@ -54,7 +54,7 @@ void myTracker::mainloop()
 	for(int i=0; i<10; i++)
 	{
 		r[i] = 0;
-		// r[i] = kuhl_gauss(); // generate some random numbers
+		r[i] = kuhl_gauss(); // generate some random numbers
 	}
 
 	// Position
@@ -62,16 +62,19 @@ void myTracker::mainloop()
 	pos[1] = 1.55f; // approx normal eyeheight
 	pos[2] = 0.0f;
 
+#if 0
 	// Add random noise to position
-	pos[0] += r[0] * .01;
+	pos[0] += r[0] * .10;
 	pos[1] += r[1] * .01;
 	pos[2] += r[2] * .01;
+#endif
 	printf("Pos = %f %f %f\n", pos[0], pos[1], pos[2]);
 
 	// Orientation
 	float rotMat[9];
-	// mat3f_rotateEuler_new(rotMat, 0, 0, 0, "XYZ");
-	mat3f_rotateEuler_new(rotMat, r[3]*.02, angle*10 + r[4]*.02, r[5]*.02, "XYZ");
+	// mat3f_rotateEuler_new(rotMat, 0, 0, 0, "XYZ");  // no rotation
+	mat3f_rotateEuler_new(rotMat, 0, angle*10, 0, "XYZ"); // yaw
+	//mat3f_rotateEuler_new(rotMat, r[3]*.05, angle*10 + r[4]*.05, r[5]*.05, "XYZ"); // yaw + noise
 	mat3f_print(rotMat);
 
 	// Convert rotation matrix into quaternion

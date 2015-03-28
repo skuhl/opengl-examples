@@ -8,6 +8,7 @@ rm -vrf CMakeFiles
 rm -vrf doxygen-docs
 rm -vf CMakeCache.txt
 rm -vf Makefile
+rm -vf libkuhl.a
 rm -vf *~
 rm -vf \#*\#
 rm -vf *.exe
