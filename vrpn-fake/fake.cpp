@@ -1,6 +1,12 @@
-// This file is based heavily on a VRPN server tutorial written by
-// Sebastian Kuntz for VR Geeks (http://www.vrgeeks.org) in August
-// 2011.
+/* This program simulates a VRPN server to help support debugging and
+   testing without access to a tracking system.
+   
+   This file is based heavily on a VRPN server tutorial written by
+   Sebastian Kuntz for VR Geeks (http://www.vrgeeks.org) in August
+   2011.
+*/
+
+#define OBJECT_NAME "Tracker0"
 
 #include <stdio.h>
 #include <math.h>
@@ -14,8 +20,8 @@
 #include "vrpn_Connection.h"
 
 #include "vecmat.h"
+#include "kuhl-util.h"
 
-#define OBJECT_NAME "Tracker0"
 
 using namespace std;
 
@@ -44,16 +50,28 @@ void myTracker::mainloop()
 	static float angle = 0;
 	angle += 0.01f;
 
+	double r[10]; // generate some random numbers to simulate imperfect tracking system.
+	for(int i=0; i<10; i++)
+	{
+		r[i] = 0;
+		// r[i] = kuhl_gauss(); // generate some random numbers
+	}
+
 	// Position
-	pos[0] = sinf( angle ); 
+	pos[0] = sinf( angle );
 	pos[1] = 1.55f; // approx normal eyeheight
 	pos[2] = 0.0f;
+
+	// Add random noise to position
+	pos[0] += r[0] * .01;
+	pos[1] += r[1] * .01;
+	pos[2] += r[2] * .01;
 	printf("Pos = %f %f %f\n", pos[0], pos[1], pos[2]);
 
 	// Orientation
 	float rotMat[9];
 	// mat3f_rotateEuler_new(rotMat, 0, 0, 0, "XYZ");
-	mat3f_rotateEuler_new(rotMat, 0, angle*10, 0, "XYZ");
+	mat3f_rotateEuler_new(rotMat, r[3]*.02, angle*10 + r[4]*.02, r[5]*.02, "XYZ");
 	mat3f_print(rotMat);
 
 	// Convert rotation matrix into quaternion
@@ -80,7 +98,7 @@ int main(int argc, char* argv[])
 	vrpn_Connection_IP* m_Connection = new vrpn_Connection_IP();
 	myTracker* serverTracker = new myTracker(m_Connection);
 
-	cout << "Created VRPN server." << endl;
+	cout << "Starting VRPN server." << endl;
 
 	while(true)
 	{
