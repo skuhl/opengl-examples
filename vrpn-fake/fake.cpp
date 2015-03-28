@@ -86,6 +86,8 @@ int main(int argc, char* argv[])
 	{
 		serverTracker->mainloop();
 		m_Connection->mainloop();
-		usleep(10000);
+
+		int second = 1000000;
+		usleep(second / 100); // 1 second
 	}
 }
