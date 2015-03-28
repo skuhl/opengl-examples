@@ -68,7 +68,7 @@ void keyboard(unsigned char key, int x, int y)
 }
 
 
-static int framesTillFpsUpdate = 0;
+static kuhl_fps_state fps_state;
 int toggle = 0;
 /* Called by GLUT whenever the window needs to be redrawn. This
  * function should not be called directly by the programmer. Instead,
@@ -83,14 +83,9 @@ void display()
 	// send something to DGR so the slaves don't think that the server has died.
 	dgr_setget("dummy", &tmp, sizeof(int));
 
-	int time = glutGet(GLUT_ELAPSED_TIME);
-	float fps = kuhl_getfps(time);
-	framesTillFpsUpdate++;
-	if(framesTillFpsUpdate >= 60)
-	{
-		framesTillFpsUpdate = 0;
-		printf("FPS: %f\n", fps);
-	}
+	float fps = kuhl_getfps(&fps_state);
+	if(fps_state.frame == 0)
+		printf("FPS: %.1f\n", fps);
 
 	toggle++;
 	if(toggle > 1)
@@ -241,7 +236,8 @@ int main(int argc, char** argv)
 	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
 	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
 	viewmat_init(initCamPos, initCamLook, initCamUp);
-	
+
+	kuhl_getfps_init(&fps_state);
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */
 	glutMainLoop();

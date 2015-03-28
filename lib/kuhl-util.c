@@ -3499,42 +3499,56 @@ void kuhl_limitfps(int fps)
 	limitfps_last = tv;
 }
 
+/** Returns the current time in milliseconds. 1 second = 1000
+ * milliseconds */
+long kuhl_milliseconds()
+{
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	long ms = (tv.tv_sec * 1000L) + tv.tv_usec / 1000L;
+	return ms;
+}
 
-static int fps_frame=0; /**< Number of frames in this second. Used by kuhl_getfps() */
-static int fps_timebase=-1; /**< Time since we last updated FPS estimate. Used by kuhl_getfps() */
-static float fps_now=-1; /**< Current estimate of FPS? Used by kuhl_getfps() */
+
+/** Initialize a kuhl_fps_state struct which can be used to easily
+ * calculate fps.
+ *
+ * @param state An empty kuhl_fps_state object to be initialized. */
+void kuhl_getfps_init(kuhl_fps_state *state)
+{
+	state->frame = 0;
+	state->timebase = 0;
+	state->fps = -1;
+}
+
 
 /** When called every frame, estimates the frames per second.
  *
- * @param milliseconds The time in milliseconds relative to some fixed
- * value. For example, if you are using GLUT, you can use
- * glutGet(GLUT_ELAPSED_TIME) to get the time in milliseconds since
- * your program started.
+ * @param state This is a state structure that is initialized by
+ * kuhl_getfps_init().
  *
  * @return An estimate of the frames per second (updated every second).
  *
  * @see kuhl_limitfps()
  */
-float kuhl_getfps(int milliseconds)
+float kuhl_getfps(kuhl_fps_state *state)
 {
-	fps_frame++;
+	/* Count this frame */
+	state->frame++;
 
-	/* If it is the first time we're called, keep track of the current
-	 * time so we can calculate FPS once a second has elapsed. */
-	if(fps_timebase == -1)
-		fps_timebase = milliseconds;
-	
 	// If a second has elapsed since our last estimation
-	if(milliseconds - fps_timebase > 1000)
+	long now = kuhl_milliseconds();
+	if(now - state->timebase > 1000)
 	{
 		// Calculate frames per second
-		fps_now = fps_frame*1000.0/(milliseconds-fps_timebase);
-		// Update the time that our estimation occured
-		fps_timebase = milliseconds;
+		// Frames * 1000 ms/s / (elapsed ms) = frames/second
+		state->fps = state->frame*1000.0/(now-state->timebase);
+		// Update the time that our estimation occurred
+		state->timebase = now;
 		// Reset our frame counter.
-		fps_frame = 0;
+		state->frame = 0;
 	}
-	return fps_now;
+	return state->fps;
 }
 
 static int kuhl_random_init_done = 0; /*< Have we called srand48() yet? */

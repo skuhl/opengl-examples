@@ -58,6 +58,16 @@ typedef struct
 } kuhl_bonemat;
 #endif
 
+/** This structure contains all of a the state necessary for
+ * frames-per-second calculations. */
+typedef struct
+{
+	int frame; /**< Number of frames in this second. */
+	long timebase; /**< The time in ms that we last updated the FPS
+	                * estimate */
+	float fps; /**< Current estimate of FPS? */
+} kuhl_fps_state;
+	
 /** This enum is used by some kuhl_geometry related functions */
 enum
 { /* Options used for some kuhl_geometry functions */
@@ -172,7 +182,8 @@ GLint kuhl_get_uniform(const char *uniformName);
 
 void kuhl_limitfps(int fps);
 
-float kuhl_getfps(int milliseconds);
+void kuhl_getfps_init(kuhl_fps_state *state);
+float kuhl_getfps(kuhl_fps_state *state);
 
 void kuhl_bbox_transform(float bbox[6], float mat[16]);
 

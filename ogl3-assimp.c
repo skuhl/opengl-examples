@@ -240,11 +240,11 @@ void get_model_matrix(float result[16])
 }
 
 
-static int framesTillFpsUpdate = 0;
 /* Called by GLUT whenever the window needs to be redrawn. This
  * function should not be called directly by the programmer. Instead,
  * we can call glutPostRedisplay() to request that GLUT call display()
  * at some point. */
+static kuhl_fps_state fps_state;
 void display()
 {
 	/* If we are using DGR, send or receive data to keep multiple
@@ -252,17 +252,16 @@ void display()
 	dgr_update();
 
 	/* Get current frames per second calculations. */
-	int time = glutGet(GLUT_ELAPSED_TIME);
-	float fps = kuhl_getfps(time);
+	float fps = kuhl_getfps(&fps_state);
 
 	if(dgr_is_enabled() == 0 || dgr_is_master())
 	{
 		// If DGR is being used, only display dgr counter if we are
 		// the master process.
 
-		if(framesTillFpsUpdate == 0)
+		// Check if FPS value was just updated by kuhl_getfps()
+		if(fps_state.frame == 0)
 		{
-			framesTillFpsUpdate = 30;
 			char label[1024];
 			snprintf(label, 1024, "FPS: %0.1f", fps);
 		
@@ -279,7 +278,6 @@ void display()
 			if(fpsLabel != 0)
 				kuhl_geometry_texture(&labelQuad, fpsLabel, "tex", 1);
 		}
-		framesTillFpsUpdate--;
 	}
 	
 	/* Ensure the slaves use the same render style as the master
@@ -393,6 +391,7 @@ void display()
 	/* Update the model for the next frame based on the time. We
 	 * convert the time to seconds and then use mod to cause the
 	 * animation to repeat. */
+	int time = glutGet(GLUT_ELAPSED_TIME);
 	dgr_setget("time", &time, sizeof(int));
 	kuhl_update_model(modelgeom, 0, ((time%10000)/1000.0));
 
@@ -525,6 +524,8 @@ int main(int argc, char** argv)
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
 	init_geometryQuad(&labelQuad, program);
+
+	kuhl_getfps_init(&fps_state);
 	
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */

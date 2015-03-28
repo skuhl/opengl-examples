@@ -65,16 +65,15 @@ std::map<std::string, vrpn_Tracker_Remote*> nameToTracker;
  * functions store the data into. */
 std::map<std::string, vrpn_TRACKERCB> nameToCallbackData;
 
+static kuhl_fps_state fps_state;
+
 /** A callback function that will get called whenever the tracked
  * point moves. */
 static void VRPN_CALLBACK handle_tracker(void *name, const vrpn_TRACKERCB t)
 {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	long long ms = (tv.tv_sec * 1000) + tv.tv_usec / 1000;
-	float recordsPerSecond = vrpn_getrps(ms);
-	if(fps_frame == 0)
-		printf("VRPN records per second: %f\n", recordsPerSecond);
+	float fps = kuhl_getfps(&fps_state);
+	if(fps_state.frame == 0)
+		printf("VRPN records per second: %.1f\n", fps);
 	
 	// Store the data in our map so that someone can use it later.
 	std::string s = (char*)name;
@@ -234,6 +233,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 		vrpn_Tracker_Remote *tkr = new vrpn_Tracker_Remote(fullname.c_str());
 		nameToTracker[fullname] = tkr;
 		tkr->register_change_handler((void*) fullname.c_str(), handle_tracker);
+		kuhl_getfps_init(&fps_state);
 	}
 	return 0;
 #endif
