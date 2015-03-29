@@ -56,6 +56,7 @@ void kuhl_shuffle(void *array, int n, int size);
 double kuhl_gauss();
 
 long kuhl_milliseconds();
+long kuhl_milliseconds_start();
 void kuhl_getfps_init(kuhl_fps_state *state);
 float kuhl_getfps(kuhl_fps_state *state);
 

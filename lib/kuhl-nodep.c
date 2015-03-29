@@ -306,6 +306,16 @@ long kuhl_milliseconds()
 	return ms;
 }
 
+/** Returns the number of milliseconds since the first time this
+ * function was called. */
+static long kuhl_milliseconds_start_time = -1;
+long kuhl_milliseconds_start()
+{
+	if(kuhl_milliseconds_start_time == -1)
+		kuhl_milliseconds_start_time = kuhl_milliseconds();
+	return kuhl_milliseconds() - kuhl_milliseconds_start_time;
+}
+
 
 /** Initialize a kuhl_fps_state struct which can be used to easily
  * calculate fps.

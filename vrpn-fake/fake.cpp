@@ -52,11 +52,10 @@ void myTracker::mainloop()
 	printf("\n");
 	printf("Records sent per second: %.1f\n", kuhl_getfps(&fps_state));
 
-	static float angle = 0;
-	angle += 0.01f;
+	double angle = kuhl_milliseconds_start() / 1000.0;
 
 	// Position
-	pos[0] = sinf( angle );
+	pos[0] = sin( angle );
 	pos[1] = 1.55f; // approx normal eyeheight
 	pos[2] = 0.0f;
 
