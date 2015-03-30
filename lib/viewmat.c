@@ -862,7 +862,7 @@ void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 	viewmat_get_viewport(viewport, viewportID);
 
 	/* Get the view or camera matrix; update the frustum values if needed. */
-	float f[6]; // left, right, top, bottom, near>0, far>0
+	float f[6]; // left, right, bottom, top, near>0, far>0
 	projmat_get_frustum(f, viewport[2], viewport[3]);
 
 	switch(viewmat_mode)
