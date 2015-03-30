@@ -296,6 +296,24 @@ void kuhl_limitfps(int fps)
 	gettimeofday(&limitfps_last, NULL);
 }
 
+/** Returns the current time in microseconds. 1 second = 1,000,000 microseconds. 1 millisecond = 1000 microseconds */
+long kuhl_microseconds()
+{
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	long us = (tv.tv_sec * 1000000L) + tv.tv_usec;
+	return us;
+}
+
+static long kuhl_microseconds_start_time = -1;
+long kuhl_microseconds_start()
+{
+	if(kuhl_microseconds_start_time == -1)
+		kuhl_microseconds_start_time = kuhl_microseconds();
+	return kuhl_microseconds() - kuhl_microseconds_start_time;
+}
+
+
 /** Returns the current time in milliseconds. 1 second = 1000
  * milliseconds */
 long kuhl_milliseconds()
