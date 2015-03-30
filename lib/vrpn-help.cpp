@@ -67,6 +67,43 @@ static void VRPN_CALLBACK handle_tracker(void *name, vrpn_TRACKERCB t)
 #endif
 
 extern "C" {
+
+/** Returns the default hostname based on the contents of
+    "~/.vrpn-server". Returns NULL on failure.
+
+    @return NULL on failure or a string which should eventually be
+    free()'d.
+ */
+char* vrpn_default_host()
+{
+	/* Try reading VRPN server information from ~/.vrpn-server
+	   
+	   This file should contain a single line that says something like:
+	   tcp://VRPN.SERVER.IP.ADDR
+	*/
+	const char *homedir = getenv("HOME");
+	char path[1024];
+	snprintf(path, 1024, "%s/.vrpn-server", homedir);
+	FILE *f = fopen(path, "r");
+	if(f == NULL)
+	{
+		kuhl_warnmsg("Can't open file %s to get VRPN server information.\n", path);
+		return NULL;
+	}
+	char *vrpnString = (char*)malloc(1024);
+	if(fscanf(f, "%1023s", vrpnString) != 1)
+	{
+		kuhl_warnmsg("Can't read %s to get VRPN server information.\n", path);
+		return NULL;
+	}
+	fclose(f);
+	return vrpnString;
+	// printf("%s: Found in %s: %s\n", __func__, path, vrpnString);
+}
+
+
+
+
 /** Uses the VRPN library to get the position and orientation of a
  * tracked object.
  *
@@ -112,29 +149,15 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 	std::string objectcpp;
 	if(hostname == NULL)
 	{
-		/* Try reading VRPN server information from ~/.vrpn-server
-
-		   This file should contain a single line that says something like:
-		   tcp://VRPN.SERVER.IP.ADDR
-		 */
-		const char *homedir = getenv("HOME");
-		char path[1024];
-		snprintf(path, 1024, "%s/.vrpn-server", homedir);
-		FILE *f = fopen(path, "r");
-		if(f == NULL)
+		char *hostnameInFile = vrpn_default_host();
+		if(hostnameInFile)
+			hostnamecpp = hostnameInFile;
+		else
 		{
-			printf("%s: Can't open file %s to get VRPN server information.\n", __func__, path);
+			kuhl_errmsg("Failed to find hostname of VRPN server.\n");
 			exit(EXIT_FAILURE);
 		}
-		char vrpnString[1024];
-		if(fscanf(f, "%1023s", vrpnString) != 1)
-		{
-			printf("%s: Can't read %s to get VRPN server information.\n", __func__, path);
-			exit(EXIT_FAILURE);
-		}
-		fclose(f);
-		// printf("%s: Found in %s: %s\n", __func__, path, vrpnString);
-		hostnamecpp = vrpnString;
+		
 	}
 	else
 		hostnamecpp = hostname;
@@ -187,8 +210,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 			 * Below, we convert the position and orientation
 			 * information into the OpenGL convention.
 			 */
-#if 0
-			if(strlen(hostname) > 8 && strncmp(hostname, "141.219.", 8) == 0) // MTU vicon tracker
+			if(strlen(hostnamecpp.c_str()) > 8 && strncmp(hostnamecpp.c_str(), "141.219.", 8) == 0) // MTU vicon tracker
 			{
 				float viconTransform[16] = { 1,0,0,0,  // column major order!
 											 0,0,-1,0,
@@ -201,7 +223,6 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 				return 1; // we successfully collected some data
 			}
 			else // Non-Vicon tracker
-#endif
 			{
 				/* Don't transform other tracking systems */
 				// orient is already filled in
@@ -223,4 +244,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 	return 0;
 #endif
 }
+
+
+	
 } // extern C

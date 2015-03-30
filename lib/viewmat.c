@@ -698,21 +698,6 @@ static void viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
 
 void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 {
-	/* If the camera is supposed to be controlled by VRPN object, use
-	 * that instead of the Oculus tracker. */
-	if(viewmat_vrpn_obj)
-	{
-		float pos[3], orient[16];
-		vrpn_get(viewmat_vrpn_obj, NULL, pos, orient);
-
-		float pos4[4] = {pos[0],pos[1],pos[2],1};
-		mat4f_copy(viewmatrix, orient);
-		mat4f_setColumn(viewmatrix, pos4, 3);  // set last column
-		mat4f_invert(viewmatrix);
-		// TODO: Handle eye offset
-		return;
-	}
-	
 #ifndef MISSING_OVR
 	/* Oculus recommends the order that we should render eyes. We
 	 * assume that smaller viewportIDs are rendered first. So, we need
@@ -722,46 +707,63 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 	 * the right eye). */
 	ovrEyeType eye = hmd->EyeRenderOrder[viewportID];
 
-	pose[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
-
-	float offsetMat[16], rotMat[16], posMat[16];
-	mat4f_identity(offsetMat);
-	mat4f_identity(rotMat);
-	mat4f_identity(posMat);
+	float offsetMat[16], rotMat[16], posMat[16], initPosMat[16];
+	mat4f_identity(offsetMat);  // Viewpoint offset (IPD, etc);
+	mat4f_identity(rotMat);     // tracking system rotation
+	mat4f_identity(posMat);     // tracking system position
+	mat4f_identity(initPosMat); // camera starting location
 
 	/* Construct a matrix which represents the amount to offset each
 	 * eye. For the DK1, this seems to only be the IPD offset. */
+	// TODO: We probably want to do something different with VRPN.
 	mat4f_translate_new(offsetMat,
-	                    eye_rdesc[eye].HmdToEyeViewOffset.x,
-	                    eye_rdesc[eye].HmdToEyeViewOffset.y,
-	                    eye_rdesc[eye].HmdToEyeViewOffset.z);
+	                    eye_rdesc[eye].HmdToEyeViewOffset.x, // left & right IPD offset
+	                    eye_rdesc[eye].HmdToEyeViewOffset.y, // vertical offset
+	                    eye_rdesc[eye].HmdToEyeViewOffset.z); // forward/back offset
 
-	
-	/* Construct a rotation matrix based on the Oculus orientation
-	 * sensor */
-	mat4f_rotateQuat_new(rotMat,
-	                     pose[eye].Orientation.x,
-	                     pose[eye].Orientation.y,
-	                     pose[eye].Orientation.z,
-	                     pose[eye].Orientation.w);
+
+	/* Construct posMat and rotMat matrices which indicate the
+	 * position and orientation of the HMD. */
+	if(viewmat_vrpn_obj) // get position from VRPN
+	{
+		float vrpnPos[3] = { 0,0,0 };
+		float vrpnOrient[16];
+		mat4f_identity(vrpnOrient);
+
+		vrpn_get(viewmat_vrpn_obj, NULL, vrpnPos, vrpnOrient);
+		
+		mat4f_translate_new(posMat, -vrpnPos[0], -vrpnPos[1], -vrpnPos[2]); // position
+		mat4f_copy(rotMat, vrpnOrient); // rotation
+
+		
+	}
+	else // get position from Oculus tracker
+	{
+		pose[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
+		mat4f_translate_new(posMat,                           // position
+		                    -pose[eye].Position.x,
+		                    -pose[eye].Position.y,
+		                    -pose[eye].Position.z);
+		mat4f_rotateQuat_new(rotMat,                          // rotation
+		                     pose[eye].Orientation.x,
+		                     pose[eye].Orientation.y,
+		                     pose[eye].Orientation.z,
+		                     pose[eye].Orientation.w);
+
+		// Starting point:
+		
+		// Translate the world based on the initial camera position
+		// specified in viewmat_init(). You may choose to initialize the
+		// camera position with y=1.5 meters to approximate a normal
+		// standing eyeheight.
+		float initPosVec[3];
+		vec3f_scalarMult_new(initPosVec, oculus_initialPos, -1.0f);
+		mat4f_translateVec_new(initPosMat, initPosVec);
+		// TODO: Could also get eyeheight via ovrHmd_GetFloat(hmd, OVR_KEY_EYE_HEIGHT, 1.65)
+	}
 	mat4f_transpose(rotMat); /* orientation sensor rotates camera, not world */
 
-	/* Matrix which translates the world to account for the position
-	 * of the HMD (from the Oculus tracker). */
-	mat4f_translate_new(posMat,
-	                    -pose[eye].Position.x,
-	                    -pose[eye].Position.y,
-	                    -pose[eye].Position.z);
 
-	// Translate the world based on the initial camera position
-	// specified in viewmat_init(). You may choose to initialize the
-	// camera position with y=1.5 meters to approximate a normal
-	// standing eyeheight.
-	float initPosVec[3];
-	vec3f_scalarMult_new(initPosVec, oculus_initialPos, -1.0f);
-	float initPosMat[16];
-	mat4f_translateVec_new(initPosMat, initPosVec);
-	// TODO: Could also get eyeheight via ovrHmd_GetFloat(hmd, OVR_KEY_EYE_HEIGHT, 1.65)
 
 	if(0)
 	{
@@ -776,10 +778,26 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 		mat4f_print(initPosMat);
 	}
 	
+	/* Currently, the tracked object over in the IVS lab is rotated by
+	 * approx 90 degrees. Apply the fix here. */
+	if(viewmat_vrpn_obj)
+	{
+		char *hostname = vrpn_default_host();
+		if(strlen(hostname) > 8 && strncmp(hostname, "141.219.", 8) == 0) // MTU vicon tracker
+		{
+			// The tracked object is oriented the wrong way in the IVS lab.
+			float offsetVicon[16];
+			mat4f_rotateAxis_new(offsetVicon, -90, 1,0,0);
+			// offsetMat = offsetMat * offsetVicon
+			mat4f_mult_mat4f_new(offsetMat, offsetMat, offsetVicon);
+		}
+	}
+	
 	// viewmatrix = offsetMat * rotMat *  posMat * initposmat
 	mat4f_mult_mat4f_new(viewmatrix, offsetMat, rotMat);
 	mat4f_mult_mat4f_new(viewmatrix, viewmatrix, posMat);
 	mat4f_mult_mat4f_new(viewmatrix, viewmatrix, initPosMat);
+	// mat4f_print(viewmatrix);
 
 #endif
 }
