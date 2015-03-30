@@ -264,7 +264,7 @@ void display()
 		{
 			char label[1024];
 			snprintf(label, 1024, "FPS: %0.1f", fps);
-		
+
 			/* Delete old label if it exists */
 			if(fpsLabel != 0) 
 				glDeleteTextures(1, &fpsLabel);
@@ -272,9 +272,12 @@ void display()
 			/* Make a new label */
 			float labelColor[3] = { 1,1,1 };
 			float labelBg[4] = { 0,0,0,.3 };
+			/* Change the last parameter (point size) to adjust the
+			 * size of the texture that the text is rendered in to. */
 			fpsLabelAspectRatio = kuhl_make_label(label,
 			                                      &fpsLabel,
-			                                      labelColor, labelBg, 128);
+			                                      labelColor, labelBg, 24);
+
 			if(fpsLabel != 0)
 				kuhl_geometry_texture(&labelQuad, fpsLabel, "tex", 1);
 		}
