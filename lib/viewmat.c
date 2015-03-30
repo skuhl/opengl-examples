@@ -621,6 +621,33 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 		glutSetCursor(GLUT_CURSOR_NONE);
 }
 
+/** Some VRPN orientation sensors may be rotated differently than what we
+ * expect them to be (for example, orientation is correct except that
+ * the camera is pointing in the wrong direction. This function will
+ * adjust the orientation matrix so that the camera is pointing in the
+ * correct direction. */
+static void viewmat_fix_rotation(float orient[16])
+{
+	if(viewmat_vrpn_obj == NULL || strlen(viewmat_vrpn_obj) == 0)
+		return;
+
+	char *hostname = vrpn_default_host();
+	
+	/* Currently, the "DK2" object over in the IVS lab is rotated by
+	 * approx 90 degrees. Apply the fix here. */
+	if(strcmp(viewmat_vrpn_obj, "DK2") == 0 &&
+	   strlen(hostname) > 14 && strncmp(hostname, "tcp://141.219.", 14) == 0) // MTU vicon tracker
+	{
+		// The tracked object is oriented the wrong way in the IVS lab.
+		float offsetVicon[16];
+		mat4f_identity(offsetVicon);
+		mat4f_rotateAxis_new(offsetVicon, 90, 1,0,0);
+		// offsetMat = offsetMat * offsetVicon
+		mat4f_mult_mat4f_new(orient, orient, offsetVicon);
+	}
+}
+
+
 /** Get the view matrix from the mouse.
  *
  * @param viewmatrix The view matrix to be filled in.
@@ -659,6 +686,8 @@ static void viewmat_get_mouse(float viewmatrix[16], int viewportNum)
 		vrpn_get(viewmat_vrpn_obj, NULL, pos, orient);
 
 		float pos4[4] = {pos[0],pos[1],pos[2],1};
+
+		viewmat_fix_rotation(orient);
 		mat4f_copy(viewmatrix, orient);
 		mat4f_setColumn(viewmatrix, pos4, 3);  // set last column
 		mat4f_invert(viewmatrix);
@@ -726,16 +755,10 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 	 * position and orientation of the HMD. */
 	if(viewmat_vrpn_obj) // get position from VRPN
 	{
-		float vrpnPos[3] = { 0,0,0 };
-		float vrpnOrient[16];
-		mat4f_identity(vrpnOrient);
-
-		vrpn_get(viewmat_vrpn_obj, NULL, vrpnPos, vrpnOrient);
-		
-		mat4f_translate_new(posMat, -vrpnPos[0], -vrpnPos[1], -vrpnPos[2]); // position
-		mat4f_copy(rotMat, vrpnOrient); // rotation
-
-		
+		float pos[3] = { 0,0,0 };
+		vrpn_get(viewmat_vrpn_obj, NULL, pos, rotMat);
+		mat4f_translate_new(posMat, -pos[0], -pos[1], -pos[2]); // position
+		viewmat_fix_rotation(rotMat);
 	}
 	else // get position from Oculus tracker
 	{
@@ -777,22 +800,7 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 		printf("Initial position: ");
 		mat4f_print(initPosMat);
 	}
-	
-	/* Currently, the tracked object over in the IVS lab is rotated by
-	 * approx 90 degrees. Apply the fix here. */
-	if(viewmat_vrpn_obj)
-	{
-		char *hostname = vrpn_default_host();
-		if(strlen(hostname) > 8 && strncmp(hostname, "141.219.", 8) == 0) // MTU vicon tracker
-		{
-			// The tracked object is oriented the wrong way in the IVS lab.
-			float offsetVicon[16];
-			mat4f_rotateAxis_new(offsetVicon, -90, 1,0,0);
-			// offsetMat = offsetMat * offsetVicon
-			mat4f_mult_mat4f_new(offsetMat, offsetMat, offsetVicon);
-		}
-	}
-	
+
 	// viewmatrix = offsetMat * rotMat *  posMat * initposmat
 	mat4f_mult_mat4f_new(viewmatrix, offsetMat, rotMat);
 	mat4f_mult_mat4f_new(viewmatrix, viewmatrix, posMat);
