@@ -2,6 +2,7 @@
 
 function cleandir()
 {
+	# If makefile still exists, try "make clean"
 	if [[ -e Makefile ]]; then
 		make -C "${1}" clean
 	fi
@@ -9,15 +10,20 @@ function cleandir()
 	rm -vf  "${1}/CMakeCache.txt"
 	rm -vf  "${1}/Makefile"
 	rm -vf  "${1}/cmake_install.cmake"
-	rm -vf *~
-	rm -vf \#*\#
+
+	# Text editor backup files:
+	rm -vf *~ \#*\#
 }
 
+# Clean the current directory
 cleandir .
-cleandir samples
-cleandir lib
-cleandir dgr
-cleandir vrpn-fake
+for D in *; do # For each file and directory
+    if [ -d "${D}" ]; then # If it is a directory
+		if [[ -e "${D}/CMakeLists.txt" ]]; then # if CMakeLists file is present
+			cleandir "${D}"
+		fi
+    fi
+done
 
 rm -vrf doxygen-docs
 rm -vrf bin/*.frag bin/*.vert
