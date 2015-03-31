@@ -215,13 +215,12 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 			 * Below, we convert the position and orientation
 			 * information into the OpenGL convention.
 			 */
-			if(strlen(hostnamecpp.c_str()) > 8 && strncmp(hostnamecpp.c_str(), "141.219.", 8) == 0) // MTU vicon tracker
+			if(strlen(hostnamecpp.c_str()) > 14 && strncmp(hostnamecpp.c_str(), "tcp://141.219.", 14) == 0) // MTU vicon tracker
 			{
 				float viconTransform[16] = { 1,0,0,0,  // column major order!
 											 0,0,-1,0,
 											 0,1,0,0,
 											 0,0,0,1 };
-				mat4f_identity(viconTransform);
 				mat4f_mult_mat4f_new(orient, viconTransform, orient);
 				mat4f_mult_vec4f_new(pos4, viconTransform, pos4);
 				vec3f_copy(pos,pos4);

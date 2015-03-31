@@ -49,10 +49,9 @@ static Image* imageio_flip(Image *image)
 	GetExceptionInfo(&exception);
 	Image *flipped = FlipImage(image, &exception);
 	DestroyImage(image);
-	image = flipped;
 	MagickError(exception.severity, exception.reason, exception.description);
 	DestroyExceptionInfo(&exception);
-	return image;
+	return flipped;
 }
 
 /** Writes the given image stored in "array" out to the filename
@@ -263,10 +262,12 @@ char* image_label(const char *label, int* width, int* height, float color[3], fl
 	setenv("MAGICK_CONFIGURE_PATH", "/home/kuhl/public-vrlab/ImageMagick/config", 1);
 	
 //	if(!IsMagickInstantiated())
-		MagickCoreGenesis(NULL, MagickTrue);
-	ExceptionInfo *exception = AcquireExceptionInfo();
+	MagickCoreGenesis(NULL, MagickTrue);
+	ExceptionInfo exception;
+	GetExceptionInfo(&exception);
 	MagickPixelPacket background;
 	GetMagickPixelPacket(NULL, &background);
+
 	background.red     = (Quantum) (QuantumRange*(bgcolor[0]));
 	background.green   = (Quantum) (QuantumRange*(bgcolor[1]));
 	background.blue    = (Quantum) (QuantumRange*(bgcolor[2]));
@@ -284,7 +285,14 @@ char* image_label(const char *label, int* width, int* height, float color[3], fl
 	draw_info->pointsize = pointsize;
 	draw_info->gravity = SouthEastGravity;
 	CloneString(&draw_info->geometry, "+0+0");
-
+	draw_info->fill.red   = (Quantum) (QuantumRange*color[0]);
+	draw_info->fill.green = (Quantum) (QuantumRange*color[1]);
+	draw_info->fill.blue  = (Quantum) (QuantumRange*color[2]);
+	// disable antialiasing
+	// draw_info->text_antialias = MagickFalse;
+	// Opacity in values are flipped in imagemagick
+	draw_info->fill.opacity = 0; // opaque
+	
 	// Figure out how big we'll need to draw
 	TypeMetric metric;
 	GetTypeMetrics(image, draw_info, &metric);
@@ -300,23 +308,10 @@ char* image_label(const char *label, int* width, int* height, float color[3], fl
 	// Clear old image
 	DestroyImage(image);
 	DestroyImageInfo(image_info);
-	DestroyDrawInfo(draw_info);
 
 	// Get new image
 	image_info = AcquireImageInfo();
 	image = NewMagickImage(image_info, *width, *height, &background);
-	draw_info = CloneDrawInfo(image_info, (DrawInfo*) NULL);
-
-	CloneString(&draw_info->text, label);
-	// Set text color, size, position
-	draw_info->pointsize = pointsize;
-	draw_info->gravity = SouthEastGravity;
-	CloneString(&draw_info->geometry, "+0+0");
-	draw_info->fill.red   = (Quantum) (QuantumRange*color[0]);
-	draw_info->fill.green = (Quantum) (QuantumRange*color[1]);
-	draw_info->fill.blue  = (Quantum) (QuantumRange*color[2]);
-	// Opacity in values are flipped in imagemagick
-	draw_info->fill.opacity = 0; // opaque
 
 	/* TODO: If we draw a solid background and transparent text, we
 	 * don't get a texture where the text is see-through. */
@@ -326,11 +321,10 @@ char* image_label(const char *label, int* width, int* height, float color[3], fl
 	image = imageio_flip(image);
 	char *array = malloc(4*(*width)*(*height));
 	ExportImagePixels(image, 0, 0, *width, *height, "RGBA",
-	                  CharPixel, array, exception);
+	                  CharPixel, array, &exception);
 	DestroyImageInfo(image_info);
 	DestroyImage(image);
 	DestroyDrawInfo(draw_info);
-	DestroyExceptionInfo(exception);
 
 	// No real need to destroy the MagickCore environment, the user
 	// might try to load another texture later...

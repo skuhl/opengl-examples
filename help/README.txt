@@ -19,7 +19,7 @@ Try to compile the programs
 
     make
 
-Try running a program
+Try running a program (all programs will be placed in the "bin" directory)
 
     ./ogl3-triangle
 

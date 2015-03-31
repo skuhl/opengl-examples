@@ -27,7 +27,7 @@ float bbox[6];
  * model and translate it so that we can see the entire model. This is
  * a useful setting to use when you are loading a new model that you
  * are unsure about the units and position of the model geometry. */
-#define FIT_TO_VIEW 0
+#define FIT_TO_VIEW 1
 /** If FIT_TO_VIEW is set, this is the place to put the
  * center of the bottom face of the bounding box. If
  * FIT_TO_VIEW is not set, this is the location in world
@@ -91,6 +91,8 @@ void get_model_matrix(float result[16])
 	mat4f_identity(result);
 	if(FIT_TO_VIEW == 0)
 	{
+		printf("WARNING: FIT_TO_VIEW should be set to 1.\n");
+		
 		/* Translate the model to where we were asked to put it */
 		float translate[16];
 		mat4f_translateVec_new(translate, placeToPutModel);
@@ -109,7 +111,7 @@ void get_model_matrix(float result[16])
 	float rotateAnimate[16];
 	mat4f_identity(rotateAnimate);
 	float percentComplete = (glutGet(GLUT_ELAPSED_TIME)%4000)/4000.0;
-//	printf("percent complete %f\n", percentComplete);
+	//printf("percent complete %f\n", percentComplete);
 	
 	float startEuler[3] = { 0, 90, 0 };
 	float endEuler[3] = { 90, 00, 90 };

@@ -170,7 +170,7 @@ int main(int argc, char** argv)
 	float initLook[3] = {0,0,0};
 	float initUp[3] = {0,1,0};
 
-	texAspectRatio = kuhl_read_texture_file("images/blue.png", &texID);
+	texAspectRatio = kuhl_read_texture_file("../images/blue.png", &texID);
 	float color[3],bgcolor[4];
 	vec3f_set(color, 1,0,0);
 	vec4f_set(bgcolor, 0,0,.5,1);

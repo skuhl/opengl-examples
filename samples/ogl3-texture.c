@@ -156,7 +156,7 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
 
 	/* Load the texture. It will be bound to texName */
 	GLuint texId = 0;
-	kuhl_read_texture_file("images/rainbow.png", &texId);
+	kuhl_read_texture_file("../images/rainbow.png", &texId);
 	kuhl_geometry_texture(geom, texId, "tex", KG_WARN);
 
 	kuhl_errorcheck();
