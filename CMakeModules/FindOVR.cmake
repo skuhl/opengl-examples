@@ -5,9 +5,13 @@ set(CMAKE_LIBRARY_PATH "/home/campus11/kuhl/public-cs4611/ovr_sdk_linux_0.4.4/Li
 set(CMAKE_INCLUDE_PATH "/home/campus11/kuhl/public-cs4611/ovr_sdk_linux_0.4.4/LibOVR/Include" ${CMAKE_INCLUDE_PATH})
 set(CMAKE_INCLUDE_PATH "/home/campus11/kuhl/public-cs4611/ovr_sdk_linux_0.4.4/LibOVR/Src" ${CMAKE_INCLUDE_PATH})
 # Installed in this directory's parent directory
+set(CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.5.0.1/LibOVR/Lib/Linux/x86_64/Debug" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.5.0.1/LibOVR/Include" ${CMAKE_INCLUDE_PATH})
+set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.5.0.1/LibOVR/Src" ${CMAKE_INCLUDE_PATH})
 set(CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR/Lib/Linux/Release/x86_64" ${CMAKE_LIBRARY_PATH})
 set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR/Include" ${CMAKE_INCLUDE_PATH})
 set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../ovr_sdk_linux_0.4.4/LibOVR/Src" ${CMAKE_INCLUDE_PATH})
+
 # An alternative directory name that OVR could be installed in (same style as: https://github.com/jherico/OculusSDK )
 set(CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../OculusSDK/LibOVR/Lib/Linux/Release/x86_64" ${CMAKE_LIBRARY_PATH})
 set(CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../OculusSDK/LibOVR/Include" ${CMAKE_INCLUDE_PATH})
