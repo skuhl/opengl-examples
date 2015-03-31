@@ -1,2 +1,18 @@
 /*.frag
 /*.vert
+
+# Generated Binaries
+/dgr-relay
+/ogl2-slideshow
+/ogl2-texture
+/ogl2-triangle
+/ogl3-assimp
+/ogl3-prerend
+/ogl3-texture
+/ogl3-triangle
+/ogl3-triangle-color
+/ogl3-triangle-shade
+/ogl3-picker
+/ogl3-slerp
+/ogl3-explode
+/ogl3-teartest
