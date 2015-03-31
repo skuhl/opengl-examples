@@ -49,5 +49,6 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 	add_dependencies(${arg} kuhl)
 endforeach()
 
+# Copy vert and frag files into the bin subfolder
 file(GLOB SHADER_FILES "*.vert" "*.frag")
 file(COPY ${SHADER_FILES} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
