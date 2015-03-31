@@ -183,17 +183,15 @@ set(PREPROC_DEFINE "MOUSEMOVE_GLUT;${ASSIMP_FOUND_DEFINITION};${MISSING_VRPN_DEF
 include_directories("lib")
 
 # Write programs out to "bin" directory.
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 
 # Process cmake files in the subdirectories.
 # build libkuhl.a
-add_subdirectory("lib") 
+add_subdirectory(${PROJECT_SOURCE_DIR}/lib) 
 # build sample programs
-add_subdirectory("samples")
+add_subdirectory(${PROJECT_SOURCE_DIR}/samples)
 # build fake vrpn server
-add_subdirectory("vrpn-fake")
+add_subdirectory(${PROJECT_SOURCE_DIR}/vrpn-fake)
 # build DGR relay
-add_subdirectory("dgr")
-
-
+add_subdirectory(${PROJECT_SOURCE_DIR}/dgr)
 

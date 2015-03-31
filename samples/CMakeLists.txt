@@ -18,6 +18,17 @@ else()
 	message(WARNING "ASSIMP was not found, not compiling: ${NEED_ASSIMP}")
 endif()
 
+# Make a target that lets us copy all of the vert and frag files from this directory into the bin directory.
+file(GLOB ShaderFiles "*.vert" "*.frag")
+add_custom_target(copy)
+get_target_property(MyTargetLocation MyTarget LOCATION)
+get_filename_component(MyTargetDir ${MyTargetLocation} PATH)
+foreach(ShaderFile ${ShaderFiles})
+    add_custom_command(TARGET copy PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E
+        copy ${ShaderFile} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+endforeach()
+
 
 # Compile the list of programs.
 foreach(arg ${PROGRAMS_TO_MAKE})
@@ -47,8 +58,9 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 	set_target_properties(${arg} PROPERTIES LINKER_LANGUAGE "CXX")
 	set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
 	add_dependencies(${arg} kuhl)
+
+	# Any time we make this program, copy all of the vertex and fragment program files into bin.
+	add_dependencies(${arg} copy)
+
 endforeach()
 
-# Copy vert and frag files into the bin subfolder
-file(GLOB SHADER_FILES "*.vert" "*.frag")
-file(COPY ${SHADER_FILES} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
