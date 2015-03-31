@@ -783,7 +783,7 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 	if(viewmat_vrpn_obj)
 	{
 		char *hostname = vrpn_default_host();
-		if(strlen(hostname) > 8 && strncmp(hostname, "141.219.", 8) == 0) // MTU vicon tracker
+		if(hostname != NULL && strlen(hostname) > 8 && strncmp(hostname, "141.219.", 8) == 0) // MTU vicon tracker
 		{
 			// The tracked object is oriented the wrong way in the IVS lab.
 			float offsetVicon[16];
@@ -791,6 +791,8 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 			// offsetMat = offsetMat * offsetVicon
 			mat4f_mult_mat4f_new(offsetMat, offsetMat, offsetVicon);
 		}
+		if(hostname)
+			free(hostname);
 	}
 	
 	// viewmatrix = offsetMat * rotMat *  posMat * initposmat

@@ -140,7 +140,12 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 #else
 	if(object == NULL || strlen(object) == 0)
 	{
-		kuhl_msg("Empty or NULL object name was passed into this function.\n");
+		kuhl_warnmsg("Empty or NULL object name was passed into this function.\n");
+		return 0;
+	}
+	if(hostname != NULL && strlen(hostname) == 0)
+	{
+		kuhl_warnmsg("Hostname is an empty string.\n");
 		return 0;
 	}
 	
