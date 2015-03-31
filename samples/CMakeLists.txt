@@ -1,0 +1,53 @@
+####################################
+# Edit the following areas to add or remove programs to compile
+#
+# If you add a new name here, there must be an .c file with the same
+# name that contains a main() function.
+####################################
+# Programs that need ASSIMP
+set(NEED_ASSIMP ogl3-assimp ogl3-slerp ogl3-explode)
+# Programs that don't rely on libraries
+set(NEED_NOTHING ogl3-triangle ogl3-triangle-color ogl3-triangle-shade ogl3-prerend ogl3-picker ogl3-teartest ogl3-texture ogl2-triangle ogl2-slideshow ogl2-texture)
+
+
+# Construct a list of programs that we want to compile based on which libraries are available.
+set(PROGRAMS_TO_MAKE ${NEED_NOTHING})
+if(ASSIMP_FOUND)
+	set(PROGRAMS_TO_MAKE ${PROGRAMS_TO_MAKE} ${NEED_ASSIMP})
+else()
+	message(WARNING "ASSIMP was not found, not compiling: ${NEED_ASSIMP}")
+endif()
+
+
+# Compile the list of programs.
+foreach(arg ${PROGRAMS_TO_MAKE})
+	if(EXISTS ${arg}.cpp)   # Figure out if the program is a c or cpp file
+		set(SOURCE_FILE ${arg}.cpp)
+	else()
+		set(SOURCE_FILE ${arg}.c)
+	endif()
+	add_executable(${arg} ${SOURCE_FILE})
+
+	target_link_libraries(${arg} kuhl)
+	if(VRPN_FOUND)  # Add VRPN to the list if it is available
+		target_link_libraries(${arg} ${VRPN_LIBRARIES})
+	endif()
+	if(OVR_FOUND) # Add Oculus LibOVR to the list if it is available
+		target_link_libraries(${arg} ${OVR_LIBRARIES})
+	endif()
+	if(ImageMagick_FOUND)
+		target_link_libraries(${arg} ${ImageMagick_LIBRARIES})
+	endif()
+	if(ASSIMP_FOUND)
+		target_link_libraries(${arg} ${ASSIMP_LIBRARIES})
+	endif()
+
+	target_link_libraries(${arg} ${GLEW_LIBRARIES} ${M_LIB} ${GLUT_LIBRARIES} ${OPENGL_LIBRARIES} )
+
+	set_target_properties(${arg} PROPERTIES LINKER_LANGUAGE "CXX")
+	set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
+	add_dependencies(${arg} kuhl)
+endforeach()
+
+file(GLOB SHADER_FILES "*.vert" "*.frag")
+file(COPY ${SHADER_FILES} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})

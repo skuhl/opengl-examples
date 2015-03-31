@@ -1,3 +1,8 @@
+# IVS has freeglut 2.4 installed, and 2.8 at the location below:
+set(CMAKE_LIBRARY_PATH /research/kuhl/public-vrlab/glut/src/.libs ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH /research/kuhl/public-vrlab/glut/include/ ${CMAKE_INCLUDE_PATH})
+
+
 # - try to find glut library and include files
 #  GLUT_INCLUDE_DIR, where to find GL/glut.h, etc.
 #  GLUT_LIBRARIES, the libraries to link against

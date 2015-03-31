@@ -1,0 +1,6 @@
+if(Threads_FOUND)
+	add_executable(dgr-relay dgr-relay.cpp)
+	target_link_libraries(dgr-relay ${CMAKE_THREAD_LIBS_INIT})
+else()
+	message(WARNING "Not compiling dgr-relay because pthreads was not found on this system.")
+endif()
