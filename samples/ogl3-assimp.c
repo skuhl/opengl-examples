@@ -33,7 +33,7 @@ float bbox[6];
  * model and translate it so that we can see the entire model. This is
  * a useful setting to use when you are loading a new model that you
  * are unsure about the units and position of the model geometry. */
-#define FIT_TO_VIEW 0
+#define FIT_TO_VIEW 1
 /** If FIT_TO_VIEW is set, this is the place to put the
  * center of the bottom face of the bounding box. If
  * FIT_TO_VIEW is not set, this is the location in world
