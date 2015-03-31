@@ -26,7 +26,7 @@ for D in *; do # For each file and directory
 done
 
 rm -vrf doxygen-docs
-rm -vrf bin/*.frag bin/*.vert
+rm -vrf bin/*.frag bin/*.vert bin/*libOVR*.so*
 rm -vf *.exe
 
 

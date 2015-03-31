@@ -20,11 +20,11 @@ endif()
 
 # Make a target that lets us copy all of the vert and frag files from this directory into the bin directory.
 file(GLOB ShaderFiles "*.vert" "*.frag")
-add_custom_target(copy)
+add_custom_target(copyGLSL)
 get_target_property(MyTargetLocation MyTarget LOCATION)
 get_filename_component(MyTargetDir ${MyTargetLocation} PATH)
 foreach(ShaderFile ${ShaderFiles})
-    add_custom_command(TARGET copy PRE_BUILD
+    add_custom_command(TARGET copyGLSL PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E
         copy ${ShaderFile} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 endforeach()
@@ -44,7 +44,7 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 		target_link_libraries(${arg} ${VRPN_LIBRARIES})
 	endif()
 	if(OVR_FOUND) # Add Oculus LibOVR to the list if it is available
-		target_link_libraries(${arg} ${OVR_LIBRARIES})
+		target_link_libraries(${arg} ${OVR_LIBRARIES} ${CMAKE_DL_LIBS})
 	endif()
 	if(ImageMagick_FOUND)
 		target_link_libraries(${arg} ${ImageMagick_LIBRARIES})
@@ -60,7 +60,10 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 	add_dependencies(${arg} kuhl)
 
 	# Any time we make this program, copy all of the vertex and fragment program files into bin.
-	add_dependencies(${arg} copy)
+	add_dependencies(${arg} copyGLSL)
+	if(OVR_FOUND)
+	    add_dependencies(${arg} copyOVR)
+	endif()
 
 endforeach()
 

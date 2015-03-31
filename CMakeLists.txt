@@ -11,6 +11,12 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Wextra -g -Wno-unused-para
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/CMakeModules)
 
+# Write programs out to "bin" directory.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+
+
+# Include rpath
+# SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # use color messages
 include(${CMAKE_SOURCE_DIR}/CMakeModules/colorMessage.cmake)
@@ -168,12 +174,22 @@ find_package(Threads)
 # --- LibOVR (Oculus Rift) ---
 find_package(OVR)
 if(OVR_FOUND)
+	# LibOVR relies on a LibOVRRT library at run time. It must be in /usr/lib or /usr/local/lib or in the same directory as the binary.
+	# Here, we make "cmake ." result in the so files getting copied into the bin folder.
+	add_custom_target(copyOVR)
+	get_filename_component(ovrSoDir ${OVR_LIBRARY_SO} DIRECTORY)
+	file(GLOB SO_FILES "${ovrSoDir}/*.so" "${ovrSoDir}/*.so.*")
+	foreach(SOFILE ${SO_FILES})
+	    add_custom_command(TARGET copyOVR PRE_BUILD
+		COMMAND ${CMAKE_COMMAND} -E
+		copy ${SOFILE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+	endforeach()
+
 	include_directories(${OVR_INCLUDE_DIRS})
 	set(MISSING_OVR_DEFINITION "")
 else()
 	set(MISSING_OVR_DEFINITION "MISSING_OVR")
 endif()
-
 
 # Set the preprocessor flags.
 set(PREPROC_DEFINE "MOUSEMOVE_GLUT;${ASSIMP_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION};${IMAGEMAGICK_FOUND_DEFINITION}")
@@ -182,8 +198,6 @@ set(PREPROC_DEFINE "MOUSEMOVE_GLUT;${ASSIMP_FOUND_DEFINITION};${MISSING_VRPN_DEF
 # Look in lib folder for libraries and header files
 include_directories("lib")
 
-# Write programs out to "bin" directory.
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 
 # Process cmake files in the subdirectories.
 # build libkuhl.a

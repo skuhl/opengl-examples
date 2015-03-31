@@ -1,5 +1,6 @@
 /*.frag
 /*.vert
+/libOVR*.so*
 
 # Generated Binaries
 /fake

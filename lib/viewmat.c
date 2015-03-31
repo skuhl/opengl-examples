@@ -36,16 +36,8 @@
 
 #include <GL/glx.h>
 #define OVR_OS_LINUX
-/* LibOVR defines a static_assert macro that produces a compiler
- * error. Since it isn't necessary, we redefine it as a function that
- * doesn't do anything. */
-#define static_assert(a,b)
 #include "OVR_CAPI.h"
 #include "OVR_CAPI_GL.h"
-/* We call this function to disable the safety warning. Since it isn't
- * declared in the headers, we need to declare it here to avoid
- * compiler warnings about implicit declarations. */
-OVR_EXPORT void ovrhmd_EnableHSWDisplaySDKRender(ovrHmd hmd, ovrBool enable);
 
 ovrHmd hmd;
 GLint leftFramebuffer, rightFramebuffer, leftFramebufferAA, rightFramebufferAA;
@@ -85,7 +77,10 @@ void viewmat_begin_frame(void)
 {
 #ifndef MISSING_OVR
 	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
-		timing = ovrHmd_BeginFrame(hmd, 0);
+	{
+		if(hmd)
+			timing = ovrHmd_BeginFrame(hmd, 0);
+	}
 #endif
 }
 
@@ -114,7 +109,8 @@ void viewmat_end_frame(void)
 		kuhl_errorcheck();
 		
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		ovrHmd_EndFrame(hmd, pose, &EyeTexture[0].Texture);
+		if(hmd)
+			ovrHmd_EndFrame(hmd, pose, &EyeTexture[0].Texture);
 #endif
 	}
 	else if(viewmat_mode == VIEWMAT_ANAGLYPH)
@@ -390,13 +386,13 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	kuhl_errmsg("Oculus support is missing: You have not compiled this code against the LibOVR library.\n");
 	exit(EXIT_FAILURE);
 #else
-	ovr_Initialize();
+	ovr_Initialize(NULL);
 
 	int useDebugMode = 0;
 	hmd = ovrHmd_Create(0);
 	if(!hmd)
 	{
-		kuhl_warnmsg("Failed to open Oculus HMD. Is oculusd running?\n");
+		kuhl_warnmsg("Failed to open Oculus HMD. Is ovrd running? Is libOVRRT*.so.* in /usr/lib, /usr/local/lib, or the current directory?\n");
 		kuhl_warnmsg("Press any key to proceed with Oculus debugging window.\n");
 		char c; 
 		if(fscanf(stdin, "%c", &c) < 0)
@@ -520,7 +516,7 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	 */
 	unsigned int distort_caps = 0;
 	distort_caps |= ovrDistortionCap_LinuxDevFullscreen; // Screen rotation for DK2
-	distort_caps |= ovrDistortionCap_Chromatic; // Chromatic aberration correction
+	// distort_caps |= ovrDistortionCap_Chromatic; // Chromatic aberration correction - Necessary for 0.4.4, turned on permanently in 0.5.0.1
 	distort_caps |= ovrDistortionCap_Vignette; // Apply gradient to edge of image
 	// distort_caps |= ovrDistortionCap_OverDrive; // Overdrive brightness transitions to compensate for DK2 artifacts
 
@@ -535,7 +531,7 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	}
 
 	/* disable health and safety warning */
-	ovrhmd_EnableHSWDisplaySDKRender(hmd, 0);
+	ovrHmd_DismissHSWDisplay(hmd);
 
 	vec3f_copy(oculus_initialPos, pos);
 
