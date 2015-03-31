@@ -30,7 +30,7 @@ rm -vrf bin/*.frag bin/*.vert
 rm -vf *.exe
 
 
-if [[ -x .git ]]; then
+if [[ -x .git && -x /usr/bin/git ]]; then
 	echo
 	echo
 	echo "Consider removing the following files because they are not in the git repo and are not ignored:"
