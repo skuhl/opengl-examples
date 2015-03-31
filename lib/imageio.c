@@ -325,6 +325,7 @@ char* image_label(const char *label, int* width, int* height, float color[3], fl
 	DestroyImageInfo(image_info);
 	DestroyImage(image);
 	DestroyDrawInfo(draw_info);
+	DestroyExceptionInfo(&exception);
 
 	// No real need to destroy the MagickCore environment, the user
 	// might try to load another texture later...
