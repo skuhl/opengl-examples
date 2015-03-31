@@ -2,6 +2,7 @@
 /*.vert
 
 # Generated Binaries
+/fake
 /dgr-relay
 /ogl2-slideshow
 /ogl2-texture
