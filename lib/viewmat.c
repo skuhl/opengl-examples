@@ -632,6 +632,8 @@ static void viewmat_fix_rotation(float orient[16])
 		return;
 
 	char *hostname = vrpn_default_host();
+	if(hostname == NULL)
+		return;
 	
 	/* Currently, the "DK2" object over in the IVS lab is rotated by
 	 * approx 90 degrees. Apply the fix here. */
@@ -645,6 +647,8 @@ static void viewmat_fix_rotation(float orient[16])
 		// offsetMat = offsetMat * offsetVicon
 		mat4f_mult_mat4f_new(orient, orient, offsetVicon);
 	}
+	if(hostname)
+		free(hostname);
 }
 
 
