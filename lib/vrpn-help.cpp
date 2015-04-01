@@ -243,7 +243,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 		nameToTracker[fullname] = tkr;
 		tkr->register_change_handler((void*) fullname.c_str(), handle_tracker);
 		kuhl_getfps_init(&fps_state);
-		kalman_initialize(&kalman);
+		kalman_initialize(&kalman, 0.1, 0.1);
 	}
 	return 0;
 #endif

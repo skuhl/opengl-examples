@@ -1,3 +1,11 @@
+/* Copyright (c) 2014 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
+ */
+
+/** @file
+ * @author Scott Kuhl
+ */
 #ifndef __kalman_h
 #define __kalman_h
 
@@ -7,17 +15,19 @@ extern "C" {
 
 
 typedef struct {
-    double p[9];
-    double xk_prev[3];
-    double qScale;
-    double r;
-    double h[3];
-    double a[9];
-	long time_prev;
-	int isEnabled;
+	int isEnabled; /**< If set to 0, disable kalman filter */
+	
+	double xk_prev[3]; /**< Filtered position, velocity, and acceleration */
+	long time_prev;    /**< Time of previous measurement in milliseconds */
+
+	double p[9];   /**< Estimated error of our current state */
+	double qScale; /**< Scaling factor for Q matrix (system error) */
+	double r;      /**< Variance of measurement error */
+	double h[3];   /**< Measurement matrix (converts measurement into state) */
+	double a[9];   /**< Transition matrix (moves state forward one step) */
 } kalman_state;
 
-void kalman_initialize(kalman_state * state);
+void kalman_initialize(kalman_state * state, float sigma_meas, float qScale);
 float kalman_estimate(kalman_state * state, float measured);
 
 #ifdef __cplusplus

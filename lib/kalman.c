@@ -1,3 +1,11 @@
+/* Copyright (c) 2014 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
+ */
+
+/** @file
+ * @author Scott Kuhl
+ */
 #include <string.h>
 #include <math.h>
 
@@ -7,15 +15,32 @@
 
 
 
-// make a prediction based on a new measurement
+/** Given a fully initialized kalman_state object, and a new
+ * measurement, get a filtered data point. The model behind this
+ * kalman filter assumes a constant acceleration and also keeps track
+ * of the points velocity.
+ *
+ * This function filters only a single 1D point. You would need to
+ * call this function three different times with three different
+ * kalman_state variables to filter X, Y, and Z.
+ *
+ * @param state An kalman_state struct initialized by kalman_initialize()
+ *
+ * @param measured The newest, unfiltered measurement.
+ *
+ * @return The filtered data.
+ *
+ */
 float kalman_estimate(kalman_state * state, float measured)
 {
 	if(state->isEnabled == 0)
 		return measured;
 
 	long now = kuhl_milliseconds();
-
 	double dt = (now - state->time_prev)/1000.0;
+	
+	/* A is the transition matrix which will move our state ahead by
+	 * one timestep. */
 	{
 		double row1[3] = { 1, dt, .5*dt*dt };
 		double row2[3] = { 0, 1, dt };
@@ -26,6 +51,16 @@ float kalman_estimate(kalman_state * state, float measured)
 	}
 	// mat3d_print(state->a);
 
+	
+	/* Q is the process/system noise covariance.
+
+	   From pg 156 of "Fundamentals of Kalman filtering: a practical
+	   approach" which provides tables where each state is a
+	   derivative of the one above it and all of the noise enters into
+	   the bottom-most state.  The resulting matrix can be scaled by a
+	   scalar as needed (called the "continuous process-noise spectral
+	   density") in the book.
+	*/
 	double q[9];
 	{
 		double row1[3] = { pow(dt,5)/20, pow(dt,4)/8, pow(dt,3)/6 };
@@ -104,18 +139,40 @@ float kalman_estimate(kalman_state * state, float measured)
 	return xk[0];
 }
 
-// The variables in the structure could be modified after they are
-// initialized by the following function.
-void kalman_initialize (kalman_state * state)
+/** Initializes a kalman_state struct.
+
+   @param state A pointer to a kalman_state struct which should be initialized.
+   
+   @param stddev Standard deviation of the measurement noise.
+
+   @param qScale A value near 0 indicates high confidence in our
+   model. A larger value will cause the filter to better track large
+   jumps in data. A value of 0 is not recommended.
+*/
+void kalman_initialize(kalman_state * state, float sigma_meas, float qScale)
 {
 	memset(state, 0, sizeof(kalman_state));
 
 	state->isEnabled = 1;
 	state->time_prev = kuhl_milliseconds();
 
-	float sigma_model = 1; // confidence in current state (smaller=more confident)
-	float sigma_meas = .1; // stddev of measurement noise
+	float sigma_model = 100; // confidence in current state (smaller=more confident)
 
+	/* kalman_estimate() creates a Q matrix appropriate for a model
+	   where we are handling position, velocity, and
+	   acceleration. However, we can scale this matrix to indicate how
+	   confident we are in our model. Setting it to 0 indicates a
+	   belief that our model is perfect. Making this value will cause
+	   the filter to better track large jumps in data.
+	
+	   In the case of a tracking, the user's movements is noise because they
+	   will be moving in complex and unpredictable ways which will not fit our
+	   model.  If we are assuming position is changing due to velocity and
+	   velocity is changing due to acceleration, and acceleration is fixed,
+	   errors in acceleration will occur.
+	*/
+	state->qScale = qScale;
+	
 	// Variance of our measurements.  A small number indicates that our
 	// measurements are noise-free.
 	state->r = sigma_meas * sigma_meas;
@@ -125,11 +182,6 @@ void kalman_initialize (kalman_state * state)
 	mat3d_identity(state->p);
 	for(int i=0; i<9; i++)
 		state->p[i] = state->p[i] * sigma_model;
-
-	// qScale is a scalar to multiply the Q matrix by.  A smaller number
-	// means that the filter is more likely to believe changes which
-	// deviate from the predicted value.
-	state->qScale = .1;
 
 	// Guess for initial state (position, velocity, acceleration)
 	vec3d_set(state->xk_prev, 0, 0, 0);
