@@ -24,8 +24,6 @@
 
 // When compiling on windows, add suseconds_t and the rand48 functions.
 #ifdef __MINGW32__
-#include <windows.h>
-
 #define RAND48_SEED_0   (0x330e)
 #define RAND48_SEED_1 (0xabcd)
 #define RAND48_SEED_2 (0x1234)
@@ -54,11 +52,11 @@ void
 	
 	         accu = (unsigned long)_rand48_mult[0] * (unsigned long)xseed[0] +
 	          (unsigned long)_rand48_add;
-	         temp[0] = (unsigned short)accu;        /* lower 16 bits */
+	         temp[0] = (unsigned short)accu;        // lower 16 bits 
 	         accu >>= sizeof(unsigned short)* 8;
 	         accu += (unsigned long)_rand48_mult[0] * (unsigned long)xseed[1] +
 	          (unsigned long)_rand48_mult[1] * (unsigned long)xseed[0];
-	         temp[1] = (unsigned short)accu;        /* middle 16 bits */
+	         temp[1] = (unsigned short)accu;        // middle 16 bits
 	         accu >>= sizeof(unsigned short)* 8;
 	         accu += _rand48_mult[0] * xseed[2] + _rand48_mult[1] * xseed[1] + _rand48_mult[2] * xseed[0];
 	         xseed[0] = temp[0];
@@ -88,9 +86,6 @@ void srand48(long seed){
 	_rand48_add = RAND48_ADD;
 }
 #endif
-
-
-
 
 /** Don't call this function, call kuhl_malloc() instead. */
 void *kuhl_mallocFileLine(size_t size, const char *file, int line)

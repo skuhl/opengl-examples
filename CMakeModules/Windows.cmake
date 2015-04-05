@@ -11,4 +11,5 @@ set(WINDOWS_GLEW_FOLDER "glew-1.12.0")
 #set(WINDOWS_FREETYPE_FOLDER "freetype-2.5.5")
 set(WINDOWS_ASSIMP_FOLDER "assimp")
 set(WINDOWS_ZLIB_FOLDER "zlib")
+set(WINDOWS_FREETYPE_FOLDER "freetype")
 

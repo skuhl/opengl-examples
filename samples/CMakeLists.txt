@@ -7,7 +7,7 @@
 # Programs that need ASSIMP
 set(NEED_ASSIMP ogl3-assimp ogl3-slerp ogl3-explode)
 # Programs that don't rely on libraries
-set(NEED_NOTHING ogl3-triangle ogl3-triangle-color ogl3-triangle-shade ogl3-prerend ogl3-picker ogl3-teartest ogl3-texture ogl2-triangle ogl2-slideshow ogl2-texture)
+set(NEED_NOTHING ogl3-text ogl3-triangle ogl3-triangle-color ogl3-triangle-shade ogl3-prerend ogl3-picker ogl3-teartest ogl3-texture ogl2-triangle ogl2-slideshow ogl2-texture)
 
 
 # Construct a list of programs that we want to compile based on which libraries are available.
@@ -51,6 +51,9 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 	endif()
 	if(ASSIMP_FOUND)
 		target_link_libraries(${arg} ${ASSIMP_LIBRARIES})
+	endif()
+	if(FREETYPE_FOUND)
+		target_link_libraries(${arg} ${FREETYPE_LIBRARIES})
 	endif()
 
 	target_link_libraries(${arg} ${GLEW_LIBRARIES} ${M_LIB} ${GLUT_LIBRARIES} ${OPENGL_LIBRARIES} )

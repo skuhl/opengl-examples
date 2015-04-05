@@ -31,13 +31,6 @@
 
 #include "kuhl-nodep.h"
 
-// When compiling on windows, add suseconds_t and the rand48 functions.
-#ifdef __MINGW32__
-#include <windows.h>
-
-typedef long suseconds_t;
-#endif
-
 #ifdef KUHL_UTIL_USE_ASSIMP
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
@@ -1397,7 +1390,7 @@ void kuhl_geometry_delete(kuhl_geometry *geom)
 }
 
 
-/** Converts an array containing RGBA image data into an OpenGL texture.
+/** Converts an array containing RGBA image data into an OpenGL texture using the specified wrapping parameters.
  *
  * @param array Contains a row-major list of pixels in R, G, B, A
  * format starting from the bottom left corner of the image. Each
@@ -1407,13 +1400,17 @@ void kuhl_geometry_delete(kuhl_geometry *geom)
  *
  * @param height The height of the image represented by the array in pixels.
  *
+ * @param wrapS The wrapping texture parameter to apply to GL_TEXTURE_WRAP_S.
+ *
+ * @param wrapT The wrapping texture parameter to apply to GL_TEXTURE_WRAP_T.
+ *
  * @return The texture name that you can use with glBindTexture() to
  * enable this particular texture when drawing. When you are done with
  * the texture, use glDeleteTextures(1, &textureName) where
  * textureName is set to the value returned by this function. Returns
  * 0 on error.
  */
-GLuint kuhl_read_texture_rgba_array(const unsigned char* array, int width, int height)
+GLuint kuhl_read_texture_rgba_array_wrap(const unsigned char* array, int width, int height, GLuint wrapS, GLuint wrapT)
 {
 	GLuint texName = 0;
 	if(!GLEW_VERSION_2_0)
@@ -1428,8 +1425,8 @@ GLuint kuhl_read_texture_rgba_array(const unsigned char* array, int width, int h
 	kuhl_errorcheck();
 	glGenTextures(1, &texName);
 	glBindTexture(GL_TEXTURE_2D, texName);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	kuhl_errorcheck();
@@ -1510,6 +1507,25 @@ GLuint kuhl_read_texture_rgba_array(const unsigned char* array, int width, int h
 	return texName;
 }
 
+/** Converts an array containing RGBA image data into an OpenGL texture using clamping.
+ *
+ * @param array Contains a row-major list of pixels in R, G, B, A
+ * format starting from the bottom left corner of the image. Each
+ * pixel is a value form 0 to 255.
+ *
+ * @param width The width of the image represented by the array in pixels.
+ *
+ * @param height The height of the image represented by the array in pixels.
+ *
+ * @return The texture name that you can use with glBindTexture() to
+ * enable this particular texture when drawing. When you are done with
+ * the texture, use glDeleteTextures(1, &textureName) where
+ * textureName is set to the value returned by this function. Returns
+ * 0 on error.
+ */
+GLuint kuhl_read_texture_rgba_array(const unsigned char* array, int width, int height) {
+	return kuhl_read_texture_rgba_array_wrap(array, width, height, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+}
 
 /** Creates a texture from a string of text. For example, if you want
  * a texture that says "hello world" in red on a transparent
@@ -1579,7 +1595,7 @@ void kuhl_flip_texture_rgba_array(unsigned char *image, const int width, const i
 
 
 #ifdef KUHL_UTIL_USE_IMAGEMAGICK
-static float kuhl_read_texture_file_im(const char *filename, GLuint *texName)
+static float kuhl_read_texture_file_im(const char *filename, GLuint *texName, GLuint wrapS, GLuint wrapT)
 {
 	char *newFilename = kuhl_find_file(filename);
 	
@@ -1611,7 +1627,7 @@ static float kuhl_read_texture_file_im(const char *filename, GLuint *texName)
 	int height = (int)iioinfo.height;
 	float aspectRatio = (float)width/height;
     printf("%s: Finished reading, dimensions are %dx%d\n", filename, width, height);
-	*texName = kuhl_read_texture_rgba_array(image, width, height);
+	*texName = kuhl_read_texture_rgba_array_wrap(image, width, height, wrapS, wrapT);
 
 	if(iioinfo.comment)
 		free(iioinfo.comment);
@@ -1627,7 +1643,7 @@ static float kuhl_read_texture_file_im(const char *filename, GLuint *texName)
 }
 #else // KUHL_UTIL_USE_IMAGEMAGICK
 
-static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName)
+static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName, GLuint wrapS, GLuint wrapT)
 {
 	char *newFilename = kuhl_find_file(filename);
 	
@@ -1657,7 +1673,7 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName)
 	 * for the lowest left pixel in the texture. */
 	float aspectRatio = (float)width/height;
     printf("%s: Finished reading, dimensions are %dx%d\n", filename, width, height);
-	*texName = kuhl_read_texture_rgba_array(image, width, height);
+	*texName = kuhl_read_texture_rgba_array_wrap(image, width, height, wrapS, wrapT);
     printf("%s: Finished putting into texture\n", filename);
 	stbi_image_free(image);
 	
@@ -1681,6 +1697,32 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName)
  * @param texName A pointer to where the OpenGL texture name should be stored.
  * (Remember that the "texture name" is really just some unsigned int).
  *
+ * @param wrapS The wrapping texture parameter to apply to GL_TEXTURE_WRAP_S.
+ *
+ * @param wrapT The wrapping texture parameter to apply to GL_TEXTURE_WRAP_T.
+ *
+ * @returns The aspect ratio of the image in the file. Since texture
+ * coordinates range from 0 to 1, the caller doesn't really need to
+ * know how large the image actually is. Returns a negative number on
+ * error.
+ */
+float kuhl_read_texture_file_wrap(const char *filename, GLuint *texName, GLuint wrapS, GLuint wrapT)
+{
+#ifdef KUHL_UTIL_USE_IMAGEMAGICK
+	return kuhl_read_texture_file_im(filename, texName, wrapS, wrapT);
+#else
+	return kuhl_read_texture_file_stb(filename, texName, wrapS, wrapT);
+#endif
+}
+
+/** Uses imageio to read in an image, and binds it to an OpenGL
+ * texture name.  Requires OpenGL 2.0 or better.
+ *
+ * @param filename name of file to load
+ *
+ * @param texName A pointer to where the OpenGL texture name should be stored.
+ * (Remember that the "texture name" is really just some unsigned int).
+ *
  * @returns The aspect ratio of the image in the file. Since texture
  * coordinates range from 0 to 1, the caller doesn't really need to
  * know how large the image actually is. Returns a negative number on
@@ -1688,11 +1730,7 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName)
  */
 float kuhl_read_texture_file(const char *filename, GLuint *texName)
 {
-#ifdef KUHL_UTIL_USE_IMAGEMAGICK
-	return kuhl_read_texture_file_im(filename, texName);
-#else
-	return kuhl_read_texture_file_stb(filename, texName);
-#endif
+	return kuhl_read_texture_file_wrap(filename, texName, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
 #ifdef KUHL_UTIL_USE_IMAGEMAGICK

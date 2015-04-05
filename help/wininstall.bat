@@ -38,7 +38,7 @@ pushd freeglut-3.0.0
 cmake -G "MinGW Makefiles" .
 cmake -G "MinGW Makefiles" .
 mingw32-make
-copy /y %libraries_folder%freeglut-3.0.0\bin\libfreeglut.dll %repository_folder%libfreeglut.dll
+copy /y %libraries_folder%freeglut-3.0.0\bin\libfreeglut.dll %repository_folder%bin\libfreeglut.dll
 popd
 
 :: Install glew
@@ -54,7 +54,7 @@ ar cr lib/libglew32.a src/glew.o
 gcc -DGLEW_NO_GLU -DGLEW_MX -O2 -Wall -W -Iinclude  -DGLEW_BUILD -o src/glew.mx.o -c src/glew.c
 gcc -shared -Wl,-soname,libglew32mx.dll -Wl,--out-implib,lib/libglew32mx.dll.a -o lib/glew32mx.dll src/glew.mx.o -L/mingw/lib -lglu32 -lopengl32 -lgdi32 -luser32 -lkernel32
 ar cr lib/libglew32mx.a src/glew.mx.o
-copy /y %libraries_folder%glew-1.12.0\lib\glew32.dll %repository_folder%glew32.dll
+copy /y %libraries_folder%glew-1.12.0\lib\glew32.dll %repository_folder%bin\glew32.dll
 popd
 
 :: Install zlib
@@ -64,7 +64,7 @@ pushd zlib
 cmake -G "MinGW Makefiles" .
 cmake -G "MinGW Makefiles" .
 mingw32-make
-copy /y %libraries_folder%zlib\libzlib.dll %repository_folder%libzlib.dll
+copy /y %libraries_folder%zlib\libzlib.dll %repository_folder%bin\libzlib.dll
 popd
 set ZLIB_HOME=%libraries_folder%zlib
 
@@ -75,7 +75,16 @@ pushd assimp
 cmake -G "MinGW Makefiles" .
 cmake -G "MinGW Makefiles" .
 mingw32-make
-copy /y %libraries_folder%assimp\bin\libassimp.dll %repository_folder%libassimp.dll
+copy /y %libraries_folder%assimp\bin\libassimp.dll %repository_folder%bin\libassimp.dll
+popd
+
+:: Install freetype
+pushd %libraries_folder%
+git clone https://github.com/winlibs/freetype
+pushd freetype
+cmake -G "MinGW Makefiles" .
+cmake -G "MinGW Makefiles" .
+mingw32-make
 popd
 
 endlocal

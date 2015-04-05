@@ -15,6 +15,12 @@
 #ifndef __KUHL_NODEP_H__
 #define __KUHL_NODEP_H__
 
+// When compiling on windows, add suseconds_t and the rand48 functions.
+#ifdef __MINGW32__
+#include <windows.h>
+typedef long suseconds_t;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

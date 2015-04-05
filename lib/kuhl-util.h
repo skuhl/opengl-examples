@@ -153,7 +153,7 @@ void kuhl_delete_program(GLuint program);
 void kuhl_print_program_log(GLuint program);
 void kuhl_print_program_info(GLuint program);
 GLint kuhl_get_uniform(const char *uniformName);
-
+GLint kuhl_get_attribute(GLuint program, const char *attributeName);
 
 
 
@@ -178,9 +178,11 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 
 
 void kuhl_flip_texture_rgba_array(unsigned char *image, const int width, const int height, const int components);
+GLuint kuhl_read_texture_rgba_array_wrap(const unsigned char *array, int width, int height, GLuint wrapS, GLuint wrapT);
 GLuint kuhl_read_texture_rgba_array(const unsigned char *array, int width, int height);
 
 float kuhl_make_label(const char *label, GLuint *texName, float color[3], float bgcolor[4], float pointsize);
+float kuhl_read_texture_file_wrap(const char *filename, GLuint *texName, GLuint wrapS, GLuint wrapT);
 float kuhl_read_texture_file(const char *filename, GLuint *texName);
 void kuhl_screenshot(const char *outputImageFilename);
 void kuhl_video_record(const char *fileLabel, int fps);
