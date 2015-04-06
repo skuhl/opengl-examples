@@ -619,7 +619,7 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 
 /** Some VRPN orientation sensors may be rotated differently than what we
  * expect them to be (for example, orientation is correct except that
- * the camera is pointing in the wrong direction. This function will
+ * the camera is pointing in the wrong direction). This function will
  * adjust the orientation matrix so that the camera is pointing in the
  * correct direction. */
 static void viewmat_fix_rotation(float orient[16])
@@ -640,7 +640,7 @@ static void viewmat_fix_rotation(float orient[16])
 		float offsetVicon[16];
 		mat4f_identity(offsetVicon);
 		mat4f_rotateAxis_new(offsetVicon, 90, 1,0,0);
-		// offsetMat = offsetMat * offsetVicon
+		// orient = orient * offsetVicon
 		mat4f_mult_mat4f_new(orient, orient, offsetVicon);
 	}
 	if(hostname)
@@ -742,19 +742,19 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 	mat4f_identity(posMat);     // tracking system position
 	mat4f_identity(initPosMat); // camera starting location
 
-	/* Construct a matrix which represents the amount to offset each
-	 * eye. For the DK1, this seems to only be the IPD offset. */
-	// TODO: We probably want to do something different with VRPN.
-	mat4f_translate_new(offsetMat,
-	                    eye_rdesc[eye].HmdToEyeViewOffset.x, // left & right IPD offset
-	                    eye_rdesc[eye].HmdToEyeViewOffset.y, // vertical offset
-	                    eye_rdesc[eye].HmdToEyeViewOffset.z); // forward/back offset
-
-
 	/* Construct posMat and rotMat matrices which indicate the
 	 * position and orientation of the HMD. */
 	if(viewmat_vrpn_obj) // get position from VRPN
 	{
+		/* Get the offset for the left and right eyes from
+		 * Oculus. If you are using a separate tracking system, you
+		 * may also want to apply an offset here between the tracked
+		 * point and the eye location. */
+		mat4f_translate_new(offsetMat,
+		                    eye_rdesc[eye].HmdToEyeViewOffset.x, // left & right IPD offset
+		                    eye_rdesc[eye].HmdToEyeViewOffset.y, // vertical offset
+		                    eye_rdesc[eye].HmdToEyeViewOffset.z); // forward/back offset
+
 		float pos[3] = { 0,0,0 };
 		vrpn_get(viewmat_vrpn_obj, NULL, pos, rotMat);
 		mat4f_translate_new(posMat, -pos[0], -pos[1], -pos[2]); // position
@@ -763,7 +763,7 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 	else // get position from Oculus tracker
 	{
 		pose[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
-		mat4f_translate_new(posMat,                           // position
+		mat4f_translate_new(posMat,                           // position (includes IPD offset)
 		                    -pose[eye].Position.x,
 		                    -pose[eye].Position.y,
 		                    -pose[eye].Position.z);
@@ -786,27 +786,25 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 	}
 	mat4f_transpose(rotMat); /* orientation sensor rotates camera, not world */
 
-
+	// viewmatrix = offsetMat * rotMat *  posMat * initposmat
+	mat4f_mult_mat4f_new(viewmatrix, offsetMat, rotMat); // offset is identity if we are using Oculus tracker
+	mat4f_mult_mat4f_new(viewmatrix, viewmatrix, posMat);
+	mat4f_mult_mat4f_new(viewmatrix, viewmatrix, initPosMat);
 
 	if(0)
 	{
 		printf("ViewportID=%d; eye=%s\n", viewportID, eye == ovrEye_Left ? "left" : "right");
-		printf("OVR eye offset: ");
+		printf("Eye offset according to OVR (only used if VRPN is used): ");
 		mat4f_print(offsetMat);
-		printf("OVR rotation sensing: ");
+		printf("Rotation sensing (from OVR or VRPN): ");
 		mat4f_print(rotMat);
-		printf("OVR position tracking: ");
+		printf("Position tracking (from OVR or VRPN): ");
 		mat4f_print(posMat);
-		printf("Initial position: ");
+		printf("Initial position (from set in viewmat_init()): ");
 		mat4f_print(initPosMat);
+		printf("Final view matrix: ");
+		mat4f_print(viewmatrix);
 	}
-
-	// viewmatrix = offsetMat * rotMat *  posMat * initposmat
-	mat4f_mult_mat4f_new(viewmatrix, offsetMat, rotMat);
-	mat4f_mult_mat4f_new(viewmatrix, viewmatrix, posMat);
-	mat4f_mult_mat4f_new(viewmatrix, viewmatrix, initPosMat);
-	// mat4f_print(viewmatrix);
-
 #endif
 }
 
@@ -849,6 +847,51 @@ void viewmat_get_ivs(float viewmatrix[16], float frustum[6])
 	mat4f_lookatVec_new(viewmatrix, pos, lookat, up);
 
 }
+
+/** Performs a sanity check on the IPD to ensure that it is not too small, big, or reversed.
+
+ @param viewmatrix View matrix for the viewportID
+ @param viewportID The viewportID for this particular view matrix.
+*/
+static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
+{
+	// First, if viewportID=0, save the matrix so we can do the check when we are called with viewportID=1.
+	static float viewmatrix0[16];
+	if(viewportID == 0)
+	{
+		mat4f_copy(viewmatrix0, viewmatrix);
+		return;
+	}
+
+	// If rendering viewportID == 1, and if there are two viewports,
+	// assume that we are running in a stereoscopic configuration and
+	// validate the IPD value.
+	if(viewportID == 1 && viewports_size == 2)
+	{
+		/* In most cases, viewportID=0 is the left eye. However,
+		 * Oculus may cause this to get swapped. */
+		float flip = 1;
+		if(viewmat_mode == VIEWMAT_HMD_OCULUS &&
+		   hmd->EyeRenderOrder[0] == ovrEye_Right)
+			flip = -1;
+
+		// Get the position matrix information
+		float pos1[4], pos2[4];
+		mat4f_getColumn(pos1, viewmatrix0, 3); // get last column
+		mat4f_getColumn(pos2, viewmatrix,  3); // get last column
+
+		// Get a vector between the eyes
+		float diff[4];
+		vec4f_sub_new(diff, pos1, pos2);
+		vec4f_scalarMult_new(diff, diff, flip); // flip vector if necessary
+		
+		float ipd = diff[0];
+		if(ipd > .07 || ipd < .05)
+			kuhl_errmsg("IPD validation failed. IPD is apparently set to %f meters. Should be between .05 and .07 for most people.\n", ipd);
+		// printf("IPD=%f\n", ipd);
+	}
+}
+
 
 /** Get a 4x4 view matrix. Some types of systems also need to update
  * the frustum based on where the virtual camera is. For example, on
@@ -920,6 +963,8 @@ void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 	{
 		mat4f_frustum_new(projmatrix, f[0], f[1], f[2], f[3], f[4], f[5]);
 	}
+
+	viewmat_validate_ipd(viewmatrix, viewportID);
 }
 
 /** Gets the viewport information for a particular viewport.
