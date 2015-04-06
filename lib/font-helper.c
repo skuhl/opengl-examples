@@ -8,7 +8,6 @@
 static FT_Library lib;
 
 static int font_load(FT_Face* face, const char* fileName, const unsigned int pointSize) {
-
 	char *newFilename = kuhl_find_file(fileName);
 	if (newFilename == NULL || pointSize < 1) {
 		fprintf(stderr, "Font: Could not open font - either a NULL file path, or invalid point size\n");
@@ -177,9 +176,6 @@ static void render_char(font_info* info, const char ch, float* x, float* y, floa
 	float y2 = -*y - g->bitmap_top * sy;
 	float w = g->bitmap.width * sx;
 	float h = g->bitmap.rows * sy;
-	
-	int advanceW = (g->advance.x >> 6);
-	x2 += ((info->pointSize - advanceW)/2.0) * sx;
 	
 	GLfloat box[4][4] = {
 		{x2,     -y2    , 0, 0},
