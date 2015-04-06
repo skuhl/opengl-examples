@@ -337,7 +337,7 @@ long kuhl_milliseconds_start()
 void kuhl_getfps_init(kuhl_fps_state *state)
 {
 	state->frame = 0;
-	state->timebase = 0;
+	state->timebase = kuhl_milliseconds();
 	state->fps = -1;
 }
 
