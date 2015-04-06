@@ -50,13 +50,21 @@ static void smooth(vrpn_TRACKERCB &t)
 }
 
 
-/** A callback function that will get called whenever the tracked
- * point moves. */
+/** A callback function that will get called whenever the tracker
+ * provides us with new data. */
 static void VRPN_CALLBACK handle_tracker(void *name, vrpn_TRACKERCB t)
 {
 	float fps = kuhl_getfps(&fps_state);
 	if(fps_state.frame == 0)
 		printf("VRPN records per second: %.1f\n", fps);
+
+	/* Some tracking systems return large values when a point gets
+	 * lost. If the tracked point seems to be lost, ignore this
+	 * update. */
+	float pos[3];
+	vec3f_set(pos, t.pos[0], t.pos[1], t.pos[2]);
+	if(vec3f_norm(pos) > 100)
+		return;
 	
 	// Store the data in our map so that someone can use it later.
 	std::string s = (char*)name;
