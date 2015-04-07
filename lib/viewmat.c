@@ -101,11 +101,23 @@ void viewmat_end_frame(void)
 		glBlitFramebuffer(0, 0, recommendTexSizeL.w,
 		                  recommendTexSizeL.h, 0, 0, recommendTexSizeL.w,
 		                  recommendTexSizeL.h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBlitFramebuffer(0, 0, recommendTexSizeL.w,
+		                  recommendTexSizeL.h, 0, 0, recommendTexSizeL.w,
+		                  recommendTexSizeL.h, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+		glBlitFramebuffer(0, 0, recommendTexSizeL.w,
+		                  recommendTexSizeL.h, 0, 0, recommendTexSizeL.w,
+		                  recommendTexSizeL.h, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, rightFramebufferAA);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, rightFramebuffer);
 		glBlitFramebuffer(0, 0, recommendTexSizeR.w,
 		                  recommendTexSizeR.h, 0, 0, recommendTexSizeR.w,
 		                  recommendTexSizeR.h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBlitFramebuffer(0, 0, recommendTexSizeL.w,
+		                  recommendTexSizeL.h, 0, 0, recommendTexSizeL.w,
+		                  recommendTexSizeL.h, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+		glBlitFramebuffer(0, 0, recommendTexSizeL.w,
+		                  recommendTexSizeL.h, 0, 0, recommendTexSizeL.w,
+		                  recommendTexSizeL.h, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 		kuhl_errorcheck();
 		
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
