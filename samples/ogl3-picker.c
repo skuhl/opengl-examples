@@ -55,7 +55,7 @@ void display()
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will
 	 * run twice for HMDs (once for the left eye and once for the
-	 * right. */
+	 * right.) */
 	viewmat_begin_frame();
 	for(int viewportID=0; viewportID<viewmat_num_viewports(); viewportID++)
 	{
@@ -133,7 +133,7 @@ void display()
 		
 		/* If we have multiple viewports, only draw cursor in the
 		 * first viewport. */
-		if(viewportID==0)
+		if(viewportID == 0)
 		{
 			/* Draw the cursor in normalized device coordinates. Don't
 			 * use any matrices. */
@@ -150,12 +150,22 @@ void display()
 			kuhl_geometry_draw(&cursor);
 			glEnable(GL_DEPTH_TEST);
 
+			/* When we render images on the Oculus, we are rendering
+			 * into a multisampled framebuffer object, and we can't
+			 * read from the multisample FBO until we have blitted it
+			 * into a normal FBO. Here, we get the blitted FBO for the
+			 * *previous* frame. */
+			GLint fb =viewmat_get_blitted_framebuffer(viewportID);
+			glBindFramebuffer(GL_FRAMEBUFFER, fb);
+			
 			GLuint stencilVal = 0;
+			kuhl_errorcheck();
 			glReadPixels(viewport[0]+viewport[2]/2, viewport[1]+viewport[3]/2,
 			             1,1, // get data for 1x1 area (i.e., a pixel)
 			             GL_STENCIL_INDEX, // query the stencil buffer
 			             GL_UNSIGNED_INT,
 			             &stencilVal);
+			kuhl_errorcheck();
 			if(stencilVal == 1)
 				printf("Cursor is on triangle.\n");
 			else if(stencilVal == 2)

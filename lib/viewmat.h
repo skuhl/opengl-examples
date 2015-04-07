@@ -33,6 +33,7 @@ extern "C" {
 
 void viewmat_begin_frame(void);
 void viewmat_begin_eye(int viewportID);
+int viewmat_get_blitted_framebuffer(int viewportID);
 void viewmat_end_frame(void);
 	
 void viewmat_init(float pos[3], float look[3], float up[3]);
