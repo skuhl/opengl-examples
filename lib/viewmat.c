@@ -39,6 +39,7 @@
 #include "OVR_CAPI.h"
 #include "OVR_CAPI_GL.h"
 
+/* TODO: These should be organized into a ovr_state struct */
 ovrHmd hmd;
 GLint leftFramebuffer, rightFramebuffer, leftFramebufferAA, rightFramebufferAA;
 ovrSizei recommendTexSizeL,recommendTexSizeR;
@@ -47,7 +48,7 @@ ovrEyeRenderDesc eye_rdesc[2];
 ovrFrameTiming timing;
 ovrPosef pose[2];
 float oculus_initialPos[3];
-union ovrGLConfig glcfg;
+
 #endif
 
 
@@ -96,28 +97,21 @@ void viewmat_end_frame(void)
 		   texture into a normal OpenGL texture. This section of code
 		   is not necessary if we are rendering directly into the
 		   normal (non-antialiased) OpenGL texture. */
+		GLuint buffersToBlit[3] = { GL_COLOR_BUFFER_BIT, GL_STENCIL_BUFFER_BIT, GL_DEPTH_BUFFER_BIT };
+
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, leftFramebufferAA);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, leftFramebuffer);
-		glBlitFramebuffer(0, 0, recommendTexSizeL.w,
-		                  recommendTexSizeL.h, 0, 0, recommendTexSizeL.w,
-		                  recommendTexSizeL.h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		glBlitFramebuffer(0, 0, recommendTexSizeL.w,
-		                  recommendTexSizeL.h, 0, 0, recommendTexSizeL.w,
-		                  recommendTexSizeL.h, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
-		glBlitFramebuffer(0, 0, recommendTexSizeL.w,
-		                  recommendTexSizeL.h, 0, 0, recommendTexSizeL.w,
-		                  recommendTexSizeL.h, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+		for(unsigned int i=0; i<sizeof(buffersToBlit)/sizeof(buffersToBlit[0]); i++)
+			glBlitFramebuffer(0, 0, recommendTexSizeL.w,
+			                  recommendTexSizeL.h, 0, 0, recommendTexSizeL.w,
+			                  recommendTexSizeL.h, buffersToBlit[i], GL_NEAREST);
+
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, rightFramebufferAA);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, rightFramebuffer);
-		glBlitFramebuffer(0, 0, recommendTexSizeR.w,
-		                  recommendTexSizeR.h, 0, 0, recommendTexSizeR.w,
-		                  recommendTexSizeR.h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		glBlitFramebuffer(0, 0, recommendTexSizeL.w,
-		                  recommendTexSizeL.h, 0, 0, recommendTexSizeL.w,
-		                  recommendTexSizeL.h, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
-		glBlitFramebuffer(0, 0, recommendTexSizeL.w,
-		                  recommendTexSizeL.h, 0, 0, recommendTexSizeL.w,
-		                  recommendTexSizeL.h, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+		for(unsigned int i=0; i<sizeof(buffersToBlit)/sizeof(buffersToBlit[0]); i++)
+			glBlitFramebuffer(0, 0, recommendTexSizeL.w,
+			                  recommendTexSizeL.h, 0, 0, recommendTexSizeL.w,
+			                  recommendTexSizeL.h, buffersToBlit[i], GL_NEAREST);
 		kuhl_errorcheck();
 		
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -501,6 +495,7 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	EyeTexture[0].OGL.TexId = leftTexture;
 	EyeTexture[1].OGL.TexId = rightTexture;
 
+	union ovrGLConfig glcfg;
 	memset(&glcfg, 0, sizeof(glcfg));
 	glcfg.OGL.Header.API=ovrRenderAPI_OpenGL;
 	glcfg.OGL.Header.Multisample = 0;
