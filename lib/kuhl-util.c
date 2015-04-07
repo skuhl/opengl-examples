@@ -3050,8 +3050,8 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 	{
 		glGenTextures(1, depthTexture);
 		glBindTexture(GL_TEXTURE_2D, *depthTexture);
-		glTexImage2D(GL_TEXTURE_2D, 0,GL_DEPTH_COMPONENT, width, height, 0,
-		             GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+		glTexImage2D(GL_TEXTURE_2D, 0,GL_DEPTH24_STENCIL8, width, height, 0,
+		             GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -3067,11 +3067,11 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 	GLuint depthbuffer = 0;
 	glGenRenderbuffers(1, &depthbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
 
 	// Connect FBO to depth buffer
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER,
-	                          GL_DEPTH_ATTACHMENT,
+	                          GL_DEPTH_STENCIL_ATTACHMENT,
 	                          GL_RENDERBUFFER,
 	                          depthbuffer);
 
@@ -3092,7 +3092,7 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 	if(depthTexture != NULL)
 	{
 		glFramebufferTexture2D(GL_FRAMEBUFFER,
-		                       GL_DEPTH_ATTACHMENT,
+		                       GL_DEPTH_STENCIL_ATTACHMENT,
 		                       GL_TEXTURE_2D,
 		                       *depthTexture,      // texture id
 		                       0);            // mipmap level
@@ -3190,8 +3190,7 @@ GLint kuhl_gen_framebuffer_msaa(int width, int height, GLuint *texture, GLuint *
 	{
 		glGenTextures(1, depthTexture);
 		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, *depthTexture);
-		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_DEPTH_COMPONENT16,
-		                        width, height, GL_TRUE);
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_DEPTH24_STENCIL8, width, height, GL_TRUE);
 		kuhl_errorcheck();
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -3209,11 +3208,11 @@ GLint kuhl_gen_framebuffer_msaa(int width, int height, GLuint *texture, GLuint *
 	GLuint depthbuffer = 0;
 	glGenRenderbuffers(1, &depthbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer);
-	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT, width, height);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, width, height);
 	
 	// Connect FBO to depth buffer
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER,
-	                          GL_DEPTH_ATTACHMENT,
+	                          GL_DEPTH_STENCIL_ATTACHMENT,
 	                          GL_RENDERBUFFER,
 	                          depthbuffer);
 	kuhl_errorcheck();
@@ -3235,7 +3234,7 @@ GLint kuhl_gen_framebuffer_msaa(int width, int height, GLuint *texture, GLuint *
 	if(depthTexture != NULL)
 	{
 		glFramebufferTexture2D(GL_FRAMEBUFFER,
-		                       GL_DEPTH_ATTACHMENT,
+		                       GL_DEPTH_STENCIL_ATTACHMENT,
 		                       GL_TEXTURE_2D_MULTISAMPLE,
 		                       *depthTexture,      // texture id
 		                       0);            // mipmap level
