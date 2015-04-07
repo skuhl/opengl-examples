@@ -124,6 +124,36 @@ void viewmat_end_frame(void)
 		glutSwapBuffers();
 }
 
+
+/** If we are rendering a scene for the Oculus, we will be rendering
+ * into a multisampled FBO that we are not allowed to read from. We
+ * can only read after the multisampled FBO is blitted into a normal
+ * FBO inside of viewmat_end_frame(). This function will retrieve the
+ * binding for the normal framebuffer. The framebuffer will be from
+ * the previous frame unless it is called after
+ * viewmat_end_frame().
+ *
+ * @param viewportID The viewport that we want a framebuffer for.
+ * @return An OpenGL framebuffer that we can bind to.
+ */
+int viewmat_get_blitted_framebuffer(int viewportID)
+{
+	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
+	{
+		ovrEyeType eye = hmd->EyeRenderOrder[viewportID];
+		if(eye == ovrEye_Left)
+			return leftFramebuffer;
+		else if(eye == ovrEye_Right)
+			return rightFramebuffer;
+		else
+			return 0;
+	}
+	GLint framebuffer;
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING,  &framebuffer);
+	return framebuffer;
+}
+
+
 /** Changes the framebuffer (as needed) that OpenGL is rendering
  * to. Some HMDs (such as the Oculus Rift) require us to prerender the
  * left and right eye scenes to a texture. Those textures are then
