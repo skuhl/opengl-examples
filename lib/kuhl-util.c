@@ -2904,8 +2904,9 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
 kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDirname,
                                GLuint program, float bbox[6])
 {
+	char *newModelFilename = kuhl_find_file(modelFilename);
 	// Loads the model from the file and reads in all of the textures:
-	const struct aiScene *scene = kuhl_private_assimp_load(modelFilename, textureDirname);
+	const struct aiScene *scene = kuhl_private_assimp_load(newModelFilename, textureDirname);
 	if(scene == NULL)
 	{
 		printf("%s: ASSIMP was unable to import the model file.\n", modelFilename);
