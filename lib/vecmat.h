@@ -810,7 +810,7 @@ static inline void matNf_getColumn(float  result[ ], const float  m[  ], const i
 	if(col >= n)
 		printf("%s: Column %d must be less than %d\n", __func__, col, n);
 	for(int i=0; i<n; i++)
-		result[i] = m[matN_getIndex(i, col, n)];
+		result[i] = m[i+col*n];
 }
 /** Copy the values in a matrix column into a vector.
     @param result The vector containing the column from the matrix.
@@ -823,7 +823,7 @@ static inline void matNd_getColumn(double result[ ], const double m[  ], const i
 	if(col >= n)
 		printf("%s: Column %d must be less than %d\n", __func__, col, n);
 	for(int i=0; i<n; i++)
-		result[i] = m[matN_getIndex(i, col, n)];
+		result[i] = m[i+col*n];
 }
 /** Copy the values in a 4x4 matrix column into a vector.
     @param result The vector containing the column from the matrix.
@@ -866,7 +866,7 @@ static inline void matNf_getRow(float  result[ ], const float  m[  ], const int 
 	if(row >= n)
 		printf("%s: Row %d must be less than %d\n", __func__, row, n);
 	for(int i=0; i<n; i++)
-		result[i] = m[matN_getIndex(row, i, n)];
+		result[i] = m[row+i*n];
 }
 /** Copy the values in a matrix row into a vector.
     @param result The vector containing the row from the matrix.
@@ -879,7 +879,7 @@ static inline void matNd_getRow(double result[ ], const double m[  ], const int 
 	if(row >= n)
 		printf("%s: Row %d must be less than %d\n", __func__, row, n);
 	for(int i=0; i<n; i++)
-		result[i] = m[matN_getIndex(row, i, n)];
+		result[i] = m[row+i*n];
 }
 /** Copy the values in a 4x4 matrix row into a vector.
     @param result The vector containing the row from the matrix.
@@ -1166,12 +1166,12 @@ static inline void mat4d_mult_vec4d(double vector[4], const double matrix[16])
 static inline void matNf_transpose(float m[], const int n)
 {
 	float tmp;
-	for(int i=0; i<n; i++)
+	for(int row=0; row<n; row++)
 	{
-		for(int j=0; j<i; j++)
+		for(int col=0; col<row; col++)
 		{
-			int index1 = matN_getIndex(i,j,n);
-			int index2 = matN_getIndex(j,i,n);
+			int index1 = row+col*n;
+			int index2 = col+row*n;
 			tmp = m[index1];
 			m[index1] = m[index2];
 			m[index2] = tmp;
@@ -1184,12 +1184,12 @@ static inline void matNf_transpose(float m[], const int n)
 static inline void matNd_transpose(double m[], const int n)
 {
 	double tmp;
-	for(int i=0; i<n; i++)
+	for(int row=0; row<n; row++)
 	{
-		for(int j=0; j<i; j++)
+		for(int col=0; col<row; col++)
 		{
-			int index1 = matN_getIndex(i,j,n);
-			int index2 = matN_getIndex(j,i,n);
+			int index1 = row+col*n;
+			int index2 = col+row*n;
 			tmp = m[index1];
 			m[index1] = m[index2];
 			m[index2] = tmp;
@@ -1255,12 +1255,12 @@ static inline void mat4d_transpose_new(double dest[16], const double src[16])
 */
 static inline void matNf_identity(float m[], int n)
 {
-	for(int i=0; i<n; i++)
-		for(int j=0; j<n; j++)
-			if(i==j)
-				m[matN_getIndex(i,j,n)] = 1.0f;
+	for(int row=0; row<n; row++)
+		for(int col=0; col<n; col++)
+			if(row==col)
+				m[row+col*n] = 1.0f;
 			else
-				m[matN_getIndex(i,j,n)] = 0.0f;
+				m[row+col*n] = 0.0f;
 }
 /** Create a NxN double identity matrix.
  @param m Location to store the resulting identity matrix.
@@ -1268,12 +1268,12 @@ static inline void matNf_identity(float m[], int n)
 */
 static inline void matNd_identity(double m[], int n)
 {
-	for(int i=0; i<n; i++)
-		for(int j=0; j<n; j++)
-			if(i==j)
-				m[matN_getIndex(i,j,n)] = 1.0;
+	for(int row=0; row<n; row++)
+		for(int col=0; col<n; col++)
+			if(row==col)
+				m[row+col*n] = 1.0;
 			else
-				m[matN_getIndex(i,j,n)] = 0.0;
+				m[row+col*n] = 0.0;
 }
 /** Create a 3x3 float identity matrix.
  @param m Location to store the resulting identity matrix.
