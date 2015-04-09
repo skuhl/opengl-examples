@@ -8,6 +8,7 @@ set(CMAKE_CXX_COMPILER "g++")
 
 project("opengl-examples" C CXX)  # This project uses C and C++
 # Add "-pg" to both the C_FLAGS and the CXX_FLAGS to enable profiling
+# Note: -O2 is necessary to get the compiler to inline the inlined functions used by vecmat.c and vecmat.h
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Wextra -Wno-unused-parameter -Wno-unused-function -g -O2")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g -O2")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/CMakeModules)
