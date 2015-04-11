@@ -1372,6 +1372,85 @@ static inline void mat4f_from_mat4d(float  dest[16], const double src[16])
 { for(int i=0; i<16; i++) dest[i] = (float) src[i]; }
 
 
+/** Creates a new 4x4 float scale matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new scale matrix.
+    @param x The amount that the matrix should scale the x-components by.
+    @param y The amount that the matrix should scale the y-components by.
+    @param z The amount that the matrix should scale the z-components by.
+*/
+static inline void mat4f_scale_new(float  result[16], float x, float y, float z)
+{
+	mat4f_identity(result);
+	result[mat4_getIndex(0,0)] = x;
+	result[mat4_getIndex(1,1)] = y;
+	result[mat4_getIndex(2,2)] = z;
+}
+/** Creates a new 4x4 double scale matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new scale matrix.
+    @param x The amount that the matrix should scale the x-components by.
+    @param y The amount that the matrix should scale the y-components by.
+    @param z The amount that the matrix should scale the z-components by.
+*/
+static inline void mat4d_scale_new(double result[16], double x, double y, double z)
+{
+	mat4d_identity(result);
+	result[mat4_getIndex(0,0)] = x;
+	result[mat4_getIndex(1,1)] = y;
+	result[mat4_getIndex(2,2)] = z;
+}
+/** Creates a new 4x4 float scale matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new scale matrix.
+    @param xyz A vector containing the amount to scale each component by.
+*/
+static inline void mat4f_scaleVec_new(float  result[16], const float  xyz[3])
+{ mat4f_scale_new(result, xyz[0], xyz[1], xyz[2]); }
+/** Creates a new 4x4 double scale matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new scale matrix.
+    @param xyz A vector containing the amount to scale each component by.
+*/
+static inline void mat4d_scaleVec_new(double result[16], const double xyz[3])
+{ mat4d_scale_new(result, xyz[0], xyz[1], xyz[2]); }
+/** Creates a new 3x3 float scale matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new scale matrix.
+    @param x The amount that the matrix should scale the x-components by.
+    @param y The amount that the matrix should scale the y-components by.
+    @param z The amount that the matrix should scale the z-components by.
+*/
+static inline void mat3f_scale_new(float  result[9], float x, float y, float z)
+{
+	mat3f_identity(result);
+	result[mat3_getIndex(0,0)] = x;
+	result[mat3_getIndex(1,1)] = y;
+	result[mat3_getIndex(2,2)] = z;
+}
+/** Creates a new 3x3 double scale matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new scale matrix.
+    @param x The amount that the matrix should scale the x-components by.
+    @param y The amount that the matrix should scale the y-components by.
+    @param z The amount that the matrix should scale the z-components by.
+*/
+static inline void mat3d_scale_new(double result[9], double x, double y, double z)
+{
+	mat3d_identity(result);
+	result[mat3_getIndex(0,0)] = x;
+	result[mat3_getIndex(1,1)] = y;
+	result[mat3_getIndex(2,2)] = z;
+}
+/** Creates a new 3x3 float scale matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new scale matrix.
+    @param xyz A vector containing the amount to scale each component by.
+*/
+static inline void mat3f_scaleVec_new(float  result[9], const float  xyz[3])
+{ mat3f_scale_new(result, xyz[0], xyz[1], xyz[2]); }
+/** Creates a new 3x3 double scale matrix with the rest of the matrix set to the identity.
+    @param result The location to store the new scale matrix.
+    @param xyz A vector containing the amount to scale each component by.
+*/
+static inline void mat3d_scaleVec_new(double result[9], const double xyz[3])
+{ mat3d_scale_new(result, xyz[0], xyz[1], xyz[2]); }
+
+
+	
 /* mat[43][df]_invert_new() will invert a matrix and store the
  * inverted matrix at a new location. However, these functions work
  * correctly even if you try to invert a matrix in place. For example,
@@ -1455,15 +1534,6 @@ void mat4d_translate_new(double result[16], double x, double y, double z);
 void mat4f_translateVec_new(float  result[16], const float  xyz[3]);
 void mat4d_translateVec_new(double result[16], const double xyz[3]);
 
-/* Set the matrix to the identity and then set the first three numbers along the diagonal starting from the upper-left corner of the matrix */
-void mat4f_scale_new(float  result[16], float  x, float  y, float  z);
-void mat4d_scale_new(double result[16], double x, double y, double z);
-void mat4f_scaleVec_new(float  result[16], const float  xyz[3]);
-void mat4d_scaleVec_new(double result[16], const double xyz[3]);
-void mat3f_scale_new(float  result[9], float x, float y, float z);
-void mat3d_scale_new(double result[9], double x, double y, double z);
-void mat3f_scaleVec_new(float  result[9], const float  xyz[3]);
-void mat3d_scaleVec_new(double result[9], const double xyz[3]);
 
 /* Sets dest to the identity and then copies src into the upper-left
  * corner of dest. */
