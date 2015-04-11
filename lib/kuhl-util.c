@@ -2830,7 +2830,7 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
 		/* If the geometry contains no animations, isn't associated
 		 * with an ASSIMP scene or node, then there is no need to try
 		 * to animate it. */
-		if(scene->mNumAnimations == 0 || scene == NULL || node == NULL)
+		if(scene == NULL || scene->mNumAnimations == 0 || node == NULL)
 			continue;
 		
 		/* Start at our current node and traverse up. Apply all of the
