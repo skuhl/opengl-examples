@@ -26,7 +26,7 @@ kuhl_geometry labelQuad;
 
 GLuint program = 0; // id value for the GLSL program
 kuhl_geometry *modelgeom = NULL;
-float bbox[6];
+float bbox[6], fitMatrix[16];
 
 #define NUM_MODELS 5000
 float positions[NUM_MODELS][3];
@@ -60,15 +60,6 @@ void keyboard(unsigned char key, int x, int y)
 
 void get_model_matrix(float result[16], float placeToPutModel[3])
 {
-	mat4f_identity(result);
-	
-	/* Get a matrix to scale+translate the model based on the bounding
-	 * box. If the last parameter is 1, the bounding box will sit on
-	 * the XZ plane. If it is set to 0, the bounding box will be
-	 * centered at the specified point. */
-	float fitMatrix[16];
-	kuhl_bbox_fit(fitMatrix, bbox, 1);
-
 	/* Get a matrix that moves the model to the correct location. */
 	float moveToLookPoint[16];
 	mat4f_translateVec_new(moveToLookPoint, placeToPutModel);
@@ -349,6 +340,7 @@ int main(int argc, char** argv)
 
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, NULL, program, bbox);
+	kuhl_bbox_fit(fitMatrix, bbox, 1);
 	init_geometryQuad(&labelQuad, program);
 
 	kuhl_getfps_init(&fps_state);
