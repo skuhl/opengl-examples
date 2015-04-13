@@ -18,11 +18,10 @@ else()
 	message(WARNING "ASSIMP was not found, not compiling: ${NEED_ASSIMP}")
 endif()
 
+
 # Make a target that lets us copy all of the vert and frag files from this directory into the bin directory.
 file(GLOB ShaderFiles "*.vert" "*.frag")
 add_custom_target(copyGLSL)
-get_target_property(MyTargetLocation MyTarget LOCATION)
-get_filename_component(MyTargetDir ${MyTargetLocation} PATH)
 foreach(ShaderFile ${ShaderFiles})
     add_custom_command(TARGET copyGLSL PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E
@@ -69,4 +68,3 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 	endif()
 
 endforeach()
-
