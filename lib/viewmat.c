@@ -144,6 +144,7 @@ void viewmat_end_frame(void)
  */
 int viewmat_get_blitted_framebuffer(int viewportID)
 {
+#ifndef MISSING_OVR
 	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
 	{
 		ovrEyeType eye = hmd->EyeRenderOrder[viewportID];
@@ -154,6 +155,8 @@ int viewmat_get_blitted_framebuffer(int viewportID)
 		else
 			return 0;
 	}
+#endif
+
 	GLint framebuffer;
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING,  &framebuffer);
 	return framebuffer;
@@ -908,9 +911,11 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
 		/* In most cases, viewportID=0 is the left eye. However,
 		 * Oculus may cause this to get swapped. */
 		float flip = 1;
+#ifndef MISSING_OVR
 		if(viewmat_mode == VIEWMAT_HMD_OCULUS &&
 		   hmd->EyeRenderOrder[0] == ovrEye_Right)
 			flip = -1;
+#endif
 
 		// Get the position matrix information
 		float pos1[4], pos2[4];
