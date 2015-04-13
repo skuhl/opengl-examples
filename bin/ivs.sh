@@ -130,7 +130,7 @@ printMessage "Creating directory $IVS_TEMP_DIR on IVS..."
 ${SSH_CMD} mkdir -p "$IVS_TEMP_DIR"
 
 printMessage "Copying files to $IVS_TEMP_DIR on IVS..."
-rsync -ah -e ssh --exclude=.svn --exclude=.git --exclude=CMakeCache.txt --exclude=CMakeFiles --checksum --partial --no-whole-file --inplace --delete . ${IVS_USER}@${IVS_HOSTNAME}:${IVS_TEMP_DIR}
+rsync -ah -e ssh --exclude=.svn --exclude=.git --exclude=CMakeCache.txt --exclude=CMakeFiles --checksum --partial --no-whole-file --inplace --delete .. ${IVS_USER}@${IVS_HOSTNAME}:${IVS_TEMP_DIR}
 
 # This check adds about a second to our startup time and usually works
 # successfully. However, it is a helpful in the unlikely case where a
@@ -272,6 +272,7 @@ export PROJMAT_FRUSTUM='${FRUSTUM}'
 export PROJMAT_MASTER_FRUSTUM='${PROJMAT_MASTER_FRUSTUM}'
 export DISPLAY='${tile}:0.0'
 export __GL_SYNC_TO_VBLANK=1
+cd bin
 while [[ ! -r $1 ]]; do
    echo ${tile} does not have $1 yet, waiting...
    sleep .5
