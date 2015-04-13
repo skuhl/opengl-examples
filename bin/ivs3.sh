@@ -112,7 +112,7 @@ if [[ ! -r ./.temp-dgr-ssh-socket ]]; then
 	echo "We failed to establish an SSH control socket."
 	echo "You can typically resolve this problem by:"
 	echo " (1) Creating an ssh key with no password and the default options (run 'ssh-keygen')"
-	echo " (2) Copy the contents of ~/.ssh/id_rsa.pub from your computer and paste it into a file named ~/.ssh/authorized_keys on the IVS machine (if the authorized_keys file exists, paste it at the bottom of the file."
+	echo " (2) Copy the contents of ~/.ssh/id_rsa.pub from your computer and paste it into a file named ~/.ssh/authorized_keys on the IVS machine (if the authorized_keys file exists, paste it at the bottom of the file)."
 
 	# If we don't exit in this situation, this script would prompt for
 	# the password for every SSH call below.
@@ -153,12 +153,12 @@ done
 printMessage "Running cmake on IVS..."
 ${SSH_CMD} "cd \"${IVS_TEMP_DIR}\" && rm -rf CMakeCache.txt CMakeFiles && /export/apps/src/cmake/2.8.9/cmake-2.8.9/bin/cmake ."
 printMessage "Compiling $1 and dgr-relay IVS..."
-${SSH_CMD} make --quiet --jobs=3 -C "${IVS_TEMP_DIR}" "$1" dgr-relay
+${SSH_CMD} make -B --quiet --jobs=3 -C "${IVS_TEMP_DIR}" "$1" dgr-relay
 
 printMessage "Starting DGR relay."
 printMessage "Relay is listening `hostname`:$RELAY_LISTEN_PORT"
 printMessage "Relay is sending to ${RELAY_SEND_TO_IP}:${RELAY_SEND_PORT}"
-${SSH_CMD} "${IVS_TEMP_DIR}/dgr-relay" ${RELAY_LISTEN_PORT} ${RELAY_SEND_TO_IP} ${RELAY_SEND_PORT} &
+${SSH_CMD} "${IVS_TEMP_DIR}/bin/dgr-relay" ${RELAY_LISTEN_PORT} ${RELAY_SEND_TO_IP} ${RELAY_SEND_PORT} &
 
 
 HORIZ_LEFT="-3.09"
