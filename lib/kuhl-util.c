@@ -2339,8 +2339,8 @@ static void kuhl_private_anim_matrix(float transformResult[16], const struct aiN
 	                            na->mRotationKeys[rotationEnd].mValue.z,
 	                            na->mRotationKeys[rotationEnd].mValue.w };
 	float rotationValMid[4];
-	vec4f_normalize(rotationValStart);
-	vec4f_normalize(rotationValEnd);
+	//vec4f_normalize(rotationValStart);
+	//vec4f_normalize(rotationValEnd);
 	quatf_slerp_new(rotationValMid, rotationValStart, rotationValEnd, factor);
 	float rotationMatrix[16];
 	mat4f_rotateQuatVec_new(rotationMatrix, rotationValMid);
@@ -2425,16 +2425,19 @@ static int kuhl_private_node_matrix(float transformResult[16],
 	/* Find the channel corresponding to the node name passed in as
 	 * parameter. */
 	struct aiAnimation *anim = scene->mAnimations[animationNum];
+
+	/* If the time value is inappropriate */
+	if(t > anim->mDuration / anim->mTicksPerSecond || t < 0)
+		return 0;
+
+	/* Try to find the animation channel */
 	int channel = -1;
 	for(unsigned int i=0; i<anim->mNumChannels; i++)
 	{
 		if(strcmp(anim->mChannels[i]->mNodeName.data, node->mName.data) == 0)
 			channel = (int) i;
 	}
-	/* If we can't find a corresponding animation channel or if the
-	 * caller requested a time that was out of range, then return the
-	 * transformation matrix from the node. */
-	if(channel < 0 || t > anim->mDuration / anim->mTicksPerSecond || t < 0)
+	if(channel < 0)
 		return 0;
 
 	/* Get this nodes matrix according to the animation
@@ -2827,7 +2830,7 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
 		/* If the geometry contains no animations, isn't associated
 		 * with an ASSIMP scene or node, then there is no need to try
 		 * to animate it. */
-		if(scene->mNumAnimations == 0 || scene == NULL || node == NULL)
+		if(scene == NULL || scene->mNumAnimations == 0 || node == NULL)
 			continue;
 		
 		/* Start at our current node and traverse up. Apply all of the
@@ -2904,8 +2907,9 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
 kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDirname,
                                GLuint program, float bbox[6])
 {
+	char *newModelFilename = kuhl_find_file(modelFilename);
 	// Loads the model from the file and reads in all of the textures:
-	const struct aiScene *scene = kuhl_private_assimp_load(modelFilename, textureDirname);
+	const struct aiScene *scene = kuhl_private_assimp_load(newModelFilename, textureDirname);
 	if(scene == NULL)
 	{
 		printf("%s: ASSIMP was unable to import the model file.\n", modelFilename);

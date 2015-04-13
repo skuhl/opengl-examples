@@ -5,7 +5,7 @@
 # name that contains a main() function.
 ####################################
 # Programs that need ASSIMP
-set(NEED_ASSIMP ogl3-assimp ogl3-slerp ogl3-explode)
+set(NEED_ASSIMP ogl3-assimp ogl3-slerp ogl3-explode ogl3-flock)
 # Programs that don't rely on libraries
 set(NEED_NOTHING ogl3-text ogl3-triangle ogl3-triangle-color ogl3-triangle-shade ogl3-prerend ogl3-picker ogl3-teartest ogl3-texture ogl2-triangle ogl2-slideshow ogl2-texture)
 
@@ -18,11 +18,10 @@ else()
 	message(WARNING "ASSIMP was not found, not compiling: ${NEED_ASSIMP}")
 endif()
 
+
 # Make a target that lets us copy all of the vert and frag files from this directory into the bin directory.
 file(GLOB ShaderFiles "*.vert" "*.frag")
 add_custom_target(copyGLSL)
-get_target_property(MyTargetLocation MyTarget LOCATION)
-get_filename_component(MyTargetDir ${MyTargetLocation} PATH)
 foreach(ShaderFile ${ShaderFiles})
     add_custom_command(TARGET copyGLSL PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E
@@ -69,4 +68,3 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 	endif()
 
 endforeach()
-

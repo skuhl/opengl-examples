@@ -259,6 +259,18 @@ extern inline void mat3d_print(const double m[ 9]);
 extern inline void mat4f_print(const float  m[16]);
 extern inline void mat4d_print(const double m[16]);
 
+
+/* Set the matrix to the identity and then set the first three numbers along the diagonal starting from the upper-left corner of the matrix */
+extern inline void mat4f_scale_new(float  result[16], float  x, float  y, float  z);
+extern inline void mat4d_scale_new(double result[16], double x, double y, double z);
+extern inline void mat4f_scaleVec_new(float  result[16], const float  xyz[3]);
+extern inline void mat4d_scaleVec_new(double result[16], const double xyz[3]);
+extern inline void mat3f_scale_new(float  result[9], float x, float y, float z);
+extern inline void mat3d_scale_new(double result[9], double x, double y, double z);
+extern inline void mat3f_scaleVec_new(float  result[9], const float  xyz[3]);
+extern inline void mat3d_scaleVec_new(double result[9], const double xyz[3]);
+
+
 /* Convert between 3x3 and 4x4 matrices */
 extern inline void mat3d_from_mat3f(double dest[ 9], const float  src[ 9]);
 extern inline void mat4d_from_mat4f(double dest[16], const float  src[16]);
@@ -1380,7 +1392,7 @@ void quatf_slerp_new(float result[4], const float start[4], const float end[4], 
 		vec4f_scalarMult_new(scaledEnd,   result,       endScale);
 		vec4f_add_new(result, scaledStart, scaledEnd);
 	}
-	vec4f_normalize(result);
+	//vec4f_normalize(result);
 }
 
 /** Spherical linear interpolation of unit quaternion.
@@ -1484,83 +1496,6 @@ void mat4f_translateVec_new(float  result[16], const float  xyz[3])
 */
 void mat4d_translateVec_new(double result[16], const double xyz[3])
 { mat4d_translate_new(result, xyz[0], xyz[1], xyz[2]); }
-
-/** Creates a new 4x4 float scale matrix with the rest of the matrix set to the identity.
-    @param result The location to store the new scale matrix.
-    @param x The amount that the matrix should scale the x-components by.
-    @param y The amount that the matrix should scale the y-components by.
-    @param z The amount that the matrix should scale the z-components by.
-*/
-void mat4f_scale_new(float  result[16], float x, float y, float z)
-{
-	mat4f_identity(result);
-	result[mat4_getIndex(0,0)] = x;
-	result[mat4_getIndex(1,1)] = y;
-	result[mat4_getIndex(2,2)] = z;
-}
-/** Creates a new 4x4 double scale matrix with the rest of the matrix set to the identity.
-    @param result The location to store the new scale matrix.
-    @param x The amount that the matrix should scale the x-components by.
-    @param y The amount that the matrix should scale the y-components by.
-    @param z The amount that the matrix should scale the z-components by.
-*/
-void mat4d_scale_new(double result[16], double x, double y, double z)
-{
-	mat4d_identity(result);
-	result[mat4_getIndex(0,0)] = x;
-	result[mat4_getIndex(1,1)] = y;
-	result[mat4_getIndex(2,2)] = z;
-}
-/** Creates a new 4x4 float scale matrix with the rest of the matrix set to the identity.
-    @param result The location to store the new scale matrix.
-    @param xyz A vector containing the amount to scale each component by.
-*/
-void mat4f_scaleVec_new(float  result[16], const float  xyz[3])
-{ mat4f_scale_new(result, xyz[0], xyz[1], xyz[2]); }
-/** Creates a new 4x4 double scale matrix with the rest of the matrix set to the identity.
-    @param result The location to store the new scale matrix.
-    @param xyz A vector containing the amount to scale each component by.
-*/
-void mat4d_scaleVec_new(double result[16], const double xyz[3])
-{ mat4d_scale_new(result, xyz[0], xyz[1], xyz[2]); }
-/** Creates a new 3x3 float scale matrix with the rest of the matrix set to the identity.
-    @param result The location to store the new scale matrix.
-    @param x The amount that the matrix should scale the x-components by.
-    @param y The amount that the matrix should scale the y-components by.
-    @param z The amount that the matrix should scale the z-components by.
-*/
-void mat3f_scale_new(float  result[9], float x, float y, float z)
-{
-	mat3f_identity(result);
-	result[mat3_getIndex(0,0)] = x;
-	result[mat3_getIndex(1,1)] = y;
-	result[mat3_getIndex(2,2)] = z;
-}
-/** Creates a new 3x3 double scale matrix with the rest of the matrix set to the identity.
-    @param result The location to store the new scale matrix.
-    @param x The amount that the matrix should scale the x-components by.
-    @param y The amount that the matrix should scale the y-components by.
-    @param z The amount that the matrix should scale the z-components by.
-*/
-void mat3d_scale_new(double result[9], double x, double y, double z)
-{
-	mat3d_identity(result);
-	result[mat3_getIndex(0,0)] = x;
-	result[mat3_getIndex(1,1)] = y;
-	result[mat3_getIndex(2,2)] = z;
-}
-/** Creates a new 3x3 float scale matrix with the rest of the matrix set to the identity.
-    @param result The location to store the new scale matrix.
-    @param xyz A vector containing the amount to scale each component by.
-*/
-void mat3f_scaleVec_new(float  result[9], const float  xyz[3])
-{ mat3f_scale_new(result, xyz[0], xyz[1], xyz[2]); }
-/** Creates a new 3x3 double scale matrix with the rest of the matrix set to the identity.
-    @param result The location to store the new scale matrix.
-    @param xyz A vector containing the amount to scale each component by.
-*/
-void mat3d_scaleVec_new(double result[9], const double xyz[3])
-{ mat3d_scale_new(result, xyz[0], xyz[1], xyz[2]); }
 
 
 /** Creates a 4x4 matrix from a 3x3 matrix. The new matrix is set to
