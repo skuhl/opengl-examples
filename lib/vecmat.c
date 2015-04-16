@@ -276,6 +276,10 @@ extern inline void mat3d_from_mat3f(double dest[ 9], const float  src[ 9]);
 extern inline void mat4d_from_mat4f(double dest[16], const float  src[16]);
 extern inline void mat3f_from_mat3d(float  dest[ 9], const double src[ 9]);
 extern inline void mat4f_from_mat4d(float  dest[16], const double src[16]);
+extern inline void mat4f_from_mat3f(float  dest[16], const float  src[ 9]);
+extern inline void mat4d_from_mat3d(double dest[16], const double src[ 9]);
+extern inline void mat3f_from_mat4f(float  dest[ 9], const float  src[16]);
+extern inline void mat3d_from_mat4d(double dest[ 9], const double src[16]);
 
 /** Inverts a 4x4 float matrix.
  *
@@ -1496,55 +1500,6 @@ void mat4f_translateVec_new(float  result[16], const float  xyz[3])
 */
 void mat4d_translateVec_new(double result[16], const double xyz[3])
 { mat4d_translate_new(result, xyz[0], xyz[1], xyz[2]); }
-
-
-/** Creates a 4x4 matrix from a 3x3 matrix. The new matrix is set to
-    the identity and then the 3x3 matrix is copied into the upper left
-    corner of the matrix.
-    @param dest The new 4x4 matrix.
-    @param src The original 3x3 matrix.
-*/
-void mat4f_from_mat3f(float  dest[16], const float  src[ 9])
-{
-	mat4f_identity(dest);
-	for(int i=0; i<3; i++)
-		for(int j=0; j<3; j++)
-			dest[mat4_getIndex(i,j)] = src[mat3_getIndex(i,j)];
-}
-/** Creates a 4x4 matrix from a 3x3 matrix. The new matrix is set to
-    the identity and then the 3x3 matrix is copied into the upper left
-    corner of the matrix.
-    @param dest The new 4x4 matrix.
-    @param src The original 3x3 matrix.
-*/
-void mat4d_from_mat3d(double dest[16], const double src[ 9])
-{
-	mat4d_identity(dest);
-	for(int i=0; i<3; i++)
-		for(int j=0; j<3; j++)
-			dest[mat4_getIndex(i,j)] = src[mat3_getIndex(i,j)];
-}
-
-/** Creates a 3x3 matrix from a 4x4 matrix by copying only the upper-left 3x3 components from the 4x4 matrix.
-    @param dest The new 3x3 matrix.
-    @param src The original 4x4 matrix.
-*/
-void mat3f_from_mat4f(float  dest[ 9], const float  src[16])
-{
-	for(int i=0; i<3; i++)
-		for(int j=0; j<3; j++)
-			dest[mat3_getIndex(i,j)] = src[mat4_getIndex(i,j)];
-}
-/** Creates a 3x3 matrix from a 4x4 matrix by copying only the upper-left 3x3 components from the 4x4 matrix.
-    @param dest The new 3x3 matrix.
-    @param src The original 4x4 matrix.
-*/
-void mat3d_from_mat4d(double dest[ 9], const double src[16])
-{
-	for(int i=0; i<3; i++)
-		for(int j=0; j<3; j++)
-			dest[mat3_getIndex(i,j)] = src[mat4_getIndex(i,j)];
-}
 
 /** Creates a view frustum projection matrix (float). This
  * creates a matrix similar to the one that glFrustum() would

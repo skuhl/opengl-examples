@@ -2772,12 +2772,11 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 			kuhl_bonemat *bones = (kuhl_bonemat*) kuhl_malloc(sizeof(kuhl_bonemat));
 			bones->count = mesh->mNumBones;
 			bones->mesh = n;
-			for(unsigned int b=0; b < MAX_BONES; b++)
-				mat4f_identity(bones->matrices[b]);
 			for(unsigned int b=0; b < mesh->mNumBones; b++)
-			{
 				bones->boneList[b] = mesh->mBones[b];
-			}
+			// set any unused bone matrices to the identity.
+			for(unsigned int b=mesh->mNumBones; b < MAX_BONES; b++)
+				mat4f_identity(bones->matrices[b]);
 			geom->bones = bones;
 		}
 
@@ -2839,19 +2838,20 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
 		if(g->bones == NULL )
 		{
 			/* Start at our current node and traverse up. Apply all of the
-			 * transformation matrices as we traverse up. */
-			float result[16];
-			mat4f_identity(result);
+			 * transformation matrices as we traverse up.
+			 *
+			 * TODO: By repeatedly traversing up, we repeatedly
+			 * recalculate the transformation matrices for the nodes
+			 * near the root---potentially reducing performance.
+			 */
+			mat4f_identity(g->matrix);
 			do
 			{
 				float transform[16];
 				kuhl_private_node_matrix(transform, scene, node, animationNum, time);
-				mat4f_mult_mat4f_new(result, transform, result);
+				mat4f_mult_mat4f_new(g->matrix, transform, g->matrix);
 				node = node->mParent;
 			} while(node != NULL);
-
-			/* Apply the transform matrix to this geometry object. */
-			mat4f_copy(g->matrix, result);
 		}
 
 		/* Don't process bones if there aren't any. */
@@ -2870,26 +2870,27 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
 			}
 			const struct aiBone *bone = g->bones->boneList[b];
 
-			/* Get bone offset from the aiBone struct */
-			float offset[16];
-			mat4f_from_aiMatrix4x4(offset, bone->mOffsetMatrix);
 
-			/* Traverse the graph up from the bone node and construct
-			 * a single transformation matrix for this bone. */
-			float result[16];
-			mat4f_identity(result);
+			/* Start at our current node and traverse up. Apply all of the
+			 * transformation matrices as we traverse up.
+			 *
+			 * TODO: By repeatedly traversing up, we repeatedly
+			 * recalculate the transformation matrices for the nodes
+			 * near the root---potentially reducing performance.
+			 */
+			mat4f_identity(g->bones->matrices[b]);
 			do
 			{
 				float transform[16];
 				kuhl_private_node_matrix(transform, scene, node, animationNum, time);
-				mat4f_mult_mat4f_new(result, transform, result);
+				mat4f_mult_mat4f_new(g->bones->matrices[b], transform, g->bones->matrices[b]);
 				node = node->mParent; // move to next node up
 			} while(node != NULL);
 
-			/* Update the bone matrix for this bone:
-			   boneMatrix = transform * offset
-			*/
-			mat4f_mult_mat4f_new(g->bones->matrices[b], result, offset);
+			/* Also apply the bone offset */
+			float offset[16];
+			mat4f_from_aiMatrix4x4(offset, bone->mOffsetMatrix);
+			mat4f_mult_mat4f_new(g->bones->matrices[b], g->bones->matrices[b], offset);
 
 		} // end for each bone
 	} // end for each geometry

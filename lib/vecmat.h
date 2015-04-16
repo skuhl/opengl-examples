@@ -1371,6 +1371,54 @@ static inline void mat3f_from_mat3d(float  dest[ 9], const double src[ 9])
 static inline void mat4f_from_mat4d(float  dest[16], const double src[16])
 { for(int i=0; i<16; i++) dest[i] = (float) src[i]; }
 
+/** Creates a 4x4 matrix from a 3x3 matrix. The new matrix is set to
+    the identity and then the 3x3 matrix is copied into the upper left
+    corner of the matrix.
+    @param dest The new 4x4 matrix.
+    @param src The original 3x3 matrix.
+*/
+static inline void mat4f_from_mat3f(float  dest[16], const float  src[ 9])
+{
+	mat4f_identity(dest);
+	for(int i=0; i<3; i++)
+		for(int j=0; j<3; j++)
+			dest[mat4_getIndex(i,j)] = src[mat3_getIndex(i,j)];
+}
+/** Creates a 4x4 matrix from a 3x3 matrix. The new matrix is set to
+    the identity and then the 3x3 matrix is copied into the upper left
+    corner of the matrix.
+    @param dest The new 4x4 matrix.
+    @param src The original 3x3 matrix.
+*/
+static inline void mat4d_from_mat3d(double dest[16], const double src[ 9])
+{
+	mat4d_identity(dest);
+	for(int i=0; i<3; i++)
+		for(int j=0; j<3; j++)
+			dest[mat4_getIndex(i,j)] = src[mat3_getIndex(i,j)];
+}
+
+/** Creates a 3x3 matrix from a 4x4 matrix by copying only the upper-left 3x3 components from the 4x4 matrix.
+    @param dest The new 3x3 matrix.
+    @param src The original 4x4 matrix.
+*/
+static inline void mat3f_from_mat4f(float  dest[ 9], const float  src[16])
+{
+	for(int i=0; i<3; i++)
+		for(int j=0; j<3; j++)
+			dest[mat3_getIndex(i,j)] = src[mat4_getIndex(i,j)];
+}
+/** Creates a 3x3 matrix from a 4x4 matrix by copying only the upper-left 3x3 components from the 4x4 matrix.
+    @param dest The new 3x3 matrix.
+    @param src The original 4x4 matrix.
+*/
+static inline void mat3d_from_mat4d(double dest[ 9], const double src[16])
+{
+	for(int i=0; i<3; i++)
+		for(int j=0; j<3; j++)
+			dest[mat3_getIndex(i,j)] = src[mat4_getIndex(i,j)];
+}
+
 
 /** Creates a new 4x4 float scale matrix with the rest of the matrix set to the identity.
     @param result The location to store the new scale matrix.
