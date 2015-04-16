@@ -54,7 +54,7 @@ typedef struct
 {
 	int count; /**< Number of bones in this struct */
 	unsigned int mesh; /**< The bones in this struct are associated with this matrix index */
-	char names[MAX_BONES][256]; /**< bone names */
+	const struct aiBone *boneList[MAX_BONES];
 	float matrices[MAX_BONES][16]; /**< Transformation matrices for each bone */
 } kuhl_bonemat;
 #endif

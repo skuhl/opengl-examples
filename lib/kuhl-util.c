@@ -2417,22 +2417,22 @@ static int kuhl_private_node_matrix(float transformResult[16],
 	 * requested animation matrix for this node. */
 	mat4f_from_aiMatrix4x4(transformResult, node->mTransformation);
 	
-	/* If the user requested an animation number that is too large
-	 * based on the number of the animations in the file, return use
-	 * the transformation matrix from the node. */
-	if(animationNum >= scene->mNumAnimations)
+	/* Return the transformation matrix from the node if: (1) The
+	 * requested animation number is too large. (2) A negative time
+	 * value is requested. */
+	if(animationNum >= scene->mNumAnimations || t < 0)
+		return 0;
+
+	struct aiAnimation *anim = scene->mAnimations[animationNum];
+
+	/* If the time value too large for the animation, return the
+	 * transformation matrix form the node. */
+	double currentTick = t * anim->mTicksPerSecond;
+	if(currentTick > anim->mDuration)
 		return 0;
 
 	/* Find the channel corresponding to the node name passed in as
 	 * parameter. */
-	struct aiAnimation *anim = scene->mAnimations[animationNum];
-
-	/* If the time value is inappropriate */
-	double currentTick = t * anim->mTicksPerSecond;
-	if(currentTick > anim->mDuration || t < 0)
-		return 0;
-
-	/* Try to find the animation channel */
 	for(unsigned int i=0; i<anim->mNumChannels; i++)
 	{
 		if(strcmp(anim->mChannels[i]->mNodeName.data, node->mName.data) == 0)
@@ -2776,8 +2776,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 				mat4f_identity(bones->matrices[b]);
 			for(unsigned int b=0; b < mesh->mNumBones; b++)
 			{
-				strncpy(bones->names[b], mesh->mBones[b]->mName.data, 256);
-				bones->names[b][255]='\0';
+				bones->boneList[b] = mesh->mBones[b];
 			}
 			geom->bones = bones;
 		}
@@ -2834,8 +2833,10 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
 		if(scene == NULL || scene->mNumAnimations == 0 || node == NULL)
 			continue;
 
-		/* If there are no bones, update g->matrix */
-		if(g->bones == NULL)
+		/* If there are no bones, or if a negative time value was
+		 * provided, update g->matrix. If there are bones, we assume
+		 * that the bones will drive the animation. */
+		if(g->bones == NULL )
 		{
 			/* Start at our current node and traverse up. Apply all of the
 			 * transformation matrices as we traverse up. */
@@ -2851,28 +2852,23 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
 
 			/* Apply the transform matrix to this geometry object. */
 			mat4f_copy(g->matrix, result);
-
-			/* If a geometry has bones, the vertex program will use
-			 * the bone matrices, not the normal transform matrix. */
-			continue; // process next kuhl_geometry struct.
 		}
+
+		/* Don't process bones if there aren't any. */
+		if(g->bones == NULL)
+			continue;
 
 		/* Update the list of bone matrices. */
 		for(int b=0; b < g->bones->count; b++) // For each bone
 		{
 			// Find the bone node and the bone itself.
-			const struct aiNode *node = kuhl_assimp_find_node(g->bones->names[b], scene->mRootNode);
+			const struct aiNode *node = kuhl_assimp_find_node(g->bones->boneList[b]->mName.data, scene->mRootNode);
 			if(node == NULL)
 			{
-				kuhl_errmsg("Failed to find node: %s\n", g->bones->names[b]);
+				kuhl_errmsg("Failed to find node that corresponded to bone: %s\n", g->bones->boneList[b]->mName.data);
 				exit(EXIT_FAILURE);
 			}
-			const struct aiBone *bone = kuhl_assimp_find_bone(node->mName.data, scene->mMeshes[g->bones->mesh]);
-			if(bone == NULL)
-			{
-				kuhl_errmsg("Failed to find bone: %s\n", node->mName.data);
-				exit(EXIT_FAILURE);
-			}
+			const struct aiBone *bone = g->bones->boneList[b];
 
 			/* Get bone offset from the aiBone struct */
 			float offset[16];
@@ -2882,13 +2878,13 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
 			 * a single transformation matrix for this bone. */
 			float result[16];
 			mat4f_identity(result);
-			while(node != NULL)
+			do
 			{
 				float transform[16];
 				kuhl_private_node_matrix(transform, scene, node, animationNum, time);
 				mat4f_mult_mat4f_new(result, transform, result);
 				node = node->mParent; // move to next node up
-			}
+			} while(node != NULL);
 
 			/* Update the bone matrix for this bone:
 			   boneMatrix = transform * offset
