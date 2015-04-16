@@ -57,9 +57,10 @@
 */
 void mat4f_from_aiMatrix4x4(float  dest[16], struct aiMatrix4x4 src)
 {
-	float *tmp = (float*) (&src);
-	for(int i=0; i<16; i++)
-		dest[i] = *(tmp+i);
+	memcpy(dest, &src, sizeof(float)*16);
+//	float *tmp = (float*) (&src);
+//	for(int i=0; i<16; i++)
+//		dest[i] = *(tmp+i);
 	mat4f_transpose(dest);
 }
 #endif
@@ -2427,24 +2428,24 @@ static int kuhl_private_node_matrix(float transformResult[16],
 	struct aiAnimation *anim = scene->mAnimations[animationNum];
 
 	/* If the time value is inappropriate */
-	if(t > anim->mDuration / anim->mTicksPerSecond || t < 0)
+	double currentTick = t * anim->mTicksPerSecond;
+	if(currentTick > anim->mDuration || t < 0)
 		return 0;
 
 	/* Try to find the animation channel */
-	int channel = -1;
 	for(unsigned int i=0; i<anim->mNumChannels; i++)
 	{
 		if(strcmp(anim->mChannels[i]->mNodeName.data, node->mName.data) == 0)
-			channel = (int) i;
+		{
+			/* Get this node's matrix according to the animation
+			 * information. */
+			struct aiNodeAnim *na = anim->mChannels[i];
+			kuhl_private_anim_matrix(transformResult, na, currentTick);
+			return 1;
+		}
 	}
-	if(channel < 0)
-		return 0;
 
-	/* Get this nodes matrix according to the animation
-	 * information. */
-	struct aiNodeAnim *na = anim->mChannels[channel];
-	kuhl_private_anim_matrix(transformResult, na, t*anim->mTicksPerSecond);
-	return 1;
+	return 0;
 }
 
 
@@ -2832,33 +2833,46 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
 		 * to animate it. */
 		if(scene == NULL || scene->mNumAnimations == 0 || node == NULL)
 			continue;
-		
-		/* Start at our current node and traverse up. Apply all of the
-		 * transformation matrices as we traverse up. */
-		float result[16];
-		mat4f_identity(result);
-		do
-		{
-			float transform[16];
-			mat4f_identity(transform);
-			kuhl_private_node_matrix(transform, scene, node, animationNum, time);
-			mat4f_mult_mat4f_new(result, transform, result);
-			node = node->mParent;
-		} while(node != NULL);
 
-		/* Apply the transform matrix to this geometry object. */
-		mat4f_copy(g->matrix, result);
-
-		/* If there are no bones, we are done with this kuhl_geometry */
+		/* If there are no bones, update g->matrix */
 		if(g->bones == NULL)
-			continue;
+		{
+			/* Start at our current node and traverse up. Apply all of the
+			 * transformation matrices as we traverse up. */
+			float result[16];
+			mat4f_identity(result);
+			do
+			{
+				float transform[16];
+				kuhl_private_node_matrix(transform, scene, node, animationNum, time);
+				mat4f_mult_mat4f_new(result, transform, result);
+				node = node->mParent;
+			} while(node != NULL);
+
+			/* Apply the transform matrix to this geometry object. */
+			mat4f_copy(g->matrix, result);
+
+			/* If a geometry has bones, the vertex program will use
+			 * the bone matrices, not the normal transform matrix. */
+			continue; // process next kuhl_geometry struct.
+		}
 
 		/* Update the list of bone matrices. */
 		for(int b=0; b < g->bones->count; b++) // For each bone
 		{
 			// Find the bone node and the bone itself.
 			const struct aiNode *node = kuhl_assimp_find_node(g->bones->names[b], scene->mRootNode);
-			const struct aiBone* bone = kuhl_assimp_find_bone(node->mName.data, scene->mMeshes[g->bones->mesh]);
+			if(node == NULL)
+			{
+				kuhl_errmsg("Failed to find node: %s\n", g->bones->names[b]);
+				exit(EXIT_FAILURE);
+			}
+			const struct aiBone *bone = kuhl_assimp_find_bone(node->mName.data, scene->mMeshes[g->bones->mesh]);
+			if(bone == NULL)
+			{
+				kuhl_errmsg("Failed to find bone: %s\n", node->mName.data);
+				exit(EXIT_FAILURE);
+			}
 
 			/* Get bone offset from the aiBone struct */
 			float offset[16];
@@ -2866,20 +2880,20 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
 
 			/* Traverse the graph up from the bone node and construct
 			 * a single transformation matrix for this bone. */
-			float transform[16];
-			mat4f_identity(transform);
+			float result[16];
+			mat4f_identity(result);
 			while(node != NULL)
 			{
-				float nodeTrans[16];
-				kuhl_private_node_matrix(nodeTrans, scene, node, animationNum, time);
-				mat4f_mult_mat4f_new(transform, nodeTrans, transform);
+				float transform[16];
+				kuhl_private_node_matrix(transform, scene, node, animationNum, time);
+				mat4f_mult_mat4f_new(result, transform, result);
 				node = node->mParent; // move to next node up
 			}
 
 			/* Update the bone matrix for this bone:
 			   boneMatrix = transform * offset
 			*/
-			mat4f_mult_mat4f_new(g->bones->matrices[b], transform, offset);
+			mat4f_mult_mat4f_new(g->bones->matrices[b], result, offset);
 
 		} // end for each bone
 	} // end for each geometry
