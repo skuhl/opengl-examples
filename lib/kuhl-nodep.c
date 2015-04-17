@@ -17,6 +17,7 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <ctype.h> // isspace()
 #include <unistd.h>
 #include <libgen.h> // dirname()
 
@@ -426,6 +427,38 @@ void kuhl_shuffle(void *array, int n, int size)
 		memcpy(arr+i*size, tmp,        size);
 	}
 }
+
+/** Removes any whitespace characters at the beginning or end of the string in place.
+
+    @param str The null-terminated string to trim in place.
+*/
+void kuhl_trim_whitespace(char *str)
+{
+	/* Find first non-whitespace character in string (or the null terminator) */
+	char *firstNonSpace = str;
+	while(isspace(*firstNonSpace) && *firstNonSpace != 0)
+		firstNonSpace++;
+
+	/* If it was an empty string */
+	if(*firstNonSpace == 0)
+	{
+		*str = 0;
+		return;
+	}
+
+	/* Find the last character in the string */
+	char *lastNonSpace = str + strlen(str) - 1;
+	while(isspace(*lastNonSpace))
+		lastNonSpace--;
+
+	*(lastNonSpace+1) = 0; // set byte after the last nonspace character to null.
+	
+	// If the string is two non-whitespace characters,
+	// lastNonSpace-firstNonSpace will be 1. But, we want to copy both
+	// of the characters plus the null terminator. */
+	memmove(str, firstNonSpace, lastNonSpace-firstNonSpace+2);
+}
+
 
 /**
    Generate random numbers following Gaussian distribution. The

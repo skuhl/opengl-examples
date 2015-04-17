@@ -8,6 +8,7 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <map>
 #include <string>
 
@@ -99,14 +100,22 @@ char* vrpn_default_host()
 		return NULL;
 	}
 	char *vrpnString = (char*)malloc(1024);
-	if(fscanf(f, "%1023s", vrpnString) != 1)
+	*vrpnString='\0';
+
+	do
 	{
-		kuhl_warnmsg("Can't read %s to get VRPN server information.\n", path);
-		return NULL;
-	}
+		if(fgets(vrpnString, 1024, f) == NULL)
+		{
+			kuhl_warnmsg("Can't read %s to get VRPN server information.\n", path);
+			return NULL;
+		}
+		kuhl_trim_whitespace(vrpnString);
+	} while(strncmp(vrpnString, "#", 1) == 0);  // allow for comments in vrpn-server file.
 	fclose(f);
+
+	printf("%s: Found in %s: %s\n", __func__, path, vrpnString);
 	return vrpnString;
-	// printf("%s: Found in %s: %s\n", __func__, path, vrpnString);
+	
 }
 
 
@@ -118,8 +127,8 @@ char* vrpn_default_host()
  * @param object The name of the object being tracked.
  *
  * @param hostname The IP address or hostname of the VRPN server or
- * tracking system computer. If hostname is set to NULL, the IP
- * address of the Vicon tracker in the IVS lab is used.
+ * tracking system computer. If hostname is set to NULL, the
+ * ~/.vrpn-server file is consulted.
  *
  * @param pos An array to be filled in with the position information
  * for the tracked object. If we are unable to track the object, a
@@ -226,9 +235,9 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 			if(strlen(hostnamecpp.c_str()) > 14 && strncmp(hostnamecpp.c_str(), "tcp://141.219.", 14) == 0) // MTU vicon tracker
 			{
 				float viconTransform[16] = { 1,0,0,0,  // column major order!
-											 0,0,-1,0,
-											 0,1,0,0,
-											 0,0,0,1 };
+				                             0,0,-1,0,
+				                             0,1,0,0,
+				                             0,0,0,1 };
 				mat4f_mult_mat4f_new(orient, viconTransform, orient);
 				mat4f_mult_vec4f_new(pos4, viconTransform, pos4);
 				vec3f_copy(pos,pos4);
@@ -246,8 +255,22 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 	else
 	{
 		/* If this is our first time, create a tracker for the object@hostname string, register the callback handler. */
-		printf("vrpn-help: Connecting to VRPN server. If this hangs, VRPN server is not running.\n");
-		vrpn_Tracker_Remote *tkr = new vrpn_Tracker_Remote(fullname.c_str());
+		kuhl_msg("Connecting to VRPN server: %s\n", hostnamecpp.c_str());
+		vrpn_Connection *connection = vrpn_get_connection_by_name(hostnamecpp.c_str());
+		/* Wait for a bit to see if we can connect. Sometimes we don't immediately connect! */
+		for(int i=0; i<1000 && !connection->connected(); i++)
+		{
+		    usleep(1000); // 1000 microseconds * 1000 = up to 1 second of waiting.
+		    connection->mainloop();
+		}
+		/* If connection failed, exit. */
+		if(!connection->connected())
+		{
+		    delete connection;
+		    kuhl_errmsg("Failed to connect to tracker: %s\n", fullname.c_str());
+		    exit(EXIT_FAILURE);
+		}
+		vrpn_Tracker_Remote *tkr = new vrpn_Tracker_Remote(fullname.c_str(), connection);
 		nameToTracker[fullname] = tkr;
 		tkr->register_change_handler((void*) fullname.c_str(), handle_tracker);
 		kuhl_getfps_init(&fps_state);
