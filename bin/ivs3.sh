@@ -312,7 +312,7 @@ while (( 1 )); do
     sleep 1
 #    jobs
 #	echo
-    if [[ `jobs | wc -l` -eq 1 ]]; then
+    if [[ `jobs -r | wc -l` -eq 1 ]]; then
 	printMessage "Looks like everything finished successfully, cleaning up..."
 	cleanup
 	exit 0
