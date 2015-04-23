@@ -52,8 +52,7 @@ static inline void   vec4d_set(double v[4], double a, double b, double c, double
  */
 static inline void vecNf_copy(float result[ ], const float a[ ], const int n)
 {
-	for(int i=0; i<n; i++)
-		result[i] = a[i];
+	memcpy(result, a, n*sizeof(float));
 }
 /** Copy the contents of one double vector in to another vector.
  * @param result An array to copy values into.
@@ -62,8 +61,7 @@ static inline void vecNf_copy(float result[ ], const float a[ ], const int n)
  */
 static inline void vecNd_copy(double result[ ], const double a[ ], const int n)
 {
-	for(int i=0; i<n; i++)
-		result[i] = a[i];
+	memcpy(result, a, n*sizeof(double));
 }
 /** Copy the contents 3-component float vector into another vector.
  * @param result An array to copy values into.
@@ -1120,8 +1118,7 @@ static inline void matNf_mult_vecNf_new(float result[], const float m[], const f
 		for(int j=0; j<n; j++)
 			tmp[i] += m[matN_getIndex(i,j,n)] * v[j];
 	}
-	for(int i=0; i<n; i++)
-		result[i] = tmp[i];
+	vecNf_copy(result, tmp, n);
 }
 static inline void matNd_mult_vecNd_new(double result[], const double m[], const double v[], const int n)
 {
@@ -1132,8 +1129,7 @@ static inline void matNd_mult_vecNd_new(double result[], const double m[], const
 		for(int j=0; j<n; j++)
 			tmp[i] += m[matN_getIndex(i,j,n)] * v[j];
 	}
-	for(int i=0; i<n; i++)
-		result[i] = tmp[i];
+	vecNd_copy(result, tmp, n);
 }
 static inline void mat3f_mult_vec3f_new(float result[3], const float m[9], const float v[3])
 { matNf_mult_vecNf_new(result, m, v, 3); }
