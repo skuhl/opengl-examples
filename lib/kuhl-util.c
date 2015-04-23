@@ -58,9 +58,6 @@
 void mat4f_from_aiMatrix4x4(float  dest[16], struct aiMatrix4x4 src)
 {
 	memcpy(dest, &src, sizeof(float)*16);
-//	float *tmp = (float*) (&src);
-//	for(int i=0; i<16; i++)
-//		dest[i] = *(tmp+i);
 	mat4f_transpose(dest);
 }
 #endif
@@ -2140,6 +2137,53 @@ static void kuhl_print_aiScene_info(const char *modelFilename, const struct aiSc
 	printf("%s: Contains %d node(s) & %u mesh(es)\n", modelFilename, numNodes, scene->mNumMeshes);
 }
 
+
+/** Assimp doesn't store the full path to the textures. Here, we
+  assume that the texture path stored in the model is relative to the
+  directory the model is stored in. Or, if textureDir is provided, we
+  assume that the texture is relative to the textureDir path.
+
+    @param textureFile is the path to the texture stored in the model file.
+    
+    @param modelFile is the path to the model file. If textureDir is
+    NULL, we assume that the texture files are relative to this
+    directory.
+
+    @param textureDir is a path that the textures are supposedly
+    stored in. This is always used if it is non-NULL. It is ignored if
+    it is NULL.
+
+    @return A full path that specifies where the texture file should
+    be. The returned string should be free()'d.
+*/
+static char* kuhl_private_assimp_fullpath(const char *textureFile, const char *modelFile, const char *textureDir)
+{
+	if(textureFile == NULL || strlen(textureFile) == 0)
+	{
+		kuhl_errmsg("textureFile was NULL or a zero character string.");
+		exit(EXIT_FAILURE);
+	}
+	
+	/* Construct a string with the directory that should contain the texture. */
+	char *fullpath = malloc(1024);
+	if(textureDir == NULL)
+	{
+		if(modelFile == NULL)
+		{
+			kuhl_errmsg("modelFile was NULL");
+			exit(EXIT_FAILURE);
+		}
+		char *editable = strdup(modelFile);
+		char *dname = dirname(editable);
+		snprintf(fullpath, 1024, "%s/%s", dname, textureFile);
+		free(editable);
+	}
+	else
+		snprintf(fullpath, 1024, "%s/%s", textureDir, textureFile);
+	return fullpath;
+}
+
+
 /** Uses ASSIMP to load model (if needed) and returns ASSIMP aiScene
  * object. This function also reads texture files that the model
  * refers to. This function does not create any kuhl_geometry structs
@@ -2236,17 +2280,19 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 
 		if(aiGetMaterialTexture(scene->mMaterials[m], aiTextureType_DIFFUSE, texIndex, &path, NULL, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS)
 		{
-			/* Construct a string with the directory that should contain the texture. */
-			char fullpath[1024];
-			if(textureDirname == NULL)
+			/* Don't load a texture that we have already loaded. */
+			char *fullpath = kuhl_private_assimp_fullpath(path.data, modelFilename, textureDirname);
+			int alreadyExists = 0;
+			for(int i=0; i<textureIdMapSize; i++)
 			{
-				char *editable = strdup(modelFilename);
-				char *dname = dirname(editable);
-				snprintf(fullpath, 1024, "%s/%s", dname, path.data);
-				free(editable);
+				if(strcmp(fullpath, textureIdMap[i].textureFileName) == 0)
+				{
+					alreadyExists=1;
+					break;
+				}
 			}
-			else
-				snprintf(fullpath, 1024, "%s/%s", textureDirname, path.data);
+			if(alreadyExists > 0) // no need to reload an already loaded texture
+				continue;
 
 			if(kuhl_read_texture_file(fullpath, &texIndex) < 0)
 			{
@@ -2261,7 +2307,7 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 				fprintf(stderr, "%s: You have loaded more textures than the hardcoded limit. Exiting.\n", __func__);
 				exit(EXIT_FAILURE);
 			}
-			textureIdMap[textureIdMapSize].textureFileName = strdup(path.data);
+			textureIdMap[textureIdMapSize].textureFileName = strdup(fullpath);
 			textureIdMap[textureIdMapSize].textureID = texIndex;
 			textureIdMapSize++;
 		}
@@ -2488,7 +2534,9 @@ kuhl_geometry* kuhl_geometry_append(kuhl_geometry *a, kuhl_geometry *b)
 static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
                                               const struct aiNode* nd,
                                               GLuint program,
-                                              float currentTransform[16])
+                                              float currentTransform[16],
+                                              const char* modelFilename,
+                                              const char* textureDirname)
 {
 	/* Each node in the scene has a transform matrix that should
 	 * affect all of the nodes under it. The currentTransform matrix
@@ -2730,8 +2778,12 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		{
 			GLuint texture = 0;
 			for(int i=0; i<textureIdMapSize; i++)
-				if(strcmp(textureIdMap[i].textureFileName, texPath.data) == 0)
+			{
+				char *fullpath = kuhl_private_assimp_fullpath(texPath.data, modelFilename, textureDirname);
+				if(strcmp(textureIdMap[i].textureFileName, fullpath) == 0)
 					texture = textureIdMap[i].textureID;
+				free(fullpath);
+			}
 			if(texture == 0)
 			{
 				printf("%s: WARNING: Mesh %u uses texture '%s'. This texture should have been loaded earlier, but we can't find it now.\n",
@@ -2795,7 +2847,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 	/* Process all of the meshes in the aiNode's children too */
 	for (unsigned int i = 0; i < nd->mNumChildren; i++)
 	{
-		kuhl_geometry *child_geom = kuhl_private_load_model(sc, nd->mChildren[i], program, currentTransform);
+		kuhl_geometry *child_geom = kuhl_private_load_model(sc, nd->mChildren[i], program, currentTransform, modelFilename, textureDirname);
 		first_geom = kuhl_geometry_append(first_geom, child_geom);
 	}
 
@@ -2931,7 +2983,8 @@ kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDir
 	float transform[16];
 	mat4f_identity(transform);
 	kuhl_geometry *ret = kuhl_private_load_model(scene, scene->mRootNode,
-	                                             program, transform);
+	                                             program, transform,
+	                                             newModelFilename, textureDirname);
 
 	/* Ensure model shows up in bind pose if the caller doesn't
 	 * also call kuhl_update_model(). */
