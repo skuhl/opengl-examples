@@ -371,6 +371,9 @@ char* dgr_serialize(int *size)
 		spaceNeeded += strlen(dgr_list[i].name)+1+sizeof(int)+dgr_list[i].size;
 	*size = spaceNeeded;
 
+	if(spaceNeeded == 0)
+		return NULL;
+	
 	char *serialized = malloc(spaceNeeded);
 	char *ptr = serialized;
 	for(int i=0; i<dgr_list_size; i++)
@@ -466,12 +469,13 @@ static void dgr_send()
 	if((numbytes = sendto(dgr_socket, buf, bufSize, 0,
 	                      dgr_addrinfo->ai_addr, dgr_addrinfo->ai_addrlen)) == -1) {
 		perror("DGR Master: sendto");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
+	free(buf);
 	if(numbytes != bufSize) // double check that everything got sent
 	{
 		fprintf(stderr, "DGR Master: Error sending all of the bytes in the message.");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 #endif // __MINGW32__
 }
