@@ -92,7 +92,10 @@ void srand48(long seed){
 void *kuhl_mallocFileLine(size_t size, const char *file, int line)
 {
 	if(size == 0)
+	{
 		fprintf(stderr, "!!!!! malloc Warning !!!!! - Size 0 passed to malloc at %s:%d\n", file, line);
+		return NULL;
+	}
 	void *ret = malloc(size);
 	if(ret == NULL)
 		fprintf(stderr, "!!!!! malloc Error !!!!! - Failed to allocate %du bytes at %s:%d\n", (int) size, file, line);
