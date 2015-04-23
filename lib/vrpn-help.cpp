@@ -110,10 +110,10 @@ char* vrpn_default_host()
 			return NULL;
 		}
 		kuhl_trim_whitespace(vrpnString);
-	} while(strncmp(vrpnString, "#", 1) == 0);  // allow for comments in vrpn-server file.
+	} while(*vrpnString == '#' || strlen(vrpnString) == 0);  // allow for comments and blank lines in vrpn-server file.
 	fclose(f);
 
-	printf("%s: Found in %s: %s\n", __func__, path, vrpnString);
+	// printf("%s: Found in %s: '%s'\n", __func__, path, vrpnString);
 	return vrpnString;
 	
 }
