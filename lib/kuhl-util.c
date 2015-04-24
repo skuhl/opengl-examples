@@ -2242,7 +2242,10 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 	struct aiPropertyStore* propStore = aiCreatePropertyStore();
 	aiSetImportPropertyFloat(propStore, "PP_GSN_MAX_SMOOTHING_ANGLE", 50.0f);
 	// Import/load the model
-	const struct aiScene* scene = aiImportFileExWithProperties(modelFilenameVarying,aiProcessPreset_TargetRealtime_Quality, NULL, propStore);
+	int aiProcessFlags = aiProcess_Triangulate|aiProcess_SortByPType; // required! Use only these flags for fast loading.
+	// aiProcessFlags |= aiProcessPreset_TargetRealtime_Fast;    // a bit slower, adds additional processing
+	aiProcessFlags |= aiProcessPreset_TargetRealtime_Quality; // Does even more processing during model load.
+	const struct aiScene* scene = aiImportFileExWithProperties(modelFilenameVarying, aiProcessFlags, NULL, propStore);
 	free(modelFilenameVarying);
 	if(scene == NULL)
 		return NULL;
@@ -2278,7 +2281,8 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 		struct aiString path;
 		GLuint texIndex = 0;
 
-		if(aiGetMaterialTexture(scene->mMaterials[m], aiTextureType_DIFFUSE, texIndex, &path, NULL, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS)
+
+		if(aiGetMaterialTexture(scene->mMaterials[m], aiTextureType_DIFFUSE,  texIndex, &path, NULL, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS)
 		{
 			/* Don't load a texture that we have already loaded. */
 			char *fullpath = kuhl_private_assimp_fullpath(path.data, modelFilename, textureDirname);
@@ -2310,6 +2314,41 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 			textureIdMap[textureIdMapSize].textureFileName = strdup(fullpath);
 			textureIdMap[textureIdMapSize].textureID = texIndex;
 			textureIdMapSize++;
+		}
+
+		/* If we failed to load a diffuse texture and there are no
+		 * other textures, we shouldn't print a
+		 * warning/error. However, if there is no diffuse and
+		 * other textures exist, print a message and exit so the
+		 * user knows that non-diffuse textures aren't going to be
+		 * loaded. */
+		#define TEX_TYPE_LEN 12
+		static const enum aiTextureType texTypeList[TEX_TYPE_LEN] = {
+			aiTextureType_DIFFUSE,   aiTextureType_SPECULAR,     aiTextureType_AMBIENT,
+			aiTextureType_EMISSIVE,  aiTextureType_HEIGHT,       aiTextureType_NORMALS,
+			aiTextureType_SHININESS, aiTextureType_OPACITY,      aiTextureType_DISPLACEMENT,
+			aiTextureType_LIGHTMAP,  aiTextureType_REFLECTION,   aiTextureType_UNKNOWN };
+		
+		static const char *texTypeListStr[TEX_TYPE_LEN] = {"DIFFUSE", "SPECULAR", "AMBIENT",
+		                                                   "EMISSIVE", "HEIGHT", "NORMALS",
+		                                                   "SHININESS","OPACITY","DISPLACEMENT",
+		                                                   "LIGHTMAP","REFLECTION","UNKNOWN" };
+
+		int textureCount = 0;
+		for(int i=1; i<TEX_TYPE_LEN; i++) // skip diffuse
+			textureCount += aiGetMaterialTextureCount(scene->mMaterials[m], texTypeList[i]);
+		if(textureCount > 0) // if there is a non-diffuse texture
+		{
+			kuhl_warnmsg("Ignoring these textures in this material: ");
+			for(int i=1; i<TEX_TYPE_LEN; i++)
+			{
+				int count = aiGetMaterialTextureCount(scene->mMaterials[m], texTypeList[i]);
+				if(count > 0)
+					printf("%s=%d ", texTypeListStr[i], count);
+			}
+			printf("\n");
+			if(aiGetMaterialTextureCount(scene->mMaterials[m], texTypeList[0]) > 1)
+				printf("The material also has more than one diffuse texture.\n");
 		}
 	}
 
@@ -2660,14 +2699,17 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		// Note: mesh->mColors is a C array, not a pointer
 		if(mesh->mColors[0] != NULL)
 		{
-			float *colors = kuhl_malloc(sizeof(float)*mesh->mNumVertices*3);
+			static const int colorComps = 3; // don't use alpha by default.
+			float *colors = kuhl_malloc(sizeof(float)*mesh->mNumVertices*colorComps);
 			for(unsigned int i=0; i<mesh->mNumVertices; i++)
 			{
-				colors[i*3+0] = mesh->mColors[0][i].r;
-				colors[i*3+1] = mesh->mColors[0][i].g;
-				colors[i*3+2] = mesh->mColors[0][i].b;
+				colors[i*colorComps+0] = mesh->mColors[0][i].r;
+				colors[i*colorComps+1] = mesh->mColors[0][i].g;
+				colors[i*colorComps+2] = mesh->mColors[0][i].b;
+				if(colorComps == 4)
+					colors[i*colorComps+3] = mesh->mColors[0][i].a;
 			}
-			kuhl_geometry_attrib(geom, colors, 3, "in_Color", 0);
+			kuhl_geometry_attrib(geom, colors, 4, "in_Color", 0);
 			free(colors);
 		}
 		/* If there are no vertex colors, try to use material colors instead */
@@ -2832,14 +2874,14 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 			geom->bones = bones;
 		}
 
-		printf("%s: Mesh #%03u is one of %u meshes in node \"%s\": numVertices=%d numIndices=%d primitiveType=%d hasNormals=%s hasColors=%s hasTexCoords=%s numBones=%d texture=%s\n",
-		       __func__, nd->mMeshes[n], nd->mNumMeshes, nd->mName.data,
+		printf("%s: Mesh #%03u in node \"%s\" (node has %d meshes): verts=%d indices=%d primType=%d normals=%s colors=%s texCoords=%s bones=%d tex=%s\n",
+		       __func__, nd->mMeshes[n], nd->mName.data, nd->mNumMeshes,
 		       mesh->mNumVertices,
 		       mesh->mNumFaces*meshPrimitiveType,
 		       meshPrimitiveType,
-		       mesh->mNormals       == NULL ? "no" : "yes",
-		       mesh->mColors[0]==NULL ? "no" : "yes", // mColors is an array of pointers
-		       mesh->mTextureCoords[0] == NULL ? "no" : "yes",   // mTextureCoords is an array of pointers
+		       mesh->mNormals       == NULL ? "n" : "y",
+		       mesh->mColors[0]==NULL ? "n" : "y", // mColors is an array of pointers
+		       mesh->mTextureCoords[0] == NULL ? "n" : "y",   // mTextureCoords is an array of pointers
 		       mesh->mNumBones,
 		       geom->texture_count == 0 ? "(null)" : texPath.data);
 	} // end for each mesh in node
