@@ -362,7 +362,10 @@ void display()
 			 * aspect ratio of the label texture and the aspect ratio of
 			 * the window (because we are placing the quad in normalized
 			 * device coordinates). */
-			float windowAspect  = glutGet(GLUT_WINDOW_WIDTH) /(float) glutGet(GLUT_WINDOW_HEIGHT);
+			int windowWidth, windowHeight;
+			viewmat_window_size(&windowWidth, &windowHeight);
+			float windowAspect = windowWidth / (float)windowHeight;
+			
 			float stretchLabel[16];
 			mat4f_scale_new(stretchLabel, 1/8.0 * fpsLabelAspectRatio / windowAspect, 1/8.0, 1);
 

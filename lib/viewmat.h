@@ -31,6 +31,8 @@
 extern "C" {
 #endif
 
+void viewmat_window_size(int *width, int *height);
+
 void viewmat_begin_frame(void);
 void viewmat_begin_eye(int viewportID);
 int viewmat_get_blitted_framebuffer(int viewportID);

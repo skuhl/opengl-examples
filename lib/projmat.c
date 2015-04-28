@@ -136,7 +136,7 @@ void projmat_init()
  * @param result The location for view frustum values to be stored.
  *
  * @param viewportWidth The width of the viewport this frustum is
- * for. If viewportWidth is -1, it is assumed that he frustum will
+ * for. If viewportWidth is -1, it is assumed that the frustum will
  * fill the entire window. This option is useful for HMD rendering
  * where there are two viewports for a single window. The viewport
  * dimensions are necessary to calculate an appropriate aspect ratio
@@ -153,10 +153,12 @@ void projmat_get_frustum(float result[6], int viewportWidth, int viewportHeight)
 {
 	if(projmat_mode == -1 || projmat_mode == 0)
 	{
+		int windowWidth, windowHeight;
+		viewmat_window_size(&windowWidth, &windowHeight);
 		if(viewportWidth < 0)
-			viewportWidth  = glutGet(GLUT_WINDOW_WIDTH);
+			viewportWidth  = windowWidth;
 		if(viewportHeight < 0)
-			viewportHeight  = glutGet(GLUT_WINDOW_HEIGHT);
+			viewportHeight  = windowHeight;
 		float aspect = viewportWidth/(float)viewportHeight;
 		float nearPlane = 0.1;
 		float farPlane = 30;

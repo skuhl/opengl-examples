@@ -73,6 +73,54 @@ static const char *viewmat_vrpn_obj = NULL; /**< Name of the VRPN object that we
 static HmdControlState viewmat_hmd;
 
 
+/** Sometimes calls to glutGet(GLUT_WINDOW_*) take several milliseconds
+ * to complete. To maintain a 60fps frame rate, we have a budget of
+ * about 16 milliseconds per frame. These functions might get called
+ * multiple times in multiple places per frame. viewmat_window_size()
+ * is an alternative way to get the window size but it may be up to 1
+ * second out of date.
+ *
+ * This causes window resizing to look a little ugly, but it is
+ * functional and results in a more consistent framerate.
+ *
+ * @param width To be filled in with the width of the GLUT window.
+ *
+ * @param height To be filled in with the height of the GLUT window.
+ */
+void viewmat_window_size(int *width, int *height)
+{
+	if(width == NULL || height == NULL)
+	{
+		kuhl_errmsg("width and/or height pointers were null.");
+		exit(EXIT_FAILURE);
+	}
+	
+	// Initialize static variables upon startup
+	static int savedWidth  = -1;
+	static int savedHeight = -1;
+	static long savedTime = -1;
+
+	// If it is the first time we are called and the variables are not
+	// initialized, initialize them!
+	int needToUpdate = 0;
+	if(savedWidth < 0 || savedHeight < 0 || savedTime < 0)
+		needToUpdate = 1;
+	else if(kuhl_milliseconds() - savedTime > 1000)
+		needToUpdate = 1;
+
+	if(needToUpdate)
+	{
+		savedWidth  = glutGet(GLUT_WINDOW_WIDTH);
+		savedHeight = glutGet(GLUT_WINDOW_HEIGHT);
+		savedTime = kuhl_milliseconds();
+		// kuhl_msg("Updated window size\n");
+	}
+
+	*width = savedWidth;
+	*height = savedHeight;
+}
+
+
 /** Should be called prior to rendering a frame. */
 void viewmat_begin_frame(void)
 {
@@ -217,8 +265,9 @@ void viewmat_begin_eye(int viewportID)
 static void viewmat_one_viewport()
 {
 	/* One viewport fills the entire screen */
-	int windowWidth  = glutGet(GLUT_WINDOW_WIDTH);
-	int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+	int windowWidth, windowHeight;
+	viewmat_window_size(&windowWidth, &windowHeight);
+
 	viewports_size = 1;
 	viewports[0][0] = 0;
 	viewports[0][1] = 0;
@@ -229,8 +278,8 @@ static void viewmat_one_viewport()
 static void viewmat_anaglyph_viewports()
 {
 	/* One viewport fills the entire screen */
-	int windowWidth  = glutGet(GLUT_WINDOW_WIDTH);
-	int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+	int windowWidth, windowHeight;
+	viewmat_window_size(&windowWidth, &windowHeight);
 	viewports_size = 2;
 	/* Our anaglyph rendering uses parallel cameras. Changing the
 	 * offset will change the distance at which objects are perceived
@@ -274,8 +323,8 @@ static void viewmat_anaglyph_viewports()
 static void viewmat_two_viewports()
 {
 	/* Two viewports, one for each eye */
-	int windowWidth  = glutGet(GLUT_WINDOW_WIDTH);
-	int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+	int windowWidth, windowHeight;
+	viewmat_window_size(&windowWidth, &windowHeight);
 
 	/* TODO: Figure out if it makes sense to make this configurable at runtime. */
 	viewports_size = 2;
@@ -796,7 +845,7 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 	mat4f_identity(rotMat);     // tracking system rotation
 	mat4f_identity(posMat);     // tracking system position
 	mat4f_identity(initPosMat); // camera starting location
-
+	
 	/* Construct posMat and rotMat matrices which indicate the
 	 * position and orientation of the HMD. */
 	if(viewmat_vrpn_obj) // get position from VRPN
@@ -902,6 +951,54 @@ void viewmat_get_ivs(float viewmatrix[16], float frustum[6])
 	mat4f_lookatVec_new(viewmatrix, pos, lookat, up);
 
 }
+
+/** Performs a sanity check on how long it took us to render a
+ * frame. At 60fps, we have approximately 16 milliseconds or 16000
+ * microseconds per frame. If the time between two subsequent
+ * renderings of viewportID 0 is too large, a warning message is
+ * printed.
+ *
+ * Even though the average FPS over a period of time may be above 60,
+ * the rendering might not appear smooth if an occasional frame misses
+ * the time budget.
+ */
+static void viewmat_validate_fps(int viewportID)
+{
+	/* Arbitrary time budget. */
+	static const int targetFps = 60;
+	static const int timeBudget = 1000000.0f / targetFps;
+	
+	if(viewportID > 0)
+		return;
+
+	/* Initialize our warning message counter and the time that the
+	 * last frame was rendered. */
+	static int warnMsgCount = 0;
+	static long lastTime = -1;
+	if(lastTime < 0) // if our first time called, initialize time and return.
+	{
+		lastTime = kuhl_microseconds();
+		return;
+	}
+
+	/* If it took too long to render the frame, print a message. */
+	long delay = kuhl_microseconds() - lastTime;
+	if(delay > timeBudget)
+	{
+		warnMsgCount++;
+
+		/* Don't print the message if the first few frames took too
+		 * long to render. Also, eventually stop printing the
+		 * message. */
+		if(warnMsgCount > 5 && warnMsgCount < 500)
+			kuhl_warnmsg("It took %ld microseconds to render a frame. Time budget for %d fps is %d microseconds.\n", delay, targetFps, timeBudget);
+		if(warnMsgCount == 499)
+			kuhl_warnmsg("That was your last warning about the time budget per frame.\n");
+	}
+
+	lastTime = kuhl_microseconds();
+}
+
 
 /** Performs a sanity check on the IPD to ensure that it is not too small, big, or reversed.
 
@@ -1032,6 +1129,7 @@ void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 	}
 
 	viewmat_validate_ipd(viewmatrix, viewportID);
+	viewmat_validate_fps(viewportID);
 }
 
 /** Gets the viewport information for a particular viewport.
