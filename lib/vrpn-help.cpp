@@ -44,6 +44,7 @@ static kalman_state kalman;
 static void smooth(vrpn_TRACKERCB &t)
 {
 #if 0
+	// TODO: We need to use the times returned by VRPN, not our own time.
 	double smoothed = kalman_estimate(&kalman, t.pos[0]);
 	// printf("%ld, %lf, %lf\n", kuhl_milliseconds(), t.pos[0], smoothed);
 	t.pos[0] = smoothed;
@@ -52,7 +53,9 @@ static void smooth(vrpn_TRACKERCB &t)
 
 
 /** A callback function that will get called whenever the tracker
- * provides us with new data. */
+ * provides us with new data. This may be called repeatedly for each
+ * record that we have missed if many records have been delivered
+ * since the last call to the VRPN mainloop() function. */
 static void VRPN_CALLBACK handle_tracker(void *name, vrpn_TRACKERCB t)
 {
 	float fps = kuhl_getfps(&fps_state);
@@ -64,6 +67,16 @@ static void VRPN_CALLBACK handle_tracker(void *name, vrpn_TRACKERCB t)
 	 * update. */
 	float pos[3];
 	vec3f_set(pos, t.pos[0], t.pos[1], t.pos[2]);
+	
+	long microseconds = (t.msg_time.tv_sec* 1000000L) + t.msg_time.tv_usec;
+
+	if(0)
+	{
+		printf("Current time %ld; VRPN record time: %ld\n", kuhl_microseconds(), microseconds);
+		printf("Received position from vrpn: ");
+		vec3f_print(pos);
+	}
+	
 	if(vec3f_norm(pos) > 100)
 		return;
 	

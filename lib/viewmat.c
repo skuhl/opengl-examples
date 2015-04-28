@@ -688,7 +688,8 @@ static void viewmat_fix_rotation(float orient[16])
 }
 
 
-/** Get the view matrix from the mouse.
+/** Get the view matrix from the mouse. Or, if a VRPN object is
+ * specified, get the view matrix from VRPN.
  *
  * @param viewmatrix The view matrix to be filled in.
  *
@@ -698,25 +699,29 @@ static void viewmat_fix_rotation(float orient[16])
  **/
 static void viewmat_get_mouse(float viewmatrix[16], int viewportNum)
 {
+	float eyeDist = 0.055;  // TODO: Make this configurable.
+	
 	if(viewmat_vrpn_obj == NULL) // if no VRPN object specified, use mouse movement
 	{
 		float pos[3],look[3],up[3];
 		mousemove_get(pos, look, up);
-
-		float eyeDist = 0.055;  // TODO: Make this configurable.
 
 		float lookVec[3], rightVec[3];
 		vec3f_sub_new(lookVec, look, pos);
 		vec3f_normalize(lookVec);
 		vec3f_cross_new(rightVec, lookVec, up);
 		vec3f_normalize(rightVec);
-		if(viewportNum == 0)
-			vec3f_scalarMult(rightVec, -eyeDist/2.0);
-		else
-			vec3f_scalarMult(rightVec, eyeDist/2.0);
 
-		vec3f_add_new(look, look, rightVec);
-		vec3f_add_new(pos, pos, rightVec);
+		if(viewports_size == 2) // if 2 viewports, use left/right IPD offset
+		{
+			if(viewportNum == 0)
+				vec3f_scalarMult(rightVec, -eyeDist/2.0);
+			else
+				vec3f_scalarMult(rightVec, eyeDist/2.0);
+
+			vec3f_add_new(look, look, rightVec);
+			vec3f_add_new(pos, pos, rightVec);
+		}
 
 		mat4f_lookatVec_new(viewmatrix, pos, look, up);
 	}
@@ -726,15 +731,25 @@ static void viewmat_get_mouse(float viewmatrix[16], int viewportNum)
 		vrpn_get(viewmat_vrpn_obj, NULL, pos, orient);
 
 		float pos4[4] = {pos[0],pos[1],pos[2],1};
-
 		viewmat_fix_rotation(orient);
 		mat4f_copy(viewmatrix, orient);
-		mat4f_setColumn(viewmatrix, pos4, 3);  // set last column
-		mat4f_invert(viewmatrix);
-		// TODO: eye separation for HMD
-	}
 
-	// mat4f_print(viewmatrix);
+		if(viewports_size == 2) // use left/right offset if 2 viewports are used
+		{
+			float rightVec[4];
+			mat4f_getColumn(rightVec, orient, 0);
+			if(viewportNum == 0)
+				vec3f_scalarMult(rightVec, -eyeDist/2.0);
+			else
+				vec3f_scalarMult(rightVec, eyeDist/2.0);
+			
+			vec4f_add_new(pos4, rightVec, pos4);
+			pos4[3] = 1;
+		}
+			
+		mat4f_setColumn(viewmatrix, pos4, 3);
+		mat4f_invert(viewmatrix);
+	}
 
 	if(viewportNum == 0)
 		dgr_setget("!!viewMat0", viewmatrix, sizeof(float)*16);
@@ -897,9 +912,11 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
 {
 	// First, if viewportID=0, save the matrix so we can do the check when we are called with viewportID=1.
 	static float viewmatrix0[16];
+	static long viewmatrix0time;
 	if(viewportID == 0)
 	{
 		mat4f_copy(viewmatrix0, viewmatrix);
+		viewmatrix0time = kuhl_microseconds();
 		return;
 	}
 
@@ -926,11 +943,19 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
 		float diff[4];
 		vec4f_sub_new(diff, pos1, pos2);
 		vec4f_scalarMult_new(diff, diff, flip); // flip vector if necessary
-		
+
+		/* This message may be triggered if a person is moving quickly
+		 * and/or when the FPS is low. This happens because the
+		 * position/orientation of the head changed between the
+		 * rendering of the left and right eyes. */
 		float ipd = diff[0];
+		long delay = kuhl_microseconds() - viewmatrix0time;
 		if(ipd > .07 || ipd < .05)
-			kuhl_errmsg("IPD validation failed. IPD is apparently set to %f meters. Should be between .05 and .07 for most people.\n", ipd);
-		// printf("IPD=%f\n", ipd);
+		{
+			kuhl_warnmsg("IPD=%.4f meters, delay=%ld us (IPD validation failed; occasional messages are OK!)\n", ipd, delay);
+		}
+		// kuhl_msg("IPD=%.4f meters, delay=%ld us\n", ipd, delay);
+
 	}
 }
 
