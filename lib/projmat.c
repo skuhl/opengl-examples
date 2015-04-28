@@ -15,6 +15,7 @@
 #include <GL/freeglut.h>
 #endif
 #include "kuhl-util.h"
+#include "viewmat.h"
 
 float projmat_frustum[6];
 float projmat_master_frustum[6];
