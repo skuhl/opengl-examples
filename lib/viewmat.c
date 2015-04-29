@@ -964,8 +964,11 @@ void viewmat_get_ivs(float viewmatrix[16], float frustum[6])
  */
 static void viewmat_validate_fps(int viewportID)
 {
-	/* Arbitrary time budget. */
-	static const int targetFps = 60;
+	/* Set the time budget. If vblank syncing is turned on, we'd
+	 * expect to always get a FPS close to the monitor. Setting this
+	 * to 55 (instead of 60) will prevent messages from getting
+	 * printed out constantly on such machines. */
+	static const int targetFps = 55;
 	static const int timeBudget = 1000000.0f / targetFps;
 	
 	if(viewportID > 0)
