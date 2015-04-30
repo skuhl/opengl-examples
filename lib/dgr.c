@@ -30,7 +30,7 @@
 
 #include <errno.h>
 #include <time.h>
-
+#include "msg.h"
 
 
 
@@ -108,15 +108,15 @@ static void dgr_init_master()
 	for(p = servinfo; p != NULL; p = p->ai_next) {
 		if ((dgr_socket = socket(p->ai_family, p->ai_socktype,
 		                         p->ai_protocol)) == -1) {
-			perror("DGR Master: socket");
+			msg(ERROR, "DGR: Master: socket(): %s", strerror(errno));
 			continue;
 		}
 		break;
 	}
 
 	if (p == NULL) {
-		fprintf(stderr, "DGR Master: failed to bind socket\n");
-		exit(1);
+		msg(FAIL, "DGR Master: failed to bind socket\n");
+		exit(EXIT_FAILURE);
 	}
 
 	dgr_addrinfo = p;
@@ -130,10 +130,10 @@ static void dgr_init_slave()
 	const char* port = getenv("DGR_SLAVE_LISTEN_PORT");
 	if(port == NULL)
 	{
-		fprintf(stderr, "DGR Slave: DGR_SLAVE_LISTEN_PORT was not set.\n");
-		exit(1);
+		msg(FAIL, "DGR Slave: DGR_SLAVE_LISTEN_PORT was not set.\n");
+		exit(EXIT_FAILURE);
 	}
-	printf("DGR Slave: Preparing to receive packets on port %s.\n", port);
+	msg(INFO, "DGR Slave: Preparing to receive packets on port %s.\n", port);
 	
 	dgr_time_lastreceive = 0;
 	struct addrinfo hints, *servinfo, *p;
@@ -145,8 +145,8 @@ static void dgr_init_slave()
 
 	int rv;
 	if ((rv = getaddrinfo(NULL, port, &hints, &servinfo)) != 0) {
-		fprintf(stderr, "DGR Slave: getaddrinfo: %s\n", gai_strerror(rv));
-		exit(1);
+		msg(FAIL, "DGR Slave: getaddrinfo: %s\n", gai_strerror(rv));
+		exit(EXIT_FAILURE);
 	}
 
 	// loop through all the results and bind to the first we can
@@ -158,7 +158,7 @@ static void dgr_init_slave()
 		}
 		if (bind(dgr_socket, p->ai_addr, p->ai_addrlen) == -1) {
 			close(dgr_socket);
-			perror("DGR Slave: bind");
+			msg(ERROR, "DGR Slave: bind: %s", strerror(errno));
 			continue;
 		}
 
@@ -166,8 +166,8 @@ static void dgr_init_slave()
 	}
 
 	if (p == NULL) {
-		fprintf(stderr, "DGR Slave: Failed to bind socket\n");
-		exit(1);
+		msg(FAIL, "DGR Slave: Failed to bind socket\n");
+		exit(EXIT_FAILURE);
 	}
 
 	freeaddrinfo(servinfo);
@@ -200,27 +200,31 @@ int dgr_is_enabled()
  * beginning of a DGR program. */
 void dgr_init()
 {
-	const char* master = getenv("DGR_MODE");
+	const char* mode = getenv("DGR_MODE");
 
 	dgr_disabled = 1;
-	if(master != NULL)
+	if(mode != NULL)
 	{
-		if(strcmp(master, "master") == 0)
+		if(strcmp(mode, "master") == 0)
 		{
 			dgr_mode = 1;
 			dgr_disabled = 0;
 			dgr_init_master();
 		}
-		else if(strcmp(master, "slave") == 0)
+		else if(strcmp(mode, "slave") == 0)
 		{
 			dgr_mode = 0;
 			dgr_disabled = 0;
 			dgr_init_slave();
 		}
+		else
+		{
+			msg(ERROR, "DGR_MODE must be 'slave' or 'master' but you set it to '%s'", mode);
+		}
 	}
 	
 	if(dgr_disabled)
-		fprintf(stderr, "DGR: DGR is disabled; not a valid DGR environment.\n");
+		msg(INFO, "DGR is disabled; not a valid DGR environment.\n");
 
 	// if there already is a list, free it.
 	if(dgr_list_size > 0)
@@ -285,8 +289,8 @@ static void dgr_set(const char *name, void *buffer, int size)
 
 		if(dgr_list_size > DGR_MAX_LIST_SIZE)
 		{
-			printf("DGR Master: You have exceeded the maximum list size for DGR.");
-			exit(1);
+			msg(FAIL, "DGR Master: You have exceeded the maximum list size for DGR.");
+			exit(EXIT_FAILURE);
 		}
 
 		dgr_record *record = &(dgr_list[dgr_list_size]);
@@ -343,12 +347,12 @@ void dgr_setget(const char *name, void* buffer, int bufferSize)
 	{
 		int ret = dgr_get(name, buffer, bufferSize);
 		if(ret == -1)
-			printf("DGR Slave: Tried to get '%s' from DGR, but DGR didn't have it!\n", name);
+			msg(ERROR, "DGR Slave: Tried to get '%s' from DGR, but DGR didn't have it!\n", name);
 		else if(ret == -2)
-			printf("DGR Slave: Tried to get '%s' from DGR, but you didn't provide a large enough buffer.\n", name);
+			msg(ERROR, "DGR Slave: Tried to get '%s' from DGR, but you didn't provide a large enough buffer.\n", name);
 
 		else if(ret != bufferSize)
-			printf("DGR Slave: Successfully retrieved '%s' from DGR but you provided a buffer that didn't match the size of the data you are retrieving. Your buffer is %d bytes but the '%s' record is %d bytes.\n", name, bufferSize, name, ret);
+			msg(WARNING, "DGR Slave: Successfully retrieved '%s' from DGR but you provided a buffer that didn't match the size of the data you are retrieving. Your buffer is %d bytes but the '%s' record is %d bytes.\n", name, bufferSize, name, ret);
 	}
 }
 
@@ -433,17 +437,17 @@ void dgr_print_list()
 {
 	if(dgr_disabled)
 	{
-		printf("DGR is disabled or not initialized correctly.\n");
+		msg(DEBUG, "DGR is disabled or not initialized correctly.\n");
 		return;
 	}
-	printf("Current DGR list (index, size, buffer, name):\n");
+	msg(DEBUG, "Current DGR list (index, size, buffer, name):\n");
 	for(int i=0; i<dgr_list_size; i++)
 	{
 		dgr_record *r = &(dgr_list[i]);
-		printf("%3d %5d %p %s\n", i, r->size, r->buffer, r->name);
+		msg(DEBUG, "%3d %5d %p %s\n", i, r->size, r->buffer, r->name);
 	}
 	if(dgr_list_size == 0)
-		printf("[ the list is empty ]\n");
+		msg(DEBUG, "[ the list is empty ]\n");
 }
 
 /** Serializes and sends DGR data out across a network. */
@@ -468,13 +472,13 @@ static void dgr_send()
 	int numbytes;
 	if((numbytes = sendto(dgr_socket, buf, bufSize, 0,
 	                      dgr_addrinfo->ai_addr, dgr_addrinfo->ai_addrlen)) == -1) {
-		perror("DGR Master: sendto");
+		msg(FAIL, "DGR Master: sendto: %s", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	free(buf);
 	if(numbytes != bufSize) // double check that everything got sent
 	{
-		fprintf(stderr, "DGR Master: Error sending all of the bytes in the message.");
+		msg(FAIL, "DGR Master: Error sending all of the bytes in the message.");
 		exit(EXIT_FAILURE);
 	}
 #endif // __MINGW32__
@@ -499,8 +503,8 @@ static void dgr_receive(int timeout)
 		int seconds = 15;
 		if(time(NULL) - dgr_time_lastreceive >= seconds)
 		{
-			printf("DGR Slave: dgr_receive() hasn't received packets within %d seconds. We did receive some one or more packets earlier. Did the master or relay die? Exiting...\n", seconds);
-			exit(1);
+			msg(FAIL, "DGR Slave: dgr_receive() hasn't received packets within %d seconds. We did receive some one or more packets earlier. Did the master or relay die? Exiting...\n", seconds);
+			exit(EXIT_FAILURE);
 		}
 	}
 	
@@ -510,16 +514,16 @@ static void dgr_receive(int timeout)
 	int retval = poll(&fds, 1, timeout);
 	if(retval == -1)
 	{
-		perror("poll()");
-		exit(1);
+		msg(FAIL, "poll(): %s", strerror(errno));
+		exit(EXIT_FAILURE);
 	}
 	else if(retval == 0) // nothing to read within timeout value
 	{
 		/* If a non-zero timeout value was specified and we timed out, exit() */
 		if(timeout > 0)
 		{
-			printf("DGR Slave: dgr_receive() never received anything and timed out (%f second timeout). Exiting...\n", timeout/1000.0);
-			exit(1);
+			msg(FAIL, "DGR Slave: dgr_receive() never received anything and timed out (%f second timeout). Exiting...\n", timeout/1000.0);
+			exit(EXIT_FAILURE);
 		}
 		return;
 	}
@@ -539,8 +543,8 @@ static void dgr_receive(int timeout)
 	{
 		if ((numbytes = recvfrom(dgr_socket, serialized, 1024*1024, 0,
 		                         (struct sockaddr *)&their_addr, &addr_len)) == -1) {
-			perror("recvfrom");
-			exit(1);
+			msg(FAIL, "recvfrom: %s", strerror(errno));
+			exit(EXIT_FAILURE);
 		}
 
 		// if there is nothing to read anymore from the socket, break out of loop.

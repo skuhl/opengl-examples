@@ -60,7 +60,7 @@ static void VRPN_CALLBACK handle_tracker(void *name, vrpn_TRACKERCB t)
 {
 	float fps = kuhl_getfps(&fps_state);
 	if(fps_state.frame == 0)
-		printf("VRPN records per second: %.1f\n", fps);
+		msg(INFO, "VRPN records per second: %.1f\n", fps);
 
 	/* Some tracking systems return large values when a point gets
 	 * lost. If the tracked point seems to be lost, ignore this
@@ -109,7 +109,7 @@ char* vrpn_default_host()
 	FILE *f = fopen(path, "r");
 	if(f == NULL)
 	{
-		kuhl_warnmsg("Can't open file %s to get VRPN server information.\n", path);
+		msg(WARNING, "Can't open file %s to get VRPN server information.\n", path);
 		return NULL;
 	}
 	char *vrpnString = (char*)malloc(1024);
@@ -119,7 +119,7 @@ char* vrpn_default_host()
 	{
 		if(fgets(vrpnString, 1024, f) == NULL)
 		{
-			kuhl_warnmsg("Can't read %s to get VRPN server information.\n", path);
+			msg(WARNING, "Can't read %s to get VRPN server information.\n", path);
 			return NULL;
 		}
 		kuhl_trim_whitespace(vrpnString);
@@ -170,12 +170,12 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 #else
 	if(object == NULL || strlen(object) == 0)
 	{
-		kuhl_warnmsg("Empty or NULL object name was passed into this function.\n");
+		msg(WARNING, "Empty or NULL object name was passed into this function.\n");
 		return 0;
 	}
 	if(hostname != NULL && strlen(hostname) == 0)
 	{
-		kuhl_warnmsg("Hostname is an empty string.\n");
+		msg(WARNING, "Hostname is an empty string.\n");
 		return 0;
 	}
 	
@@ -189,7 +189,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 			hostnamecpp = hostnameInFile;
 		else
 		{
-			kuhl_errmsg("Failed to find hostname of VRPN server.\n");
+			msg(ERROR, "Failed to find hostname of VRPN server.\n");
 			exit(EXIT_FAILURE);
 		}
 		
@@ -268,7 +268,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 	else
 	{
 		/* If this is our first time, create a tracker for the object@hostname string, register the callback handler. */
-		kuhl_msg("Connecting to VRPN server: %s\n", hostnamecpp.c_str());
+		msg(INFO, "Connecting to VRPN server: %s\n", hostnamecpp.c_str());
 		vrpn_Connection *connection = vrpn_get_connection_by_name(hostnamecpp.c_str());
 		/* Wait for a bit to see if we can connect. Sometimes we don't immediately connect! */
 		for(int i=0; i<1000 && !connection->connected(); i++)
@@ -280,7 +280,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 		if(!connection->connected())
 		{
 		    delete connection;
-		    kuhl_errmsg("Failed to connect to tracker: %s\n", fullname.c_str());
+		    msg(ERROR, "Failed to connect to tracker: %s\n", fullname.c_str());
 		    exit(EXIT_FAILURE);
 		}
 		vrpn_Tracker_Remote *tkr = new vrpn_Tracker_Remote(fullname.c_str(), connection);

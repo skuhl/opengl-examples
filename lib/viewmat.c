@@ -91,7 +91,7 @@ void viewmat_window_size(int *width, int *height)
 {
 	if(width == NULL || height == NULL)
 	{
-		kuhl_errmsg("width and/or height pointers were null.");
+		msg(ERROR, "width and/or height pointers were null.");
 		exit(EXIT_FAILURE);
 	}
 	
@@ -113,7 +113,7 @@ void viewmat_window_size(int *width, int *height)
 		savedWidth  = glutGet(GLUT_WINDOW_WIDTH);
 		savedHeight = glutGet(GLUT_WINDOW_HEIGHT);
 		savedTime = kuhl_milliseconds();
-		// kuhl_msg("Updated window size\n");
+		// msg(INFO, "Updated window size\n");
 	}
 
 	*width = savedWidth;
@@ -239,7 +239,7 @@ void viewmat_begin_eye(int viewportID)
 			glBindFramebuffer(GL_FRAMEBUFFER, rightFramebufferAA);
 		else
 		{
-			kuhl_errmsg("Unknown viewport ID: %d\n",viewportID);
+			msg(ERROR, "Unknown viewport ID: %d\n",viewportID);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -253,7 +253,7 @@ void viewmat_begin_eye(int viewportID)
 			glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_FALSE);
 		else
 		{
-			kuhl_errmsg("Unknown viewport ID: %d\n",viewportID);
+			msg(ERROR, "Unknown viewport ID: %d\n",viewportID);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -383,7 +383,7 @@ static void viewmat_refresh_viewports()
 			viewmat_anaglyph_viewports();
 			break;
 		default:
-			kuhl_errmsg("Unknown viewmat mode: %d\n", viewmat_mode);
+			msg(ERROR, "Unknown viewmat mode: %d\n", viewmat_mode);
 			exit(EXIT_FAILURE);
 	}
 }
@@ -401,7 +401,7 @@ static int viewmat_init_vrpn()
 	if(vrpnObjString != NULL && strlen(vrpnObjString) > 0)
 	{
 		viewmat_vrpn_obj = vrpnObjString;
-		kuhl_msg("View is following tracker object: %s\n", viewmat_vrpn_obj);
+		msg(INFO, "View is following tracker object: %s\n", viewmat_vrpn_obj);
 		
 		/* Try to connect to VRPN server */
 		float vrpnPos[3];
@@ -424,7 +424,7 @@ void viewmat_init_ivs()
 
 	if(viewmat_init_vrpn() == 0)
 	{
-		kuhl_errmsg("Failed to setup IVS mode because we could not connect to VRPN.\n");
+		msg(ERROR, "Failed to setup IVS mode because we could not connect to VRPN.\n");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -439,7 +439,6 @@ static void viewmat_init_mouse(float pos[3], float look[3], float up[3])
 	if(viewmat_init_vrpn() == 1)
 		return;
 		
-	kuhl_msg("Using mouse movement.\n");
 	glutMotionFunc(mousemove_glutMotionFunc);
 	glutMouseFunc(mousemove_glutMouseFunc);
 	mousemove_set(pos[0],pos[1],pos[2],
@@ -455,7 +454,7 @@ static void viewmat_init_hmd_dsight()
 	const char* hmdDeviceFile = getenv("VIEWMAT_DSIGHT_FILE");
 	if (hmdDeviceFile == NULL)
 	{
-		kuhl_errmsg("Failed to setup dSight HMD mode, VIEWMAT_DSIGHT_FILE not set\n");
+		msg(ERROR, "Failed to setup dSight HMD mode, VIEWMAT_DSIGHT_FILE not set\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -471,7 +470,7 @@ static void viewmat_init_hmd_dsight()
 static void viewmat_init_hmd_oculus(float pos[3])
 {
 #ifdef MISSING_OVR
-	kuhl_errmsg("Oculus support is missing: You have not compiled this code against the LibOVR library.\n");
+	msg(ERROR, "Oculus support is missing: You have not compiled this code against the LibOVR library.\n");
 	exit(EXIT_FAILURE);
 #else
 	ovr_Initialize(NULL);
@@ -480,12 +479,12 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	hmd = ovrHmd_Create(0);
 	if(!hmd)
 	{
-		kuhl_warnmsg("Failed to open Oculus HMD. Is ovrd running? Is libOVRRT*.so.* in /usr/lib, /usr/local/lib, or the current directory?\n");
-		kuhl_warnmsg("Press any key to proceed with Oculus debugging window.\n");
+		msg(WARNING, "Failed to open Oculus HMD. Is ovrd running? Is libOVRRT*.so.* in /usr/lib, /usr/local/lib, or the current directory?\n");
+		msg(WARNING, "Press any key to proceed with Oculus debugging window.\n");
 		char c; 
 		if(fscanf(stdin, "%c", &c) < 0)
 		{
-			kuhl_errmsg("fscanf error.\n");
+			msg(ERROR, "fscanf error.\n");
 			exit(EXIT_FAILURE);
 		}
 
@@ -493,12 +492,12 @@ static void viewmat_init_hmd_oculus(float pos[3])
 		useDebugMode = 1;
 		if(!hmd)
 		{
-			kuhl_errmsg("Oculus: Failed to create virtual debugging HMD\n");
+			msg(ERROR, "Oculus: Failed to create virtual debugging HMD\n");
 			exit(EXIT_FAILURE);
 		}
 	}
 	
-	kuhl_msg("Initialized HMD: %s - %s\n", hmd->Manufacturer, hmd->ProductName);
+	msg(INFO, "Initialized HMD: %s - %s\n", hmd->Manufacturer, hmd->ProductName);
 
 #if 0
 	printf("default fov tangents left eye:\n");
@@ -615,7 +614,7 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	//distort_caps |= ovrDistortionCap_TimeWarp; 
 	
 	if(!ovrHmd_ConfigureRendering(hmd, &glcfg.Config, distort_caps, hmd->DefaultEyeFov, eye_rdesc)) {
-		kuhl_errmsg("Failed to configure distortion renderer.\n");
+		msg(ERROR, "Failed to configure distortion renderer.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -651,30 +650,30 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	{
 		viewmat_mode = VIEWMAT_IVS;
 		viewmat_init_ivs();
-		kuhl_msg("Using IVS head tracking mode, tracking object: %s\n", viewmat_vrpn_obj);
+		msg(INFO, "Using IVS head tracking mode, tracking object: %s\n", viewmat_vrpn_obj);
 	}
 	else if(strcasecmp(modeString, "dsight") == 0)
 	{
 		viewmat_mode = VIEWMAT_HMD_DSIGHT;
 		viewmat_init_hmd_dsight();
-		kuhl_msg("Using dSight HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
+		msg(INFO, "Using dSight HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
 	}
 	else if(strcasecmp(modeString, "oculus") == 0)
 	{
 		viewmat_mode = VIEWMAT_HMD_OCULUS;
 		viewmat_init_hmd_oculus(pos);
 		// TODO: Tracking options?
-		kuhl_msg("Using Oculus HMD head tracking mode.\n");
+		msg(INFO, "Using Oculus HMD head tracking mode.\n");
 	}
 	else if(strcasecmp(modeString, "hmd") == 0)
 	{
 		viewmat_mode = VIEWMAT_HMD;
 		viewmat_init_mouse(pos, look, up);
-		kuhl_msg("Using HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
+		msg(INFO, "Using HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
 	}
 	else if(strcasecmp(modeString, "none") == 0)
 	{
-		kuhl_msg("No view matrix handler is being used.\n");
+		msg(INFO, "No view matrix handler is being used.\n");
 		viewmat_mode = VIEWMAT_NONE;
 		// Set our initial position, but don't handle mouse movement.
 		mousemove_set(pos[0],pos[1],pos[2],
@@ -683,16 +682,16 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	}
 	else if(strcasecmp(modeString, "anaglyph") == 0)
 	{
-		kuhl_msg("Anaglyph image rendering. Use the red filter on the left eye and the cyan filter on the right eye.\n");
+		msg(INFO, "Anaglyph image rendering. Use the red filter on the left eye and the cyan filter on the right eye.\n");
 		viewmat_mode = VIEWMAT_ANAGLYPH;
 		viewmat_init_mouse(pos, look, up);
 	}
 	else
 	{
 		if(strcasecmp(modeString, "mouse") == 0) // if no mode specified, default to mouse
-			kuhl_msg("Using mouse movement.\n");
+			msg(INFO, "Using mouse movement.\n");
 		else // if an unrecognized mode was specified.
-			kuhl_msg("Unrecognized VIEWMAT_MODE: %s; using mouse movement instead.\n", modeString);
+			msg(ERROR, "Unrecognized VIEWMAT_MODE: %s; using mouse movement instead.\n", modeString);
 		viewmat_mode = VIEWMAT_MOUSE;
 		viewmat_init_mouse(pos, look, up);
 	}
@@ -994,9 +993,9 @@ static void viewmat_validate_fps(int viewportID)
 		 * long to render. Also, eventually stop printing the
 		 * message. */
 		if(warnMsgCount > 5 && warnMsgCount < 500)
-			kuhl_warnmsg("It took %ld microseconds to render a frame. Time budget for %d fps is %d microseconds.\n", delay, targetFps, timeBudget);
+			msg(WARNING, "It took %ld microseconds to render a frame. Time budget for %d fps is %d microseconds.\n", delay, targetFps, timeBudget);
 		if(warnMsgCount == 499)
-			kuhl_warnmsg("That was your last warning about the time budget per frame.\n");
+			msg(WARNING, "That was your last warning about the time budget per frame.\n");
 	}
 
 	lastTime = kuhl_microseconds();
@@ -1052,9 +1051,9 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
 		long delay = kuhl_microseconds() - viewmatrix0time;
 		if(ipd > .07 || ipd < .05)
 		{
-			kuhl_warnmsg("IPD=%.4f meters, delay=%ld us (IPD validation failed; occasional messages are OK!)\n", ipd, delay);
+			msg(WARNING, "IPD=%.4f meters, delay=%ld us (IPD validation failed; occasional messages are OK!)\n", ipd, delay);
 		}
-		// kuhl_msg("IPD=%.4f meters, delay=%ld us\n", ipd, delay);
+		// msg(INFO, "IPD=%.4f meters, delay=%ld us\n", ipd, delay);
 
 	}
 }
@@ -1107,7 +1106,7 @@ void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 			viewmat_get_mouse(viewmatrix, viewportID);
 			break;
 		default:
-			kuhl_errmsg("Unknown viewmat mode: %d\n", viewmat_mode);
+			msg(ERROR, "Unknown viewmat mode: %d\n", viewmat_mode);
 			exit(EXIT_FAILURE);
 	}
 		
@@ -1149,7 +1148,7 @@ void viewmat_get_viewport(int viewportValue[4], int viewportNum)
 	
 	if(viewportNum >= viewports_size)
 	{
-		kuhl_errmsg("You requested a viewport that does not exist.\n");
+		msg(ERROR, "You requested a viewport that does not exist.\n");
 		exit(EXIT_FAILURE);
 	}
 

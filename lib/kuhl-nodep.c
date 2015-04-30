@@ -23,6 +23,7 @@
 
 #include "kuhl-nodep.h"
 
+
 // When compiling on windows, add suseconds_t and the rand48 functions.
 #ifdef __MINGW32__
 #define RAND48_SEED_0   (0x330e)
