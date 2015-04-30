@@ -435,8 +435,9 @@ void kuhl_shuffle(void *array, int n, int size)
 /** Removes any whitespace characters at the beginning or end of the string in place.
 
     @param str The null-terminated string to trim in place.
+    @return The same pointer as the str parameter.
 */
-void kuhl_trim_whitespace(char *str)
+char* kuhl_trim_whitespace(char *str)
 {
 	/* Find first non-whitespace character in string (or the null terminator) */
 	char *firstNonSpace = str;
@@ -447,7 +448,7 @@ void kuhl_trim_whitespace(char *str)
 	if(*firstNonSpace == 0)
 	{
 		*str = 0;
-		return;
+		return str;
 	}
 
 	/* Find the last character in the string */
@@ -461,6 +462,7 @@ void kuhl_trim_whitespace(char *str)
 	// lastNonSpace-firstNonSpace will be 1. But, we want to copy both
 	// of the characters plus the null terminator. */
 	memmove(str, firstNonSpace, lastNonSpace-firstNonSpace+2);
+	return str;
 }
 
 

@@ -51,7 +51,7 @@ void kuhl_limitfps(int fps);
 
 int kuhl_randomInt(int min, int max);
 void kuhl_shuffle(void *array, int n, int size);
-void kuhl_trim_whitespace(char *str);
+char* kuhl_trim_whitespace(char *str);
 double kuhl_gauss();
 
 long kuhl_microseconds();

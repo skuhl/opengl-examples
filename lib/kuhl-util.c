@@ -105,12 +105,12 @@ GLuint kuhl_create_shader(const char *filename, GLuint shader_type)
 	 * OpenGL to be guaranteed that the functions exist. */
 	if(shader_type == GL_FRAGMENT_SHADER && !glewIsSupported("GL_ARB_fragment_shader") && !glewIsSupported("GL_VERSION_2_0"))
 	{
-		msg(FAIL, "glew said fragment shaders are not supported on this machine.\n");
+		msg(FATAL, "glew said fragment shaders are not supported on this machine.\n");
 		exit(EXIT_FAILURE);
 	}
 	if(shader_type == GL_VERTEX_SHADER && !glewIsSupported("GL_ARB_vertex_shader") && !glewIsSupported("GL_VERSION_2_0"))
 	{
-		msg(FAIL, "glew said vertex shaders are not supported on this machine.\n", __func__);
+		msg(FATAL, "glew said vertex shaders are not supported on this machine.\n", __func__);
 		exit(EXIT_FAILURE);
 	}
 
@@ -131,14 +131,17 @@ GLuint kuhl_create_shader(const char *filename, GLuint shader_type)
 	GLsizei actualLen = 0;
 	glGetShaderInfoLog(shader, 1024, &actualLen, logString);
 	if(actualLen > 0)
-		printf("%s Shader log:\n%s\n", shader_type == GL_VERTEX_SHADER ? "Vertex" : "Fragment", logString);
+		msg(WARNING, "%s Shader log for %s:\n%s\n", shader_type == GL_VERTEX_SHADER ? "Vertex" : "Fragment", filename, kuhl_trim_whitespace(logString));
 	kuhl_errorcheck();
 
 	/* If shader compilation wasn't successful, exit. */
 	GLint shaderCompileStatus = GL_FALSE;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &shaderCompileStatus);
 	if(shaderCompileStatus == GL_FALSE)
+	{
+		msg(FATAL, "Failed to compile '%s'\n", filename);
 		exit(EXIT_FAILURE);
+	}
 
 	return shader;
 }
@@ -260,10 +263,10 @@ GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename)
 	GLuint program = glCreateProgram();
 	if(program == 0)
 	{
-		msg(FAIL, "Failed to create program.\n");
-		exit(1);
+		msg(FATAL, "Failed to create program.\n");
+		exit(EXIT_FAILURE);
 	}
-	msg(DEBUG, "GLSL program %d: Creating vertex (%s) & fragment (%s) shaders\n",
+	msg(INFO, "GLSL prog %d: Creating vertex (%s) & fragment (%s) shaders\n",
 	    program, vertexFilename, fragFilename);
 	
 	/* Create the shaders */
@@ -288,7 +291,7 @@ GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename)
 	if(linked == GL_FALSE)
 	{
 		kuhl_print_program_log(program);
-		msg(FAIL, "Failed to link GLSL program.\n");
+		msg(FATAL, "Failed to link GLSL program.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -311,7 +314,7 @@ void kuhl_print_program_log(GLuint program)
 	GLsizei actualLen = 0;
 	glGetProgramInfoLog(program, 1024, &actualLen, logString);
 	if(actualLen > 0)
-		printf("GLSL program log:\n%s\n", logString);
+		msg(WARNING, "GLSL program log:\n%s\n", logString);
 }
 
 
@@ -427,7 +430,7 @@ static void kuhl_geometry_sanity_check_attribute(GLuint bufferobject, const char
 			/* All parts of this attribute should be set */
 			if(attributeName == NULL || bufferobject == 0)
 			{
-				msg(FAIL, "Only part of the attribute was set:"
+				msg(FATAL, "Only part of the attribute was set:"
 				    "Name=%s bufferobject=%d\n",
 				    attributeName, bufferobject);
 				exit(EXIT_FAILURE);
@@ -1791,7 +1794,7 @@ static void kuhl_screenshot_stb(const char *outputImageFilename)
 	
 	if (!ok)
 	{
-		msg(FAIL, "Failed write screenshot to %s (note: STB can only write png, tga, and bmp files.)\n", outputImageFilename);
+		msg(FATAL, "Failed write screenshot to %s (note: STB can only write png, tga, and bmp files.)\n", outputImageFilename);
 		exit(EXIT_FAILURE);
 	}
 
@@ -2258,13 +2261,13 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 	/* Print warning messages if the model uses features that our code
 	 * doesn't support (even though ASSIMP might support them. */
 	if(scene->mNumCameras > 0)
-		printf("%s: WARNING: This model has %u camera(s) embedded in it that we are ignoring.\n",
+		msg(DEBUG, "%s: This model has %u camera(s) embedded in it that we are ignoring.\n",
 		       modelFilename, scene->mNumCameras);
 	if(scene->mNumLights > 0)
-		printf("%s: WARNING: This model has %u light(s) embedded in it that we are ignoring.\n",
+		msg(DEBUG, "%s: This model has %u light(s) embedded in it that we are ignoring.\n",
 		       modelFilename, scene->mNumLights);
 	if(scene->mNumTextures > 0)
-		printf("%s: WARNING: This model has %u texture(s) embedded in it. This program currently ignores embedded textures.\n",
+		msg(DEBUG, "%s: This model has %u texture(s) embedded in it. This program currently ignores embedded textures.\n",
 		       modelFilename, scene->mNumTextures);
 
 	// Uncomment this line to print additional information about the model:
@@ -3442,7 +3445,7 @@ void kuhl_play_sound(const char *filename)
 		/* Since exec will never return, we can only get here if exec
 		 * failed. */
 		perror("execvp");
-		msg(FAIL, "Error playing file %s (do you have the aplay, ogg123 and play commands installed on your machine?)\n", filename);
+		msg(FATAL, "Error playing file %s (do you have the aplay, ogg123 and play commands installed on your machine?)\n", filename);
 		exit(EXIT_FAILURE);
 	}
 

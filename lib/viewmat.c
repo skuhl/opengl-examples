@@ -992,9 +992,9 @@ static void viewmat_validate_fps(int viewportID)
 		/* Don't print the message if the first few frames took too
 		 * long to render. Also, eventually stop printing the
 		 * message. */
-		if(warnMsgCount > 5 && warnMsgCount < 500)
+		if(warnMsgCount > 5 && warnMsgCount <= 100)
 			msg(WARNING, "It took %ld microseconds to render a frame. Time budget for %d fps is %d microseconds.\n", delay, targetFps, timeBudget);
-		if(warnMsgCount == 499)
+		if(warnMsgCount == 100)
 			msg(WARNING, "That was your last warning about the time budget per frame.\n");
 	}
 

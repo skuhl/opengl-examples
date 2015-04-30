@@ -124,7 +124,7 @@ void projmat_init()
 		msg(INFO, "Using a view frustum.\n");
 	else
 	{
-		msg(FAIL, "projmat is confused.\n");
+		msg(FATAL, "projmat is confused.\n");
 		exit(EXIT_FAILURE);
 	}
 

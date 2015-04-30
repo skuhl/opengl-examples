@@ -33,7 +33,7 @@
 
 #include "msg.h"
 
-static FILE *f = NULL;
+static FILE *f = NULL;  /*< The file stream for our log file */
 
 
 static void msg_timestamp(char *buf, int len)
@@ -41,13 +41,14 @@ static void msg_timestamp(char *buf, int len)
 	struct timeval tv;
 	if(gettimeofday(&tv, NULL) < 0)
 	{
-		msg(FAIL, "gettimeofday: %s", strerror(errno));
+		msg(FATAL, "gettimeofday: %s", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	struct tm *now = localtime(&(tv.tv_sec));
 	char buf1[1024];
-	strftime(buf1, 1024, "%Y%m%d-%H%M%S", now);
+	//strftime(buf1, 1024, "%Y%m%d-%H%M%S", now);
+	strftime(buf1, 1024, "%H%M%S", now);
 	snprintf(buf, len, "%s.%06ld", buf1, tv.tv_usec);
 }
 
@@ -67,15 +68,31 @@ static void msg_type_string(msg_type type, char *buf, int len)
 		case ERROR:
 			snprintf(buf, len, "[ERROR]");
 			break;
-		case FAIL:
-			snprintf(buf, len, "[FAIL ]");
+		case FATAL:
+			snprintf(buf, len, "[FATAL]");
+			break;
+		case BOLD:
+			snprintf(buf, len, "[BOLD ]");
+			break;
+		case GREEN:
+			snprintf(buf, len, "[GREEN]");
+			break;
+		case BLUE:
+			snprintf(buf, len, "[BLUE ]");
+			break;
+		case CYAN:
+			snprintf(buf, len, "[CYAN ]");
+			break;
+		case PURPLE:
+			snprintf(buf, len, "[PURPL]");
 			break;
 		default:
 			snprintf(buf, len, "[?????]");
 	}
 }
 
-/** Returns 1 if this type of message should be printed to the console. */
+/** Returns 1 if this type of message should be printed to the
+ * console. */
 static int msg_show_type(msg_type type)
 {
 	switch(type)
@@ -84,7 +101,7 @@ static int msg_show_type(msg_type type)
 		case INFO:    return 1;
 		case WARNING: return 1;
 		case ERROR:   return 1;
-		case FAIL:    return 1;
+		case FATAL:   return 1;
 		default:      return 1;
 	}
 }
@@ -106,8 +123,24 @@ static void msg_start_color(msg_type type, FILE *stream)
 		case ERROR:
 			fprintf(stream, "\x1B[31m"); // red text
 			break;
-		case FAIL:
+		case FATAL:
 			fprintf(stream, "\x1B[31m"); // red text
+			fprintf(stream, "\x1B[1m");  // bold
+			break;
+		case GREEN:
+			fprintf(stream, "\x1B[32m"); // green text
+			fprintf(stream, "\x1B[1m");  // bold
+			break;
+		case BLUE:
+			fprintf(stream, "\x1B[34m"); // blue text
+			fprintf(stream, "\x1B[1m");  // bold
+			break;
+		case CYAN:
+			fprintf(stream, "\x1B[36m"); // cyan text
+			fprintf(stream, "\x1B[1m");  // bold
+			break;
+		case PURPLE:
+			fprintf(stream, "\x1B[35m"); // magenta text
 			fprintf(stream, "\x1B[1m");  // bold
 			break;
 		default:
@@ -148,12 +181,18 @@ static void msg_init(void)
 	else
 		f = fopen(logfile, "w"); // overwrite
 
-	fprintf(f, "[TYPE ] YYYYMMDD-HHMMSS.uSEC   file:line function() message\n");
-	fprintf(f, "-----------------------------------------------------------\n");
+	fprintf(f, "[TYPE ] HHMMSS.uSEC   file:line function()\n");
+	fprintf(f, "------------------------------------------\n");
 	msg(INFO, "Messages are being written to %s\n", logfile);
 }
 
-
+/** Writes a message to the log file.
+    @param type The type of message to log
+    @param fileName The filename where this function was called from.
+    @param lineNum The line number in the file where this function was called from.
+    @param funcName The name of the function which called this function.
+    @param msg The message to log
+*/
 void msg_details(msg_type type, const char *fileName, int lineNum, const char *funcName, const char *msg, ...)
 {
 	msg_init();
@@ -172,11 +211,12 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 	/* Determine the stream that we are going to print out to: stdout,
 	 * stderr, or don't print to console */
 	FILE *stream = stdout;
-	if(type == ERROR || type == FAIL)
+	if(type == ERROR || type == FATAL)
 		stream = stderr;
 	if(msg_show_type(type) == 0)
 		stream = NULL;
 
+	/* Print the message to stderr or stdout */
 	if(stream)
 	{
 		msg_start_color(type, stream);
@@ -184,21 +224,13 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 		msg_end_color(type, stream);
 	}
 
-	/* info to prepend to message printed to log file */
+	/* Info to prepend to message printed to log file */
 	char timestamp[1024];
 	msg_timestamp(timestamp, 1024);
-	if(fileName)
-	{
-		char *fileNameCopy = strdup(fileName);
-		char *shortFileName = basename(fileNameCopy);
-		fprintf(f, "%s %s %s:%d %s() %s", typestr, timestamp, shortFileName, lineNum, funcName, msgbuf);
-		free(fileNameCopy);
-	}
-	else
-	{
-		fprintf(f, "%s %s %s", typestr, timestamp, msgbuf);
-
-	}
+	char *fileNameCopy = strdup(fileName);
+	char *shortFileName = basename(fileNameCopy);
+	fprintf(f, "%s %s %s:%d %s()\n        %s", typestr, timestamp, shortFileName, lineNum, funcName, msgbuf);
+	free(fileNameCopy);
 
 	/* Add a newline to the end of the message if one was absent */
 	int msgbuflen = strlen(msgbuf);
@@ -214,9 +246,13 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 	fflush(f);
 }
 
+/** ASSIMP can be configured to call a callback function every time it
+    needs to print a message. This function allows us to feed assimp's
+    messages through our logging system.
+*/
 void msg_assimp_callback(const char* msg, char *usr)
 {
-	msg_details(DEBUG, NULL, 0, NULL, "ASSIMP: %s %s", usr, msg);
+	msg_details(DEBUG, "ASSIMP", 0, "ASSIMP", "%s %s", usr, msg);
 }
 
 

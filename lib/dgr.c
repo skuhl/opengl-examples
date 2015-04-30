@@ -115,7 +115,7 @@ static void dgr_init_master()
 	}
 
 	if (p == NULL) {
-		msg(FAIL, "DGR Master: failed to bind socket\n");
+		msg(FATAL, "DGR Master: failed to bind socket\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -130,7 +130,7 @@ static void dgr_init_slave()
 	const char* port = getenv("DGR_SLAVE_LISTEN_PORT");
 	if(port == NULL)
 	{
-		msg(FAIL, "DGR Slave: DGR_SLAVE_LISTEN_PORT was not set.\n");
+		msg(FATAL, "DGR Slave: DGR_SLAVE_LISTEN_PORT was not set.\n");
 		exit(EXIT_FAILURE);
 	}
 	msg(INFO, "DGR Slave: Preparing to receive packets on port %s.\n", port);
@@ -145,7 +145,7 @@ static void dgr_init_slave()
 
 	int rv;
 	if ((rv = getaddrinfo(NULL, port, &hints, &servinfo)) != 0) {
-		msg(FAIL, "DGR Slave: getaddrinfo: %s\n", gai_strerror(rv));
+		msg(FATAL, "DGR Slave: getaddrinfo: %s\n", gai_strerror(rv));
 		exit(EXIT_FAILURE);
 	}
 
@@ -166,7 +166,7 @@ static void dgr_init_slave()
 	}
 
 	if (p == NULL) {
-		msg(FAIL, "DGR Slave: Failed to bind socket\n");
+		msg(FATAL, "DGR Slave: Failed to bind socket\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -289,7 +289,7 @@ static void dgr_set(const char *name, void *buffer, int size)
 
 		if(dgr_list_size > DGR_MAX_LIST_SIZE)
 		{
-			msg(FAIL, "DGR Master: You have exceeded the maximum list size for DGR.");
+			msg(FATAL, "DGR Master: You have exceeded the maximum list size for DGR.");
 			exit(EXIT_FAILURE);
 		}
 
@@ -472,13 +472,13 @@ static void dgr_send()
 	int numbytes;
 	if((numbytes = sendto(dgr_socket, buf, bufSize, 0,
 	                      dgr_addrinfo->ai_addr, dgr_addrinfo->ai_addrlen)) == -1) {
-		msg(FAIL, "DGR Master: sendto: %s", strerror(errno));
+		msg(FATAL, "DGR Master: sendto: %s", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	free(buf);
 	if(numbytes != bufSize) // double check that everything got sent
 	{
-		msg(FAIL, "DGR Master: Error sending all of the bytes in the message.");
+		msg(FATAL, "DGR Master: Error sending all of the bytes in the message.");
 		exit(EXIT_FAILURE);
 	}
 #endif // __MINGW32__
@@ -503,7 +503,7 @@ static void dgr_receive(int timeout)
 		int seconds = 15;
 		if(time(NULL) - dgr_time_lastreceive >= seconds)
 		{
-			msg(FAIL, "DGR Slave: dgr_receive() hasn't received packets within %d seconds. We did receive some one or more packets earlier. Did the master or relay die? Exiting...\n", seconds);
+			msg(FATAL, "DGR Slave: dgr_receive() hasn't received packets within %d seconds. We did receive some one or more packets earlier. Did the master or relay die? Exiting...\n", seconds);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -514,7 +514,7 @@ static void dgr_receive(int timeout)
 	int retval = poll(&fds, 1, timeout);
 	if(retval == -1)
 	{
-		msg(FAIL, "poll(): %s", strerror(errno));
+		msg(FATAL, "poll(): %s", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	else if(retval == 0) // nothing to read within timeout value
@@ -522,7 +522,7 @@ static void dgr_receive(int timeout)
 		/* If a non-zero timeout value was specified and we timed out, exit() */
 		if(timeout > 0)
 		{
-			msg(FAIL, "DGR Slave: dgr_receive() never received anything and timed out (%f second timeout). Exiting...\n", timeout/1000.0);
+			msg(FATAL, "DGR Slave: dgr_receive() never received anything and timed out (%f second timeout). Exiting...\n", timeout/1000.0);
 			exit(EXIT_FAILURE);
 		}
 		return;
@@ -543,7 +543,7 @@ static void dgr_receive(int timeout)
 	{
 		if ((numbytes = recvfrom(dgr_socket, serialized, 1024*1024, 0,
 		                         (struct sockaddr *)&their_addr, &addr_len)) == -1) {
-			msg(FAIL, "recvfrom: %s", strerror(errno));
+			msg(FATAL, "recvfrom: %s", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 
