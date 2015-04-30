@@ -1,6 +1,6 @@
 Freeglut is available in package managers for many Linux
 distributions. Even if you have freeglut installed, cmake may require
-that you also have some X development libraries installed to.
+that you also have some X development libraries installed too.
 
 For example, on Ubuntu 14.04, you may need to install these packages:
 libxmu-dev
@@ -8,3 +8,14 @@ libxi-dev
 freeglut3-dev
 
 On OSX, the glut included with XCode should be sufficient.
+
+
+To compile freeglut from scratch, download the latest version from:
+freeglut.sf.net
+tar -xzf freeglut-X.X.X.tar.gz
+cd freeglut-X-X-X
+cmake .
+make
+
+If you also want to install the program onto your system:
+make install
