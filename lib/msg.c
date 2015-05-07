@@ -216,19 +216,24 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 	if(msg_show_type(type) == 0)
 		stream = NULL;
 
-	/* Print the message to stderr or stdout */
-	if(stream)
-	{
-		msg_start_color(type, stream);
-		fprintf(stream, "%s %s", typestr, msgbuf);
-		msg_end_color(type, stream);
-	}
-
-	/* Info to prepend to message printed to log file */
 	char timestamp[1024];
 	msg_timestamp(timestamp, 1024);
 	char *fileNameCopy = strdup(fileName);
 	char *shortFileName = basename(fileNameCopy);
+	
+	/* Print the message to stderr or stdout */
+	if(stream)
+	{
+		msg_start_color(type, stream);
+		/* Print additional details to console for fatal errors */
+		if(type == FATAL)
+			fprintf(stream, "%s %s @ %s:%d %s()", typestr, msgbuf, shortFileName, lineNum, funcName);
+		else
+			fprintf(stream, "%s %s", typestr, msgbuf);
+		msg_end_color(type, stream);
+	}
+
+	/* Info to prepend to message printed to log file */
 	fprintf(f, "%s %s %s:%d %s()\n        %s", typestr, timestamp, shortFileName, lineNum, funcName, msgbuf);
 	free(fileNameCopy);
 
