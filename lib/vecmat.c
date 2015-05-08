@@ -1797,3 +1797,88 @@ void mat4d_lookat_new(double result[16], double eyeX, double eyeY, double eyeZ, 
 }
 
 
+/** Pushes a copy of a matrix currently on top of the stack onto the
+    top of the stack. A list structure is used to represent the stack.
+
+    @param l A list structure to store the stack.
+
+    @param m The matrix to multiply against the top matrix on the
+    stack and then push the result onto the stack.
+
+    @return If l is NULL, a newly allocated stack that should
+    eventually be free()'d with list_free(). Otherwise, the same value
+    as l.
+ */
+void mat4f_stack_push(list *l)
+{
+	float peek[16];
+
+	if(l->length == 0)
+	{
+		/* Push an identity matrix if the stack is empty */
+		mat4f_identity(peek);
+		list_push(l, peek);
+	}
+	else
+	{
+		/* Get the top matrix on the stack or use the identity if the
+		 * stack is empty */
+		list_peek(l, peek);
+
+		if(list_push(l, peek) == 0)
+		{
+			msg(FATAL, "Failed to push a matrix onto the stack");
+			exit(EXIT_FAILURE);
+		}
+	}
+}
+
+/** Pop a matrix from the top of the stack. Similar to OpenGL 2.0
+    glPopMatrix().
+
+    @param l The stack to pop from.
+ */
+void mat4f_stack_pop(list *l)
+{
+	if(l == NULL || l->length == 0)
+		return;
+	list_pop(l, NULL);
+}
+
+/** Retrieve a copy of the top matrix from the stack without changing
+    the contents of the stack.
+
+    @param l The stack to retrieve the top matrix from.
+    
+    @param m The location to copy the top matrix into.
+ */
+void mat4f_stack_peek(const list *l, float m[16])
+{
+	if(list_peek(l, m) == 0)
+		mat4f_identity(m);
+}
+
+
+/** Multiplies the top matrix on the stack with the given matrix. A
+    list structure is used to represent the stack. If the stack is
+    empty, the matrix will instead be pushed onto the stack.
+
+    @param l The stack that the matrix should be applied to.
+
+    @param m The matrix to be multiplied against the top matrix on the
+    stack.
+    
+    @return If l is NULL, a newly allocated stack that should
+    eventually be free()'d with list_free(). Otherwise, the same value
+    as l.
+ */
+void mat4f_stack_mult(list *l, float m[16])
+{
+	if(l->length == 0)
+		list_push(l, m);
+	else
+	{
+		float *top = (float*) list_getptr(l, l->length-1);
+		mat4f_mult_mat4f_new(top, top, m);
+	}
+}

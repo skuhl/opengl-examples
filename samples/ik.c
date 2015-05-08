@@ -333,6 +333,9 @@ void display()
 		/* Get the view or camera matrix; update the frustum values if needed. */
 		float viewMat[16], perspective[16];
 		viewmat_get(viewMat, perspective, viewportID);
+		
+		list *stack = list_new(16, sizeof(float)*16);
+		mat4f_stack_mult(stack, viewMat);
 
 		glUseProgram(program);
 
@@ -351,23 +354,22 @@ void display()
 
 		float modelMat[16];
 		get_model_matrix(modelMat);
+		mat4f_stack_mult(stack, modelMat);
 
 		float baseRotate[16];
 		mat4f_rotateEuler_new(baseRotate, arm1X, 0, arm1Z, "XYZ");
-		mat4f_mult_mat4f_new(modelMat, modelMat, baseRotate);
-		
-		float modelview[16];
-		mat4f_mult_mat4f_new(modelview, viewMat, modelMat); // modelview = view * model
+		mat4f_stack_mult(stack, baseRotate);
+		mat4f_stack_push(stack);
 
 		float scale[16];
 		float decenter[16];
 		mat4f_scale_new(scale, .5, 4, .5);
 		mat4f_translate_new(decenter, 0, .5, 0);
-		mat4f_mult_mat4f_new(modelview, modelview, scale);
-		mat4f_mult_mat4f_new(modelview, modelview, decenter);
+		mat4f_stack_mult(stack, scale);
+		mat4f_stack_mult(stack, decenter);
 
-
-		/* Send the modelview matrix to the vertex program. */
+		float modelview[16];
+		mat4f_stack_peek(stack, modelview);
 		glUniformMatrix4fv(kuhl_get_uniform("ModelView"),
 		                   1, // number of 4x4 float matrices
 		                   0, // transpose
@@ -376,26 +378,28 @@ void display()
 		kuhl_geometry_draw(modelgeom); /* Draw the model */
 		kuhl_errorcheck();
 
+		mat4f_stack_pop(stack);
 
 		float trans[16];
-
 		mat4f_translate_new(trans, 0, 4, 0);
-		mat4f_mult_mat4f_new(modelMat, modelMat, trans);
+		mat4f_stack_mult(stack, trans);
 
 		mat4f_rotateEuler_new(baseRotate, arm2X, 0, arm2Z, "XYZ");
-		mat4f_mult_mat4f_new(modelMat, modelMat, baseRotate);
-		
-		mat4f_mult_mat4f_new(modelview, viewMat, modelMat); // modelview = view * model
-		mat4f_mult_mat4f_new(modelview, modelview, scale);
-		mat4f_mult_mat4f_new(modelview, modelview, decenter);
+		mat4f_stack_mult(stack, baseRotate);
+		mat4f_stack_push(stack);
 
+		mat4f_stack_mult(stack, scale);
+		mat4f_stack_mult(stack, decenter);
 		
 		/* Send the modelview matrix to the vertex program. */
+		mat4f_stack_peek(stack, modelview);
 		glUniformMatrix4fv(kuhl_get_uniform("ModelView"),
 		                   1, // number of 4x4 float matrices
 		                   0, // transpose
 		                   modelview); // value
 		kuhl_geometry_draw(modelgeom);
+
+		list_free(stack);
 		
 		if(dgr_is_enabled() == 0 || dgr_is_master())
 		{
@@ -429,6 +433,7 @@ void display()
 			kuhl_geometry_draw(&labelQuad); /* Draw the quad */
 			glEnable(GL_DEPTH_TEST);
 			kuhl_errorcheck();
+
 		}
 
 		glUseProgram(0); // stop using a GLSL program.

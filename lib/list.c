@@ -497,8 +497,8 @@ int list_get(const list *l, int index, void *result)
 	}
 	else
 	{
-		msg(ERROR, "Failed to get item from index %d. The list has length %d\n", index, l->length);
-		return 0;
+		msg(FATAL, "Failed to get item from index %d. The list has length %d\n", index, l->length);
+		exit(EXIT_FAILURE);
 	}
 }
 
@@ -780,6 +780,16 @@ int list_pop(list *l, void *result)
 {
 	return list_remove(l, l->length-1, result);
 }
+
+/** This list data structure can be used as a stack. Peeking at the
+ * stack gives you a copy of the top item on the stack. */
+int list_peek(const list *l, void *result)
+{
+	if(l->length == 0)
+		return 0;
+	return list_get(l, l->length-1, result);
+}
+
 
 void list_print_stats(const list *l)
 {

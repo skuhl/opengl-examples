@@ -98,6 +98,9 @@ int list_find(const list *l, void *item);
 int list_sort(list *l, int (*compar)(const void *, const void *));
 int list_bsearch(list *l, void *item, int (*compar)(const void *, const void *));
 
+int list_push(list *l, void *item);
+int list_pop(list *l, void *result);
+int list_peek(const list *l, void *result);
 
 
 	

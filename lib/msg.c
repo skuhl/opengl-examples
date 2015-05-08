@@ -227,7 +227,11 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 		msg_start_color(type, stream);
 		/* Print additional details to console for fatal errors */
 		if(type == FATAL)
-			fprintf(stream, "%s %s @ %s:%d %s()", typestr, msgbuf, shortFileName, lineNum, funcName);
+		{
+			fprintf(stream, "%s %s", typestr, msgbuf);
+			fprintf(stream, "%s Occurred at %s:%d in the function %s()\n",
+			        typestr, shortFileName, lineNum, funcName);
+		}
 		else
 			fprintf(stream, "%s %s", typestr, msgbuf);
 		msg_end_color(type, stream);
