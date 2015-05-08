@@ -593,8 +593,12 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	
 	unsigned int hmd_caps = 0;
 	hmd_caps |= ovrHmdCap_DynamicPrediction; // enable internal latency feedback
-	// disable vsync; allow frame rate higher than display refresh rate, can cause tearing
-	//hmd_caps |= ovrHmdCap_NoVSync;
+	
+	/* disable vsync; allow frame rate higher than display refresh
+	   rate, can cause tearing. On some windowing systems, you using
+	   this setting reduces issues with overrunning the time budget
+	   and tearing still does not occur. */
+	hmd_caps |= ovrHmdCap_NoVSync;
 	hmd_caps |= ovrHmdCap_LowPersistence; // Less blur during rotation; dimmer screen
 	
 	ovrHmd_SetEnabledCaps(hmd, hmd_caps);
@@ -985,6 +989,7 @@ static void viewmat_validate_fps(int viewportID)
 
 	/* If it took too long to render the frame, print a message. */
 	long delay = kuhl_microseconds() - lastTime;
+	// msg(INFO, "Time to render frame %d\n", delay);
 	if(delay > timeBudget)
 	{
 		warnMsgCount++;

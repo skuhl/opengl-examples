@@ -9,4 +9,10 @@ http://www.katsbits.com/download/models/md5-example.php
 http://people.sc.fsu.edu/~jburkardt/data/ply/ply.html
 http://graphics.im.ntu.edu.tw/~robin/courses/cg03/model/
 
+Other interesting models that are more difficult to obtain or are in a format not supported by assimp:
 http://graphics.stanford.edu/projects/mich/   (only available to researchers)
+http://resources.mpi-inf.mpg.de/mpimodel/v1.0/  (MPI informatics building, available on VRML and MAX formats)
+http://graphics.cs.brown.edu/games/brown-mesh-set/  (IFS file format)
+
+
+
