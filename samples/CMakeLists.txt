@@ -5,9 +5,9 @@
 # name that contains a main() function.
 ####################################
 # Programs that need ASSIMP
-set(NEED_ASSIMP ogl3-assimp ogl3-slerp ogl3-explode ogl3-flock)
+set(NEED_ASSIMP viewer slerp explode flock ik)
 # Programs that don't rely on libraries
-set(NEED_NOTHING ogl3-text ogl3-triangle ogl3-triangle-color ogl3-triangle-shade ogl3-prerend ogl3-picker ogl3-teartest ogl3-texture ogl2-triangle ogl2-slideshow ogl2-texture)
+set(NEED_NOTHING text triangle triangle-color triangle-shade prerend picker teartest texture ogl2-triangle ogl2-slideshow ogl2-texture test-queue test-list)
 
 
 # Construct a list of programs that we want to compile based on which libraries are available.

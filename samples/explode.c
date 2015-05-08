@@ -57,8 +57,8 @@ typedef struct {
 
 particle **particles;
 
-#define GLSL_VERT_FILE "ogl3-assimp.vert"
-#define GLSL_FRAG_FILE "ogl3-assimp.frag"
+#define GLSL_VERT_FILE "assimp.vert"
+#define GLSL_FRAG_FILE "assimp.frag"
 
 /** Give each vertex a velocity when the explosion occurs. */
 void explode()

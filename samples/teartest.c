@@ -1,3 +1,28 @@
+/*
+  This program can help you evaluate if tearing is occurring on your
+  screen. If tearing does occur, you will see lines appearing on the
+  screen. If tearing is not occurring, the program should just appear
+  to be a flickering window.
+
+   On a default Ubuntu machine, you may need to use a command such as:
+
+   nvidia-settings --assign CurrentMetaMode="HDMI-0: nvidia-auto-select {ForceFullCompositionPipeline=On}"
+
+   to eliminate tearing. Applying this metamode in your xorg.conf file
+   may not work since the lightdm login manager may override it.
+
+   The 'nvidia-settings' GUI also has a checkbox for sync to vblank.
+   The 'ccsm' program can also allow you to set sync to vblank for the
+   Ubuntu compositing window manager.
+
+   Finally, if you are using multiple monitors on Ubuntu and none of
+   the above options work, try setting the environment variables in
+   /etc/profile as recommended on the following page:
+   
+   https://wiki.archlinux.org/index.php/NVIDIA
+
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -29,6 +54,12 @@ void keyboard(unsigned char key, int x, int y)
 		case 27: // ASCII code for Escape key
 			exit(0);
 			break;
+		case 'f':
+			glutFullScreen();
+			break;
+		case 'c':
+			glutSetCursor(GLUT_CURSOR_NONE);
+			break;
 	}
 
 	/* Whenever any key is pressed, request that display() get
@@ -36,6 +67,9 @@ void keyboard(unsigned char key, int x, int y)
 	glutPostRedisplay();
 }
 
+
+static kuhl_fps_state fps_state;
+int toggle = 0;
 /* Called by GLUT whenever the window needs to be redrawn. This
  * function should not be called directly by the programmer. Instead,
  * we can call glutPostRedisplay() to request that GLUT call display()
@@ -45,7 +79,18 @@ void display()
 	/* If we are using DGR, send or receive data to keep multiple
 	 * processes/computers synchronized. */
 	dgr_update();
+	int tmp=1;
+	// send something to DGR so the slaves don't think that the server has died.
+	dgr_setget("dummy", &tmp, sizeof(int));
 
+	float fps = kuhl_getfps(&fps_state);
+	if(fps_state.frame == 0)
+		printf("FPS: %.1f\n", fps);
+
+	toggle++;
+	if(toggle > 1)
+		toggle = 0;
+	
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will
 	 * run twice for HMDs (once for the left eye and once for the
@@ -54,7 +99,7 @@ void display()
 	for(int viewportID=0; viewportID<viewmat_num_viewports(); viewportID++)
 	{
 		viewmat_begin_eye(viewportID);
-
+		
 		/* Where is the viewport that we are drawing onto and what is its size? */
 		int viewport[4]; // x,y of lower left corner, width, height
 		viewmat_get_viewport(viewport, viewportID);
@@ -67,56 +112,13 @@ void display()
 		 * after viewmat_begin_eye(). */
 		glScissor(viewport[0], viewport[1], viewport[2], viewport[3]);
 		glEnable(GL_SCISSOR_TEST);
-		glClearColor(.2,.2,.2,0); // set clear color to grey
+		if(toggle)
+			glClearColor(.2,.2,.2,0); // set clear color to grey
+		else
+			glClearColor(.3,.4,.4,0); // set clear color to grey
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		glDisable(GL_SCISSOR_TEST);
 		glEnable(GL_DEPTH_TEST); // turn on depth testing
-		kuhl_errorcheck();
-
-		/* Get the view or camera matrix; update the frustum values if needed. */
-		float viewMat[16], perspective[16];
-		viewmat_get(viewMat, perspective, viewportID);
-
-		/* Calculate an angle to rotate the
-		 * object. glutGet(GLUT_ELAPSED_TIME) is the number of
-		 * milliseconds since glutInit() was called. */
-		int count = glutGet(GLUT_ELAPSED_TIME) % 10000; // get a counter that repeats every 10 seconds
-		float angle = count / 10000.0 * 360; // rotate 360 degrees every 10 seconds
-		/* Make sure all computers/processes use the same angle */
-		dgr_setget("angle", &angle, sizeof(GLfloat));
-		/* Create a 4x4 rotation matrix based on the angle we computed. */
-		float rotateMat[16];
-		mat4f_rotateAxis_new(rotateMat, angle, 0,1,0);
-
-		/* Create a scale matrix. */
-		float scaleMatrix[16];
-		mat4f_scale_new(scaleMatrix, 3, 3, 3);
-
-		// Modelview = (viewMatrix * scaleMatrix) * rotationMatrix
-		float modelview[16];
-		mat4f_mult_mat4f_new(modelview, viewMat, scaleMatrix);
-		mat4f_mult_mat4f_new(modelview, modelview, rotateMat);
-
-		kuhl_errorcheck();
-		glUseProgram(program);
-		kuhl_errorcheck();
-		/* Send the perspective projection matrix to the vertex program. */
-		glUniformMatrix4fv(kuhl_get_uniform("Projection"),
-		                   1, // number of 4x4 float matrices
-		                   0, // transpose
-		                   perspective); // value
-		/* Send the modelview matrix to the vertex program. */
-		glUniformMatrix4fv(kuhl_get_uniform("ModelView"),
-		                   1, // number of 4x4 float matrices
-		                   0, // transpose
-		                   modelview); // value
-		kuhl_errorcheck();
-		/* Draw the geometry using the matrices that we sent to the
-		 * vertex programs immediately above */
-		kuhl_geometry_draw(&triangle);
-		kuhl_geometry_draw(&quad);
-
-		glUseProgram(0); // stop using a GLSL program.
 
 	} // finish viewport loop
 	viewmat_end_frame();
@@ -124,7 +126,7 @@ void display()
 	/* Check for errors. If there are errors, consider adding more
 	 * calls to kuhl_errorcheck() in your code. */
 	kuhl_errorcheck();
-
+	
 	/* Ask GLUT to call display() again. We shouldn't call display()
 	 * ourselves recursively because it will not leave time for GLUT
 	 * to call other callback functions for when a key is pressed, the
@@ -157,10 +159,10 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint program)
 	                  GL_TRIANGLES); // type of thing to draw
 
 	/* The data that we want to draw */
-	GLfloat vertexPositions[] = {0+1.1, 0, 0,
-	                             1+1.1, 0, 0,
-	                             1+1.1, 1, 0,
-	                             0+1.1, 1, 0 };
+	GLfloat vertexPositions[] = {0, -10, 0,
+	                             1.5, -10, 0,
+	                             1.5,  10, 0,
+	                             0,  10, 0 };
 	kuhl_geometry_attrib(geom, vertexPositions,
 	                     3, // number of components x,y,z
 	                     "in_Position", // GLSL variable
@@ -213,11 +215,11 @@ int main(int argc, char** argv)
 
 	/* Compile and link a GLSL program composed of a vertex shader and
 	 * a fragment shader. */
-	program = kuhl_create_program("ogl3-triangle.vert", "ogl3-triangle.frag");
+	program = kuhl_create_program("triangle.vert", "triangle.frag");
 	glUseProgram(program);
 	kuhl_errorcheck();
 	/* Set the uniform variable in the shader that is named "red" to the value 1. */
-	glUniform1i(kuhl_get_uniform("red"), 0);
+	glUniform1i(kuhl_get_uniform("red"), 1);
 	kuhl_errorcheck();
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);
@@ -234,7 +236,8 @@ int main(int argc, char** argv)
 	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
 	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
 	viewmat_init(initCamPos, initCamLook, initCamUp);
-	
+
+	kuhl_getfps_init(&fps_state);
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */
 	glutMainLoop();

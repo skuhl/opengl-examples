@@ -1,8 +1,3 @@
-/* This example demonstrates how to draw a HUD cursor and how to use
- * the stencil buffer to determine what piece of geometry the cursor
- * is on. For more information and details, see:
- * http://en.wikibooks.org/wiki/OpenGL_Programming/Object_selection
- */
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -20,10 +15,7 @@
 #include "viewmat.h"
 GLuint program = 0; // id value for the GLSL program
 
-kuhl_geometry cursor;
 kuhl_geometry triangle;
-kuhl_geometry quad;
-
 
 /* Called by GLUT whenever a key is pressed. */
 void keyboard(unsigned char key, int x, int y)
@@ -55,7 +47,7 @@ void display()
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will
 	 * run twice for HMDs (once for the left eye and once for the
-	 * right.) */
+	 * right. */
 	viewmat_begin_frame();
 	for(int viewportID=0; viewportID<viewmat_num_viewports(); viewportID++)
 	{
@@ -74,7 +66,7 @@ void display()
 		glScissor(viewport[0], viewport[1], viewport[2], viewport[3]);
 		glEnable(GL_SCISSOR_TEST);
 		glClearColor(.2,.2,.2,0); // set clear color to grey
-		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		glDisable(GL_SCISSOR_TEST);
 		glEnable(GL_DEPTH_TEST); // turn on depth testing
 		kuhl_errorcheck();
@@ -117,72 +109,19 @@ void display()
 		                   0, // transpose
 		                   modelview); // value
 		kuhl_errorcheck();
-
-			/* Draw the geometry using the matrices that we sent to the
-			 * vertex programs immediately above. Use the stencil buffer
-			 * to keep track of which object appears on top. */
-		if(viewportID == 0)
-			glEnable(GL_STENCIL_TEST);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-		glStencilFunc(GL_ALWAYS, 1, -1);
+		/* Draw the geometry using the matrices that we sent to the
+		 * vertex programs immediately above */
 		kuhl_geometry_draw(&triangle);
-		
-		glStencilFunc(GL_ALWAYS, 2, -1);
-		kuhl_geometry_draw(&quad);
-		glDisable(GL_STENCIL_TEST);
-		
-		/* If we have multiple viewports, only draw cursor in the
-		 * first viewport. */
-		if(viewportID == 0)
-		{
-			/* Draw the cursor in normalized device coordinates. Don't
-			 * use any matrices. */
-			float identity[16];
-			mat4f_identity(identity);
-			glUniformMatrix4fv(kuhl_get_uniform("Projection"),
-			                   1, 0, identity);
-			glUniformMatrix4fv(kuhl_get_uniform("ModelView"),
-			                   1, 0, identity);
-
-			/* Disable depth testing so the cursor isn't occluded by
-			 * anything. */
-			glDisable(GL_DEPTH_TEST);
-			kuhl_geometry_draw(&cursor);
-			glEnable(GL_DEPTH_TEST);
-
-			/* When we render images on the Oculus, we are rendering
-			 * into a multisampled framebuffer object, and we can't
-			 * read from the multisample FBO until we have blitted it
-			 * into a normal FBO. Here, we get the blitted FBO for the
-			 * *previous* frame. */
-			GLint fb =viewmat_get_blitted_framebuffer(viewportID);
-			glBindFramebuffer(GL_FRAMEBUFFER, fb);
-			
-			GLuint stencilVal = 0;
-			kuhl_errorcheck();
-			glReadPixels(viewport[0]+viewport[2]/2, viewport[1]+viewport[3]/2,
-			             1,1, // get data for 1x1 area (i.e., a pixel)
-			             GL_STENCIL_INDEX, // query the stencil buffer
-			             GL_UNSIGNED_INT,
-			             &stencilVal);
-			kuhl_errorcheck();
-			if(stencilVal == 1)
-				printf("Cursor is on triangle.\n");
-			else if(stencilVal == 2)
-				printf("Cursor is on quad.\n");
-			else
-				printf("Cursor isn't on anything.\n");
-		}
 
 		glUseProgram(0); // stop using a GLSL program.
-		
+
 	} // finish viewport loop
 	viewmat_end_frame();
 
 	/* Check for errors. If there are errors, consider adding more
 	 * calls to kuhl_errorcheck() in your code. */
 	kuhl_errorcheck();
-    
+
 	/* Ask GLUT to call display() again. We shouldn't call display()
 	 * ourselves recursively because it will not leave time for GLUT
 	 * to call other callback functions for when a key is pressed, the
@@ -204,59 +143,12 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
 	                     "in_Position", // GLSL variable
 	                     KG_WARN); // warn if attribute is missing in GLSL program?
 
-	GLfloat colorData[] = { 1,0,0,
-	                        0,1,0,
-	                        0,0,1 };
+	GLfloat colorData[] = {1,0,0,
+	                       0,1,0,
+	                       0,0,1 };
 	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", KG_WARN);
 }
 
-void init_geometryCursor(kuhl_geometry *geom, GLuint program)
-{
-	kuhl_geometry_new(geom, program, 4, GL_LINES);
-
-	/* The data that we want to draw */
-	GLfloat vertexData[] = {-.04, 0, 0,
-	                         .04, 0, 0,
-	                        0, -.04, 0,
-	                        0,  .04, 0 };
-	kuhl_geometry_attrib(geom, vertexData, 3, "in_Position", KG_WARN);
-
-	GLfloat colorData[] = { 1,1,1,
-	                        1,1,1,
-	                        1,1,1,
-	                        1,1,1 };
-	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", KG_WARN);
-}
-
-
-
-/* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
-void init_geometryQuad(kuhl_geometry *geom, GLuint program)
-{
-	kuhl_geometry_new(geom, program,
-	                  4, // number of vertices
-	                  GL_TRIANGLES); // type of thing to draw
-
-	/* The data that we want to draw */
-	GLfloat vertexPositions[] = {0+1.1, 0, 0,
-	                             1+1.1, 0, 0,
-	                             1+1.1, 1, 0,
-	                             0+1.1, 1, 0 };
-	kuhl_geometry_attrib(geom, vertexPositions,
-	                     3, // number of components x,y,z
-	                     "in_Position", // GLSL variable
-	                     KG_WARN); // warn if attribute is missing in GLSL program?
-	GLfloat colorData[] = { 1,0,0,
-	                        0,1,0,
-	                        0,0,1,
-	                        0,1,1 };
-	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", KG_WARN);
-	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
-	                       0, 2, 3 }; // indices of second triangle.
-	kuhl_geometry_indices(geom, indexData, 6);
-
-	kuhl_errorcheck();
-}
 
 int main(int argc, char** argv)
 {
@@ -266,9 +158,9 @@ int main(int argc, char** argv)
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
 #ifdef __APPLE__
-	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE | GLUT_STENCIL);
+	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
 #else
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE | GLUT_STENCIL);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
 	glutInitContextVersion(3,2);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 #endif
@@ -295,22 +187,16 @@ int main(int argc, char** argv)
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
 
-	/* Compile and link a GLSL program composed of a vertex shader and
-	 * a fragment shader. */
-	program = kuhl_create_program("ogl3-triangle-color.vert", "ogl3-triangle-color.frag");
+	program = kuhl_create_program("triangle-color.vert", "triangle-color.frag");
 	glUseProgram(program);
 	kuhl_errorcheck();
-	/* Set the uniform variable in the shader that is named "red" to the value 1. */
-	glUniform1i(kuhl_get_uniform("red"), 1);
-	kuhl_errorcheck();
+
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);
 
 	/* Create kuhl_geometry structs for the objects that we want to
 	 * draw. */
-	init_geometryCursor(&cursor, program);
 	init_geometryTriangle(&triangle, program);
-	init_geometryQuad(&quad, program);
 
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */

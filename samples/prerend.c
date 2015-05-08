@@ -298,7 +298,7 @@ int main(int argc, char** argv)
 
 	/* Compile and link a GLSL program composed of a vertex shader and
 	 * a fragment shader. */
-	program = kuhl_create_program("ogl3-triangle.vert", "ogl3-triangle.frag");
+	program = kuhl_create_program("triangle.vert", "triangle.frag");
 	glUseProgram(program);
 	kuhl_errorcheck();
 	/* Set the uniform variable in the shader that is named "red" to the value 1. */
@@ -312,7 +312,7 @@ int main(int argc, char** argv)
 	init_geometryTriangle(&triangle, program);
 	init_geometryQuad(&quad, program);
 
-	prerendProgram = kuhl_create_program("ogl3-prerend.vert", "ogl3-prerend.frag");
+	prerendProgram = kuhl_create_program("prerend.vert", "prerend.frag");
 	init_geometryQuadPrerender(&prerendQuad, prerendProgram);	
 
 	dgr_init();     /* Initialize DGR based on environment variables. */

@@ -31,8 +31,8 @@ float bbox[6], fitMatrix[16];
 #define NUM_MODELS 5000
 float positions[NUM_MODELS][3];
 
-#define GLSL_VERT_FILE "ogl3-assimp.vert"
-#define GLSL_FRAG_FILE "ogl3-assimp.frag"
+#define GLSL_VERT_FILE "assimp.vert"
+#define GLSL_FRAG_FILE "assimp.frag"
 
 /* Called by GLUT whenever a key is pressed. */
 void keyboard(unsigned char key, int x, int y)

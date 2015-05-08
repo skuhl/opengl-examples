@@ -19,6 +19,12 @@
 #include "dgr.h"
 #include "projmat.h"
 #include "viewmat.h"
+
+GLuint fpsLabel = 0;
+float fpsLabelAspectRatio = 0;
+kuhl_geometry labelQuad;
+int renderStyle = 0;
+
 GLuint program = 0; // id value for the GLSL program
 kuhl_geometry *modelgeom = NULL;
 float bbox[6];
@@ -40,10 +46,8 @@ float placeToPutModel[3] = { 0, 0, 0 };
  * give us units in meters. */
 #define INCHES_TO_METERS 0
 
-int rotateStyle = 0;
-
-#define GLSL_VERT_FILE "ogl3-assimp.vert"
-#define GLSL_FRAG_FILE "ogl3-assimp.frag"
+#define GLSL_VERT_FILE "assimp.vert"
+#define GLSL_FRAG_FILE "assimp.frag"
 
 /* Called by GLUT whenever a key is pressed. */
 void keyboard(unsigned char key, int x, int y)
@@ -55,6 +59,12 @@ void keyboard(unsigned char key, int x, int y)
 		case 27: // ASCII code for Escape key
 			exit(0);
 			break;
+		case 'f': // full screen
+			glutFullScreen();
+			break;
+		case 'F': // switch to window from full screen mode
+			glutPositionWindow(0,0);
+			break;
 		case 'r':
 		{
 			// Reload GLSL program from disk
@@ -62,20 +72,127 @@ void keyboard(unsigned char key, int x, int y)
 			program = kuhl_create_program(GLSL_VERT_FILE, GLSL_FRAG_FILE);
 			/* Apply the program to the model geometry */
 			kuhl_geometry_program(modelgeom, program, KG_FULL_LIST);
+			/* and the fps label*/
+			kuhl_geometry_program(&labelQuad, program, KG_FULL_LIST);
 
 			break;
 		}
-				
-		case ' ':
-			rotateStyle++;
-			if(rotateStyle > 3)
-				rotateStyle = 0;
-			switch(rotateStyle)
+		case 'w':
+		{
+			// Toggle between wireframe and solid
+			int polygonMode;
+			glGetIntegerv(GL_POLYGON_MODE, &polygonMode);
+			if(polygonMode == GL_LINE)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			else
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			break;
+		}
+		case 'p':
+		{
+			// Toggle between points and solid
+			int polygonMode;
+			glGetIntegerv(GL_POLYGON_MODE, &polygonMode);
+			if(polygonMode == GL_POINT)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			else
+				glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+			break;
+		}
+		case 'c':
+		{
+			// Toggle front, back, and no culling
+			int cullMode;
+			glGetIntegerv(GL_CULL_FACE_MODE, &cullMode);
+			if(glIsEnabled(GL_CULL_FACE))
 			{
-				case 0: printf("Interpolate Euler angles\n"); break;
-				case 1: printf("Interpolate rotation matrices\n"); break;
-				case 2: printf("Interpolate quaternions\n"); break;
-				case 3: printf("Interpolate quaternion (slerp)\n"); break;
+				if(cullMode == GL_FRONT)
+				{
+					glCullFace(GL_BACK);
+					printf("Culling: Culling back faces; drawing front faces\n");
+				}
+				else
+				{
+					glDisable(GL_CULL_FACE);
+					printf("Culling: No culling; drawing all faces.\n");
+				}
+			}
+			else
+			{
+				glEnable(GL_CULL_FACE);
+				glCullFace(GL_FRONT);
+				printf("Culling: Culling front faces; drawing back faces\n");
+			}
+			kuhl_errorcheck();
+			break;
+		}
+		case '+': // increase size of points and width of lines
+		{
+			GLfloat currentPtSize;
+			GLfloat sizeRange[2];
+			glGetFloatv(GL_POINT_SIZE, &currentPtSize);
+			glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, sizeRange);
+			GLfloat temp = currentPtSize+1;
+			if(temp > sizeRange[1])
+				temp = sizeRange[1];
+			glPointSize(temp);
+			printf("Point size is %f (can be between %f and %f)\n", temp, sizeRange[0], sizeRange[1]);
+			kuhl_errorcheck();
+
+			GLfloat currentLineWidth;
+			GLfloat widthRange[2];
+			glGetFloatv(GL_LINE_WIDTH, &currentLineWidth);
+			glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, widthRange);
+			temp = currentLineWidth+1;
+			if(temp > widthRange[1])
+				temp = widthRange[1];
+			glLineWidth(temp);
+			printf("Line width is %f (can be between %f and %f)\n", temp, widthRange[0], widthRange[1]);
+			kuhl_errorcheck();
+			break;
+		}
+		case '-': // decrease size of points and width of lines
+		{
+			GLfloat currentPtSize;
+			GLfloat sizeRange[2];
+			glGetFloatv(GL_POINT_SIZE, &currentPtSize);
+			glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, sizeRange);
+			GLfloat temp = currentPtSize-1;
+			if(temp < sizeRange[0])
+				temp = sizeRange[0];
+			glPointSize(temp);
+			printf("Point size is %f (can be between %f and %f)\n", temp, sizeRange[0], sizeRange[1]);
+			kuhl_errorcheck();
+
+			GLfloat currentLineWidth;
+			GLfloat widthRange[2];
+			glGetFloatv(GL_LINE_WIDTH, &currentLineWidth);
+			glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, widthRange);
+			temp = currentLineWidth-1;
+			if(temp < widthRange[0])
+				temp = widthRange[0];
+			glLineWidth(temp);
+			printf("Line width is %f (can be between %f and %f)\n", temp, widthRange[0], widthRange[1]);
+			kuhl_errorcheck();
+			break;
+		}
+		
+		case ' ': // Toggle different sections of the GLSL fragment shader
+			renderStyle++;
+			if(renderStyle > 9)
+				renderStyle = 0;
+			switch(renderStyle)
+			{
+				case 0: printf("Render style: Diffuse (headlamp light)\n"); break;
+				case 1: printf("Render style: Texture (color is used on non-textured geometry)\n"); break;
+				case 2: printf("Render style: Texture+diffuse (color is used on non-textured geometry)\n"); break;
+				case 3: printf("Render style: Vertex color\n"); break;
+				case 4: printf("Render style: Vertex color + diffuse (headlamp light)\n"); break;
+				case 5: printf("Render style: Normals\n"); break;
+				case 6: printf("Render style: Texture coordinates\n"); break;
+				case 7: printf("Render style: Front (green) and back (red) faces based on winding\n"); break;
+				case 8: printf("Render style: Front (green) and back (red) based on normals\n"); break;
+				case 9: printf("Render style: Depth (white=far; black=close)\n"); break;
 			}
 			break;
 	}
@@ -91,8 +208,6 @@ void get_model_matrix(float result[16])
 	mat4f_identity(result);
 	if(FIT_TO_VIEW == 0)
 	{
-		printf("WARNING: FIT_TO_VIEW should be set to 1.\n");
-		
 		/* Translate the model to where we were asked to put it */
 		float translate[16];
 		mat4f_translateVec_new(translate, placeToPutModel);
@@ -108,57 +223,6 @@ void get_model_matrix(float result[16])
 		mat4f_mult_mat4f_new(result, translate, scale);
 		return;
 	}
-	float rotateAnimate[16];
-	mat4f_identity(rotateAnimate);
-	float percentComplete = (glutGet(GLUT_ELAPSED_TIME)%4000)/4000.0;
-	//printf("percent complete %f\n", percentComplete);
-	
-	float startEuler[3] = { 0, 90, 0 };
-	float endEuler[3] = { 90, 00, 90 };
-	float startMatrix[16], endMatrix[16];
-	mat4f_rotateEuler_new(startMatrix, startEuler[0], startEuler[1], startEuler[2], "XYZ");
-	mat4f_rotateEuler_new(endMatrix, endEuler[0], endEuler[1], endEuler[2], "XYZ");
-
-	if(rotateStyle == 0) // Interpolate eulers
-	{
-
-		float interpolate[3] = { 0,0,0 };
-		vec3f_scalarMult(startEuler, 1-percentComplete);
-		vec3f_scalarMult(endEuler, percentComplete);
-		vec3f_add_new(interpolate, startEuler, endEuler);
-		mat4f_rotateEuler_new(rotateAnimate, interpolate[0], interpolate[1], interpolate[2], "XYZ");
-	}
-	else if(rotateStyle == 1) // Interpolate matrices
-	{
-		for(int i=0; i<16; i++)
-		{
-			rotateAnimate[i] = startMatrix[i] * (1-percentComplete) +
-				endMatrix[i] * percentComplete;
-		}
-	}
-	else if(rotateStyle == 2) // interpolate quaternions - linear
-	{
-		float startQuat[4], endQuat[4];
-		float interpQuat[4];
-		quatf_from_mat4f(startQuat, startMatrix);
-		quatf_from_mat4f(endQuat, endMatrix);
-		for(int i=0; i<4; i++)
-		{
-			interpQuat[i] = startQuat[i]*(1-percentComplete) +
-				endQuat[i] * percentComplete;
-		}
-		quatf_normalize(interpQuat);
-		mat4f_rotateQuatVec_new(rotateAnimate, interpQuat);
-	}
-	else if(rotateStyle == 3) // quaternion slerp
-	{
-		float startQuat[4], endQuat[4];
-		float interpQuat[4];
-		quatf_from_mat4f(startQuat, startMatrix);
-		quatf_from_mat4f(endQuat, endMatrix);
-		quatf_slerp_new(interpQuat, startQuat, endQuat, percentComplete);
-		mat4f_rotateQuatVec_new(rotateAnimate, interpQuat);
-	}
 	
 	/* Get a matrix to scale+translate the model based on the bounding
 	 * box. If the last parameter is 1, the bounding box will sit on
@@ -172,14 +236,58 @@ void get_model_matrix(float result[16])
 	mat4f_translateVec_new(moveToLookPoint, placeToPutModel);
 
 	/* Create a single model matrix. */
-	mat4f_mult_mat4f_new(result, rotateAnimate, fitMatrix);
-	mat4f_mult_mat4f_new(result, moveToLookPoint, result);
+	mat4f_mult_mat4f_new(result, moveToLookPoint, fitMatrix);
 }
 
+
+/* Called by GLUT whenever the window needs to be redrawn. This
+ * function should not be called directly by the programmer. Instead,
+ * we can call glutPostRedisplay() to request that GLUT call display()
+ * at some point. */
+static kuhl_fps_state fps_state;
 void display()
 {
+	/* If we are using DGR, send or receive data to keep multiple
+	 * processes/computers synchronized. */
 	dgr_update();
 
+	/* Get current frames per second calculations. */
+	float fps = kuhl_getfps(&fps_state);
+
+	if(dgr_is_enabled() == 0 || dgr_is_master())
+	{
+		// If DGR is being used, only display dgr counter if we are
+		// the master process.
+
+		// Check if FPS value was just updated by kuhl_getfps()
+		if(fps_state.frame == 0)
+		{
+			char label[1024];
+			snprintf(label, 1024, "FPS: %0.1f", fps);
+
+			/* Delete old label if it exists */
+			if(fpsLabel != 0) 
+				glDeleteTextures(1, &fpsLabel);
+
+			/* Make a new label */
+			float labelColor[3] = { 1,1,1 };
+			float labelBg[4] = { 0,0,0,.3 };
+			/* Change the last parameter (point size) to adjust the
+			 * size of the texture that the text is rendered in to. */
+			fpsLabelAspectRatio = kuhl_make_label(label,
+			                                      &fpsLabel,
+			                                      labelColor, labelBg, 24);
+
+			if(fpsLabel != 0)
+				kuhl_geometry_texture(&labelQuad, fpsLabel, "tex", 1);
+		}
+	}
+	
+	/* Ensure the slaves use the same render style as the master
+	 * process. */
+	dgr_setget("style", &renderStyle, sizeof(int));
+
+	
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will
 	 * run twice for HMDs (once for the left eye and once for the
@@ -237,7 +345,7 @@ void display()
 		                   0, // transpose
 		                   modelview); // value
 
-		glUniform1i(kuhl_get_uniform("renderStyle"), 0);
+		glUniform1i(kuhl_get_uniform("renderStyle"), renderStyle);
 		// Copy far plane value into vertex program so we can render depth buffer.
 		float f[6]; // left, right, bottom, top, near>0, far>0
 		projmat_get_frustum(f, viewport[2], viewport[3]);
@@ -247,16 +355,57 @@ void display()
 		kuhl_geometry_draw(modelgeom); /* Draw the model */
 		kuhl_errorcheck();
 
+		if(dgr_is_enabled() == 0 || dgr_is_master())
+		{
+
+			/* The shape of the frames per second quad depends on the
+			 * aspect ratio of the label texture and the aspect ratio of
+			 * the window (because we are placing the quad in normalized
+			 * device coordinates). */
+			int windowWidth, windowHeight;
+			viewmat_window_size(&windowWidth, &windowHeight);
+			float windowAspect = windowWidth / (float)windowHeight;
+			
+			float stretchLabel[16];
+			mat4f_scale_new(stretchLabel, 1/8.0 * fpsLabelAspectRatio / windowAspect, 1/8.0, 1);
+
+			/* Position label in the upper left corner of the screen */
+			float transLabel[16];
+			mat4f_translate_new(transLabel, -.9, .8, 0);
+			mat4f_mult_mat4f_new(modelview, transLabel, stretchLabel);
+			glUniformMatrix4fv(kuhl_get_uniform("ModelView"), 1, 0, modelview);
+
+			/* Make sure we don't use a projection matrix */
+			float identity[16];
+			mat4f_identity(identity);
+			glUniformMatrix4fv(kuhl_get_uniform("Projection"), 1, 0, identity);
+
+			/* Don't use depth testing and make sure we use the texture
+			 * rendering style */
+			glDisable(GL_DEPTH_TEST);
+			glUniform1i(kuhl_get_uniform("renderStyle"), 1);
+			kuhl_geometry_draw(&labelQuad); /* Draw the quad */
+			glEnable(GL_DEPTH_TEST);
+			kuhl_errorcheck();
+		}
+
 		glUseProgram(0); // stop using a GLSL program.
 
 	} // finish viewport loop
 	viewmat_end_frame();
+	
+	/* Update the model for the next frame based on the time. We
+	 * convert the time to seconds and then use mod to cause the
+	 * animation to repeat. */
+	int time = glutGet(GLUT_ELAPSED_TIME);
+	dgr_setget("time", &time, sizeof(int));
+	kuhl_update_model(modelgeom, 0, ((time%10000)/1000.0));
 
 	/* Check for errors. If there are errors, consider adding more
 	 * calls to kuhl_errorcheck() in your code. */
 	kuhl_errorcheck();
 
-	// kuhl_video_record("videoout", 30);
+	//kuhl_video_record("videoout", 30);
 	
 	/* Ask GLUT to call display() again. We shouldn't call display()
 	 * ourselves recursively because it will not leave time for GLUT
@@ -264,6 +413,43 @@ void display()
 	 * window is resized, etc. */
 	glutPostRedisplay();
 }
+
+/* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
+void init_geometryQuad(kuhl_geometry *geom, GLuint program)
+{
+	kuhl_geometry_new(geom, program,
+	                  4, // number of vertices
+	                  GL_TRIANGLES); // type of thing to draw
+
+	/* The data that we want to draw */
+	GLfloat vertexPositions[] = {0, 0, 0,
+	                             1, 0, 0,
+	                             1, 1, 0,
+	                             0, 1, 0 };
+	kuhl_geometry_attrib(geom, vertexPositions,
+	                     3, // number of components x,y,z
+	                     "in_Position", // GLSL variable
+	                     KG_WARN); // warn if attribute is missing in GLSL program?
+
+	GLfloat texcoord[] = {0, 0,
+	                      1, 0,
+	                      1, 1,
+	                      0, 1};
+	kuhl_geometry_attrib(geom, texcoord,
+	                     2, // number of components x,y,z
+	                     "in_TexCoord", // GLSL variable
+	                     KG_WARN); // warn if attribute is missing in GLSL program?
+
+
+	
+
+	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
+	                       0, 2, 3 }; // indices of second triangle.
+	kuhl_geometry_indices(geom, indexData, 6);
+
+	kuhl_errorcheck();
+}
+
 
 int main(int argc, char** argv)
 {
@@ -343,6 +529,9 @@ int main(int argc, char** argv)
 
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
+	init_geometryQuad(&labelQuad, program);
+
+	kuhl_getfps_init(&fps_state);
 	
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */

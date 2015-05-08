@@ -17,6 +17,8 @@ GLuint program = 0; // id value for the GLSL program
 
 kuhl_geometry triangle;
 
+
+
 /* Called by GLUT whenever a key is pressed. */
 void keyboard(unsigned char key, int x, int y)
 {
@@ -71,6 +73,14 @@ void display()
 		glEnable(GL_DEPTH_TEST); // turn on depth testing
 		kuhl_errorcheck();
 
+		/* Turn on blending (note, if you are using transparent textures,
+		   the transparency may not look correct unless you draw further
+		   items before closer items. This program always draws the
+		   geometry in the same order.). */
+		glEnable(GL_BLEND);
+		glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+
 		/* Get the view or camera matrix; update the frustum values if needed. */
 		float viewMat[16], perspective[16];
 		viewmat_get(viewMat, perspective, viewportID);
@@ -113,8 +123,6 @@ void display()
 		 * vertex programs immediately above */
 		kuhl_geometry_draw(&triangle);
 
-		glUseProgram(0); // stop using a GLSL program.
-
 	} // finish viewport loop
 	viewmat_end_frame();
 
@@ -131,24 +139,28 @@ void display()
 
 void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
 {
-	kuhl_geometry_new(geom, program, 3, // num vertices
-	                  GL_TRIANGLES); // primitive type
+	kuhl_geometry_new(geom, program, 3, GL_TRIANGLES);
 
-	/* The data that we want to draw */
-	GLfloat vertexPositions[] = {0, 0, 0,
-	                             1, 0, 0,
-	                             1, 1, 0};
-	kuhl_geometry_attrib(geom, vertexPositions, // data
-	                     3, // number of components (x,y,z)
-	                     "in_Position", // GLSL variable
-	                     KG_WARN); // warn if attribute is missing in GLSL program?
+	GLfloat texcoordData[] = {0, 0,
+	                          1, 0,
+	                          1, 1 };
+	kuhl_geometry_attrib(geom, texcoordData, 2, "in_TexCoord", KG_WARN);
 
-	GLfloat colorData[] = {1,0,0,
-	                       0,1,0,
-	                       0,0,1 };
-	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", KG_WARN);
+
+/* The data that we want to draw */
+	GLfloat vertexData[] = {0, 0, 0,
+	                        1, 0, 0,
+	                        1, 1, 0};
+	kuhl_geometry_attrib(geom, vertexData, 3, "in_Position", KG_WARN);
+
+
+	/* Load the texture. It will be bound to texName */
+	GLuint texId = 0;
+	kuhl_read_texture_file("../images/rainbow.png", &texId);
+	kuhl_geometry_texture(geom, texId, "tex", KG_WARN);
+
+	kuhl_errorcheck();
 }
-
 
 int main(int argc, char** argv)
 {
@@ -187,16 +199,16 @@ int main(int argc, char** argv)
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
 
-	program = kuhl_create_program("ogl3-triangle-color.vert", "ogl3-triangle-color.frag");
+	/* Compile and link a GLSL program composed of a vertex shader and
+	 * a fragment shader. */
+	program = kuhl_create_program("texture.vert", "texture.frag");
 	glUseProgram(program);
 	kuhl_errorcheck();
 
+	init_geometryTriangle(&triangle, program);
+	
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);
-
-	/* Create kuhl_geometry structs for the objects that we want to
-	 * draw. */
-	init_geometryTriangle(&triangle, program);
 
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
