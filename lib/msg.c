@@ -45,11 +45,20 @@ static void msg_timestamp(char *buf, int len)
 		exit(EXIT_FAILURE);
 	}
 
+#if 0
+	// Absolute time
 	struct tm *now = localtime(&(tv.tv_sec));
 	char buf1[1024];
-	//strftime(buf1, 1024, "%Y%m%d-%H%M%S", now);
 	strftime(buf1, 1024, "%H%M%S", now);
 	snprintf(buf, len, "%s.%06ld", buf1, tv.tv_usec);
+#else
+	// Relative to start time.
+	double time = tv.tv_sec + tv.tv_usec / 1000000.0;
+	static double firstTime = -1;
+	if(firstTime < 0)
+		firstTime = time;
+	snprintf(buf, len, "%11.6f", time-firstTime);
+#endif
 }
 
 static void msg_type_string(msg_type type, char *buf, int len)
@@ -159,7 +168,10 @@ static void msg_end_color(msg_type type, FILE *stream)
 
 
 
-/** Initializes the logging system, creates the log file if needed.
+/** Initializes the logging system, creates the log file if
+ * needed. Also, writes a message informing the user about the
+ * location of the log file. The time printed in the log file will be
+ * relative to the time that this first message was printed.
  */
 static void msg_init(void)
 {
@@ -181,7 +193,7 @@ static void msg_init(void)
 	else
 		f = fopen(logfile, "w"); // overwrite
 
-	fprintf(f, "[TYPE ] HHMMSS.uSEC   file:line function()\n");
+	fprintf(f, "[TYPE ]    seconds     filename:line message\n");
 	fprintf(f, "------------------------------------------\n");
 	msg(INFO, "Messages are being written to %s\n", logfile);
 }
@@ -204,6 +216,14 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 	vsnprintf(msgbuf, 1024, msg, args);
 	va_end(args);
 
+	/* Remove any newlines at the end of the message. */
+	int msgbufidx = strlen(msgbuf)-1;
+	while(msgbuf[msgbufidx] == '\n')
+	{
+		msgbuf[msgbufidx] = '\0';
+		msgbufidx--;
+	}
+	
 	/* info to prepend to message printed to console */
 	char typestr[1024];
 	msg_type_string(type, typestr, 1024);
@@ -228,27 +248,18 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 		/* Print additional details to console for fatal errors */
 		if(type == FATAL)
 		{
-			fprintf(stream, "%s %s", typestr, msgbuf);
+			fprintf(stream, "%s %s\n", typestr, msgbuf);
 			fprintf(stream, "%s Occurred at %s:%d in the function %s()\n",
 			        typestr, shortFileName, lineNum, funcName);
 		}
 		else
-			fprintf(stream, "%s %s", typestr, msgbuf);
+			fprintf(stream, "%s %s\n", typestr, msgbuf);
 		msg_end_color(type, stream);
 	}
 
-	/* Info to prepend to message printed to log file */
-	fprintf(f, "%s %s %s:%d %s()\n        %s", typestr, timestamp, shortFileName, lineNum, funcName, msgbuf);
+	// Not using funcName to try to keep log shorter.
+	fprintf(f, "%s%s %12s:%-4d %s\n", typestr, timestamp, shortFileName, lineNum, msgbuf);
 	free(fileNameCopy);
-
-	/* Add a newline to the end of the message if one was absent */
-	int msgbuflen = strlen(msgbuf);
-	if(msgbuf[msgbuflen-1] != '\n')
-	{
-		if(stream)
-			fprintf(stream, "\n");
-		fprintf(f, "\n");
-	}
 
 	/* Ensure messages are written to the file or console. */
 	fflush(stream);
@@ -261,7 +272,7 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 */
 void msg_assimp_callback(const char* msg, char *usr)
 {
-	msg_details(DEBUG, "ASSIMP", 0, "ASSIMP", "%s %s", usr, msg);
+	msg_details(DEBUG, "ASSIMP", 0, "", "%s", msg);
 }
 
 
