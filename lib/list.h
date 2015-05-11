@@ -66,14 +66,15 @@ typedef struct {
 	int capacity;
 	int length;
 	int itemSize;
+	int (*compar)(const void *, const void *);
 	void *data;
 } list;
 	
-list* list_new(int capacity, int itemSize);
-list* list_new_import(int numItems, int itemSize, void *array);
+list* list_new(int capacity, int itemSize, int (*compar)(const void *, const void *));
+list* list_new_import(int numItems, int itemSize, int (*compar)(const void *, const void *), void *array);
 	
-int list_reset(list *l, int capacity, int itemSize);
-int list_reset_import(list *l, int length, int itemSize, void *array);
+int list_reset(list *l, int capacity, int itemSize, int (*compar)(const void *, const void *));
+int list_reset_import(list *l, int length, int itemSize, int (*compar)(const void *, const void *), void *array);
 void list_free(list *l);
 list* list_copy(const list *l);
 
@@ -82,6 +83,7 @@ void* list_getptr(const list *l, int index);
 int list_set(list *l, int index, void *item);
 
 int list_remove(list *l, int index, void *result);
+int list_remove_all(list *l, void *item);
 int list_insert(list *l, int index, void *item);
 	
 int list_append(list *l, void *item);
@@ -96,9 +98,11 @@ int list_swap(list *l, int a, int b);
 int list_reverse(list *l);
 int list_move(list *l, int src, int dst, int count);
 
-int list_find(const list *l, void *item);
-int list_sort(list *l, int (*compar)(const void *, const void *));
-int list_bsearch(list *l, void *item, int (*compar)(const void *, const void *));
+int list_index_compare(const list *l, int index, const void *item);
+int list_find(const list *l, const void *item);
+int list_count(const list *l, const void *item);
+int list_sort(      list *l);
+int list_bsearch(   list *l, const void *item);
 
 int list_push(list *l, void *item);
 int list_pop(list *l, void *result);
@@ -117,6 +121,13 @@ int list_capacity(const list *l);
 	
 void list_sanity_check(const list *l);
 void list_print_stats(const list *l);
+
+/* A list can also be treated as a set. */
+int set_add(list *l, void *item);
+int set_remove(list *l, void *item);
+
+/* TODO: set_union() set_intersection() */
+
 #ifdef __cplusplus
 } // end extern "C"
 #endif

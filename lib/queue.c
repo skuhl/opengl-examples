@@ -91,7 +91,7 @@ queue* queue_new(int capacity, int itemSize)
 	capacity++; /* increase capacity by 1 since we always need an
 	             * empty spot to have our write pointer to point at */
 	
-	list *l = list_new(capacity, itemSize);
+	list *l = list_new(capacity, itemSize, NULL);
 	queue *q = malloc(sizeof(queue));
 	if(l == NULL || q == NULL)
 	{
@@ -140,7 +140,7 @@ int queue_reset(queue *q, int capacity, int itemSize)
 		return 0;
 	}
 
-	if(list_reset(q->l, capacity, itemSize) == 0)
+	if(list_reset(q->l, capacity, itemSize, NULL) == 0)
 	{
 		msg(ERROR, "Failed to set up a list for the queue.");
 		return 0;

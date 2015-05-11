@@ -334,7 +334,7 @@ void display()
 		float viewMat[16], perspective[16];
 		viewmat_get(viewMat, perspective, viewportID);
 		
-		list *stack = list_new(16, sizeof(float)*16);
+		list *stack = list_new(16, sizeof(float)*16, NULL);
 		mat4f_stack_mult(stack, viewMat);
 
 		glUseProgram(program);

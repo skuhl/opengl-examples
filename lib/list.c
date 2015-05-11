@@ -72,7 +72,7 @@ void list_sanity_check(const list *l)
     allocate the list. The list should eventually be free'd with
     list_free().
 */
-list* list_new(int capacity, int itemSize)
+list* list_new(int capacity, int itemSize, int (*compar)(const void *, const void *))
 {
 	list *l = malloc(sizeof(list));
 	if(l == NULL)
@@ -81,7 +81,7 @@ list* list_new(int capacity, int itemSize)
 		return NULL;
 	}
 	l->data = NULL;
-	if(list_reset(l, capacity, itemSize) == 0)
+	if(list_reset(l, capacity, itemSize, compar) == 0)
 		return NULL;
 	return l;
 }
@@ -94,7 +94,7 @@ list* list_new(int capacity, int itemSize)
     @param array The data to initialize the list to.
     @return A new list or NULL if failure
 */
-list* list_new_import(int numItems, int itemSize, void *array)
+list* list_new_import(int numItems, int itemSize, int (*compar)(const void *, const void *), void *array)
 {
 	list *l = malloc(sizeof(list));
 	if(l == NULL)
@@ -103,7 +103,7 @@ list* list_new_import(int numItems, int itemSize, void *array)
 		return NULL;
 	}
 	l->data = NULL;
-	if(list_reset_import(l, numItems, itemSize, array) == 0)
+	if(list_reset_import(l, numItems, itemSize, compar, array) == 0)
 		return NULL;
 	return l;
 }
@@ -164,7 +164,7 @@ int list_export(const list *l, void *result)
 
     @return 1 if success, 0 if failure.
 */
-int list_reset(list *l, int capacity, int itemSize)
+int list_reset(list *l, int capacity, int itemSize, int (*compar)(const void *, const void *))
 {
 	if(l == NULL)
 	{
@@ -185,6 +185,7 @@ int list_reset(list *l, int capacity, int itemSize)
 	l->capacity = capacity;
 	l->itemSize = itemSize;
 	l->length   = 0;
+	l->compar   = compar;
 	
 	/* If the data isn't NULL, we are assuming that this is an old
 	 * list that we are reusing. We don't need to malloc new
@@ -230,15 +231,15 @@ int list_reset(list *l, int capacity, int itemSize)
 
     @return 1 if success, 0 if failure.
  */
-   
-int list_reset_import(list *l, int numItems, int itemSize, void *array)
+int list_reset_import(list *l, int numItems, int itemSize, int (*compar)(const void *, const void *), void *array)
 {
 	/* reset the list so it has exactly the capacity needed */
-	if(list_reset(l, numItems, itemSize) == 0)
+	if(list_reset(l, numItems, itemSize, compar) == 0)
 		return 0;
 
 	memcpy(l->data, array, itemSize * numItems);
 	l->length = numItems;
+	l->compar = compar;
 	return 1;
 }
 
@@ -350,6 +351,29 @@ int list_remove(list *l, int index, void *result)
 	l->length--;
 	list_sanity_check(l);
 	return 1;
+}
+
+/** Repeatedly looks for the specified item in the list using
+    list_find() and removes all of the matching items.
+
+    @param l The list to remove the items from
+    @param item Remove all items that match this one
+    @return 1 if success, 0 if fail.
+ */
+int list_remove_all(list *l, void *item)
+{
+	int found = list_find(l, item);
+	while(found >= 0)
+	{
+		list_remove(l, found, NULL);
+		found = list_find(l, item);
+	}
+	if(found == -2)
+		return 0; // fail
+	if(found == -1)
+		return 1; // success
+
+	return 0; // fail 
 }
 
 /** Checks if storing an item at this index would require increasing
@@ -699,7 +723,7 @@ list* list_copy(const list *l)
 		return NULL;
 
 	list_sanity_check(l);
-	list *newl = list_new(l->capacity, l->itemSize);
+	list *newl = list_new(l->capacity, l->itemSize, l->compar);
 	list_set_length(newl, l->length);
 	memcpy(newl->data, l->data, l->length*l->itemSize);
 	list_sanity_check(newl);
@@ -840,70 +864,91 @@ int list_capacity(const list *l)
 	return l->capacity;
 }
 
-/** Search the list for the first matching item in the list.
+/** Search the list for the first matching item in the
+    list. Comparison uses the memcmp() function if l->compar is NULL.
 
     @param l The list to search.
-    
+
     @param item The item to find.
-    
+
     @return The index of the item. -1 if the item was not found. -2 if
     there was an error.
-
  */
-int list_find(const list *l, void *item)
+int list_find(const list *l, const void *item)
 {
-	if(l == NULL || item == NULL)
+	if(l == NULL)
 		return -2; // error
 
 	for(int i=0; i<l->length; i++)
 	{
-		void *tmp = list_getptr(l, i);
-		if(tmp == NULL)
-		{
-			msg(FATAL, "Internal error in list_find.");
-			exit(EXIT_FAILURE);
-		}
-		if(memcmp(tmp, item, l->itemSize) == 0)
+		int compareResult = list_index_compare(l, i, item);
+		if(compareResult == -1)
+			return -2; // error
+		else if(compareResult == 1)
 			return i;  // found
 	}
 	return -1; // not found
 }
 
-/** Sorts the items in the list.
+/** Counts the number of times the specified item appears in the
+    list. Comparison uses the memcmp() function if l->compar is NULL.
+
+    @param l The list to search.
+
+    @param item The item to find.
+
+    @return Returns the number of times the item appears in the
+    list. Returns a negative number on error.
+ */
+int list_count(const list *l, const void *item)
+{
+	if(l == NULL)
+		return -1; // error
+	int count = 0;
+
+	for(int i=0; i<l->length; i++)
+	{
+		int compareResult = list_index_compare(l, i, item);
+		if(compareResult == -1)
+			return -1; // error
+		else if(compareResult == 1)
+			count++;  // found
+	}
+	return count;
+}
+
+
+/** Sorts the items in the list. l->compar must be set.
 
    @param l The list to sort.
 
-   @param compar A comparison function that meets the requirements of
-   the qsort() standard C function.
-
    @return 1 if successful, 0 if fail
 */
-int list_sort(list *l, int (*compar)(const void *, const void *))
+int list_sort(list *l)
 {
-	if(l == NULL || compar == NULL)
+	if(l == NULL || l->compar == NULL)
 		return 0;
 
-	qsort(l->data, l->length, l->itemSize, compar);
+	qsort(l->data, l->length, l->itemSize, l->compar);
 	return 1;
 }
 
-/** Uses a binary search to find an item in a sorted list.
+/** Uses a binary search to find an item in a sorted list. l->compar
+    must be set.
 
    @param l A sorted list.
 
    @param item The item to find.
    
-   @param compar A comparison function that meets the requirements of
-   the bsearch() standard C function.
-
-   @return The index if successful, -1 if not found, -2 if failure
+   @return The index of the matching item (if found), -1 if not found,
+   -2 if failure
 */
-int list_bsearch(list *l, void *item, int (*compar)(const void *, const void *))
+int list_bsearch(list *l, const void *item)
 {
-	if(l == NULL || compar == NULL || item == NULL)
+	if(l == NULL || l->compar == NULL || item == NULL)
 		return -2;
 
-	char *ptr = (char*) bsearch(item, l->data, l->length, l->itemSize, compar);
+	char *ptr = (char*) bsearch(item, l->data, l->length, l->itemSize, l->compar);
 	if(ptr == NULL)
 		return -1;
 	return (ptr - (char*)l->data) / l->itemSize;
@@ -973,5 +1018,92 @@ void list_shuffle(list *l)
 			msg(FATAL, "Internal list error while shuffling\n");
 			exit(EXIT_FAILURE);
 		}
+	}
+}
+
+/** Checks if the an item is at an index in a list. Comparison uses
+    the memcmp() function if l->compar is NULL.
+
+    @param l A list
+
+    @param index The index to look at in the list
+
+    @param item The item to be compared against the item at the index.
+
+    @returns 1 if the item matches the item at the specified index, 0
+    if it does not match, -1 on failure.
+ */
+int list_index_compare(const list *l, int index, const void *item)
+{
+	if(l == NULL || item == NULL)
+		return -1; // error
+	void *tmp = list_getptr(l,index);
+	if(tmp == NULL)
+		return -1; // error
+	if(l->compar == NULL)
+	{
+		if(memcmp(tmp, item, l->itemSize) == 0)
+			return 1;  // match
+		else
+			return 0; // no match
+	} else {
+		if(l->compar(tmp, item) == 0)
+			return 1; // match
+		else
+			return 0; // no match
+	}
+}
+
+
+
+/** If the item is not already in the list, add it.
+
+    @param l The list which contains the items in a set.
+    @param item The item to add to the set.
+    @return 1 if success, 0 if failure.
+ */
+int set_add(list *l, void *item)
+{
+	if(l == NULL || item == NULL)
+		return 0;
+
+	int foundResult = list_find(l, item);
+	if(foundResult == -1) // not found
+	{
+		if(list_append(l, item) == 1)
+			return 1; // successfully added to set
+		else
+			return 0; // error adding item to set
+	}
+	else if(foundResult == -2)
+		return 0; // error finding item in the list
+	else
+		return 1; // item was found in the list
+}
+
+/** If an item is in the list, remove it. If the item appears multiple
+    times in the list, only the first item will be removed (which
+    would be the case if all items are added using set_add() ). Use
+    list_remove_all() to remove all matching items from the list.
+
+    @param l The list to remove an item from.
+    @param item The item to remove.
+    @return 1 if success, 0 if failure
+*/
+int set_remove(list *l, void *item)
+{
+	if(l == NULL || item == NULL)
+		return 0;
+
+	int foundResult = list_find(l, item);
+	if(foundResult == -1)
+		return 1; // success, item wasn't in set.
+	else if(foundResult == -2)
+		return 0; // error
+	else
+	{
+		if(list_remove(l, foundResult, NULL) == 0)
+			return 0;
+		return 1;
 	}
 }
