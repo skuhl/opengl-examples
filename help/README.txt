@@ -57,7 +57,7 @@ Michigan Tech: Run code on the IVS display wall (if you have permission to do so
 
 Michigan Tech: Test to see if program will work on IVS without access to the IVS display wall.
 
-    ./local.sh ./ogl3-triangle
+    ./ivs-test.sh ./ogl3-triangle
 
 Michigan Tech: Run code on the IVS display wall and update the viewport based on tracking the user's head (if you have permission to do so)
 
