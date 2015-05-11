@@ -5,22 +5,24 @@
 
 /** @file
 
-    List provides an array-like mechanism for storing items. The list
-    is automatically resized so that the capacity of the list always
-    matches or exceeds the length of the list. Anything can be stored
-    in the list, but all items in the list must be the same size. The
-    code is written to include numerous checks and not written with a
-    sole focus on speed or efficiency.
+    List provides an array-like mechanism for storing items.
+
+    The list is automatically resized so that the capacity of the list
+    always matches or exceeds the length of the list. Anything can be
+    stored in the list, but all items in the list must be the same
+    size. The code is written to include numerous checks and not
+    written with a sole focus on speed or efficiency.
 
     For example, if you want to store an int in the list, you would use:
 
+    <pre>
     list *l = list_new(10, sizeof(int));
     int i=4;
     list_append(l, &i);
     // retrieving values from the list:
     int *x = list_get(l, 0);
     printf("%d\n", *x);
-    
+    </pre>
 
     Note that the list will store a *copy* of the int inside of the
     list---the list does not store a list of pointers. If you want to
