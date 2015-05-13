@@ -2210,10 +2210,15 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 	msg(INFO, "Loading model: %s\n", modelFilename);
 	/* Write assimp messages to command line */
 	struct aiLogStream stream;
+
 	// stream = aiGetPredefinedLogStream(aiDefaultLogStream_STDOUT,NULL);
-	stream.callback = msg_assimp_callback;
-	stream.user = strdup(modelFilename); // memory leak
-	aiAttachLogStream(&stream);
+	if(stream.callback != msg_assimp_callback)
+	{
+		// we only need to set this up once.
+		stream.callback = msg_assimp_callback;
+		stream.user = strdup(modelFilename); // memory leak
+		aiAttachLogStream(&stream);
+	}
 	
 	/* Try loading the model. We are using a postprocessing preset
 	 * here so we don't have to set many options. */
@@ -3453,4 +3458,3 @@ void kuhl_play_sound(const char *filename)
 	msg(ERROR "This sound function only works on Linux.\n");
 #endif
 }
-
