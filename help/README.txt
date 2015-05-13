@@ -95,11 +95,11 @@ features are supported on the computer you are running the program on.
 Freeglut (required) - OpenGL doesn't provide a cross-platform way to
 create a window that you can draw on. Freeglut is one cross platform
 library that makes it relatively easy to create windows, handle
-mouse/keyboard inputs, etc. in a cross-platform way. A new, but
-similar, alternative is GLFW. To install Freeglut, look for packages
-named freeglut, freeglut-dev in your package manager and install those
-packages. An earlier version of a similar library, called GLUT may or
-may not work with this code.
+mouse/keyboard inputs, etc. A new, but similar, alternative is
+GLFW. To install Freeglut, look for packages named freeglut,
+freeglut-dev in your package manager and install those packages. An
+earlier version of a similar library, called GLUT may or may not work
+with this code.
 
  - For a guide to install Freeglut, see FREEGLUT-INSTALL.txt
  - Homepage: http://freeglut.sourceforge.net/
