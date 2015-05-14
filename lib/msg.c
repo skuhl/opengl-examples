@@ -177,7 +177,11 @@ static void msg_init(void)
 {
 	// Set to 1 to overwrite existing log file, 0 to append.
 	const int append = 0;
-	const char *logfile = "log.txt";
+	
+	char *logfile = strdup("log.txt");
+	const char* envvar_logfile = getenv("MSG_LOGFILE");
+	if(envvar_logfile != NULL && strlen(envvar_logfile) > 0)
+		logfile = strdup(envvar_logfile);
 	
 	if(f != NULL)
 		return;
@@ -188,14 +192,14 @@ static void msg_init(void)
 		fprintf(f, "============================================================\n");
 		fprintf(f, "=== Program started ========================================\n");
 		fprintf(f, "============================================================\n");
-		msg(INFO, "Messages are being appended to %s\n", logfile);
+		msg(INFO, "Messages are being appended to '%s'\n", logfile);
 	}
 	else
 		f = fopen(logfile, "w"); // overwrite
 
 	fprintf(f, "[TYPE ]    seconds     filename:line message\n");
 	fprintf(f, "------------------------------------------\n");
-	msg(INFO, "Messages are being written to %s\n", logfile);
+	msg(INFO, "Messages are being written to '%s'\n", logfile);
 }
 
 /** Writes a message to the log file.
