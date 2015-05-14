@@ -32,6 +32,14 @@ void keyboard(unsigned char key, int x, int y)
 		case 27: // ASCII code for Escape key
 			exit(0);
 			break;
+		case 's': // swap the left & right images
+		{
+			GLuint tmp;
+			tmp = texIdLeft;
+			texIdLeft = texIdRight;
+			texIdRight = tmp;
+			break;
+		}
 	}
 
 	/* Whenever any key is pressed, request that display() get
@@ -86,7 +94,7 @@ void display()
 
 		/* Get the view or camera matrix; update the frustum values if needed. */
 		float viewMat[16], perspective[16];
-		viewmat_get(viewMat, perspective, viewportID);
+		viewmat_eye eye = viewmat_get(viewMat, perspective, viewportID);
 
 		/* Always put camera at origin (no translation, no
 		 * interpupillary distance). */
@@ -115,21 +123,13 @@ void display()
 		                   0, // transpose
 		                   modelview); // value
 		kuhl_errorcheck();
-		/* Draw the geometry using the matrices that we sent to the
-		 * vertex programs immediately above */
-		if(viewportID == 0)
-		{
+
+		/* Draw the cylinder with the appropriate texture */
+		if(eye == VIEWMAT_EYE_RIGHT)
+			kuhl_geometry_texture(&cylinder, texIdRight, "tex", KG_WARN);
+		else
 			kuhl_geometry_texture(&cylinder, texIdLeft, "tex", KG_WARN);
-			kuhl_geometry_draw(&cylinder);
-		}
-		else if(viewportID == 1)
-		{
-			if(texIdRight == 0)
-				kuhl_geometry_texture(&cylinder, texIdLeft, "tex", KG_WARN);
-			else
-				kuhl_geometry_texture(&cylinder, texIdRight, "tex", KG_WARN);
-			kuhl_geometry_draw(&cylinder);
-		}
+		kuhl_geometry_draw(&cylinder);
 
 	} // finish viewport loop
 	viewmat_end_frame();
@@ -272,9 +272,9 @@ void init_geometryCylinder(kuhl_geometry *cylinder, GLuint program)
 			normals[normalsIndex++] = n[2];
 
 			if(j < 2)
-				texcoords[texcoordsIndex++] = i/(float)numSides;
+				texcoords[texcoordsIndex++] = (numSides-i)/(float)numSides;
 			else
-				texcoords[texcoordsIndex++] = (i+1)/(float)numSides;
+				texcoords[texcoordsIndex++] = (numSides-(i+1))/(float)numSides;
 
 			if(j == 1 || j == 2)
 				texcoords[texcoordsIndex++] = 0; // bottom
@@ -358,9 +358,13 @@ int main(int argc, char** argv)
 
 	init_geometryCylinder(&cylinder, program);
 
+	msg(INFO, "Left  image: %s\n", argv[1]);
 	kuhl_read_texture_file(argv[1], &texIdLeft);
 	if(argc == 3)
+	{
+		msg(INFO, "Right image: %s\n", argv[2]);
 		kuhl_read_texture_file(argv[2], &texIdRight);
+	}
 	
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);
