@@ -6,7 +6,7 @@
 ####################################
 # Programs that need ASSIMP
 set(NEED_ASSIMP viewer slerp explode flock ik)
-# Programs that don't rely on libraries
+# Programs that don't rely on ASSIMP
 set(NEED_NOTHING text triangle triangle-color triangle-shade prerend picker teartest texture panorama ogl2-triangle ogl2-slideshow ogl2-texture)
 
 
