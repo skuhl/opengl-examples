@@ -79,7 +79,7 @@ fi
 PATH=.:$PATH
 
 printMessage "Making sure everything is recompiled on this computer..."
-make --quiet "$1" dgr-relay
+make -C .. --quiet "$1" dgr-relay
 
 # Make sure that the dgr-relay and the program we want to execute exist and are executable.
 if [[ ! -x dgr-relay ]]; then
@@ -148,7 +148,7 @@ done
 
 
 printMessage "Running cmake on IVS..."
-${SSH_CMD} "cd \"${IVS_TEMP_DIR}\" && rm -rf CMakeCache.txt CMakeFiles && /export/apps/src/cmake/2.8.9/cmake-2.8.9/bin/cmake ."
+${SSH_CMD} "cd \"${IVS_TEMP_DIR}\" && ./cleanup.sh && /export/apps/src/cmake/2.8.9/cmake-2.8.9/bin/cmake ."
 printMessage "Compiling $1 and dgr-relay IVS..."
 ${SSH_CMD} make -B --quiet --jobs=3 -C "${IVS_TEMP_DIR}" "$1" dgr-relay
 
@@ -270,6 +270,7 @@ export PROJMAT_WINDOW_POS='0 0'
 export PROJMAT_WINDOW_SIZE='5760 1080'
 export PROJMAT_FRUSTUM='${FRUSTUM}'
 export PROJMAT_MASTER_FRUSTUM='${PROJMAT_MASTER_FRUSTUM}'
+export MSG_LOGFILE='log-${tile}.txt'
 export DISPLAY='${tile}:0.0'
 export __GL_SYNC_TO_VBLANK=1
 cd bin
