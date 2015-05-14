@@ -392,7 +392,7 @@ GLint kuhl_get_attribute(GLuint program, const char *attributeName)
 
 	if(!glIsProgram(program))
 	{
-		msg(ERROR, "Program %d is not a valid GLSL program.\n", program);
+		msg(FATAL, "Cannot get attribute '%s' from program %d because the program is not a valid GLSL program.\n", attributeName, program);
 		exit(EXIT_FAILURE);
 	}
 
@@ -407,7 +407,7 @@ GLint kuhl_get_attribute(GLuint program, const char *attributeName)
 	kuhl_errorcheck();
 	if(loc == -1)
 	{
-		msg(ERROR, "Attribute variable '%s' is missing or inactive in GLSL program %d.\n", attributeName, program);
+		msg(ERROR, "Cannot get attribute '%s' from program %d because it is missing or inactive.\n", attributeName, program);
 	}
 	return loc;
 }
@@ -881,40 +881,44 @@ void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint compo
 {
 	if(name == NULL || strlen(name) == 0)
 	{
-		msg(WARNING, "GLSL variable name was NULL or the empty string.\n");
+		msg(WARNING, "Unable to add an attribute that is NULL or an empty string.\n");
 		return;
 	}
 	if(geom == NULL)
 	{
-		msg(WARNING, "Geometry struct is null while trying to set attribute %s.\n",name);
+		msg(WARNING, "Unable to add attribute '%s' to the geometry object because you passed in a geometry object that was set to NULL.\n",name);
 		return;
 	}
 	if(data == NULL)
 	{
-		msg(WARNING, "data array is null while trying to set attribute %s.\n",
+		msg(WARNING, "Unable to add attribute '%s' to the geometry object because you passed in an array set to NULL.\n",
 		             name);
 		return;
 	}
 	if(components == 0)
 	{
-		msg(WARNING, "Components was 0 while trying to set attribute %s.\n",
+		msg(WARNING, "Unable to add attribute '%s' to the geometry object because this attribute has 0 components.\n",
 		             name);
 		return;
 	}
 	if(!glIsVertexArray(geom->vao))
 	{
-		msg(WARNING, "This geometry object has an invalid vertex array object %d (detected while setting attribute %s)\n", geom->vao, name);
+		msg(WARNING, "Unable to add attribute '%s' to the geometry object because the geometry has an invalid vertex array object %d\n", geom->vao, name);
 		return;
 	}
 
 	/* If this attribute isn't available in the GLSL program, move
 	 * on to the next one. */
-	GLint attribLocation = kuhl_get_attribute(geom->program, name);
+	// GLint attribLocation = kuhl_get_attribute(geom->program, name);
+
+	// Get attribute location directly so kuhl_get_attribute() and
+	// this function don't print the same error repeatedly.
+	GLint attribLocation = glGetAttribLocation(geom->program, name);
 	if(attribLocation == -1)
 	{
 		if(warnIfAttribMissing)
-			msg(WARNING, "Attribute '%s' was missing in geometry object.\n",
-			             name);
+			msg(WARNING, "Unable to add attribute '%s' to the geometry object because it was missing or inactive in program %d\n",
+			    name, geom->program);
 		return;
 	}
 
@@ -940,8 +944,7 @@ void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint compo
 	/* If we are writing past the end of the array. */
 	if(destIndex == MAX_ATTRIBUTES)
 	{
-		fprintf(stderr, "%s: You tried to add more than %d attributes to a kuhl_geometry object\n",
-		        __func__, MAX_ATTRIBUTES);
+		msg(FATAL, "You tried to add more than %d attributes to a kuhl_geometry object\n", MAX_ATTRIBUTES);
 		exit(EXIT_FAILURE);
 	}
 
@@ -1470,6 +1473,11 @@ GLuint kuhl_read_texture_rgba_array_wrap(const unsigned char* array, int width, 
 		GLint maxTextureSize = 0;
 		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
 		msg(ERROR, "Your card's rough estimate for the maximum texture size that it supports: %dx%d\n", maxTextureSize, maxTextureSize);
+		msg(WARNING, "Common max texture sizes for graphics cards can be found at: http://feedback.wildfiregames.com/report/opengl/feature/GL_MAX_TEXTURE_SIZE");
+
+		// According to the website above, as of July 2014, 85% of
+		// computers support 8k or larger. Most computers on MTU's
+		// campus supports 16k.
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 		return 0;
