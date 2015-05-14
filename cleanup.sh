@@ -32,8 +32,8 @@ for D in *; do # For each file and directory
 done
 
 rm -vrf "${THIS_DIR}/doxygen-docs"
-rm -vrf "${THIS_DIR}/bin/*.frag" "${THIS_DIR}/bin/*.vert" "${THIS_DIR}/bin/*libOVR*.so*"
-rm -vf "${THIS_DIR}/*.exe"
+rm -vf "${THIS_DIR}/bin/"*.frag "${THIS_DIR}/bin/"*.vert "${THIS_DIR}/bin/"*libOVR*.so*
+rm -vf "${THIS_DIR}/"*.exe
 
 
 if [[ -x "${THIS_DIR}/.git" && -x /usr/bin/git ]]; then
@@ -41,5 +41,7 @@ if [[ -x "${THIS_DIR}/.git" && -x /usr/bin/git ]]; then
 	echo
 	echo "Consider removing the following files because they are not in the git repo and are not ignored:"
 	echo
-	git -C "${THIS_DIR}" ls-files --others --exclude-standard
+	pushd "${THIS_DIR}"
+	git ls-files --others --exclude-standard
+	popd
 fi

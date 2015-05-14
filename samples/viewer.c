@@ -23,10 +23,11 @@
 GLuint fpsLabel = 0;
 float fpsLabelAspectRatio = 0;
 kuhl_geometry labelQuad;
-int renderStyle = 0;
+int renderStyle = 2;
 
 GLuint program = 0; // id value for the GLSL program
 kuhl_geometry *modelgeom = NULL;
+kuhl_geometry *origingeom = NULL;
 float bbox[6];
 
 /** Set this variable to 1 to force this program to scale the entire
@@ -38,13 +39,19 @@ float bbox[6];
  * center of the bottom face of the bounding box. If
  * FIT_TO_VIEW is not set, this is the location in world
  * coordinates that we want to model's origin to appear at. */
-float placeToPutModel[3] = { 0, 0, 0 };
+float placeToPutModel[3] = { 0, 1, 0 };
 /** SketchUp produces files that older versions of ASSIMP think 1 unit
  * is 1 inch. However, all of this software assumes that 1 unit is 1
  * meter. So, we need to convert some models from inches to
  * meters. Newer versions of ASSIMP correctly read the same files and
  * give us units in meters. */
 #define INCHES_TO_METERS 0
+
+/** The following variable toggles the display an "origin+axis" marker
+ * which draws a small box at the origin and draws lines of length 1
+ * on each axis. Depending on which matrices are applied to the
+ * marker, the marker will be in object, world, etc coordinates. */
+#define SHOW_ORIGIN 0
 
 #define GLSL_VERT_FILE "assimp.vert"
 #define GLSL_FRAG_FILE "assimp.frag"
@@ -354,6 +361,28 @@ void display()
 		kuhl_errorcheck();
 		kuhl_geometry_draw(modelgeom); /* Draw the model */
 		kuhl_errorcheck();
+		if(SHOW_ORIGIN)
+		{
+			/* Save current line width */
+			GLfloat origLineWidth;
+			glGetFloatv(GL_LINE_WIDTH, &origLineWidth);
+			glLineWidth(4); // make lines thick
+			
+			/* Object coordinate system origin */
+			kuhl_geometry_draw(origingeom); /* Draw the origin marker */
+
+			/* World coordinate origin */
+			mat4f_copy(modelview, viewMat);
+			glUniformMatrix4fv(kuhl_get_uniform("ModelView"),
+			                   1, // number of 4x4 float matrices
+			                   0, // transpose
+			                   modelview); // value
+			kuhl_geometry_draw(origingeom); /* Draw the origin marker */
+
+			/* Restore line width */
+			glLineWidth(origLineWidth);
+		}
+
 
 		if(dgr_is_enabled() == 0 || dgr_is_master())
 		{
@@ -529,6 +558,9 @@ int main(int argc, char** argv)
 
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
+	if(SHOW_ORIGIN)
+		origingeom = kuhl_load_model("../models/origin/origin.obj", NULL, program, NULL);
+	
 	init_geometryQuad(&labelQuad, program);
 
 	kuhl_getfps_init(&fps_state);
