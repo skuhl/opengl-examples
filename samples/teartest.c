@@ -1,4 +1,9 @@
-/*
+/* Copyright (c) 2014-2015 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
+ */
+
+/** @file 
   This program can help you evaluate if tearing is occurring on your
   screen. If tearing does occur, you will see lines appearing on the
   screen. If tearing is not occurring, the program should just appear
@@ -20,6 +25,8 @@
    /etc/profile as recommended on the following page:
    
    https://wiki.archlinux.org/index.php/NVIDIA
+
+   @author Scott Kuhl, Sam Seltzer-Johnston
 
  */
 

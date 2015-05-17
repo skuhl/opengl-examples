@@ -1,3 +1,13 @@
+/* Copyright (c) 2014-2015 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
+ */
+
+/** @file Demonstrates drawing text on the screen.
+ *
+ * @author Scott Kuhl, Sam Seltzer-Johnston
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>

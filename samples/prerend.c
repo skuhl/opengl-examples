@@ -1,3 +1,15 @@
+/* Copyright (c) 2014-2015 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
+ */
+
+/** @file This program demonstrates prerendering a scene into a
+ * texture before displaying it.
+ *
+ * @author Scott Kuhl
+ */
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
