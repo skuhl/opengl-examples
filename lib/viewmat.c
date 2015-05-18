@@ -950,13 +950,27 @@ static viewmat_eye viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
  */
 static viewmat_eye viewmat_get_ivs(float viewmatrix[16], float frustum[6])
 {
+	/* Only get information from VRPN if we are DGR master, or if DGR
+	 * is being used at all. */
 	float pos[3];
 	if((dgr_is_enabled() && dgr_is_master()) || dgr_is_enabled()==0)
 	{
-		/* get information from vrpn */
-		float orient[16];
-		vrpn_get(viewmat_vrpn_obj, NULL, pos, orient);
+		if(viewmat_vrpn_obj != NULL)
+		{
+			/* get information from vrpn */
+			float orient[16];
+			vrpn_get(viewmat_vrpn_obj, NULL, pos, orient);
+		}
+		else
+		{
+			/* If no head tracking is available, assume the person is
+			 * standing at the origin with a normal eye height */
+			pos[0] = 0;
+			pos[1] = 1.5; // normal eye height
+			pos[2] = 0;
+		}
 	}
+	
 	/* Make sure all DGR hosts can get the position so that they
 	 * can update the frustum appropriately */
 	dgr_setget("!!viewMatPos", pos, sizeof(float)*3);
