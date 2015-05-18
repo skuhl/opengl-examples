@@ -209,6 +209,17 @@ void display()
 	 * to call other callback functions for when a key is pressed, the
 	 * window is resized, etc. */
 	glutPostRedisplay();
+
+	static int fps_state_init = 0;
+	static kuhl_fps_state fps_state;
+	if(fps_state_init == 0)
+	{
+		kuhl_getfps_init(&fps_state);
+		fps_state_init = 1;
+	}
+	float fps = kuhl_getfps(&fps_state);
+	if(fps_state.frame == 0)
+		msg(INFO, "fps: %6.1f\n", fps);
 }
 
 
