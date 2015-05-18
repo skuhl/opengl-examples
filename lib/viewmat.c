@@ -415,17 +415,15 @@ static int viewmat_init_vrpn()
 /** Initialize IVS view matrix calculations, connect to VRPN. */
 void viewmat_init_ivs()
 {
-	/* Since the master process is the only one that talks to the VRPN
-	 * server, slaves don't need to do anything to initialize. Also,
-	 * if we somehow aren't using DGR, assume that we need to connect to
-	 * VRPN. */
-	if((dgr_is_enabled() && dgr_is_master()==0) || dgr_is_enabled()!=0)
-		return;
-
-	if(viewmat_init_vrpn() == 0)
+	/* If we are using DGR, we only need to connect to VRPN if we are
+	 * the master process. */
+	if(dgr_is_enabled() && dgr_is_master())
+		viewmat_init_vrpn();
+	else if(dgr_is_enabled() == 0)
 	{
-		msg(ERROR, "Failed to setup IVS mode because we could not connect to VRPN.\n");
-		exit(EXIT_FAILURE);
+		// DGR should be enabled with IVS, but still connect to VRPN if we aren't.
+		msg(ERROR, "We are apparently using IVS without DGR?");
+		viewmat_init_vrpn();
 	}
 }
 
