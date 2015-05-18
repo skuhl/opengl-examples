@@ -275,7 +275,7 @@ export PROJMAT_WINDOW_POS='${WINDOW_POS}'
 export PROJMAT_WINDOW_SIZE='${WINDOW_SIZE}'
 export PROJMAT_FRUSTUM='${FRUSTUM}'
 export PROJMAT_MASTER_FRUSTUM='${PROJMAT_MASTER_FRUSTUM}'
-export MSG_LOGFILE='log-${tile}.txt'
+export MSG_LOGFILE='log-${tile}-${PROC_NUM}.txt'
 export DISPLAY='${tile}:0.0'
 export __GL_SYNC_TO_VBLANK=1
 cd bin

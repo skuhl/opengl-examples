@@ -81,6 +81,7 @@ export PROJMAT_WINDOW_SIZE="360 270"
 export PROJMAT_WINDOW_POS="100 450"
 #export PROJMAT_FRUSTUM="-1 0 -.5 .5 1 100"
 export PROJMAT_FRUSTUM="-3.09 0 ${BOTTOM} ${TOP} 2 100"
+export MSG_LOGFILE="log-ivs-left.txt"
 # PROJMAT_MASTER_FRUSTUM is still set.
 "${@}" &
 
@@ -92,6 +93,7 @@ export PROJMAT_WINDOW_SIZE="360 270"
 export PROJMAT_WINDOW_POS="460 450"
 #export PROJMAT_FRUSTUM="0 1 -.5 .5 1 100"
 export PROJMAT_FRUSTUM="0 3.09 ${BOTTOM} ${TOP} 2 100"
+export MSG_LOGFILE="log-ivs-right.txt"
 # PROJMAT_MASTER_FRUSTUM is still set.
 "${@}" &
 
