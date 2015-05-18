@@ -128,7 +128,7 @@ endif()
 find_package(GLEW REQUIRED)
 include_directories(${GLEW_INCLUDE_DIRS})
 
-# Check for an newer extension that we use for glGetProgram(). If GLEW
+# Check for a newer extension that we use for glGetProgram(). If GLEW
 # is too old, it might not know about the extension and we could get
 # compile errors.
 include(CheckSymbolExists)
