@@ -44,6 +44,8 @@ myTracker::myTracker( vrpn_Connection *c ) :
 	kuhl_getfps_init(&fps_state);
 }
 
+
+long lastrecord = 0;
 void myTracker::mainloop()
 {
 	vrpn_gettimeofday(&_timestamp, NULL);
@@ -91,6 +93,8 @@ void myTracker::mainloop()
 	char msgbuf[1000];
 	int len = vrpn_Tracker::encode_to(msgbuf);
 
+	printf("Microseconds since last record: %ld\n", kuhl_microseconds()-lastrecord);
+	lastrecord = kuhl_microseconds();
 	if (d_connection->pack_message(len, _timestamp, position_m_id, d_sender_id, msgbuf,
 	                               vrpn_CONNECTION_LOW_LATENCY))
 	{

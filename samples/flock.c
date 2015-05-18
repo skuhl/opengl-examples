@@ -1,9 +1,14 @@
-/* This sample is based on a sample that is included with ASSIMP. Much
- * of the logic of the program was unchanged. However, texture loading
- * and other miscellaneous changes were made.
- *
- * Changes by: Scott Kuhl
+/* Copyright (c) 2015 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
  */
+
+/** @file Draws a single model repeatedly. Useful for doing very
+ * simple performance measurements.
+ *
+ * @author Scott Kuhl
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -31,8 +36,8 @@ float bbox[6], fitMatrix[16];
 #define NUM_MODELS 5000
 float positions[NUM_MODELS][3];
 
-#define GLSL_VERT_FILE "ogl3-assimp.vert"
-#define GLSL_FRAG_FILE "ogl3-assimp.frag"
+#define GLSL_VERT_FILE "assimp.vert"
+#define GLSL_FRAG_FILE "assimp.frag"
 
 /* Called by GLUT whenever a key is pressed. */
 void keyboard(unsigned char key, int x, int y)

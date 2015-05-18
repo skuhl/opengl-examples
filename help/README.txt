@@ -21,23 +21,23 @@ Try to compile the programs
 
 Try running a program (all programs will be placed in the "bin" directory)
 
-    ./ogl3-triangle
+    ./triangle
 
 Check out model loading and texturing capabilities
 
-    ./ogl3-assimp models/duck.dae
+    ./viewer ../models/duck.dae
 
 Run code for an HMD (left/right eye screens side-by-side):
 
-    ./hmd.sh ./ogl3-triangle
+    ./hmd.sh ./triangle
 
 Run the code using the Oculus HMD
 
-    ./oculus.sh ./ogl3-triangle
+    ./oculus.sh ./triangle
 
 Run the code with red/cyan anaglyph 3D:
 
-    ./anaglyph.sh ./ogl3-triangle
+    ./anaglyph.sh ./triangle
 
 If you want to want to use VRPN to control the position and
 orientation of the camera, you need to:
@@ -48,24 +48,24 @@ orientation of the camera, you need to:
     - Set the VIEWMAT_VRPN_OBJECT environment variable to the name of
       the tracked object.
 
-    - Run the program (such as ogl3-assimp) that you want to run.
+    - Run the program (such as "viewer") that you want to run.
 
 
 Michigan Tech: Run code on the IVS display wall (if you have permission to do so)
 
-    ./ivs.sh ./ogl3-triangle
+    ./ivs.sh ./triangle
 
 Michigan Tech: Test to see if program will work on IVS without access to the IVS display wall.
 
-    ./local.sh ./ogl3-triangle
+    ./ivs-test.sh ./triangle
 
 Michigan Tech: Run code on the IVS display wall and update the viewport based on tracking the user's head (if you have permission to do so)
 
-    ./ivs-track.sh ./ogl3-triangle
+    ./ivs-track.sh ./triangle
 
 Michigan Tech: Run code on the IVS display wall and account for the screen bezels (if you have permission to do so)
 
-    ./ivs3.sh ./ogl3-triangle
+    ./ivs3.sh ./triangle
 
 
 
@@ -95,11 +95,11 @@ features are supported on the computer you are running the program on.
 Freeglut (required) - OpenGL doesn't provide a cross-platform way to
 create a window that you can draw on. Freeglut is one cross platform
 library that makes it relatively easy to create windows, handle
-mouse/keyboard inputs, etc. in a cross-platform way. A new, but
-similar, alternative is GLFW. To install Freeglut, look for packages
-named freeglut, freeglut-dev in your package manager and install those
-packages. An earlier version of a similar library, called GLUT may or
-may not work with this code.
+mouse/keyboard inputs, etc. A new, but similar, alternative is
+GLFW. To install Freeglut, look for packages named freeglut,
+freeglut-dev in your package manager and install those packages. An
+earlier version of a similar library, called GLUT may or may not work
+with this code.
 
  - For a guide to install Freeglut, see FREEGLUT-INSTALL.txt
  - Homepage: http://freeglut.sourceforge.net/

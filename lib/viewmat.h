@@ -31,13 +31,20 @@
 extern "C" {
 #endif
 
+typedef enum { VIEWMAT_EYE_LEFT,    /*< Right eye viewport */
+               VIEWMAT_EYE_RIGHT,   /*< Left eye viewport */
+               VIEWMAT_EYE_MIDDLE,  /*< Single viewport */
+               VIEWMAT_EYE_UNKNOWN } viewmat_eye;
+
+void viewmat_window_size(int *width, int *height);
+
 void viewmat_begin_frame(void);
 void viewmat_begin_eye(int viewportID);
 int viewmat_get_blitted_framebuffer(int viewportID);
 void viewmat_end_frame(void);
 	
 void viewmat_init(float pos[3], float look[3], float up[3]);
-void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportNum);
+viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportNum);
 int viewmat_num_viewports();
 void viewmat_get_viewport(int viewportValue[4], int viewportNum);
 

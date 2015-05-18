@@ -17,10 +17,12 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <ctype.h> // isspace()
 #include <unistd.h>
 #include <libgen.h> // dirname()
 
 #include "kuhl-nodep.h"
+
 
 // When compiling on windows, add suseconds_t and the rand48 functions.
 #ifdef __MINGW32__
@@ -91,7 +93,10 @@ void srand48(long seed){
 void *kuhl_mallocFileLine(size_t size, const char *file, int line)
 {
 	if(size == 0)
+	{
 		fprintf(stderr, "!!!!! malloc Warning !!!!! - Size 0 passed to malloc at %s:%d\n", file, line);
+		return NULL;
+	}
 	void *ret = malloc(size);
 	if(ret == NULL)
 		fprintf(stderr, "!!!!! malloc Error !!!!! - Failed to allocate %du bytes at %s:%d\n", (int) size, file, line);
@@ -426,6 +431,40 @@ void kuhl_shuffle(void *array, int n, int size)
 		memcpy(arr+i*size, tmp,        size);
 	}
 }
+
+/** Removes any whitespace characters at the beginning or end of the string in place.
+
+    @param str The null-terminated string to trim in place.
+    @return The same pointer as the str parameter.
+*/
+char* kuhl_trim_whitespace(char *str)
+{
+	/* Find first non-whitespace character in string (or the null terminator) */
+	char *firstNonSpace = str;
+	while(isspace(*firstNonSpace) && *firstNonSpace != 0)
+		firstNonSpace++;
+
+	/* If it was an empty string */
+	if(*firstNonSpace == 0)
+	{
+		*str = 0;
+		return str;
+	}
+
+	/* Find the last character in the string */
+	char *lastNonSpace = str + strlen(str) - 1;
+	while(isspace(*lastNonSpace))
+		lastNonSpace--;
+
+	*(lastNonSpace+1) = 0; // set byte after the last nonspace character to null.
+	
+	// If the string is two non-whitespace characters,
+	// lastNonSpace-firstNonSpace will be 1. But, we want to copy both
+	// of the characters plus the null terminator. */
+	memmove(str, firstNonSpace, lastNonSpace-firstNonSpace+2);
+	return str;
+}
+
 
 /**
    Generate random numbers following Gaussian distribution. The

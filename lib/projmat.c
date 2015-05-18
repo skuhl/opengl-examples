@@ -15,6 +15,7 @@
 #include <GL/freeglut.h>
 #endif
 #include "kuhl-util.h"
+#include "viewmat.h"
 
 float projmat_frustum[6];
 float projmat_master_frustum[6];
@@ -39,7 +40,7 @@ static void projmat_init_window()
 	if(windowSizeString != NULL &&
 	   sscanf(windowSizeString, "%d %d", &(windowSize[0]), &(windowSize[1])) == 2)
 	{
-		kuhl_msg("Setting window size %d %d\n", windowSize[0], windowSize[1]);
+		msg(INFO, "Setting window size %d %d\n", windowSize[0], windowSize[1]);
 		glutReshapeWindow(windowSize[0], windowSize[1]);
 	}
 
@@ -49,7 +50,7 @@ static void projmat_init_window()
 	if(windowPosString != NULL &&
 	   sscanf(windowPosString, "%d %d", &(windowPos[0]), &(windowPos[1])) == 2)
 	{
-		kuhl_msg("Setting window position %d %d\n", windowPos[0], windowPos[1]);
+		msg(INFO, "Setting window position %d %d\n", windowPos[0], windowPos[1]);
 		glutPositionWindow(windowPos[0], windowPos[1]);
 	}
 
@@ -57,7 +58,7 @@ static void projmat_init_window()
 	const char* fullscreenString = getenv("PROJMAT_FULLSCREEN");
 	if(fullscreenString && strlen(fullscreenString) > 0)
 	{
-		kuhl_msg("Requesting fullscreen\n");
+		msg(INFO, "Requesting fullscreen\n");
 		glutFullScreen();
 	}
 }
@@ -80,7 +81,7 @@ void projmat_init()
 		          &(projmat_frustum[0]), &(projmat_frustum[1]), &(projmat_frustum[2]),
 		          &(projmat_frustum[3]), &(projmat_frustum[4]), &(projmat_frustum[5])) != 6)
 		{
-			kuhl_errmsg("Unable to parse PROJMAT_FRUSTUM environment variable.\n");
+			msg(ERROR, "Unable to parse PROJMAT_FRUSTUM environment variable.\n");
 			projmat_mode = -1;
 		}
 
@@ -99,7 +100,7 @@ void projmat_init()
 			for(int i=0; i<6; i++)
 				projmat_master_frustum[i] = projmat_frustum[i];
 
-			kuhl_errmsg("Error parsing master frustum.\n");
+			msg(ERROR, "Error parsing master frustum.\n");
 		}
 
 	}
@@ -110,20 +111,20 @@ void projmat_init()
 		projmat_mode = 0;
 		if(sscanf(vfovString, "%f", &projmat_vfov) != 1)
 		{
-			kuhl_errmsg("Unable to parse PROJMAT_VFOV environment variable.\n");
+			msg(ERROR, "Unable to parse PROJMAT_VFOV environment variable.\n");
 			projmat_vfov = -1;
 		}
 	}
 
 	if(projmat_mode == -1)
-		kuhl_msg("Using default perspective projection.\n");
+		msg(INFO, "Using default perspective projection.\n");
 	else if(projmat_mode == 0)
-		kuhl_msg("Using a simple perspective projection (vfov=%f degrees).\n", projmat_vfov);
+		msg(INFO, "Using a simple perspective projection (vfov=%f degrees).\n", projmat_vfov);
 	else if(projmat_mode == 1)
-		kuhl_msg("Using a view frustum.\n");
+		msg(INFO, "Using a view frustum.\n");
 	else
 	{
-		kuhl_errmsg("projmat is confused.\n");
+		msg(FATAL, "projmat is confused.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -136,7 +137,7 @@ void projmat_init()
  * @param result The location for view frustum values to be stored.
  *
  * @param viewportWidth The width of the viewport this frustum is
- * for. If viewportWidth is -1, it is assumed that he frustum will
+ * for. If viewportWidth is -1, it is assumed that the frustum will
  * fill the entire window. This option is useful for HMD rendering
  * where there are two viewports for a single window. The viewport
  * dimensions are necessary to calculate an appropriate aspect ratio
@@ -153,10 +154,12 @@ void projmat_get_frustum(float result[6], int viewportWidth, int viewportHeight)
 {
 	if(projmat_mode == -1 || projmat_mode == 0)
 	{
+		int windowWidth, windowHeight;
+		viewmat_window_size(&windowWidth, &windowHeight);
 		if(viewportWidth < 0)
-			viewportWidth  = glutGet(GLUT_WINDOW_WIDTH);
+			viewportWidth  = windowWidth;
 		if(viewportHeight < 0)
-			viewportHeight  = glutGet(GLUT_WINDOW_HEIGHT);
+			viewportHeight  = windowHeight;
 		float aspect = viewportWidth/(float)viewportHeight;
 		float nearPlane = 0.1;
 		float farPlane = 30;

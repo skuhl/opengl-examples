@@ -73,6 +73,67 @@ static const char *viewmat_vrpn_obj = NULL; /**< Name of the VRPN object that we
 static HmdControlState viewmat_hmd;
 
 
+/** Sometimes calls to glutGet(GLUT_WINDOW_*) take several milliseconds
+ * to complete. To maintain a 60fps frame rate, we have a budget of
+ * about 16 milliseconds per frame. These functions might get called
+ * multiple times in multiple places per frame. viewmat_window_size()
+ * is an alternative way to get the window size but it may be up to 1
+ * second out of date.
+ *
+ * This causes window resizing to look a little ugly, but it is
+ * functional and results in a more consistent framerate.
+ *
+ * @param width To be filled in with the width of the GLUT window.
+ *
+ * @param height To be filled in with the height of the GLUT window.
+ */
+void viewmat_window_size(int *width, int *height)
+{
+	if(width == NULL || height == NULL)
+	{
+		msg(ERROR, "width and/or height pointers were null.");
+		exit(EXIT_FAILURE);
+	}
+	
+	// Initialize static variables upon startup
+	static int savedWidth  = -1;
+	static int savedHeight = -1;
+	static long savedTime = -1;
+
+	// If it is the first time we are called and the variables are not
+	// initialized, initialize them!
+	int needToUpdate = 0;
+	if(savedWidth < 0 || savedHeight < 0 || savedTime < 0)
+		needToUpdate = 1;
+	else if(kuhl_milliseconds() - savedTime > 1000)
+		needToUpdate = 1;
+
+	if(needToUpdate)
+	{
+		savedWidth  = glutGet(GLUT_WINDOW_WIDTH);
+		savedHeight = glutGet(GLUT_WINDOW_HEIGHT);
+		savedTime = kuhl_milliseconds();
+		// msg(INFO, "Updated window size\n");
+	}
+
+	*width = savedWidth;
+	*height = savedHeight;
+}
+
+
+/** Checks if the viewportID is an appropriate value. Exits if it is
+ * invalid.
+ */
+static void viewmat_validate_viewportId(int viewportID)
+{
+	if(viewportID < 0 && viewportID >= viewports_size)
+	{
+		msg(FATAL, "Viewport %d does not exist. Number of viewports: %d\n",
+		    viewportID, viewports_size);
+		exit(EXIT_FAILURE);
+	}
+}
+
 /** Should be called prior to rendering a frame. */
 void viewmat_begin_frame(void)
 {
@@ -144,6 +205,8 @@ void viewmat_end_frame(void)
  */
 int viewmat_get_blitted_framebuffer(int viewportID)
 {
+	viewmat_validate_viewportId(viewportID);
+	
 #ifndef MISSING_OVR
 	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
 	{
@@ -173,11 +236,12 @@ int viewmat_get_blitted_framebuffer(int viewportID)
  *
  * @param viewportID The viewport number that we are rendering to. If
  * running as a single window, non-stereo desktop application, use
- * 0. For HMDs, use 0 when rendering the left eye and 1 when rendering
- * the right eye.
+ * 0.
  */
 void viewmat_begin_eye(int viewportID)
 {
+	viewmat_validate_viewportId(viewportID);
+	
 #ifndef MISSING_OVR
 	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
 	{
@@ -191,7 +255,7 @@ void viewmat_begin_eye(int viewportID)
 			glBindFramebuffer(GL_FRAMEBUFFER, rightFramebufferAA);
 		else
 		{
-			kuhl_errmsg("Unknown viewport ID: %d\n",viewportID);
+			msg(FATAL, "Unknown viewport ID: %d\n",viewportID);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -205,7 +269,7 @@ void viewmat_begin_eye(int viewportID)
 			glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_FALSE);
 		else
 		{
-			kuhl_errmsg("Unknown viewport ID: %d\n",viewportID);
+			msg(FATAL, "Unknown viewport ID: %d\n",viewportID);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -214,11 +278,12 @@ void viewmat_begin_eye(int viewportID)
 /** Sets up viewmat to only have one viewport. This can be called
  * every frame since resizing the window will change the size of the
  * viewport! */
-static void viewmat_one_viewport()
+static void viewmat_one_viewport(void)
 {
 	/* One viewport fills the entire screen */
-	int windowWidth  = glutGet(GLUT_WINDOW_WIDTH);
-	int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+	int windowWidth, windowHeight;
+	viewmat_window_size(&windowWidth, &windowHeight);
+
 	viewports_size = 1;
 	viewports[0][0] = 0;
 	viewports[0][1] = 0;
@@ -226,11 +291,11 @@ static void viewmat_one_viewport()
 	viewports[0][3] = windowHeight;
 }
 
-static void viewmat_anaglyph_viewports()
+static void viewmat_anaglyph_viewports(void)
 {
 	/* One viewport fills the entire screen */
-	int windowWidth  = glutGet(GLUT_WINDOW_WIDTH);
-	int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+	int windowWidth, windowHeight;
+	viewmat_window_size(&windowWidth, &windowHeight);
 	viewports_size = 2;
 	/* Our anaglyph rendering uses parallel cameras. Changing the
 	 * offset will change the distance at which objects are perceived
@@ -257,7 +322,6 @@ static void viewmat_anaglyph_viewports()
 	
 	for(int i=0; i<2; i++)
 	{
-
 		if(i == 0)
 			viewports[i][0] = -offset/2;
 		else
@@ -271,11 +335,11 @@ static void viewmat_anaglyph_viewports()
 /** Sets up viewmat to split the screen vertically into two
  * viewports. This can be called every frame since resizing the window
  * will change the size of the viewport! */
-static void viewmat_two_viewports()
+static void viewmat_two_viewports(void)
 {
 	/* Two viewports, one for each eye */
-	int windowWidth  = glutGet(GLUT_WINDOW_WIDTH);
-	int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+	int windowWidth, windowHeight;
+	viewmat_window_size(&windowWidth, &windowHeight);
 
 	/* TODO: Figure out if it makes sense to make this configurable at runtime. */
 	viewports_size = 2;
@@ -291,7 +355,7 @@ static void viewmat_two_viewports()
 }
 
 /** The oculus uses one framebuffer per eye. */
-static void viewmat_oculus_viewports()
+static void viewmat_oculus_viewports(void)
 {
 #ifndef MISSING_OVR
 	int windowWidth  = EyeTexture[0].OGL.Header.RenderViewport.Size.w;
@@ -314,7 +378,7 @@ static void viewmat_oculus_viewports()
 
 /** This method should be called regularly to ensure that we adjust
  * our viewports after a window is resized. */
-static void viewmat_refresh_viewports()
+static void viewmat_refresh_viewports(void)
 {
 	switch(viewmat_mode)
 	{
@@ -334,7 +398,7 @@ static void viewmat_refresh_viewports()
 			viewmat_anaglyph_viewports();
 			break;
 		default:
-			kuhl_errmsg("Unknown viewmat mode: %d\n", viewmat_mode);
+			msg(ERROR, "Unknown viewmat mode: %d\n", viewmat_mode);
 			exit(EXIT_FAILURE);
 	}
 }
@@ -344,7 +408,7 @@ static void viewmat_refresh_viewports()
     
     @return Returns 1 if VRPN is set up, 0 otherwise.
 */
-static int viewmat_init_vrpn()
+static int viewmat_init_vrpn(void)
 {
 	viewmat_vrpn_obj = NULL;
 	
@@ -352,7 +416,7 @@ static int viewmat_init_vrpn()
 	if(vrpnObjString != NULL && strlen(vrpnObjString) > 0)
 	{
 		viewmat_vrpn_obj = vrpnObjString;
-		kuhl_msg("View is following tracker object: %s\n", viewmat_vrpn_obj);
+		msg(INFO, "View is following tracker object: %s\n", viewmat_vrpn_obj);
 		
 		/* Try to connect to VRPN server */
 		float vrpnPos[3];
@@ -364,7 +428,7 @@ static int viewmat_init_vrpn()
 }
 
 /** Initialize IVS view matrix calculations, connect to VRPN. */
-void viewmat_init_ivs()
+void viewmat_init_ivs(void)
 {
 	/* Since the master process is the only one that talks to the VRPN
 	 * server, slaves don't need to do anything to initialize. Also,
@@ -375,7 +439,7 @@ void viewmat_init_ivs()
 
 	if(viewmat_init_vrpn() == 0)
 	{
-		kuhl_errmsg("Failed to setup IVS mode because we could not connect to VRPN.\n");
+		msg(ERROR, "Failed to setup IVS mode because we could not connect to VRPN.\n");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -390,7 +454,6 @@ static void viewmat_init_mouse(float pos[3], float look[3], float up[3])
 	if(viewmat_init_vrpn() == 1)
 		return;
 		
-	kuhl_msg("Using mouse movement.\n");
 	glutMotionFunc(mousemove_glutMotionFunc);
 	glutMouseFunc(mousemove_glutMouseFunc);
 	mousemove_set(pos[0],pos[1],pos[2],
@@ -406,7 +469,7 @@ static void viewmat_init_hmd_dsight()
 	const char* hmdDeviceFile = getenv("VIEWMAT_DSIGHT_FILE");
 	if (hmdDeviceFile == NULL)
 	{
-		kuhl_errmsg("Failed to setup dSight HMD mode, VIEWMAT_DSIGHT_FILE not set\n");
+		msg(ERROR, "Failed to setup dSight HMD mode, VIEWMAT_DSIGHT_FILE not set\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -422,7 +485,7 @@ static void viewmat_init_hmd_dsight()
 static void viewmat_init_hmd_oculus(float pos[3])
 {
 #ifdef MISSING_OVR
-	kuhl_errmsg("Oculus support is missing: You have not compiled this code against the LibOVR library.\n");
+	msg(ERROR, "Oculus support is missing: You have not compiled this code against the LibOVR library.\n");
 	exit(EXIT_FAILURE);
 #else
 	ovr_Initialize(NULL);
@@ -431,12 +494,12 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	hmd = ovrHmd_Create(0);
 	if(!hmd)
 	{
-		kuhl_warnmsg("Failed to open Oculus HMD. Is ovrd running? Is libOVRRT*.so.* in /usr/lib, /usr/local/lib, or the current directory?\n");
-		kuhl_warnmsg("Press any key to proceed with Oculus debugging window.\n");
+		msg(WARNING, "Failed to open Oculus HMD. Is ovrd running? Is libOVRRT*.so.* in /usr/lib, /usr/local/lib, or the current directory?\n");
+		msg(WARNING, "Press any key to proceed with Oculus debugging window.\n");
 		char c; 
 		if(fscanf(stdin, "%c", &c) < 0)
 		{
-			kuhl_errmsg("fscanf error.\n");
+			msg(ERROR, "fscanf error.\n");
 			exit(EXIT_FAILURE);
 		}
 
@@ -444,12 +507,12 @@ static void viewmat_init_hmd_oculus(float pos[3])
 		useDebugMode = 1;
 		if(!hmd)
 		{
-			kuhl_errmsg("Oculus: Failed to create virtual debugging HMD\n");
+			msg(ERROR, "Oculus: Failed to create virtual debugging HMD\n");
 			exit(EXIT_FAILURE);
 		}
 	}
 	
-	kuhl_msg("Initialized HMD: %s - %s\n", hmd->Manufacturer, hmd->ProductName);
+	msg(INFO, "Initialized HMD: %s - %s\n", hmd->Manufacturer, hmd->ProductName);
 
 #if 0
 	printf("default fov tangents left eye:\n");
@@ -463,7 +526,7 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	/* pixelDensity can range between 0 to 1 (where 1 has the highest
 	 * resolution). Using smaller values will result in smaller
 	 * textures that each eye is rendered into. */
-	float pixelDensity = .5;
+	float pixelDensity = 1;
 	/* Number of multisample antialiasing while rendering the scene
 	 * for each eye. */
 	GLint msaa_samples = 2;
@@ -545,8 +608,12 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	
 	unsigned int hmd_caps = 0;
 	hmd_caps |= ovrHmdCap_DynamicPrediction; // enable internal latency feedback
-	// disable vsync; allow frame rate higher than display refresh rate, can cause tearing
-	//hmd_caps |= ovrHmdCap_NoVSync;
+	
+	/* disable vsync; allow frame rate higher than display refresh
+	   rate, can cause tearing. On some windowing systems, you using
+	   this setting reduces issues with overrunning the time budget
+	   and tearing still does not occur. */
+	hmd_caps |= ovrHmdCap_NoVSync;
 	hmd_caps |= ovrHmdCap_LowPersistence; // Less blur during rotation; dimmer screen
 	
 	ovrHmd_SetEnabledCaps(hmd, hmd_caps);
@@ -566,7 +633,7 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	//distort_caps |= ovrDistortionCap_TimeWarp; 
 	
 	if(!ovrHmd_ConfigureRendering(hmd, &glcfg.Config, distort_caps, hmd->DefaultEyeFov, eye_rdesc)) {
-		kuhl_errmsg("Failed to configure distortion renderer.\n");
+		msg(ERROR, "Failed to configure distortion renderer.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -602,30 +669,30 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	{
 		viewmat_mode = VIEWMAT_IVS;
 		viewmat_init_ivs();
-		kuhl_msg("Using IVS head tracking mode, tracking object: %s\n", viewmat_vrpn_obj);
+		msg(INFO, "Using IVS head tracking mode, tracking object: %s\n", viewmat_vrpn_obj);
 	}
 	else if(strcasecmp(modeString, "dsight") == 0)
 	{
 		viewmat_mode = VIEWMAT_HMD_DSIGHT;
 		viewmat_init_hmd_dsight();
-		kuhl_msg("Using dSight HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
+		msg(INFO, "Using dSight HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
 	}
 	else if(strcasecmp(modeString, "oculus") == 0)
 	{
 		viewmat_mode = VIEWMAT_HMD_OCULUS;
 		viewmat_init_hmd_oculus(pos);
 		// TODO: Tracking options?
-		kuhl_msg("Using Oculus HMD head tracking mode.\n");
+		msg(INFO, "Using Oculus HMD head tracking mode.\n");
 	}
 	else if(strcasecmp(modeString, "hmd") == 0)
 	{
 		viewmat_mode = VIEWMAT_HMD;
 		viewmat_init_mouse(pos, look, up);
-		kuhl_msg("Using HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
+		msg(INFO, "Using HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
 	}
 	else if(strcasecmp(modeString, "none") == 0)
 	{
-		kuhl_msg("No view matrix handler is being used.\n");
+		msg(INFO, "No view matrix handler is being used.\n");
 		viewmat_mode = VIEWMAT_NONE;
 		// Set our initial position, but don't handle mouse movement.
 		mousemove_set(pos[0],pos[1],pos[2],
@@ -634,16 +701,16 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	}
 	else if(strcasecmp(modeString, "anaglyph") == 0)
 	{
-		kuhl_msg("Anaglyph image rendering. Use the red filter on the left eye and the cyan filter on the right eye.\n");
+		msg(INFO, "Anaglyph image rendering. Use the red filter on the left eye and the cyan filter on the right eye.\n");
 		viewmat_mode = VIEWMAT_ANAGLYPH;
 		viewmat_init_mouse(pos, look, up);
 	}
 	else
 	{
 		if(strcasecmp(modeString, "mouse") == 0) // if no mode specified, default to mouse
-			kuhl_msg("Using mouse movement.\n");
+			msg(INFO, "Using mouse movement.\n");
 		else // if an unrecognized mode was specified.
-			kuhl_msg("Unrecognized VIEWMAT_MODE: %s; using mouse movement instead.\n", modeString);
+			msg(ERROR, "Unrecognized VIEWMAT_MODE: %s; using mouse movement instead.\n", modeString);
 		viewmat_mode = VIEWMAT_MOUSE;
 		viewmat_init_mouse(pos, look, up);
 	}
@@ -688,35 +755,50 @@ static void viewmat_fix_rotation(float orient[16])
 }
 
 
-/** Get the view matrix from the mouse.
+/** Get the view matrix from the mouse. Or, if a VRPN object is
+ * specified, get the view matrix from VRPN.
  *
  * @param viewmatrix The view matrix to be filled in.
  *
  * @param viewportNum If mouse mode is used with a left an right
  * screen for an HMD, we need to return different view matrices for
  * the left (0) and right (1) eyes.
+ *
+ * @return The eye that viewportNum corresponds to.
  **/
-static void viewmat_get_mouse(float viewmatrix[16], int viewportNum)
+static viewmat_eye viewmat_get_mouse(float viewmatrix[16], int viewportNum)
 {
+	viewmat_eye eye = VIEWMAT_EYE_MIDDLE;
+
+	float eyeDist = 0.055;  // TODO: Make this configurable.
+
 	if(viewmat_vrpn_obj == NULL) // if no VRPN object specified, use mouse movement
 	{
 		float pos[3],look[3],up[3];
 		mousemove_get(pos, look, up);
-
-		float eyeDist = 0.055;  // TODO: Make this configurable.
 
 		float lookVec[3], rightVec[3];
 		vec3f_sub_new(lookVec, look, pos);
 		vec3f_normalize(lookVec);
 		vec3f_cross_new(rightVec, lookVec, up);
 		vec3f_normalize(rightVec);
-		if(viewportNum == 0)
-			vec3f_scalarMult(rightVec, -eyeDist/2.0);
-		else
-			vec3f_scalarMult(rightVec, eyeDist/2.0);
 
-		vec3f_add_new(look, look, rightVec);
-		vec3f_add_new(pos, pos, rightVec);
+		if(viewports_size == 2) // if 2 viewports, use left/right IPD offset
+		{
+			if(viewportNum == 0)
+			{
+				vec3f_scalarMult(rightVec, -eyeDist/2.0);
+				eye = VIEWMAT_EYE_LEFT;
+			}
+			else
+			{
+				vec3f_scalarMult(rightVec, eyeDist/2.0);
+				eye = VIEWMAT_EYE_RIGHT;
+			}
+
+			vec3f_add_new(look, look, rightVec);
+			vec3f_add_new(pos, pos, rightVec);
+		}
 
 		mat4f_lookatVec_new(viewmatrix, pos, look, up);
 	}
@@ -726,24 +808,42 @@ static void viewmat_get_mouse(float viewmatrix[16], int viewportNum)
 		vrpn_get(viewmat_vrpn_obj, NULL, pos, orient);
 
 		float pos4[4] = {pos[0],pos[1],pos[2],1};
-
 		viewmat_fix_rotation(orient);
 		mat4f_copy(viewmatrix, orient);
-		mat4f_setColumn(viewmatrix, pos4, 3);  // set last column
-		mat4f_invert(viewmatrix);
-		// TODO: eye separation for HMD
-	}
 
-	// mat4f_print(viewmatrix);
+		if(viewports_size == 2) // use left/right offset if 2 viewports are used
+		{
+			float rightVec[4];
+			mat4f_getColumn(rightVec, orient, 0);
+			if(viewportNum == 0)
+			{
+				vec3f_scalarMult(rightVec, -eyeDist/2.0);
+				eye = VIEWMAT_EYE_LEFT;
+			}
+			else
+			{
+				vec3f_scalarMult(rightVec, eyeDist/2.0);
+				eye = VIEWMAT_EYE_LEFT;
+			}
+
+			vec4f_add_new(pos4, rightVec, pos4);
+			pos4[3] = 1;
+		}
+			
+		mat4f_setColumn(viewmatrix, pos4, 3);
+		mat4f_invert(viewmatrix);
+	}
 
 	if(viewportNum == 0)
 		dgr_setget("!!viewMat0", viewmatrix, sizeof(float)*16);
 	else
 		dgr_setget("!!viewMat1", viewmatrix, sizeof(float)*16);
+
+	return eye;
 }
 
 /** Get the view matrix for the dSight HMD. */
-static void viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
+static viewmat_eye viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
 {
 	float quaternion[4];
 	updateHmdControl(&viewmat_hmd, quaternion);
@@ -763,9 +863,15 @@ static void viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
 	// except we have no way of acquiring the Pos matrix, so leave it out
 	mat4f_mult_mat4f_new(viewmatrix, rotationMatrix, shiftMatrix);
 	// Don't need to use DGR!
+
+	if(viewportNum == 0)
+		return VIEWMAT_EYE_LEFT;
+	else
+		return VIEWMAT_EYE_RIGHT;
 }
 
-void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
+/** Get a view matrix appropriate for the Oculus HMD */
+static viewmat_eye viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 {
 #ifndef MISSING_OVR
 	/* Oculus recommends the order that we should render eyes. We
@@ -781,7 +887,7 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 	mat4f_identity(rotMat);     // tracking system rotation
 	mat4f_identity(posMat);     // tracking system position
 	mat4f_identity(initPosMat); // camera starting location
-
+	
 	/* Construct posMat and rotMat matrices which indicate the
 	 * position and orientation of the HMD. */
 	if(viewmat_vrpn_obj) // get position from VRPN
@@ -845,6 +951,11 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 		printf("Final view matrix: ");
 		mat4f_print(viewmatrix);
 	}
+
+	if(eye == ovrEye_Left)
+		return VIEWMAT_EYE_LEFT;
+	else
+		return VIEWMAT_EYE_RIGHT;
 #endif
 }
 
@@ -853,7 +964,7 @@ void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
  * @param viewmatrix The location where the viewmatrix should be stored.
  * @param frustum The location of the view frustum that should be adjusted.
  */
-void viewmat_get_ivs(float viewmatrix[16], float frustum[6])
+static viewmat_eye viewmat_get_ivs(float viewmatrix[16], float frustum[6])
 {
 	float pos[3];
 	if((dgr_is_enabled() && dgr_is_master()) || dgr_is_enabled()==0)
@@ -885,8 +996,60 @@ void viewmat_get_ivs(float viewmatrix[16], float frustum[6])
 		
 	float up[3] = {0, 1, 0};
 	mat4f_lookatVec_new(viewmatrix, pos, lookat, up);
-
+	return VIEWMAT_EYE_MIDDLE;
 }
+
+/** Performs a sanity check on how long it took us to render a
+ * frame. At 60fps, we have approximately 16 milliseconds or 16000
+ * microseconds per frame. If the time between two subsequent
+ * renderings of viewportID 0 is too large, a warning message is
+ * printed.
+ *
+ * Even though the average FPS over a period of time may be above 60,
+ * the rendering might not appear smooth if an occasional frame misses
+ * the time budget.
+ */
+static void viewmat_validate_fps(int viewportID)
+{
+	/* Set the time budget. If vblank syncing is turned on, we'd
+	 * expect to always get a FPS close to the monitor. Setting this
+	 * to 55 (instead of 60) will prevent messages from getting
+	 * printed out constantly on such machines. */
+	static const int targetFps = 55;
+	static const int timeBudget = 1000000.0f / targetFps;
+	
+	if(viewportID > 0)
+		return;
+
+	/* Initialize our warning message counter and the time that the
+	 * last frame was rendered. */
+	static int warnMsgCount = 0;
+	static long lastTime = -1;
+	if(lastTime < 0) // if our first time called, initialize time and return.
+	{
+		lastTime = kuhl_microseconds();
+		return;
+	}
+
+	/* If it took too long to render the frame, print a message. */
+	long delay = kuhl_microseconds() - lastTime;
+	// msg(INFO, "Time to render frame %d\n", delay);
+	if(delay > timeBudget)
+	{
+		warnMsgCount++;
+
+		/* Don't print the message if the first few frames took too
+		 * long to render. Also, eventually stop printing the
+		 * message. */
+		if(warnMsgCount > 5 && warnMsgCount <= 100)
+			msg(WARNING, "It took %ld microseconds to render a frame. Time budget for %d fps is %d microseconds.\n", delay, targetFps, timeBudget);
+		if(warnMsgCount == 100)
+			msg(WARNING, "That was your last warning about the time budget per frame.\n");
+	}
+
+	lastTime = kuhl_microseconds();
+}
+
 
 /** Performs a sanity check on the IPD to ensure that it is not too small, big, or reversed.
 
@@ -897,9 +1060,11 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
 {
 	// First, if viewportID=0, save the matrix so we can do the check when we are called with viewportID=1.
 	static float viewmatrix0[16];
+	static long viewmatrix0time;
 	if(viewportID == 0)
 	{
 		mat4f_copy(viewmatrix0, viewmatrix);
+		viewmatrix0time = kuhl_microseconds();
 		return;
 	}
 
@@ -926,11 +1091,19 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
 		float diff[4];
 		vec4f_sub_new(diff, pos1, pos2);
 		vec4f_scalarMult_new(diff, diff, flip); // flip vector if necessary
-		
+
+		/* This message may be triggered if a person is moving quickly
+		 * and/or when the FPS is low. This happens because the
+		 * position/orientation of the head changed between the
+		 * rendering of the left and right eyes. */
 		float ipd = diff[0];
+		long delay = kuhl_microseconds() - viewmatrix0time;
 		if(ipd > .07 || ipd < .05)
-			kuhl_errmsg("IPD validation failed. IPD is apparently set to %f meters. Should be between .05 and .07 for most people.\n", ipd);
-		// printf("IPD=%f\n", ipd);
+		{
+			msg(WARNING, "IPD=%.4f meters, delay=%ld us (IPD validation failed; occasional messages are OK!)\n", ipd, delay);
+		}
+		// msg(INFO, "IPD=%.4f meters, delay=%ld us\n", ipd, delay);
+
 	}
 }
 
@@ -944,13 +1117,25 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
  *
  * @param projmatrix A 4x4 projection matrix for viewmat to fill in.
  *
- * @param viewportID If there is only one viewport, set this to 0. If
- * the system uses multiple viewports (i.e., HMD), then set this to 0
- * or 1 to get the view matrices for the left and right eyes.
+ * @param viewportID If there is only one viewport, set this to
+ * 0. This value must be smaller than the value reported by
+ * viewmat_num_viewports(). In an HMD, typically viewportID=0 is the
+ * left eye and viewportID=1 is the right eye. However, some Oculus
+ * HMDs will result in this being swapped. To definitively know which
+ * eye this view matrix corresponds to, examine the return value of
+ * this function.
+ *
+ * @return A viewmat_eye enum which indicates if this view matrix is
+ * for the left, right, middle, or unknown eye.
  *
  */
-void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
+viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 {
+	viewmat_eye eye = VIEWMAT_EYE_UNKNOWN;
+
+
+
+	
 	int viewport[4]; // x,y of lower left corner, width, height
 	viewmat_get_viewport(viewport, viewportID);
 
@@ -963,31 +1148,30 @@ void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 		case VIEWMAT_MOUSE:    // mouse movement
 		case VIEWMAT_ANAGLYPH: // red/cyan anaglyph
 		case VIEWMAT_HMD:      // side-by-side HMD view
-			viewmat_get_mouse(viewmatrix, viewportID);
+			eye = viewmat_get_mouse(viewmatrix, viewportID);
 			break;
 		case VIEWMAT_IVS: // IVS display wall
 			// frustum is updated based on head tracking
-			viewmat_get_ivs(viewmatrix, f);
+			eye = viewmat_get_ivs(viewmatrix, f);
 			break;
 		case VIEWMAT_HMD_DSIGHT: // dSight HMD
-			viewmat_get_hmd_dsight(viewmatrix, viewportID);
+			eye = viewmat_get_hmd_dsight(viewmatrix, viewportID);
 			break;
 		case VIEWMAT_HMD_OCULUS:
-			viewmat_get_hmd_oculus(viewmatrix, viewportID);
+			eye = viewmat_get_hmd_oculus(viewmatrix, viewportID);
 			break;
 		case VIEWMAT_NONE:
 			// Get the view matrix from the mouse movement code...but
 			// we haven't registered mouse movement callback
 			// functions, so mouse movement won't work.
-			viewmat_get_mouse(viewmatrix, viewportID);
+			eye = viewmat_get_mouse(viewmatrix, viewportID);
 			break;
 		default:
-			kuhl_errmsg("Unknown viewmat mode: %d\n", viewmat_mode);
+			msg(FATAL, "Unknown viewmat mode: %d\n", viewmat_mode);
 			exit(EXIT_FAILURE);
 	}
 		
 	/* The following code calculates the projection matrix. */
-
 	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
 	{
 #ifndef MISSING_OVR
@@ -1007,6 +1191,8 @@ void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 	}
 
 	viewmat_validate_ipd(viewmatrix, viewportID);
+	viewmat_validate_fps(viewportID);
+	return eye;
 }
 
 /** Gets the viewport information for a particular viewport.
@@ -1020,12 +1206,7 @@ void viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 void viewmat_get_viewport(int viewportValue[4], int viewportNum)
 {
 	viewmat_refresh_viewports();
-	
-	if(viewportNum >= viewports_size)
-	{
-		kuhl_errmsg("You requested a viewport that does not exist.\n");
-		exit(EXIT_FAILURE);
-	}
+	viewmat_validate_viewportId(viewportNum);
 
 	/* Copy the viewport into the location the caller provided. */
 	for(int i=0; i<4; i++)
@@ -1042,3 +1223,5 @@ int viewmat_num_viewports()
 	viewmat_refresh_viewports();
 	return viewports_size;
 }
+
+

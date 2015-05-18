@@ -131,11 +131,9 @@ void mousemove_set(float posX, float posY, float posZ,
                    float lookX, float lookY, float lookZ,
                    float upX, float upY, float upZ)
 {
-	float pos[3],look[3],up[3];
-	vec3f_set(pos, posX, posY, posZ);
-	vec3f_set(look, lookX, lookY, lookZ);
-	vec3f_set(up, upX, upY, upZ);
-	mousemove_setVec(pos, look, up);
+	vec3f_set(cam_position, posX, posY, posZ);
+	vec3f_set(cam_lookat, lookX, lookY, lookZ);
+	vec3f_set(cam_up, upX, upY, upZ);
 }
 
 /** Creates a rotation matrix and multiplies a point by the rotation

@@ -54,7 +54,7 @@ typedef struct
 {
 	int count; /**< Number of bones in this struct */
 	unsigned int mesh; /**< The bones in this struct are associated with this matrix index */
-	char names[MAX_BONES][256]; /**< bone names */
+	const struct aiBone *boneList[MAX_BONES];
 	float matrices[MAX_BONES][16]; /**< Transformation matrices for each bone */
 } kuhl_bonemat;
 #endif
@@ -136,13 +136,13 @@ typedef struct _kuhl_geometry_
  * easier callback approach because it doesn't make it easy to narrow
  * down the line(s) of code causing an error.
  */
-#define kuhl_errorcheck() kuhl_errorcheckFileLine(__FILE__, __LINE__)
+#define kuhl_errorcheck() kuhl_errorcheckFileLine(__FILE__, __LINE__, __func__)
 
 
 
 	
 // kuhl_errorcheck() calls this C function:
-int kuhl_errorcheckFileLine(const char *file, int line);
+int kuhl_errorcheckFileLine(const char *file, int line, const char *func);
 // kuhl_malloc() calls this C function:
 void* kuhl_mallocFileLine(size_t size, const char *file, int line);
 

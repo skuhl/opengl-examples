@@ -33,8 +33,7 @@ static void writeSafe(const int fd, const unsigned char* buf, size_t numBytes)
 		ssize_t result = write(fd, buf, numBytes);
 		if(result < 0)
 		{
-			kuhl_errmsg("write:");
-			perror("");
+			msg(FATAL, "write error %s", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 		// write() wrote none, some, or all of the bytes we wanted to write.
@@ -57,13 +56,12 @@ static void readSafe(int fd, unsigned char* buf, size_t numBytes)
 		ssize_t result = read(fd, buf, numBytes);
 		if(result == 0)
 		{
-			kuhl_errmsg("readSafe reached end of file(?!)\n");
+			msg(FATAL, "readSafe reached end of file(?!)\n");
 			exit(EXIT_FAILURE);
 		}
 		else if(result < 0)
 		{
-			kuhl_errmsg("read:");
-			perror("");
+			msg(FATAL, "read: %s", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 		// read() either read all or some of the bytes we wanted to read.
@@ -107,7 +105,7 @@ HmdControlState initHmdControl(const char* deviceFile)
 #endif
 	if (result.fd == -1)
 	{
-		kuhl_errmsg("Could not open %s for HMD rotation sensor driver\n", deviceFile);
+		msg(FATAL, "Could not open %s for HMD rotation sensor driver\n", deviceFile);
 		exit(EXIT_FAILURE);
 	}
 	return result;

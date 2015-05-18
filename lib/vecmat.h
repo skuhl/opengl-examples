@@ -31,6 +31,9 @@ extern "C" {
 #include <stdio.h>
 #include <math.h>
 #include <string.h> /* needed for memcpy() */
+
+#include "list.h"
+#include "msg.h"
 	
 /** Set the values in a 3-component float vector */
 static inline void   vec3f_set(float  v[3], float  a, float  b, float  c)
@@ -52,8 +55,7 @@ static inline void   vec4d_set(double v[4], double a, double b, double c, double
  */
 static inline void vecNf_copy(float result[ ], const float a[ ], const int n)
 {
-	for(int i=0; i<n; i++)
-		result[i] = a[i];
+	memcpy(result, a, n*sizeof(float));
 }
 /** Copy the contents of one double vector in to another vector.
  * @param result An array to copy values into.
@@ -62,8 +64,7 @@ static inline void vecNf_copy(float result[ ], const float a[ ], const int n)
  */
 static inline void vecNd_copy(double result[ ], const double a[ ], const int n)
 {
-	for(int i=0; i<n; i++)
-		result[i] = a[i];
+	memcpy(result, a, n*sizeof(double));
 }
 /** Copy the contents 3-component float vector into another vector.
  * @param result An array to copy values into.
@@ -1120,8 +1121,7 @@ static inline void matNf_mult_vecNf_new(float result[], const float m[], const f
 		for(int j=0; j<n; j++)
 			tmp[i] += m[matN_getIndex(i,j,n)] * v[j];
 	}
-	for(int i=0; i<n; i++)
-		result[i] = tmp[i];
+	vecNf_copy(result, tmp, n);
 }
 static inline void matNd_mult_vecNd_new(double result[], const double m[], const double v[], const int n)
 {
@@ -1132,8 +1132,7 @@ static inline void matNd_mult_vecNd_new(double result[], const double m[], const
 		for(int j=0; j<n; j++)
 			tmp[i] += m[matN_getIndex(i,j,n)] * v[j];
 	}
-	for(int i=0; i<n; i++)
-		result[i] = tmp[i];
+	vecNd_copy(result, tmp, n);
 }
 static inline void mat3f_mult_vec3f_new(float result[3], const float m[9], const float v[3])
 { matNf_mult_vecNf_new(result, m, v, 3); }
@@ -1371,6 +1370,54 @@ static inline void mat3f_from_mat3d(float  dest[ 9], const double src[ 9])
 static inline void mat4f_from_mat4d(float  dest[16], const double src[16])
 { for(int i=0; i<16; i++) dest[i] = (float) src[i]; }
 
+/** Creates a 4x4 matrix from a 3x3 matrix. The new matrix is set to
+    the identity and then the 3x3 matrix is copied into the upper left
+    corner of the matrix.
+    @param dest The new 4x4 matrix.
+    @param src The original 3x3 matrix.
+*/
+static inline void mat4f_from_mat3f(float  dest[16], const float  src[ 9])
+{
+	mat4f_identity(dest);
+	for(int i=0; i<3; i++)
+		for(int j=0; j<3; j++)
+			dest[mat4_getIndex(i,j)] = src[mat3_getIndex(i,j)];
+}
+/** Creates a 4x4 matrix from a 3x3 matrix. The new matrix is set to
+    the identity and then the 3x3 matrix is copied into the upper left
+    corner of the matrix.
+    @param dest The new 4x4 matrix.
+    @param src The original 3x3 matrix.
+*/
+static inline void mat4d_from_mat3d(double dest[16], const double src[ 9])
+{
+	mat4d_identity(dest);
+	for(int i=0; i<3; i++)
+		for(int j=0; j<3; j++)
+			dest[mat4_getIndex(i,j)] = src[mat3_getIndex(i,j)];
+}
+
+/** Creates a 3x3 matrix from a 4x4 matrix by copying only the upper-left 3x3 components from the 4x4 matrix.
+    @param dest The new 3x3 matrix.
+    @param src The original 4x4 matrix.
+*/
+static inline void mat3f_from_mat4f(float  dest[ 9], const float  src[16])
+{
+	for(int i=0; i<3; i++)
+		for(int j=0; j<3; j++)
+			dest[mat3_getIndex(i,j)] = src[mat4_getIndex(i,j)];
+}
+/** Creates a 3x3 matrix from a 4x4 matrix by copying only the upper-left 3x3 components from the 4x4 matrix.
+    @param dest The new 3x3 matrix.
+    @param src The original 4x4 matrix.
+*/
+static inline void mat3d_from_mat4d(double dest[ 9], const double src[16])
+{
+	for(int i=0; i<3; i++)
+		for(int j=0; j<3; j++)
+			dest[mat3_getIndex(i,j)] = src[mat4_getIndex(i,j)];
+}
+
 
 /** Creates a new 4x4 float scale matrix with the rest of the matrix set to the identity.
     @param result The location to store the new scale matrix.
@@ -1558,6 +1605,14 @@ void mat4d_lookat_new(double result[16], double eyeX, double eyeY, double eyeZ, 
 void mat4f_lookatVec_new(float  result[16], const float  eye[3], const float  center[3], const float  up[3]);
 void mat4d_lookatVec_new(double result[16], const double eye[3], const double center[3], const double up[3]);
 
+/* Matrix stack implementation */
+void mat4f_stack_push(list *l);
+void mat4f_stack_mult(list *l, float m[16]);
+void mat4f_stack_pop(list *l);
+void mat4f_stack_peek(const list *l, float m[16]);
+
+
+	
 #ifdef __cplusplus
 } // end extern "C"
 #endif

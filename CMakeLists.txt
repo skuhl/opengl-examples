@@ -10,8 +10,9 @@ project("opengl-examples" C CXX)  # This project uses C and C++
 
 
 # Add "-pg" to to both the C_FLAGS and the CXX_FLAGS to enable profiling
-# -O2 is necessary to get the compiler to inline the inlined functions used by vecmat.c and vecmat.h
-set(C_CXX_FLAGS "-Wall -g -O2")    # Compiler options used by both the C++ and C compiler
+# -O2 or -O3 is necessary to get the compiler to inline the inlined functions used by vecmat.c and vecmat.h
+# -march=native will cause the compiler to use features that are available on the current CPU (SSE, etc)---but will make the resulting executable less portable.
+set(C_CXX_FLAGS "-Wall -g -O2 -march=native")    # Compiler options used by both the C++ and C compiler
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_CXX_FLAGS} -std=gnu99 -Wextra -Wno-unused-parameter -Wno-unused-function")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${C_CXX_FLAGS}")

@@ -1,3 +1,13 @@
+/* Copyright (c) 2014-2015 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
+ */
+
+/** @file Demonstrates drawing a shaded 3D triangle.
+ *
+ * @author Scott Kuhl
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -14,16 +24,9 @@
 #include "projmat.h"
 #include "viewmat.h"
 GLuint program = 0; // id value for the GLSL program
-GLuint prerendProgram = 0;
-
-#define USE_MSAA 1
-GLuint prerenderFrameBuffer = 0;
-GLuint prerenderFrameBufferAA = 0;
-GLuint prerenderTexID = 0;
 
 kuhl_geometry triangle;
 kuhl_geometry quad;
-kuhl_geometry prerendQuad;
 
 
 /* Called by GLUT whenever a key is pressed. */
@@ -52,7 +55,6 @@ void display()
 	/* If we are using DGR, send or receive data to keep multiple
 	 * processes/computers synchronized. */
 	dgr_update();
-
 
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will
@@ -118,65 +120,24 @@ void display()
 		                   1, // number of 4x4 float matrices
 		                   0, // transpose
 		                   modelview); // value
-		kuhl_errorcheck();
+		// Normal matrix = transpose(inverse(modelview))
+		float normalMat[9];
+		mat3f_from_mat4f(normalMat, modelview);
+		mat3f_invert(normalMat);
+		mat3f_transpose(normalMat);
+		glUniformMatrix3fv(kuhl_get_uniform("NormalMat"),
+		                   1, // count
+		                   0, // transpose
+		                   normalMat); // value
 
-		/* Setup prerender directly to texture once (and reuse the
-		 * framebuffer object for subsequent draw commands). */
-		if(prerenderFrameBuffer == 0)
-		{
-#if USE_MSAA==1
-			/* Generate a MSAA framebuffer + texture */
-			GLuint prerenderTexIDAA;
-			prerenderFrameBufferAA = kuhl_gen_framebuffer_msaa(viewport[2], viewport[3],
-			                                                   &prerenderTexIDAA,
-			                                                   NULL, 16);
-#endif
-			prerenderFrameBuffer = kuhl_gen_framebuffer(viewport[2], viewport[3],
-			                                                   &prerenderTexID,
-			                                                   NULL);
-			/* Apply the texture to our geometry and draw the quad. */
-			kuhl_geometry_texture(&prerendQuad, prerenderTexID, "tex", 1);
-		}
-		/* Switch to framebuffer and set the OpenGL viewport to cover
-		 * the entire framebuffer. */
-#if USE_MSAA==1
-		glBindFramebuffer(GL_FRAMEBUFFER, prerenderFrameBufferAA);
-#else
-		glBindFramebuffer(GL_FRAMEBUFFER, prerenderFrameBuffer);
-#endif
-		glViewport(0,0,viewport[2], viewport[3]);
 		kuhl_errorcheck();
-
-		/* Clear the framebuffer and the depth buffer. */
-		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		/* Draw the geometry using the matrices that we sent to the
 		 * vertex programs immediately above */
 		kuhl_geometry_draw(&triangle);
 		kuhl_geometry_draw(&quad);
 
-		/* Stop rendering to texture */
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glUseProgram(0);
-		kuhl_errorcheck();
-		
-#if USE_MSAA==1
-		/* Copy the MSAA framebuffer into the normal framebuffer */
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, prerenderFrameBufferAA);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, prerenderFrameBuffer);
-		glBlitFramebuffer(0,0,viewport[2],viewport[3],
-		                  0,0,viewport[2],viewport[3],
-		                  GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		glBindFramebuffer(GL_READ_FRAMEBUFFER,0);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER,0);
-		kuhl_errorcheck();
-#endif
+		glUseProgram(0); // stop using a GLSL program.
 
-		/* Set up the viewport to draw on the screen */
-		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
-
-
-		kuhl_geometry_draw(&prerendQuad);
-		
 	} // finish viewport loop
 	viewmat_end_frame();
 
@@ -205,6 +166,11 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
 	                     "in_Position", // GLSL variable
 	                     KG_WARN); // warn if attribute is missing in GLSL program?
 
+	/* The normals for each vertex */
+	GLfloat normalData[] = {0, 0, 1,
+	                        0, 0, 1,
+	                        0, 0, 1};
+	kuhl_geometry_attrib(geom, normalData, 3, "in_Normal", KG_WARN);
 }
 
 
@@ -217,48 +183,27 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint program)
 
 	/* The data that we want to draw */
 	GLfloat vertexPositions[] = {0+1.1, 0, 0,
-	                       1+1.1, 0, 0,
-	                       1+1.1, 1, 0,
-	                       0+1.1, 1, 0 };
+	                             1+1.1, 0, 0,
+	                             1+1.1, 1, 0,
+	                             0+1.1, 1, 0 };
 	kuhl_geometry_attrib(geom, vertexPositions,
 	                     3, // number of components x,y,z
 	                     "in_Position", // GLSL variable
 	                     KG_WARN); // warn if attribute is missing in GLSL program?
 
+	/* The normals for each vertex */
+	GLfloat normalData[] = {0, 0, 1,
+	                        0, 0, 1,
+	                        0, 0, 1,
+	                        0, 0, 1};
+	kuhl_geometry_attrib(geom, normalData, 3, "in_Normal", KG_WARN);
+	
 	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
 	                       0, 2, 3 }; // indices of second triangle.
 	kuhl_geometry_indices(geom, indexData, 6);
 
 	kuhl_errorcheck();
 }
-
-/* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
-void init_geometryQuadPrerender(kuhl_geometry *geom, GLuint program)
-{
-	kuhl_geometry_new(geom, program, 4, GL_TRIANGLES);
-
-
-	/* The data that we want to draw */
-	GLfloat vertexPositions[] = {-1, -1, 0,
-	                        1, -1, 0,
-	                        1, 1, 0,
-	                        -1, 1, 0 };
-	kuhl_geometry_attrib(geom, vertexPositions,
-	                     3, // number of components x,y,z
-	                     "in_Position", // GLSL variable
-	                     KG_WARN); // warn if attribute is missing in GLSL program?
-
-	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
-	                       0, 2, 3 }; // indices of second triangle.
-	kuhl_geometry_indices(geom, indexData, 6);
-
-	GLfloat texcoordData[] = {0, 0,
-	                          1, 0,
-	                          1, 1,
-	                          0, 1};
-	kuhl_geometry_attrib(geom, texcoordData, 2, "in_TexCoord", KG_WARN);
-}
-
 
 int main(int argc, char** argv)
 {
@@ -268,13 +213,14 @@ int main(int argc, char** argv)
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
 #ifdef __APPLE__
-	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
 #else
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
 	glutInitContextVersion(3,2);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 #endif
 	glutCreateWindow(argv[0]); // set window title to executable name
+	glEnable(GL_MULTISAMPLE);
 
 	/* Initialize GLEW */
 	glewExperimental = GL_TRUE;
@@ -298,7 +244,7 @@ int main(int argc, char** argv)
 
 	/* Compile and link a GLSL program composed of a vertex shader and
 	 * a fragment shader. */
-	program = kuhl_create_program("ogl3-triangle.vert", "ogl3-triangle.frag");
+	program = kuhl_create_program("triangle-shade.vert", "triangle-shade.frag");
 	glUseProgram(program);
 	kuhl_errorcheck();
 	/* Set the uniform variable in the shader that is named "red" to the value 1. */
@@ -312,13 +258,10 @@ int main(int argc, char** argv)
 	init_geometryTriangle(&triangle, program);
 	init_geometryQuad(&quad, program);
 
-	prerendProgram = kuhl_create_program("ogl3-prerend.vert", "ogl3-prerend.frag");
-	init_geometryQuadPrerender(&prerendQuad, prerendProgram);	
-
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
 
-	float initCamPos[3]  = {0,0,3}; // location of camera
+	float initCamPos[3]  = {0,0,10}; // location of camera
 	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
 	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
 	viewmat_init(initCamPos, initCamLook, initCamUp);

@@ -1,8 +1,16 @@
-/* This example demonstrates how to draw a HUD cursor and how to use
- * the stencil buffer to determine what piece of geometry the cursor
- * is on. For more information and details, see:
- * http://en.wikibooks.org/wiki/OpenGL_Programming/Object_selection
+/* Copyright (c) 2014-2015 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
  */
+
+/** @file This example demonstrates how to draw a HUD cursor and how
+ * to use the stencil buffer to determine what piece of geometry the
+ * cursor is on. For more information and details, see:
+ * http://en.wikibooks.org/wiki/OpenGL_Programming/Object_selection
+ *
+ * @author Scott Kuhl
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -297,7 +305,7 @@ int main(int argc, char** argv)
 
 	/* Compile and link a GLSL program composed of a vertex shader and
 	 * a fragment shader. */
-	program = kuhl_create_program("ogl3-triangle-color.vert", "ogl3-triangle-color.frag");
+	program = kuhl_create_program("triangle-color.vert", "triangle-color.frag");
 	glUseProgram(program);
 	kuhl_errorcheck();
 	/* Set the uniform variable in the shader that is named "red" to the value 1. */

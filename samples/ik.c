@@ -1,8 +1,11 @@
-/* This sample is based on a sample that is included with ASSIMP. Much
- * of the logic of the program was unchanged. However, texture loading
- * and other miscellaneous changes were made.
+/* Copyright (c) 2015 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
+ */
+
+/** @file Demonstrates kinematics
  *
- * Changes by: Scott Kuhl
+ * @author Scott Kuhl
  */
 #include <stdlib.h>
 #include <stdio.h>
@@ -33,7 +36,7 @@ float bbox[6];
  * model and translate it so that we can see the entire model. This is
  * a useful setting to use when you are loading a new model that you
  * are unsure about the units and position of the model geometry. */
-#define FIT_TO_VIEW 1
+#define FIT_TO_VIEW 0
 /** If FIT_TO_VIEW is set, this is the place to put the
  * center of the bottom face of the bounding box. If
  * FIT_TO_VIEW is not set, this is the location in world
@@ -46,8 +49,13 @@ float placeToPutModel[3] = { 0, 0, 0 };
  * give us units in meters. */
 #define INCHES_TO_METERS 0
 
-#define GLSL_VERT_FILE "ogl3-assimp.vert"
-#define GLSL_FRAG_FILE "ogl3-assimp.frag"
+#define GLSL_VERT_FILE "assimp.vert"
+#define GLSL_FRAG_FILE "assimp.frag"
+
+float arm1X = 0;
+float arm1Z = 0;
+float arm2X = 0;
+float arm2Z = 0;
 
 /* Called by GLUT whenever a key is pressed. */
 void keyboard(unsigned char key, int x, int y)
@@ -65,6 +73,14 @@ void keyboard(unsigned char key, int x, int y)
 		case 'F': // switch to window from full screen mode
 			glutPositionWindow(0,0);
 			break;
+		case 'a': arm1X+=1; break;
+		case 'A': arm1X-=1; break;
+		case 'z': arm1Z+=1; break;
+		case 'Z': arm1Z-=1; break;
+		case 's': arm2X+=1; break;
+		case 'S': arm2X-=1; break;
+		case 'x': arm2Z+=1; break;
+		case 'X': arm2Z-=1; break;
 		case 'r':
 		{
 			// Reload GLSL program from disk
@@ -215,11 +231,6 @@ void get_model_matrix(float result[16])
 		/* Do inches to meters conversion if we are asked to. */
 		float scale[16];
 		mat4f_identity(scale);
-		if(INCHES_TO_METERS)
-		{
-			float inchesToMeters=1/39.3701;
-			mat4f_scale_new(scale, inchesToMeters, inchesToMeters, inchesToMeters);
-		}
 		mat4f_mult_mat4f_new(result, translate, scale);
 		return;
 	}
@@ -325,8 +336,18 @@ void display()
 		/* Get the view or camera matrix; update the frustum values if needed. */
 		float viewMat[16], perspective[16];
 		viewmat_get(viewMat, perspective, viewportID);
+		
+		list *stack = list_new(16, sizeof(float)*16, NULL);
+		mat4f_stack_mult(stack, viewMat);
 
 		glUseProgram(program);
+
+		glUniform1i(kuhl_get_uniform("renderStyle"), renderStyle);
+		// Copy far plane value into vertex program so we can render depth buffer.
+		float f[6]; // left, right, bottom, top, near>0, far>0
+		projmat_get_frustum(f, viewport[2], viewport[3]);
+		glUniform1f(kuhl_get_uniform("farPlane"), f[5]);
+		
 		kuhl_errorcheck();
 		/* Send the perspective projection matrix to the vertex program. */
 		glUniformMatrix4fv(kuhl_get_uniform("Projection"),
@@ -336,25 +357,53 @@ void display()
 
 		float modelMat[16];
 		get_model_matrix(modelMat);
-		float modelview[16];
-		mat4f_mult_mat4f_new(modelview, viewMat, modelMat); // modelview = view * model
+		mat4f_stack_mult(stack, modelMat);
 
-		/* Send the modelview matrix to the vertex program. */
+		float baseRotate[16];
+		mat4f_rotateEuler_new(baseRotate, arm1X, 0, arm1Z, "XYZ");
+		mat4f_stack_mult(stack, baseRotate);
+		mat4f_stack_push(stack);
+
+		float scale[16];
+		float decenter[16];
+		mat4f_scale_new(scale, .5, 4, .5);
+		mat4f_translate_new(decenter, 0, .5, 0);
+		mat4f_stack_mult(stack, scale);
+		mat4f_stack_mult(stack, decenter);
+
+		float modelview[16];
+		mat4f_stack_peek(stack, modelview);
 		glUniformMatrix4fv(kuhl_get_uniform("ModelView"),
 		                   1, // number of 4x4 float matrices
 		                   0, // transpose
 		                   modelview); // value
-
-		glUniform1i(kuhl_get_uniform("renderStyle"), renderStyle);
-		// Copy far plane value into vertex program so we can render depth buffer.
-		float f[6]; // left, right, bottom, top, near>0, far>0
-		projmat_get_frustum(f, viewport[2], viewport[3]);
-		glUniform1f(kuhl_get_uniform("farPlane"), f[5]);
-
 		kuhl_errorcheck();
 		kuhl_geometry_draw(modelgeom); /* Draw the model */
 		kuhl_errorcheck();
 
+		mat4f_stack_pop(stack);
+
+		float trans[16];
+		mat4f_translate_new(trans, 0, 4, 0);
+		mat4f_stack_mult(stack, trans);
+
+		mat4f_rotateEuler_new(baseRotate, arm2X, 0, arm2Z, "XYZ");
+		mat4f_stack_mult(stack, baseRotate);
+		mat4f_stack_push(stack);
+
+		mat4f_stack_mult(stack, scale);
+		mat4f_stack_mult(stack, decenter);
+		
+		/* Send the modelview matrix to the vertex program. */
+		mat4f_stack_peek(stack, modelview);
+		glUniformMatrix4fv(kuhl_get_uniform("ModelView"),
+		                   1, // number of 4x4 float matrices
+		                   0, // transpose
+		                   modelview); // value
+		kuhl_geometry_draw(modelgeom);
+
+		list_free(stack);
+		
 		if(dgr_is_enabled() == 0 || dgr_is_master())
 		{
 
@@ -362,7 +411,10 @@ void display()
 			 * aspect ratio of the label texture and the aspect ratio of
 			 * the window (because we are placing the quad in normalized
 			 * device coordinates). */
-			float windowAspect  = glutGet(GLUT_WINDOW_WIDTH) /(float) glutGet(GLUT_WINDOW_HEIGHT);
+			int windowWidth, windowHeight;
+			viewmat_window_size(&windowWidth, &windowHeight);
+			float windowAspect = windowWidth / (float)windowHeight;
+			
 			float stretchLabel[16];
 			mat4f_scale_new(stretchLabel, 1/8.0 * fpsLabelAspectRatio / windowAspect, 1/8.0, 1);
 
@@ -384,6 +436,7 @@ void display()
 			kuhl_geometry_draw(&labelQuad); /* Draw the quad */
 			glEnable(GL_DEPTH_TEST);
 			kuhl_errorcheck();
+
 		}
 
 		glUseProgram(0); // stop using a GLSL program.
@@ -450,28 +503,9 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint program)
 
 int main(int argc, char** argv)
 {
-	char *modelFilename    = NULL;
+	char *modelFilename    = "../models/cube/cube.obj";
 	char *modelTexturePath = NULL;
 	
-	if(argc == 2)
-	{
-		modelFilename = argv[1];
-		modelTexturePath = NULL;
-	}
-	else if(argc == 3)
-	{
-		modelFilename = argv[1];
-		modelTexturePath = argv[2];
-	}
-	else
-	{
-		printf("Usage:\n"
-		       "%s modelFile     - Textures are assumed to be in the same directory as the model.\n"
-		       "- or -\n"
-		       "%s modelFile texturePath\n", argv[0], argv[0]);
-		exit(1);
-	}
-
 	/* set up our GLUT window */
 	glutInit(&argc, argv);
 	glutInitWindowSize(512, 512);

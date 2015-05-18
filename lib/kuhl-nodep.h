@@ -15,6 +15,8 @@
 #ifndef __KUHL_NODEP_H__
 #define __KUHL_NODEP_H__
 
+#include "msg.h"
+
 // When compiling on windows, add suseconds_t and the rand48 functions.
 #ifdef __MINGW32__
 #include <windows.h>
@@ -36,16 +38,6 @@ typedef struct
 } kuhl_fps_state;
 
 
-/** Print an error message to stderr with file and line number
- * information. */
-#define kuhl_errmsg(M, ...) fprintf(stderr, "ERROR: %s():%d: " M, __func__, __LINE__, ##__VA_ARGS__)
-/** Print a warning message to stderr with file and line number
- * information. */
-#define kuhl_warnmsg(M, ...) fprintf(stderr, "WARNING: %s():%d: " M, __func__, __LINE__, ##__VA_ARGS__)
-/** Print a message to stdout with file and line number
- * information. */
-#define kuhl_msg(M, ...) fprintf(stdout, "%s():%d: " M, __func__, __LINE__, ##__VA_ARGS__)
-
 /** An alternative to malloc() which behaves the same way except it
  * prints a message when common errors occur (out of memory, trying to
  * allocate 0 bytes). */
@@ -59,6 +51,7 @@ void kuhl_limitfps(int fps);
 
 int kuhl_randomInt(int min, int max);
 void kuhl_shuffle(void *array, int n, int size);
+char* kuhl_trim_whitespace(char *str);
 double kuhl_gauss();
 
 long kuhl_microseconds();

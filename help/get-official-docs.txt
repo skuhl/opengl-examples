@@ -1,0 +1,35 @@
+To get OpenGL 4.0 docs, run:
+
+svn co --username anonymous --password anonymous https://cvs.khronos.org/svn/repos/ogl/trunk/ecosystem/public/sdk/docs/man4/ man4/
+cd man4/
+
+There are several different ways you could process the xml files found in that repository. Some documentation is available here: https://www.opengl.org/wiki/Getting_started/XML_Toolchain_and_Man_Pages
+
+---------
+
+I have used the following procedure to create a PDF containing the documentation for OpenGL C functions, and also create a PDF containing GLSL function/variable documentation. To do this, you will need to make sure you are using the "bash" shell. Then follow these steps:
+
+for i in *.xml; do dblatex $i; done
+OR
+parallel -j 10  dblatex -- *.xml
+# wait a while!
+# Remove PDFs that we don't need:
+rm version.pdf apiversion.pdf apifunchead.pdf bufferbindings.pdf funchead.pdf varhead.pdf baseformattable.pdf internalformattable.pdf compressedformattable.pdf texboformattable.pdf
+
+# Assemble individual PDFs into a single OpenGL PDF:
+pdftk gl[^_]*.pdf cat output ~/ogl4-doc.pdf
+rm gl[^_]*.pdf 
+# All remaining PDFs should be related to GLSL:
+pdftk *.pdf output ~/ogl4-glsl-doc.pdf
+
+You will find the two resulting PDFs in your home directory. You can further compress and optimize the files with the following commands in the bash shell:
+
+cd ~
+for FILE in ogl4-doc.pdf ogl4-glsl-doc.pdf; do
+# Don't subset the fonts (the output from this command will contain many duplicate, non-subsetted fonts)
+gs -q  -dCompatibilityLevel=1.4 -dSubsetFonts=false -dPDFSETTINGS=/printer -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=/tmp/out1.pdf ${FILE} -c '.setpdfwrite'
+# Merge duplicate fonts and subset them:
+gs -q  -dCompatibilityLevel=1.4 -dPDFSETTINGS=/prepress -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=/tmp/out2.pdf /tmp/out1.pdf
+# Linearize the PDF
+qpdf --linearize /tmp/out2.pdf ${FILE}
+done

@@ -1,3 +1,13 @@
+/* Copyright (c) 2014-2015 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
+ */
+
+/** @file Demonstrates drawing colored 3D triangle.
+ *
+ * @author Scott Kuhl
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -16,8 +26,6 @@
 GLuint program = 0; // id value for the GLSL program
 
 kuhl_geometry triangle;
-kuhl_geometry quad;
-
 
 /* Called by GLUT whenever a key is pressed. */
 void keyboard(unsigned char key, int x, int y)
@@ -114,7 +122,6 @@ void display()
 		/* Draw the geometry using the matrices that we sent to the
 		 * vertex programs immediately above */
 		kuhl_geometry_draw(&triangle);
-		kuhl_geometry_draw(&quad);
 
 		glUseProgram(0); // stop using a GLSL program.
 
@@ -146,39 +153,18 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
 	                     "in_Position", // GLSL variable
 	                     KG_WARN); // warn if attribute is missing in GLSL program?
 
+	GLfloat colorData[] = {1,0,0,
+	                       0,1,0,
+	                       0,0,1 };
+	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", KG_WARN);
 }
 
-
-/* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
-void init_geometryQuad(kuhl_geometry *geom, GLuint program)
-{
-	kuhl_geometry_new(geom, program,
-	                  4, // number of vertices
-	                  GL_TRIANGLES); // type of thing to draw
-
-	/* The data that we want to draw */
-	GLfloat vertexPositions[] = {0+1.1, 0, 0,
-	                             1+1.1, 0, 0,
-	                             1+1.1, 1, 0,
-	                             0+1.1, 1, 0 };
-	kuhl_geometry_attrib(geom, vertexPositions,
-	                     3, // number of components x,y,z
-	                     "in_Position", // GLSL variable
-	                     KG_WARN); // warn if attribute is missing in GLSL program?
-
-	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
-	                       0, 2, 3 }; // indices of second triangle.
-	kuhl_geometry_indices(geom, indexData, 6);
-
-	kuhl_errorcheck();
-}
 
 int main(int argc, char** argv)
 {
 	/* set up our GLUT window */
 	glutInit(&argc, argv);
 	glutInitWindowSize(512, 512);
-	glutSetOption(GLUT_MULTISAMPLE, 4); // set msaa samples; default to 4
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
 #ifdef __APPLE__
@@ -211,21 +197,16 @@ int main(int argc, char** argv)
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
 
-	/* Compile and link a GLSL program composed of a vertex shader and
-	 * a fragment shader. */
-	program = kuhl_create_program("ogl3-triangle.vert", "ogl3-triangle.frag");
+	program = kuhl_create_program("triangle-color.vert", "triangle-color.frag");
 	glUseProgram(program);
 	kuhl_errorcheck();
-	/* Set the uniform variable in the shader that is named "red" to the value 1. */
-	glUniform1i(kuhl_get_uniform("red"), 0);
-	kuhl_errorcheck();
+
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);
 
 	/* Create kuhl_geometry structs for the objects that we want to
 	 * draw. */
 	init_geometryTriangle(&triangle, program);
-	init_geometryQuad(&quad, program);
 
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */

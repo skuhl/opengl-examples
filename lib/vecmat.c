@@ -276,6 +276,10 @@ extern inline void mat3d_from_mat3f(double dest[ 9], const float  src[ 9]);
 extern inline void mat4d_from_mat4f(double dest[16], const float  src[16]);
 extern inline void mat3f_from_mat3d(float  dest[ 9], const double src[ 9]);
 extern inline void mat4f_from_mat4d(float  dest[16], const double src[16]);
+extern inline void mat4f_from_mat3f(float  dest[16], const float  src[ 9]);
+extern inline void mat4d_from_mat3d(double dest[16], const double src[ 9]);
+extern inline void mat3f_from_mat4f(float  dest[ 9], const float  src[16]);
+extern inline void mat3d_from_mat4d(double dest[ 9], const double src[16]);
 
 /** Inverts a 4x4 float matrix.
  *
@@ -1497,55 +1501,6 @@ void mat4f_translateVec_new(float  result[16], const float  xyz[3])
 void mat4d_translateVec_new(double result[16], const double xyz[3])
 { mat4d_translate_new(result, xyz[0], xyz[1], xyz[2]); }
 
-
-/** Creates a 4x4 matrix from a 3x3 matrix. The new matrix is set to
-    the identity and then the 3x3 matrix is copied into the upper left
-    corner of the matrix.
-    @param dest The new 4x4 matrix.
-    @param src The original 3x3 matrix.
-*/
-void mat4f_from_mat3f(float  dest[16], const float  src[ 9])
-{
-	mat4f_identity(dest);
-	for(int i=0; i<3; i++)
-		for(int j=0; j<3; j++)
-			dest[mat4_getIndex(i,j)] = src[mat3_getIndex(i,j)];
-}
-/** Creates a 4x4 matrix from a 3x3 matrix. The new matrix is set to
-    the identity and then the 3x3 matrix is copied into the upper left
-    corner of the matrix.
-    @param dest The new 4x4 matrix.
-    @param src The original 3x3 matrix.
-*/
-void mat4d_from_mat3d(double dest[16], const double src[ 9])
-{
-	mat4d_identity(dest);
-	for(int i=0; i<3; i++)
-		for(int j=0; j<3; j++)
-			dest[mat4_getIndex(i,j)] = src[mat3_getIndex(i,j)];
-}
-
-/** Creates a 3x3 matrix from a 4x4 matrix by copying only the upper-left 3x3 components from the 4x4 matrix.
-    @param dest The new 3x3 matrix.
-    @param src The original 4x4 matrix.
-*/
-void mat3f_from_mat4f(float  dest[ 9], const float  src[16])
-{
-	for(int i=0; i<3; i++)
-		for(int j=0; j<3; j++)
-			dest[mat3_getIndex(i,j)] = src[mat4_getIndex(i,j)];
-}
-/** Creates a 3x3 matrix from a 4x4 matrix by copying only the upper-left 3x3 components from the 4x4 matrix.
-    @param dest The new 3x3 matrix.
-    @param src The original 4x4 matrix.
-*/
-void mat3d_from_mat4d(double dest[ 9], const double src[16])
-{
-	for(int i=0; i<3; i++)
-		for(int j=0; j<3; j++)
-			dest[mat3_getIndex(i,j)] = src[mat4_getIndex(i,j)];
-}
-
 /** Creates a view frustum projection matrix (float). This
  * creates a matrix similar to the one that glFrustum() would
  * apply to the OpenGL 2.0 matrix stack. A simpler (but less
@@ -1842,3 +1797,88 @@ void mat4d_lookat_new(double result[16], double eyeX, double eyeY, double eyeZ, 
 }
 
 
+/** Pushes a copy of a matrix currently on top of the stack onto the
+    top of the stack. A list structure is used to represent the stack.
+
+    @param l A list structure to store the stack.
+
+    @param m The matrix to multiply against the top matrix on the
+    stack and then push the result onto the stack.
+
+    @return If l is NULL, a newly allocated stack that should
+    eventually be free()'d with list_free(). Otherwise, the same value
+    as l.
+ */
+void mat4f_stack_push(list *l)
+{
+	float peek[16];
+
+	if(l->length == 0)
+	{
+		/* Push an identity matrix if the stack is empty */
+		mat4f_identity(peek);
+		list_push(l, peek);
+	}
+	else
+	{
+		/* Get the top matrix on the stack or use the identity if the
+		 * stack is empty */
+		list_peek(l, peek);
+
+		if(list_push(l, peek) == 0)
+		{
+			msg(FATAL, "Failed to push a matrix onto the stack");
+			exit(EXIT_FAILURE);
+		}
+	}
+}
+
+/** Pop a matrix from the top of the stack. Similar to OpenGL 2.0
+    glPopMatrix().
+
+    @param l The stack to pop from.
+ */
+void mat4f_stack_pop(list *l)
+{
+	if(l == NULL || l->length == 0)
+		return;
+	list_pop(l, NULL);
+}
+
+/** Retrieve a copy of the top matrix from the stack without changing
+    the contents of the stack.
+
+    @param l The stack to retrieve the top matrix from.
+    
+    @param m The location to copy the top matrix into.
+ */
+void mat4f_stack_peek(const list *l, float m[16])
+{
+	if(list_peek(l, m) == 0)
+		mat4f_identity(m);
+}
+
+
+/** Multiplies the top matrix on the stack with the given matrix. A
+    list structure is used to represent the stack. If the stack is
+    empty, the matrix will instead be pushed onto the stack.
+
+    @param l The stack that the matrix should be applied to.
+
+    @param m The matrix to be multiplied against the top matrix on the
+    stack.
+    
+    @return If l is NULL, a newly allocated stack that should
+    eventually be free()'d with list_free(). Otherwise, the same value
+    as l.
+ */
+void mat4f_stack_mult(list *l, float m[16])
+{
+	if(l->length == 0)
+		list_push(l, m);
+	else
+	{
+		float *top = (float*) list_getptr(l, l->length-1);
+		mat4f_mult_mat4f_new(top, top, m);
+	}
+}
