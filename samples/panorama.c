@@ -160,7 +160,7 @@ void display()
 
 		/* Create a scale matrix. */
 		float scaleMatrix[16];
-		mat4f_scale_new(scaleMatrix, 10, 10, 10);
+		mat4f_scale_new(scaleMatrix, 20, 20, 20);
 
 		// Modelview = (viewMatrix * scaleMatrix) * rotationMatrix
 		float modelview[16];
