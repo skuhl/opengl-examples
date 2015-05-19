@@ -583,22 +583,6 @@ static void viewmat_init_hmd_oculus(float pos[3])
 //	glutReshapeWindow(glcfg.OGL.Header.BackBufferSize.w,
 //	                  glcfg.OGL.Header.BackBufferSize.h);
 
-
-#if 0
-	/* We have only tested the Oculus in Extended Desktop mode on Linux. */
-	if((hmd->HmdCaps & ovrHmdCap_ExtendDesktop)) {
-		/* Note: debug mode seems to cause this if-statement to put us in direct-hmd mode. */
-		printf("Oculus: Running in 'extended desktop' mode\n");
-	} else {
-#ifdef WIN32
-		ovrHmd_AttachToWindow(hmd, glcfg.OGL.Window, 0, 0);
-#elif defined(OVR_OS_LINUX)
-		ovrHmd_AttachToWindow(hmd, (void*)glXGetCurrentDrawable(), 0, 0);
-#endif
-		printf("Oculus: running in 'direct-hmd' mode\n");
-	}
-#endif
-
 	unsigned int trackingcap = 0;
 	trackingcap |= ovrTrackingCap_Orientation; // orientation tracking
 	trackingcap |= ovrTrackingCap_Position;    // position tracking
@@ -633,7 +617,7 @@ static void viewmat_init_hmd_oculus(float pos[3])
 	//distort_caps |= ovrDistortionCap_TimeWarp; 
 	
 	if(!ovrHmd_ConfigureRendering(hmd, &glcfg.Config, distort_caps, hmd->DefaultEyeFov, eye_rdesc)) {
-		msg(ERROR, "Failed to configure distortion renderer.\n");
+		msg(FATAL, "Failed to configure distortion renderer.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -966,13 +950,27 @@ static viewmat_eye viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
  */
 static viewmat_eye viewmat_get_ivs(float viewmatrix[16], float frustum[6])
 {
+	/* Only get information from VRPN if we are DGR master, or if DGR
+	 * is being used at all. */
 	float pos[3];
 	if((dgr_is_enabled() && dgr_is_master()) || dgr_is_enabled()==0)
 	{
-		/* get information from vrpn */
-		float orient[16];
-		vrpn_get(viewmat_vrpn_obj, NULL, pos, orient);
+		if(viewmat_vrpn_obj != NULL)
+		{
+			/* get information from vrpn */
+			float orient[16];
+			vrpn_get(viewmat_vrpn_obj, NULL, pos, orient);
+		}
+		else
+		{
+			/* If no head tracking is available, assume the person is
+			 * standing at the origin with a normal eye height */
+			pos[0] = 0;
+			pos[1] = 1.5; // normal eye height
+			pos[2] = 0;
+		}
 	}
+	
 	/* Make sure all DGR hosts can get the position so that they
 	 * can update the frustum appropriately */
 	dgr_setget("!!viewMatPos", pos, sizeof(float)*3);
