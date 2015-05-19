@@ -8,7 +8,8 @@
 
 #define LINE_UP "\033[F"
 #define LINE_CLEAR "\033[J"
-
+#define DATA_TRACKER 0
+#define FILE_TRACKER 1
 
 #include <stdio.h>
 #include <math.h>
@@ -31,8 +32,8 @@ using namespace std;
 class myTracker : public vrpn_Tracker
 {
   public:
-	myTracker( const char* name, bool n, bool v, bool q, vrpn_Connection *c = 0 );
-	myTracker( char** files, bool n, bool v, bool q, vrpn_Connection *c = 0 );
+	myTracker( const char* name, bool* flags, vrpn_Connection *c = 0, char* fileName = NULL );
+	//myTracker( char** files, bool n, bool v, bool q, vrpn_Connection *c = 0 );
 	virtual ~myTracker() {};
 	virtual void mainloop();
 
@@ -44,36 +45,48 @@ class myTracker : public vrpn_Tracker
   	bool verbose;
   	bool quiet;
   	bool noise;
+  	bool type;
+  	char* trackerName;
+  	char* fileName;
+  	long lastrecord;
 };
 
-myTracker::myTracker( const char* name, bool n, bool v, bool q, vrpn_Connection *c ) :
+myTracker::myTracker( const char* name, bool* flags, vrpn_Connection *c, char* fileName ) :
 	vrpn_Tracker( name, c )
 {
 	printf("Using tracker name: %s\n", name);
-	verbose = v;
-	quiet = q;
-	noise = n;
+	this->trackerName = (char*)name;
+	this->verbose = flags[0];
+	this->quiet = flags[1];
+	this->noise = flags[2];
+	this->type = flags[3];
+	this->fileName = fileName;
+	lastrecord = 0;
 	kuhl_getfps_init(&fps_state);
 }
 
-myTracker::myTracker( char** files, bool n, bool v, bool q, vrpn_Connection *c ) :
+/*myTracker::myTracker( char** files, bool n, bool v, bool q, vrpn_Connection *c ) :
 	vrpn_Tracker( "Tracker0", c )
 {
 	verbose = v;
 	quiet = q;
 	noise = n;
 	kuhl_getfps_init(&fps_state);
-}
+}*/
 
-long lastrecord = 0;
 void myTracker::mainloop()
 {
 
 	vrpn_gettimeofday(&_timestamp, NULL);
 	vrpn_Tracker::timestamp = _timestamp;
 
-	if(!quiet)printf(LINE_CLEAR "Records sent per second: %.1f\n", kuhl_getfps(&fps_state));
 
+	if(!quiet)
+	{
+		printf(LINE_CLEAR "%s:\n", trackerName);	
+		printf(LINE_CLEAR "Records sent per second: %.1f\n", kuhl_getfps(&fps_state));	
+	}
+	
 	double angle = kuhl_milliseconds_start() / 1000.0;
 
 	// Position
@@ -128,11 +141,11 @@ void myTracker::mainloop()
 
 /**
  * -b (buffer)- Takes one parameter. The size of the file buffer. Default: 2048 data points.
- * TODO-f (files)- Takes one or more parameter, this will read from a log file instead of generating data.
+ * -f (files)- Takes one or more parameters, this will read from a log file instead of generating data.
  * -h (help)- Prints a helpful message
  * -n (noise)- Adds noise to each data point.
  * -q (quiet)- Turns off almost all debugging.
- * -t (tracker)- Takes one parameter. Uses the specified name for the tracked object.
+ * -t (tracker)- Takes one or more parameters. Uses the specified names for the tracked objects, multiple names will create multiple objects.
  * -v (verbose)- Turns on some extra debugging.
  */
 int main(int argc, char* argv[])
@@ -141,17 +154,18 @@ int main(int argc, char* argv[])
 	bool verbose = false;
 	bool quiet = false;
 	bool noise = false;
-	const char* objectName = "Tracker0";
+	char** objNamesv = NULL;
+	int objNamesc = 0;
 	int bufSize = 2048;
 	
 	//Start out with no file names, we will malloc later if we need it.
-	//char** filesv = NULL;
-	//int filesc = 0;
+	char** filesv = NULL;
+	int filesc = 0;
 
 	//Check the arguments for any options supplied
 	//See Linux man(3) getopt for more info
 	int option = 0;
-	const char* options = "b:hnqt:v";//f:";
+	const char* options = "b:f:hnqt:v";
 	while((option = getopt(argc, argv, options)) != -1){
 
     	switch(option)
@@ -159,7 +173,7 @@ int main(int argc, char* argv[])
         	case 'b':
 				bufSize = atoi(optarg);
         		break;
-        	/*case 'f':
+        	case 'f':
 				//decriment the option index since it get's auto-incremented twice by getopt to
 				//pass over the expected single parameter. We need to support multiple params.
        			for(optind--; optind < argc && argv[optind][0] != '-' && strlen(argv[optind]); optind++)
@@ -169,20 +183,21 @@ int main(int argc, char* argv[])
 					filesv = (char**)realloc(filesv, filesc * sizeof(char**));
 					filesv[filesc-1] = argv[optind];
         		}
-        		break;*/
+        		break;
         	case 'h':
 				//free up file names incase the user specified them.
-				//if(filesv != NULL)free(filesv);
+				if(filesv != NULL)free(filesv);
+				if(objNamesv != NULL)free(objNamesv);
 				//print the help message
 				printf("Usage: fake [OPTION]...\n");
 				printf("Runs a fake vrpn server that simulates a real tracking system.\n");
-				printf("If no data files are specified, data will be generated via \n");
+				printf("If no data files are specified, data will be generated.\n");
 				printf("\t-b [SIZE]\tBuffer: the size of the file buffer. Default: 2048 data points.\n");
-				//printf("\t-f [FILE]...\tFiles: use the specified data files (one or more).\n");
+				printf("\t-f [FILE]...\tFiles: use the specified data files (one or more).\n");
 				printf("\t-h\t\tHelp: print this message.\n");
 				printf("\t-n\t\tNoise: adds noise to each data point.\n");
 				printf("\t-q\t\tQuiet: turn off most of the debugging.\n");
-				printf("\t-t [NAME]\tTracker: rename the tracked object.\n\t\t\t\t NOTE: does nothing if any files are specified.\n");
+				printf("\t-t [NAME]...\tTracker: use the specified names for tracked objects.\n\t\t\t\t NOTE: does nothing if any files are specified.\n");
 				printf("\t-v\t\tVerbose: turn on extra debugging.\n");
 				exit(0);
         		break;
@@ -194,7 +209,15 @@ int main(int argc, char* argv[])
 				verbose = false;
         		break;
         	case 't':
-				objectName = optarg;
+        		//decriment the option index since it get's auto-incremented twice by getopt to
+				//pass over the expected single parameter. We need to support multiple params.
+       			for(optind--; optind < argc && argv[optind][0] != '-' && strlen(argv[optind]); optind++)
+				{
+					//Read all of the file names
+					objNamesc++;
+					objNamesv = (char**)realloc(objNamesv, objNamesc * sizeof(char**));
+					objNamesv[objNamesc-1] = argv[optind];
+        		}
         		break;
         	case 'v':
 				verbose = true;
@@ -207,42 +230,87 @@ int main(int argc, char* argv[])
 					fprintf(stderr,"Unknow option: %c\n", (char)option);
 				}
 				//free up files incase the user specified them.
-				//if(filesv != NULL)free(filesv);
+				if(filesv != NULL)free(filesv);
+				if(objNamesv != NULL)free(objNamesv);
 				exit(1);
 				break;
     	}
 	}
+	
+	//if the user didn't specify a tracker or a file, use the default traker name.
+	if(filesc == 0 && objNamesc == 0)
+	{
+		objNamesv = (char**)malloc(sizeof(char**));
+		objNamesv[0] = (char*)("Tracker0");
+		objNamesc = 1;
+	}
+	
 	if(verbose)
 	{
 		printf("Options specified:\n");
 		printf("  Verbose: %s\n", verbose ? "true" : "false");
 		printf("  Quiet: %s\n", quiet ? "true" : "false");
 		printf("  Noise: %s\n", noise ? "true" : "false");
-		printf("  Buffer Size: %d\n", bufSize);
-		printf("  Tracker name: %s\n", objectName);
-		/*printf("  Number of files: %d\n", filesc);
+		printf("  Buffer size: %d\n", bufSize);
+		printf("  Number of trackers: %d\n", objNamesc);
+		if(objNamesc > 0)printf("  Trackers:\n");
+		for(int i = 0; i < objNamesc; i++)
+		{
+			printf("    %s\n", objNamesv[i]);
+		}
+		printf("  Number of files: %d\n", filesc);
 		if(filesc > 0)printf("  Files:\n");
 		for(int i = 0; i < filesc; i++)
 		{
 			printf("    %s\n", filesv[i]);
-		}*/
+		}
 		printf("-------------------\n");
 	}
 	
 	if(verbose)printf("Opening VRPN connection\n");
-	
 	vrpn_Connection_IP* m_Connection = new vrpn_Connection_IP();
-	myTracker* serverTracker = new myTracker(objectName, noise, verbose, quiet, m_Connection);
+	
+	//Set the tracker type to file if files were specified, otherwise set it to data type.
+	bool trackerst = filesc > 0 ? FILE_TRACKER : DATA_TRACKER;
+	
+	//Set the tracker count to the number of either files or data trackers depending on the type.
+	int trackersc = trackerst ? filesc : objNamesc;
+	
+	//Make an array of tracker objects that is the size of the number of trackers we need.
+	myTracker* trackersv[trackersc];
+	
+	bool flags[4] = {verbose, quiet, noise, trackerst};
+	for(int i = 0; i < trackersc; i++)
+	{
+		if(trackerst == DATA_TRACKER)
+		{
+			trackersv[i] = new myTracker(objNamesv[i], flags, m_Connection);
+		}
+		else
+		{
+			
+		}
+	}
+	//myTracker* serverTracker = new myTracker(objNamesv[0], flags, m_Connection);
 
 	cout << "Starting VRPN server." << endl;
-
+	
 	while(true)
 	{
-		serverTracker->mainloop();
+		for(int i = 0; i < trackersc; i++)
+		{
+			trackersv[i]->mainloop();
+		}
+		for(int i = 0; i < trackersc; i++)
+		{
+			//Clear out the last couple of lines so that the log isn't spammed
+			if(!quiet)printf(LINE_UP LINE_UP LINE_UP LINE_UP LINE_UP LINE_UP LINE_UP LINE_UP);
+		}
+
+		//serverTracker->mainloop();
 		m_Connection->mainloop();
-		//Clear out the last couple of lines so that the log isn't spammed
-		if(!quiet)printf(LINE_UP LINE_UP LINE_UP LINE_UP LINE_UP LINE_UP LINE_UP);
 		kuhl_limitfps(100);
 	}
-	//if(filesv != NULL)free(filesv);
+	if(filesv != NULL)free(filesv);
+	if(objNamesv != NULL)free(objNamesv);
 }
