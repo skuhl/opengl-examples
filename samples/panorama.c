@@ -64,43 +64,43 @@ void keyboard(unsigned char key, int x, int y)
 	glutPostRedisplay();
 }
 
-void setupCubemap(GLuint texId[6], kuhl_geometry quad, const float origModelView[16])
+void setupCubemap(GLuint texId[6], kuhl_geometry q, const float origModelView[16])
 {
 	glUniformMatrix4fv(kuhl_get_uniform("ModelView"),1,0,origModelView);
-	kuhl_geometry_texture(&quad, texId[0], "tex", KG_WARN);
-	kuhl_geometry_draw(&quad); // negative Z (front)
+	kuhl_geometry_texture(&q, texId[0], "tex", KG_WARN);
+	kuhl_geometry_draw(&q); // negative Z (front)
 	
 	float rotation[16];
 	float modelview[16];
 	mat4f_rotateEuler_new(rotation, 0,180,0, "XYZ");
 	mat4f_mult_mat4f_new(modelview, origModelView, rotation);
 	glUniformMatrix4fv(kuhl_get_uniform("ModelView"),1,0,modelview);
-	kuhl_geometry_texture(&quad, texId[1], "tex", KG_WARN);
-	kuhl_geometry_draw(&quad); // positive Z (back)
+	kuhl_geometry_texture(&q, texId[1], "tex", KG_WARN);
+	kuhl_geometry_draw(&q); // positive Z (back)
 
 	mat4f_rotateEuler_new(rotation, 0,90,0, "XYZ");
 	mat4f_mult_mat4f_new(modelview, origModelView, rotation);
 	glUniformMatrix4fv(kuhl_get_uniform("ModelView"),1,0,modelview);
-	kuhl_geometry_texture(&quad, texId[2], "tex", KG_WARN);
-	kuhl_geometry_draw(&quad); // negative X (left)
+	kuhl_geometry_texture(&q, texId[2], "tex", KG_WARN);
+	kuhl_geometry_draw(&q); // negative X (left)
 
 	mat4f_rotateEuler_new(rotation, 0,-90,0, "XYZ");
 	mat4f_mult_mat4f_new(modelview, origModelView, rotation);
 	glUniformMatrix4fv(kuhl_get_uniform("ModelView"),1,0,modelview);
-	kuhl_geometry_texture(&quad, texId[3], "tex", KG_WARN);
-	kuhl_geometry_draw(&quad); // positive X (right)
+	kuhl_geometry_texture(&q, texId[3], "tex", KG_WARN);
+	kuhl_geometry_draw(&q); // positive X (right)
 
 	mat4f_rotateEuler_new(rotation, -90,0,0, "XYZ");
 	mat4f_mult_mat4f_new(modelview, origModelView, rotation);
 	glUniformMatrix4fv(kuhl_get_uniform("ModelView"),1,0,modelview);
-	kuhl_geometry_texture(&quad, texId[4], "tex", KG_WARN);
-	kuhl_geometry_draw(&quad); // negative Y (down)
+	kuhl_geometry_texture(&q, texId[4], "tex", KG_WARN);
+	kuhl_geometry_draw(&q); // negative Y (down)
 	
 	mat4f_rotateEuler_new(rotation, 90,0,0, "XYZ");
 	mat4f_mult_mat4f_new(modelview, origModelView, rotation);
 	glUniformMatrix4fv(kuhl_get_uniform("ModelView"),1,0,modelview);
-	kuhl_geometry_texture(&quad, texId[5], "tex", KG_WARN);
-	kuhl_geometry_draw(&quad); // positive Y (up)
+	kuhl_geometry_texture(&q, texId[5], "tex", KG_WARN);
+	kuhl_geometry_draw(&q); // positive Y (up)
 }
 
 
@@ -224,9 +224,9 @@ void display()
 
 
 /* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
-void init_geometryQuad(kuhl_geometry *geom, GLuint program)
+void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 {
-	kuhl_geometry_new(geom, program,
+	kuhl_geometry_new(geom, prog,
 	                  4, // number of vertices
 	                  GL_TRIANGLES); // type of thing to draw
 
@@ -261,7 +261,7 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint program)
 
 
 /** Creates a cylinder geometry object. */
-void init_geometryCylinder(kuhl_geometry *cylinder, GLuint program)
+void init_geometryCylinder(kuhl_geometry *cyl, GLuint prog)
 {
 	int numSides=50;
 	
@@ -405,11 +405,11 @@ void init_geometryCylinder(kuhl_geometry *cylinder, GLuint program)
 		indices[indicesIndex++] = verticesIndex/3-1;
 	}
 
-	kuhl_geometry_new(cylinder, program, verticesIndex/3, GL_TRIANGLES);
-	kuhl_geometry_attrib(cylinder, vertices, 3, "in_Position", 1);
-	kuhl_geometry_attrib(cylinder, normals, 3, "in_Normal", 1);
-	kuhl_geometry_attrib(cylinder, texcoords, 2, "in_TexCoord", 1);
-	kuhl_geometry_indices(cylinder, indices, indicesIndex);
+	kuhl_geometry_new(cyl, prog, verticesIndex/3, GL_TRIANGLES);
+	kuhl_geometry_attrib(cyl, vertices, 3, "in_Position", 1);
+	kuhl_geometry_attrib(cyl, normals, 3, "in_Normal", 1);
+	kuhl_geometry_attrib(cyl, texcoords, 2, "in_TexCoord", 1);
+	kuhl_geometry_indices(cyl, indices, indicesIndex);
 
 	/*
 	  printf("v: %d\n", verticesIndex);
