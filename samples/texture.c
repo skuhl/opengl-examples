@@ -147,9 +147,9 @@ void display()
 	glutPostRedisplay();
 }
 
-void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
+void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
 {
-	kuhl_geometry_new(geom, program, 3, GL_TRIANGLES);
+	kuhl_geometry_new(geom, prog, 3, GL_TRIANGLES);
 
 	GLfloat texcoordData[] = {0, 0,
 	                          1, 0,

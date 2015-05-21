@@ -142,9 +142,9 @@ void display()
 	glutPostRedisplay();
 }
 
-void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
+void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
 {
-	kuhl_geometry_new(geom, program, 3, // num vertices
+	kuhl_geometry_new(geom, prog, 3, // num vertices
 	                  GL_TRIANGLES); // primitive type
 
 	/* The data that we want to draw */
@@ -160,9 +160,9 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
 
 
 /* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
-void init_geometryQuad(kuhl_geometry *geom, GLuint program)
+void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 {
-	kuhl_geometry_new(geom, program,
+	kuhl_geometry_new(geom, prog,
 	                  4, // number of vertices
 	                  GL_TRIANGLES); // type of thing to draw
 
@@ -182,8 +182,6 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint program)
 
 	kuhl_errorcheck();
 }
-
-#include "queue.h"
 
 int main(int argc, char** argv)
 {

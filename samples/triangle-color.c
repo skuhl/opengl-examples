@@ -139,9 +139,9 @@ void display()
 	glutPostRedisplay();
 }
 
-void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
+void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
 {
-	kuhl_geometry_new(geom, program, 3, // num vertices
+	kuhl_geometry_new(geom, prog, 3, // num vertices
 	                  GL_TRIANGLES); // primitive type
 
 	/* The data that we want to draw */

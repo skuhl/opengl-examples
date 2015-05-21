@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.6)
 
-set(CMAKE_C_COMPILER "gcc")
-set(CMAKE_CXX_COMPILER "g++")
+#set(CMAKE_C_COMPILER "gcc")
+#set(CMAKE_CXX_COMPILER "g++")
 
-#set(CMAKE_C_COMPILER "clang")
-#set(CMAKE_CXX_COMPILER "clang++")
+set(CMAKE_C_COMPILER "clang")
+set(CMAKE_CXX_COMPILER "clang++")
 
 project("opengl-examples" C CXX)  # This project uses C and C++
 
@@ -13,9 +13,10 @@ project("opengl-examples" C CXX)  # This project uses C and C++
 # -O2 or -O3 is necessary to get the compiler to inline the inlined functions used by vecmat.c and vecmat.h
 # -march=native will cause the compiler to use features that are available on the current CPU (SSE, etc)---but will make the resulting executable less portable.
 #   -march=native is removed because it doesn't work on IVS as of May 2015
-set(C_CXX_FLAGS "-Wall -g -O2")    # Compiler options used by both the C++ and C compiler
+# -Wshadow should probably be added eventually
+set(C_CXX_FLAGS "-Wall -Wextra -g -O2  -Wformat -Wno-unused-parameter -Wno-unused-function")  # Compiler options used by both the C++ and C compiler
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_CXX_FLAGS} -std=gnu99 -Wextra -Wno-unused-parameter -Wno-unused-function")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_CXX_FLAGS} -std=gnu99")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${C_CXX_FLAGS}")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/CMakeModules)
 
