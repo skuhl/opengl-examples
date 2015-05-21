@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdbool.h>
@@ -107,7 +108,7 @@ void bounceBall()
 		}
 		else // missed paddle and didn't lose
 		{
-			//sleep(1);
+			sleep(1);
 			ballPos[0] = 0;
 			ballPos[1] = 0;
 			ballSpeed /= .7;
@@ -140,7 +141,7 @@ void bounceBall()
 		}
 		else // missed paddle and didn't lose
 		{
-			//sleep(1);
+			sleep(1);
 			ballPos[0] = 0;
 			ballPos[1] = 0;
 			ballSpeed /= .7;
@@ -289,10 +290,9 @@ void display()
 	/* Try to connect to VRPN server */
 	vrpn_get(TRACKED_OBJ_A, NULL, vrpnPos, vrpnOrient);
 	player1Xpos = vrpnPos[0];
-	//printf("x1: %f\n", vrpnPos[0]);
+
 	vrpn_get(TRACKED_OBJ_B, NULL, vrpnPos, vrpnOrient);
 	player2Xpos = vrpnPos[0];
-	//printf("x2: %f\n", vrpnPos[0]);
 	
 	glDisable(GL_LIGHTING);
 	// background quad
