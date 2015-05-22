@@ -12,28 +12,30 @@
 #define FILE_TRACKER 1
 
 #include <stdio.h>
+#include <fcntl.h>
 #include <math.h>
 #include <unistd.h>
 #include <iostream>
 #include <cstdlib>
+#include <string>
+#include <cerrno>
+#include <time.h>
 
 #include "vrpn_Text.h"
 #include "vrpn_Tracker.h"
 #include "vrpn_Analog.h"
 #include "vrpn_Button.h"
 #include "vrpn_Connection.h"
-
 #include "vecmat.h"
 #include "kuhl-util.h"
-
+#include "tdl-util.h"
 
 using namespace std;
 
 class myTracker : public vrpn_Tracker
 {
   public:
-	myTracker( const char* name, bool* flags, vrpn_Connection *c = 0, char* fileName = NULL );
-	//myTracker( char** files, bool n, bool v, bool q, vrpn_Connection *c = 0 );
+	myTracker( const char* name, bool* flags, vrpn_Connection *c = 0, int fd = -1 );
 	virtual ~myTracker() {};
 	virtual void mainloop();
 
@@ -47,11 +49,12 @@ class myTracker : public vrpn_Tracker
   	bool noise;
   	bool type;
   	char* trackerName;
-  	char* fileName;
+  	int fd;
+  	int modifier;
   	long lastrecord;
 };
 
-myTracker::myTracker( const char* name, bool* flags, vrpn_Connection *c, char* fileName ) :
+myTracker::myTracker( const char* name, bool* flags, vrpn_Connection *c, int fd ) :
 	vrpn_Tracker( name, c )
 {
 	printf("Using tracker name: %s\n", name);
@@ -60,23 +63,13 @@ myTracker::myTracker( const char* name, bool* flags, vrpn_Connection *c, char* f
 	this->quiet = flags[1];
 	this->noise = flags[2];
 	this->type = flags[3];
-	this->fileName = fileName;
-	lastrecord = 0;
+	this->fd = fd;
+	this->modifier = ((double) rand() / (RAND_MAX)) * (360);
 	kuhl_getfps_init(&fps_state);
 }
 
-/*myTracker::myTracker( char** files, bool n, bool v, bool q, vrpn_Connection *c ) :
-	vrpn_Tracker( "Tracker0", c )
-{
-	verbose = v;
-	quiet = q;
-	noise = n;
-	kuhl_getfps_init(&fps_state);
-}*/
-
 void myTracker::mainloop()
 {
-
 	vrpn_gettimeofday(&_timestamp, NULL);
 	vrpn_Tracker::timestamp = _timestamp;
 
@@ -90,7 +83,7 @@ void myTracker::mainloop()
 	double angle = kuhl_milliseconds_start() / 1000.0;
 
 	// Position
-	pos[0] = sin( angle );
+	pos[0] = sin( angle + this->modifier ) ;
 	pos[1] = 1.55f; // approx normal eyeheight
 	pos[2] = 0.0f;
 
@@ -140,7 +133,6 @@ void myTracker::mainloop()
 }
 
 /**
- * -b (buffer)- Takes one parameter. The size of the file buffer. Default: 2048 data points.
  * -f (files)- Takes one or more parameters, this will read from a log file instead of generating data.
  * -h (help)- Prints a helpful message
  * -n (noise)- Adds noise to each data point.
@@ -150,13 +142,13 @@ void myTracker::mainloop()
  */
 int main(int argc, char* argv[])
 {	
+	srand(time(NULL));
 	//Options that will be set by the arguments
 	bool verbose = false;
 	bool quiet = false;
 	bool noise = false;
 	char** objNamesv = NULL;
 	int objNamesc = 0;
-	int bufSize = 2048;
 	
 	//Start out with no file names, we will malloc later if we need it.
 	char** filesv = NULL;
@@ -165,14 +157,11 @@ int main(int argc, char* argv[])
 	//Check the arguments for any options supplied
 	//See Linux man(3) getopt for more info
 	int option = 0;
-	const char* options = "b:f:hnqt:v";
+	const char* options = "f:hnqt:v";
 	while((option = getopt(argc, argv, options)) != -1){
 
     	switch(option)
 		{
-        	case 'b':
-				bufSize = atoi(optarg);
-        		break;
         	case 'f':
 				//decriment the option index since it get's auto-incremented twice by getopt to
 				//pass over the expected single parameter. We need to support multiple params.
@@ -192,7 +181,6 @@ int main(int argc, char* argv[])
 				printf("Usage: fake [OPTION]...\n");
 				printf("Runs a fake vrpn server that simulates a real tracking system.\n");
 				printf("If no data files are specified, data will be generated.\n");
-				printf("\t-b [SIZE]\tBuffer: the size of the file buffer. Default: 2048 data points.\n");
 				printf("\t-f [FILE]...\tFiles: use the specified data files (one or more).\n");
 				printf("\t-h\t\tHelp: print this message.\n");
 				printf("\t-n\t\tNoise: adds noise to each data point.\n");
@@ -251,7 +239,6 @@ int main(int argc, char* argv[])
 		printf("  Verbose: %s\n", verbose ? "true" : "false");
 		printf("  Quiet: %s\n", quiet ? "true" : "false");
 		printf("  Noise: %s\n", noise ? "true" : "false");
-		printf("  Buffer size: %d\n", bufSize);
 		printf("  Number of trackers: %d\n", objNamesc);
 		if(objNamesc > 0)printf("  Trackers:\n");
 		for(int i = 0; i < objNamesc; i++)
@@ -288,12 +275,25 @@ int main(int argc, char* argv[])
 		}
 		else
 		{
-			
+			fprintf(stderr, "Sorry, files aren't implemented yet.\n");
+    		exit(1);
+			/*
+			int fd = open(filesv[i], O_RDONLY);
+			if(fd == -1)
+			{
+				fprintf(stderr, "Failed to open file \"%s\": %s\n", filesv[i], strerror(errno));
+    			exit(1);
+    		}
+    		
+    		char* name;
+			tdl_prepare(fd, &name);
+			if(verbose)printf("Creating tracker for %s from file %s\n", name, filesv[i]);
+			trackersv[i] = new myTracker(name, flags, m_Connection, fd);
+			*/
 		}
 	}
-	//myTracker* serverTracker = new myTracker(objNamesv[0], flags, m_Connection);
 
-	cout << "Starting VRPN server." << endl;
+	printf("Starting VRPN server.\n");
 	
 	while(true)
 	{
