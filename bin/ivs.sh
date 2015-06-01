@@ -130,7 +130,7 @@ printMessage "Creating directory $IVS_TEMP_DIR on IVS..."
 ${SSH_CMD} mkdir -p "$IVS_TEMP_DIR"
 
 printMessage "Copying files to $IVS_TEMP_DIR on IVS..."
-rsync -ah -e ssh --exclude=.svn --exclude=.git --exclude=CMakeCache.txt --exclude=CMakeFiles --checksum --partial --no-whole-file --inplace --delete .. ${IVS_USER}@${IVS_HOSTNAME}:${IVS_TEMP_DIR}
+rsync -ah -e ssh --exclude=.svn --exclude=.git --exclude=dogygen-docs --exclude=CMakeCache.txt --exclude=CMakeFiles --checksum --partial --no-whole-file --inplace --delete .. ${IVS_USER}@${IVS_HOSTNAME}:${IVS_TEMP_DIR}
 
 # This check adds about a second to our startup time and usually works
 # successfully. However, it is a helpful in the unlikely case where a
@@ -147,7 +147,7 @@ for i in ${ALL_TILES}; do
 done
 
 
-printMessage "Running cmake on IVS..."
+printMessage "Running cmake on IVS in ${IVS_TEMP_DIR} ..."
 ${SSH_CMD} "cd \"${IVS_TEMP_DIR}\" && ./cleanup.sh && /export/apps/src/cmake/2.8.9/cmake-2.8.9/bin/cmake ."
 printMessage "Compiling $1 and dgr-relay IVS..."
 ${SSH_CMD} make -B --quiet --jobs=3 -C "${IVS_TEMP_DIR}" "$1" dgr-relay
