@@ -1,8 +1,16 @@
-/* This example demonstrates how to draw a HUD cursor and how to use
- * the stencil buffer to determine what piece of geometry the cursor
- * is on. For more information and details, see:
- * http://en.wikibooks.org/wiki/OpenGL_Programming/Object_selection
+/* Copyright (c) 2014-2015 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
  */
+
+/** @file This example demonstrates how to draw a HUD cursor and how
+ * to use the stencil buffer to determine what piece of geometry the
+ * cursor is on. For more information and details, see:
+ * http://en.wikibooks.org/wiki/OpenGL_Programming/Object_selection
+ *
+ * @author Scott Kuhl
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -190,9 +198,9 @@ void display()
 	glutPostRedisplay();
 }
 
-void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
+void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
 {
-	kuhl_geometry_new(geom, program, 3, // num vertices
+	kuhl_geometry_new(geom, prog, 3, // num vertices
 	                  GL_TRIANGLES); // primitive type
 
 	/* The data that we want to draw */
@@ -210,9 +218,9 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
 	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", KG_WARN);
 }
 
-void init_geometryCursor(kuhl_geometry *geom, GLuint program)
+void init_geometryCursor(kuhl_geometry *geom, GLuint prog)
 {
-	kuhl_geometry_new(geom, program, 4, GL_LINES);
+	kuhl_geometry_new(geom, prog, 4, GL_LINES);
 
 	/* The data that we want to draw */
 	GLfloat vertexData[] = {-.04, 0, 0,
@@ -231,9 +239,9 @@ void init_geometryCursor(kuhl_geometry *geom, GLuint program)
 
 
 /* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
-void init_geometryQuad(kuhl_geometry *geom, GLuint program)
+void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 {
-	kuhl_geometry_new(geom, program,
+	kuhl_geometry_new(geom, prog,
 	                  4, // number of vertices
 	                  GL_TRIANGLES); // type of thing to draw
 

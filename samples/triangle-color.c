@@ -1,3 +1,13 @@
+/* Copyright (c) 2014-2015 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
+ */
+
+/** @file Demonstrates drawing colored 3D triangle.
+ *
+ * @author Scott Kuhl
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -129,9 +139,9 @@ void display()
 	glutPostRedisplay();
 }
 
-void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
+void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
 {
-	kuhl_geometry_new(geom, program, 3, // num vertices
+	kuhl_geometry_new(geom, prog, 3, // num vertices
 	                  GL_TRIANGLES); // primitive type
 
 	/* The data that we want to draw */

@@ -1,3 +1,13 @@
+/* Copyright (c) 2014-2015 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
+ */
+
+/** @file Demonstrates drawing text on the screen.
+ *
+ * @author Scott Kuhl, Sam Seltzer-Johnston
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -178,9 +188,9 @@ void display()
 	glutPostRedisplay();
 }
 
-void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
+void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
 {
-	kuhl_geometry_new(geom, program, 3, GL_TRIANGLES);
+	kuhl_geometry_new(geom, prog, 3, GL_TRIANGLES);
 
 	GLfloat texcoordData[] = {0, 0,
 	                          1, 0,
@@ -188,7 +198,7 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint program)
 	kuhl_geometry_attrib(geom, texcoordData, 2, "in_TexCoord", KG_WARN);
 
 
-/* The data that we want to draw */
+	/* The data that we want to draw */
 	GLfloat vertexData[] = {0, 0, 0,
 	                        1, 0, 0,
 	                        1, 1, 0};

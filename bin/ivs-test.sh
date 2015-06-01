@@ -58,11 +58,15 @@ export PROJMAT_WINDOW_POS="100 100"
 #export PROJMAT_FRUSTUM="-1 1 -0.5 0.5 1 100"
 #export PROJMAT_MASTER_FRUSTUM="${DGR_FRUSTUM}"
 
-# These frustum values are based loosely on someone being 1.5 meters
-# tall and standing 2 meters from the IVS screen:
-BOTTOM=$(bc <<< "scale=6; 0.28 - 1.5")
-TOP=$(bc <<< "scale=6; 2.6 - 1.5")
-export PROJMAT_FRUSTUM="-3.09 3.09 ${BOTTOM} ${TOP} 2 100"
+# These frustum values are relative to the origin of the tracked
+# space. The code in viewmat.c will adjust the frustum based on the
+# eye position (either from the tracking system or based on a typical
+# eye position).
+BOTTOM=0.28
+TOP=2.6
+NEAR=3.5
+FAR=100
+export PROJMAT_FRUSTUM="-3.09 3.09 ${BOTTOM} ${TOP} ${NEAR} ${FAR}"
 export PROJMAT_MASTER_FRUSTUM="${PROJMAT_FRUSTUM}"
 "${@}" &
 
@@ -80,7 +84,8 @@ export DGR_SLAVE_LISTEN_PORT="5701"
 export PROJMAT_WINDOW_SIZE="360 270"
 export PROJMAT_WINDOW_POS="100 450"
 #export PROJMAT_FRUSTUM="-1 0 -.5 .5 1 100"
-export PROJMAT_FRUSTUM="-3.09 0 ${BOTTOM} ${TOP} 2 100"
+export PROJMAT_FRUSTUM="-3.09 0 ${BOTTOM} ${TOP} ${NEAR} ${FAR}"
+export MSG_LOGFILE="log-ivs-left.txt"
 # PROJMAT_MASTER_FRUSTUM is still set.
 "${@}" &
 
@@ -91,7 +96,8 @@ export DGR_SLAVE_LISTEN_PORT="5702"
 export PROJMAT_WINDOW_SIZE="360 270"
 export PROJMAT_WINDOW_POS="460 450"
 #export PROJMAT_FRUSTUM="0 1 -.5 .5 1 100"
-export PROJMAT_FRUSTUM="0 3.09 ${BOTTOM} ${TOP} 2 100"
+export PROJMAT_FRUSTUM="0 3.09 ${BOTTOM} ${TOP} ${NEAR} ${FAR}"
+export MSG_LOGFILE="log-ivs-right.txt"
 # PROJMAT_MASTER_FRUSTUM is still set.
 "${@}" &
 

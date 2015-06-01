@@ -1,3 +1,14 @@
+/* Copyright (c) 2015 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
+ */
+
+/** @file This program demonstrates how to load cylindrical and
+ * cubemap panorama photos (either in mono or stereo modes).
+ *
+ * @author Scott Kuhl
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -15,11 +26,17 @@
 #include "viewmat.h"
 GLuint program = 0; // id value for the GLSL program
 
-kuhl_geometry triangle;
+kuhl_geometry quad;
 kuhl_geometry cylinder;
 
+/* cylindrical panorama textures */
 GLuint texIdLeft  = 0;
 GLuint texIdRight = 0;
+
+/* cubemap textures */
+GLuint cubemapLeftTex[6];
+GLuint cubemapRightTex[6];
+
 
 
 /* Called by GLUT whenever a key is pressed. */
@@ -32,12 +49,60 @@ void keyboard(unsigned char key, int x, int y)
 		case 27: // ASCII code for Escape key
 			exit(0);
 			break;
+		case 's': // swap the left & right images
+		{
+			GLuint tmp;
+			tmp = texIdLeft;
+			texIdLeft = texIdRight;
+			texIdRight = tmp;
+			break;
+		}
 	}
 
 	/* Whenever any key is pressed, request that display() get
 	 * called. */ 
 	glutPostRedisplay();
 }
+
+void setupCubemap(GLuint texId[6], kuhl_geometry q, const float origModelView[16])
+{
+	glUniformMatrix4fv(kuhl_get_uniform("ModelView"),1,0,origModelView);
+	kuhl_geometry_texture(&q, texId[0], "tex", KG_WARN);
+	kuhl_geometry_draw(&q); // negative Z (front)
+	
+	float rotation[16];
+	float modelview[16];
+	mat4f_rotateEuler_new(rotation, 0,180,0, "XYZ");
+	mat4f_mult_mat4f_new(modelview, origModelView, rotation);
+	glUniformMatrix4fv(kuhl_get_uniform("ModelView"),1,0,modelview);
+	kuhl_geometry_texture(&q, texId[1], "tex", KG_WARN);
+	kuhl_geometry_draw(&q); // positive Z (back)
+
+	mat4f_rotateEuler_new(rotation, 0,90,0, "XYZ");
+	mat4f_mult_mat4f_new(modelview, origModelView, rotation);
+	glUniformMatrix4fv(kuhl_get_uniform("ModelView"),1,0,modelview);
+	kuhl_geometry_texture(&q, texId[2], "tex", KG_WARN);
+	kuhl_geometry_draw(&q); // negative X (left)
+
+	mat4f_rotateEuler_new(rotation, 0,-90,0, "XYZ");
+	mat4f_mult_mat4f_new(modelview, origModelView, rotation);
+	glUniformMatrix4fv(kuhl_get_uniform("ModelView"),1,0,modelview);
+	kuhl_geometry_texture(&q, texId[3], "tex", KG_WARN);
+	kuhl_geometry_draw(&q); // positive X (right)
+
+	mat4f_rotateEuler_new(rotation, -90,0,0, "XYZ");
+	mat4f_mult_mat4f_new(modelview, origModelView, rotation);
+	glUniformMatrix4fv(kuhl_get_uniform("ModelView"),1,0,modelview);
+	kuhl_geometry_texture(&q, texId[4], "tex", KG_WARN);
+	kuhl_geometry_draw(&q); // negative Y (down)
+	
+	mat4f_rotateEuler_new(rotation, 90,0,0, "XYZ");
+	mat4f_mult_mat4f_new(modelview, origModelView, rotation);
+	glUniformMatrix4fv(kuhl_get_uniform("ModelView"),1,0,modelview);
+	kuhl_geometry_texture(&q, texId[5], "tex", KG_WARN);
+	kuhl_geometry_draw(&q); // positive Y (up)
+}
+
 
 /* Called by GLUT whenever the window needs to be redrawn. This
  * function should not be called directly by the programmer. Instead,
@@ -86,7 +151,7 @@ void display()
 
 		/* Get the view or camera matrix; update the frustum values if needed. */
 		float viewMat[16], perspective[16];
-		viewmat_get(viewMat, perspective, viewportID);
+		viewmat_eye eye = viewmat_get(viewMat, perspective, viewportID);
 
 		/* Always put camera at origin (no translation, no
 		 * interpupillary distance). */
@@ -95,7 +160,7 @@ void display()
 
 		/* Create a scale matrix. */
 		float scaleMatrix[16];
-		mat4f_scale_new(scaleMatrix, 30, 30, 30);
+		mat4f_scale_new(scaleMatrix, 20, 20, 20);
 
 		// Modelview = (viewMatrix * scaleMatrix) * rotationMatrix
 		float modelview[16];
@@ -115,22 +180,23 @@ void display()
 		                   0, // transpose
 		                   modelview); // value
 		kuhl_errorcheck();
-		/* Draw the geometry using the matrices that we sent to the
-		 * vertex programs immediately above */
-		if(viewportID == 0)
-		{
-			kuhl_geometry_texture(&cylinder, texIdLeft, "tex", KG_WARN);
-			kuhl_geometry_draw(&cylinder);
-		}
-		else if(viewportID == 1)
-		{
-			if(texIdRight == 0)
-				kuhl_geometry_texture(&cylinder, texIdLeft, "tex", KG_WARN);
-			else
-				kuhl_geometry_texture(&cylinder, texIdRight, "tex", KG_WARN);
-			kuhl_geometry_draw(&cylinder);
-		}
 
+		if(texIdLeft != 0 && texIdRight != 0) // cylinder
+		{
+			/* Draw the cylinder with the appropriate texture */
+			if(eye == VIEWMAT_EYE_RIGHT)
+				kuhl_geometry_texture(&cylinder, texIdRight, "tex", KG_WARN);
+			else
+				kuhl_geometry_texture(&cylinder, texIdLeft, "tex", KG_WARN);
+			kuhl_geometry_draw(&cylinder);
+		}
+		else // cubemap
+		{
+			if(eye == VIEWMAT_EYE_RIGHT)
+				setupCubemap(cubemapRightTex, quad, modelview);
+			else
+				setupCubemap(cubemapLeftTex, quad, modelview);
+		}
 	} // finish viewport loop
 	viewmat_end_frame();
 
@@ -143,11 +209,59 @@ void display()
 	 * to call other callback functions for when a key is pressed, the
 	 * window is resized, etc. */
 	glutPostRedisplay();
+
+	static int fps_state_init = 0;
+	static kuhl_fps_state fps_state;
+	if(fps_state_init == 0)
+	{
+		kuhl_getfps_init(&fps_state);
+		fps_state_init = 1;
+	}
+	float fps = kuhl_getfps(&fps_state);
+	if(fps_state.frame == 0)
+		msg(INFO, "fps: %6.1f\n", fps);
+}
+
+
+/* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
+void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
+{
+	kuhl_geometry_new(geom, prog,
+	                  4, // number of vertices
+	                  GL_TRIANGLES); // type of thing to draw
+
+	/* The data that we want to draw */
+	GLfloat vertexPositions[] = {-.5, -.5, -.5,
+	                              .5, -.5, -.5,
+	                              .5,  .5, -.5,
+	                             -.5,  .5, -.5 };
+	kuhl_geometry_attrib(geom, vertexPositions,
+	                     3, // number of components x,y,z
+	                     "in_Position", // GLSL variable
+	                     KG_WARN); // warn if attribute is missing in GLSL program?
+
+	GLfloat texcoord[] = {0, 0,
+	                      1, 0,
+	                      1, 1,
+	                      0, 1};
+	kuhl_geometry_attrib(geom, texcoord,
+	                     2, // number of components x,y,z
+	                     "in_TexCoord", // GLSL variable
+	                     KG_WARN); // warn if attribute is missing in GLSL program?
+
+
+	
+
+	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
+	                       0, 2, 3 }; // indices of second triangle.
+	kuhl_geometry_indices(geom, indexData, 6);
+
+	kuhl_errorcheck();
 }
 
 
 /** Creates a cylinder geometry object. */
-void init_geometryCylinder(kuhl_geometry *cylinder, GLuint program)
+void init_geometryCylinder(kuhl_geometry *cyl, GLuint prog)
 {
 	int numSides=50;
 	
@@ -272,9 +386,9 @@ void init_geometryCylinder(kuhl_geometry *cylinder, GLuint program)
 			normals[normalsIndex++] = n[2];
 
 			if(j < 2)
-				texcoords[texcoordsIndex++] = i/(float)numSides;
+				texcoords[texcoordsIndex++] = (numSides-i)/(float)numSides;
 			else
-				texcoords[texcoordsIndex++] = (i+1)/(float)numSides;
+				texcoords[texcoordsIndex++] = (numSides-(i+1))/(float)numSides;
 
 			if(j == 1 || j == 2)
 				texcoords[texcoordsIndex++] = 0; // bottom
@@ -291,11 +405,11 @@ void init_geometryCylinder(kuhl_geometry *cylinder, GLuint program)
 		indices[indicesIndex++] = verticesIndex/3-1;
 	}
 
-	kuhl_geometry_new(cylinder, program, verticesIndex/3, GL_TRIANGLES);
-	kuhl_geometry_attrib(cylinder, vertices, 3, "in_Position", 1);
-	kuhl_geometry_attrib(cylinder, normals, 3, "in_Normal", 1);
-	kuhl_geometry_attrib(cylinder, texcoords, 2, "in_TexCoord", 1);
-	kuhl_geometry_indices(cylinder, indices, indicesIndex);
+	kuhl_geometry_new(cyl, prog, verticesIndex/3, GL_TRIANGLES);
+	kuhl_geometry_attrib(cyl, vertices, 3, "in_Position", 1);
+	kuhl_geometry_attrib(cyl, normals, 3, "in_Normal", 1);
+	kuhl_geometry_attrib(cyl, texcoords, 2, "in_TexCoord", 1);
+	kuhl_geometry_indices(cyl, indices, indicesIndex);
 
 	/*
 	  printf("v: %d\n", verticesIndex);
@@ -308,11 +422,17 @@ void init_geometryCylinder(kuhl_geometry *cylinder, GLuint program)
 
 int main(int argc, char** argv)
 {
-	if(argc < 2 || argc > 3)
+	if(argc != 2 && argc != 3 && argc != 7 && argc != 13)
 	{
-		printf("Usage: %s panoImage.jpg\n", argv[0]);
-		printf(" - or -\n");
-		printf("Usage: %s left.jpg right.jpg\n", argv[0]);
+		printf("Usage for cylindrical panoramas:\n");
+		printf("   %s panoImage.jpg\n", argv[0]);
+		printf("   %s left.jpg right.jpg\n", argv[0]);
+		printf("\n");
+		printf("Usage for cubemap panoramas:\n");
+		printf("   %s front.jpg back.jpg left.jpg right.jpg down.jpg up.jpg\n", argv[0]);
+		printf("   %s Lfront.jpg Lback.jpg Lleft.jpg Lright.jpg Ldown.jpg Lup.jpg Rfront.jpg Rback.jpg Rleft.jpg Rright.jpg Rdown.jpg Rup.jpg\n", argv[0]);
+		printf("\n");
+		printf("Tip: Works best if horizon is at center of the panorama.\n");
 		exit(EXIT_FAILURE);
 	}
 	/* set up our GLUT window */
@@ -356,11 +476,48 @@ int main(int argc, char** argv)
 	glUseProgram(program);
 	kuhl_errorcheck();
 
+	init_geometryQuad(&quad, program);
 	init_geometryCylinder(&cylinder, program);
 
-	kuhl_read_texture_file(argv[1], &texIdLeft);
+	if(argc == 2)
+	{
+		msg(INFO, "Cylinder mono image: %s\n", argv[1]);
+		kuhl_read_texture_file(argv[1], &texIdLeft);
+		texIdRight = texIdLeft;
+	}
 	if(argc == 3)
+	{
+		msg(INFO, "Cylinder left  image: %s\n", argv[1]);
+		kuhl_read_texture_file(argv[1], &texIdLeft);
+		msg(INFO, "Cylinder right image: %s\n", argv[2]);
 		kuhl_read_texture_file(argv[2], &texIdRight);
+	}
+
+	char *cubemapNames[] = { "front", "back", "left", "right", "down", "up" };	
+	if(argc == 7)
+	{
+		for(int i=0; i<6; i++)
+		{
+			msg(INFO, "Cubemap image (%-5s): %s\n", cubemapNames[i], argv[i+1]);
+			kuhl_read_texture_file(argv[i+1], &(cubemapLeftTex[i]));
+			cubemapRightTex[i]= cubemapLeftTex[i];
+			texIdLeft =0;
+			texIdRight=0;
+		}
+	}
+	if(argc == 13)
+	{
+		for(int i=0; i<6; i++)
+		{
+			msg(INFO, "Cubemap image (left,  %-5s): %s\n", cubemapNames[i], argv[i+6+1]);
+			kuhl_read_texture_file(argv[i+6+1], &(cubemapLeftTex[i]));
+			msg(INFO, "Cubemap image (right, %-5s)\n", cubemapNames[i], argv[i+6+1]);
+			cubemapRightTex[i]= cubemapLeftTex[i];
+			texIdLeft =0;
+			texIdRight=0;
+		}
+	}
+	
 	
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);

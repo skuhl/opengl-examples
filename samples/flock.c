@@ -1,9 +1,14 @@
-/* This sample is based on a sample that is included with ASSIMP. Much
- * of the logic of the program was unchanged. However, texture loading
- * and other miscellaneous changes were made.
- *
- * Changes by: Scott Kuhl
+/* Copyright (c) 2015 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
  */
+
+/** @file Draws a single model repeatedly. Useful for doing very
+ * simple performance measurements.
+ *
+ * @author Scott Kuhl
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -246,9 +251,9 @@ void display()
 }
 
 /* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
-void init_geometryQuad(kuhl_geometry *geom, GLuint program)
+void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 {
-	kuhl_geometry_new(geom, program,
+	kuhl_geometry_new(geom, prog,
 	                  4, // number of vertices
 	                  GL_TRIANGLES); // type of thing to draw
 

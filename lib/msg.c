@@ -34,7 +34,7 @@
 #include "msg.h"
 
 static FILE *f = NULL;  /*< The file stream for our log file */
-
+static char *logfile = NULL;
 
 static void msg_timestamp(char *buf, int len)
 {
@@ -178,7 +178,7 @@ static void msg_init(void)
 	// Set to 1 to overwrite existing log file, 0 to append.
 	const int append = 0;
 	
-	char *logfile = strdup("log.txt");
+	logfile = strdup("log.txt");
 	const char* envvar_logfile = getenv("MSG_LOGFILE");
 	if(envvar_logfile != NULL && strlen(envvar_logfile) > 0)
 		logfile = strdup(envvar_logfile);
@@ -248,16 +248,26 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 	/* Print the message to stderr or stdout */
 	if(stream)
 	{
+		// If using a non-standard logfile name, prepend the name to
+		// the message. This makes it easier to distinguish between
+		// which process is creating which message if there are
+		// multiple programs running at once.
+		char prepend[1024];
+		if(strcmp(logfile, "log.txt") == 0)
+			prepend[0] = '\0';
+		else
+			snprintf(prepend, 1024, "(%s) ", logfile);
+		
 		msg_start_color(type, stream);
 		/* Print additional details to console for fatal errors */
 		if(type == FATAL)
 		{
-			fprintf(stream, "%s %s\n", typestr, msgbuf);
-			fprintf(stream, "%s Occurred at %s:%d in the function %s()\n",
-			        typestr, shortFileName, lineNum, funcName);
+			fprintf(stream, "%s %s%s\n", prepend, typestr, msgbuf);
+			fprintf(stream, "%s %sOccurred at %s:%d in the function %s()\n",
+			        typestr, shortFileName, prepend, lineNum, funcName);
 		}
 		else
-			fprintf(stream, "%s %s\n", typestr, msgbuf);
+			fprintf(stream, "%s %s%s\n", typestr, prepend, msgbuf);
 		msg_end_color(type, stream);
 	}
 

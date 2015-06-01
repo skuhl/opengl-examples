@@ -1,9 +1,13 @@
-/* This sample is based on a sample that is included with ASSIMP. Much
- * of the logic of the program was unchanged. However, texture loading
- * and other miscellaneous changes were made.
- *
- * Changes by: Scott Kuhl
+/* Copyright (c) 2014-2015 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
  */
+
+/** @file Loads 3D model files displays them.
+ *
+ * @author Scott Kuhl
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -39,7 +43,7 @@ float bbox[6];
  * center of the bottom face of the bounding box. If
  * FIT_TO_VIEW is not set, this is the location in world
  * coordinates that we want to model's origin to appear at. */
-float placeToPutModel[3] = { 0, 1, 0 };
+float placeToPutModel[3] = { 0, 0, 0 };
 /** SketchUp produces files that older versions of ASSIMP think 1 unit
  * is 1 inch. However, all of this software assumes that 1 unit is 1
  * meter. So, we need to convert some models from inches to
@@ -444,9 +448,9 @@ void display()
 }
 
 /* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
-void init_geometryQuad(kuhl_geometry *geom, GLuint program)
+void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 {
-	kuhl_geometry_new(geom, program,
+	kuhl_geometry_new(geom, prog,
 	                  4, // number of vertices
 	                  GL_TRIANGLES); // type of thing to draw
 
