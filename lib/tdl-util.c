@@ -110,7 +110,7 @@ int tdl_create(char* path, char* name)
 	}
 
 	int fd = -1;
-	if((fd = open(path, O_CREAT /*| O_EXCL*/ | O_RDWR , S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH)) < 0)
+	if((fd = open(path, O_CREAT | O_EXCL | O_RDWR , S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH)) < 0)
 	{
 		perror("File creation failed");
 		return fd;
@@ -155,9 +155,9 @@ int tdl_create(char* path, char* name)
  *				  1 if the end of the file was reached and the cursor was reset.
  *
  */
-int tdl_read(int fd, double pos[3], float orient[9])
+int tdl_read(int fd, float pos[3], float orient[9])
 {
-	int posSize = 3*(signed int)sizeof(double);
+	int posSize = 3*(signed int)sizeof(float);
 	int orientSize = 9*(signed int)sizeof(float);
 	
 	int readVal = 0;
@@ -198,9 +198,9 @@ int tdl_read(int fd, double pos[3], float orient[9])
  * 		  float* orient - the orientation array
  *
  */
-void tdl_write(int fd, double pos[3], float orient[9])
+void tdl_write(int fd, float pos[3], float orient[9])
 {
-	int posSize = 3*(signed int)sizeof(double);
+	int posSize = 3*(signed int)sizeof(float);
 	int orientSize = 9*(signed int)sizeof(float);
 	if(write(fd, pos, posSize) < posSize)
 	{

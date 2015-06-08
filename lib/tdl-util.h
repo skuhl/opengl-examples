@@ -53,7 +53,7 @@ int tdl_create(char* path, char* name);
  *				  1 if the end of the file was reached and the cursor was reset.
  *
  */
-int tdl_read(int fd, double pos[3], float orient[9]);
+int tdl_read(int fd, float pos[3], float orient[9]);
 
 /*
  * Writes the position and orientation properly formated to a file.
@@ -63,7 +63,7 @@ int tdl_read(int fd, double pos[3], float orient[9]);
  * 		  float* orient - the orientation array
  *
  */
-void tdl_write(int fd, double pos[3], float orient[9]);
+void tdl_write(int fd, float pos[3], float orient[9]);
 
 /*
  * Checks the headers of a file to make sure it is a proper tdl file.

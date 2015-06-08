@@ -76,7 +76,7 @@ void myTracker::mainloop()
 	vrpn_gettimeofday(&_timestamp, NULL);
 	vrpn_Tracker::timestamp = _timestamp;
 
-	double filePos[3];
+	float filePos[3];
 	float fileOrient[9];
 	int readVal = -1;
 	if(type == FILE_TRACKER)
