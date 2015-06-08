@@ -6,13 +6,14 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdio.h>
+#include <fcntl.h>
 
 #ifdef __cplusplus
 #include <cstdlib>
 #else
 #include <stdlib.h>
 #endif
-
 
 #include "tdl-util.h"
 /*
@@ -25,39 +26,53 @@
  *		  char** name - a pointer to the char* where the name should be stored.
  *						if this is null, the name will be ignored.
  */
-void tdl_prepare(int fd, char** name)
+int tdl_prepare(int fd, char** name)
 {
-	//get the current cursor position so we can set it back when we are done
-	off_t tmpPosition = lseek(fd, 0, SEEK_CUR);
-	//Seek to the begining
+	//Seek to the begining of the file.
 	lseek(fd, 0, SEEK_SET);
 	
-	
-	//Move the cursor back to it's original location
-	lseek(fd, tmpPosition, SEEK_SET);
-	if(name != NULL)
+	if(tdl_validate(fd))
 	{
-		name[0] = (char*)"Tracker0";
+		char c = 0;
+		char* tmpName = (char*)malloc(sizeof(char) * 33);
+		int i = 0, bRead = 0;
+		/*
+		  Read until we find a NULL char that indicates the end of the name
+		  even if we reach the char limit, we still need to keep reading just
+		  in case a name longer than 32 chars was written to the file some how.
+		  The extra chars should be ignored, this is simple to set the cursor
+		  for further reads.
+		*/
+		while((bRead = read(fd, &c, 1)) > 0)
+		{
+			if(i < 33)
+			{
+				tmpName[i++] = c;
+			}
+			
+			if(c == 0) break;
+		}
+		
+		//error check for the read.
+		if(bRead < 1)
+		{
+			perror("Reading object name failed");
+		}
+		
+		//If the specified pointer isn't null, store to it.
+		if(name != NULL)
+		{
+			name[0] = tmpName;
+		}	
 	}
-}
-
-/*
- * Returns the next tracked point in the file.
- * If the end of the file is reached, the file cursor will be
- * moved back to the beginning of the file.
- *
- * @param int fd - a file descripter pointing to the file.
- *		  float* pos - the array that the position will be stored. Should be length 3.
- *		  float* orient - the array that the orientation will be stored. Should be length 15.
- *
- * @return int - -1 if the file could not be read.
- * 				  0 if the operation was normal.
- *				  1 if the end of the file was reached and the cursor was reset.
- *
- */
-int tdl_read(int fd, float* pos, float* orient)
-{
-	return 0;
+	else
+	{
+		//return -1 if the file is invalid.
+		return -1;
+	}
+	
+	//Everthing went fine, so return 1.
+	return 1;
 }
 
 /*
@@ -72,14 +87,107 @@ int tdl_read(int fd, float* pos, float* orient)
  * 				       ".tdl" will be appended to the file name if
  *					   it is not specified in the path.
  *		  char* name - the name of the object that the file contains.
+ *					   There is a limit of 32 chars for the object name,
+ *					   anything longer will be truncated.
  *
  * @return int - a file descripter pointing to the newly created file.
  */
 int tdl_create(char* path, char* name)
 {
-	//int pathLen = strlen(path);
-	 
-	return -1;
+	int pathLen = strlen(path);
+	int nameLen = strlen(name);
+	nameLen = nameLen > 32 ? 32 : nameLen;
+	
+	char buff[pathLen+4];
+	//Check the last 4 chars in the path to see if they are .tdl.
+	if(pathLen < 4 || strncmp(path + pathLen - 4, ".tdl", 4) != 0)
+	{
+		buff[0] = '\0';
+		strncat(buff, path, pathLen);
+		strncat(buff, ".tdl", 4);
+		path = buff;
+		pathLen += 4;
+	}
+
+	int fd = -1;
+	if((fd = open(path, O_CREAT /*| O_EXCL*/ | O_RDWR , S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH)) < 0)
+	{
+		perror("File creation failed");
+		return fd;
+	}
+	
+	unsigned char header[9];
+	header[0] = 219;//INV ascii char for identifier
+	header[1] = 84;//T
+	header[2] = 68;//D
+	header[3] = 76;//L
+	header[4] = 13;//\r
+	header[5] = 10;//\n
+	header[6] = 26;//\032
+	header[7] = 10;//\n
+	header[8] = 0;//NULL term
+	if(write(fd, header, 9) < 9)
+	{
+		perror("Writing header failed");
+		return fd;
+	}
+	
+	//We +1 to the name length so that the term char is also written.
+	if(write(fd, name, nameLen+1) < nameLen+1)
+	{
+		perror("Writing object name failed");
+		return fd;
+	}
+	
+	return fd;
+}
+/*
+ * Returns the next tracked point in the file.
+ * If the end of the file is reached, the file cursor will be
+ * moved back to the beginning of the file.
+ *
+ * @param int fd - a file descripter pointing to the file.
+ *		  float* pos - the array that the position will be stored. Should be length 3.
+ *		  float* orient - the array that the orientation will be stored. Should be length 16.
+ *
+ * @return int - -1 if the file could not be read.
+ * 				  0 if the operation was normal.
+ *				  1 if the end of the file was reached and the cursor was reset.
+ *
+ */
+int tdl_read(int fd, double pos[3], float orient[9])
+{
+	int posSize = 3*(signed int)sizeof(double);
+	int orientSize = 9*(signed int)sizeof(float);
+	
+	int readVal = 0;
+	if((readVal = read(fd, pos, posSize)) < posSize)
+	{
+		if(readVal == 0){
+			//EOF
+			return 1;
+		}
+		else
+		{
+			perror("Reading position failed");
+			return -1;
+		}
+	}
+	
+	if((readVal = read(fd, orient, orientSize)) < orientSize)
+	{
+		if(readVal == 0){
+			//EOF
+			return 1;
+		}
+		else
+		{
+			perror("Reading position failed");
+			return -1;
+		}
+	}
+	
+	return 0;
 }
 
 /*
@@ -90,9 +198,19 @@ int tdl_create(char* path, char* name)
  * 		  float* orient - the orientation array
  *
  */
-void tdl_write(int fd, float* pos, float* orient)
+void tdl_write(int fd, double pos[3], float orient[9])
 {
-
+	int posSize = 3*(signed int)sizeof(double);
+	int orientSize = 9*(signed int)sizeof(float);
+	if(write(fd, pos, posSize) < posSize)
+	{
+		perror("Writing position failed");
+	}
+	
+	if(write(fd, orient, orientSize) < orientSize)
+	{
+		perror("Writing orientation failed");
+	}
 }
 
 /*
@@ -112,12 +230,16 @@ bool tdl_validate(int fd)
 int tdl_validate(int fd)
 #endif
 {
-	char headerbuff[8];
+	unsigned char buff[9];
 	int valid = 0;
-	ssize_t lenRead = read(fd, headerbuff, 8);
-	if(lenRead == 8)
+	ssize_t lenRead = read(fd, buff, 9);
+	if(lenRead == 9)
 	{
-
+		valid = buff[0] == 219 && buff[1] == 84 &&
+			    buff[2] == 68 && buff[3] == 76 && 
+			    buff[4] == 13 && buff[5] == 10 && 
+			    buff[6] == 26 && buff[7] == 10 && 
+			    buff[8] == 0;
 	}
 	
 #ifdef __cplusplus

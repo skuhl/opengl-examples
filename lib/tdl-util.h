@@ -17,7 +17,7 @@ extern "C" {
  *		  char** name - a pointer to the char* where the name should be stored.
  *						if this is null, the name will be ignored.
  */
-void tdl_prepare(int fd, char** name);
+int tdl_prepare(int fd, char** name);
 
 /*
  * Returns the next tracked point in the file.
@@ -26,14 +26,14 @@ void tdl_prepare(int fd, char** name);
  *
  * @param int fd - a file descripter pointing to the file.
  *		  float* pos - the array that the position will be stored. Should be length 3.
- *		  float* orient - the array that the orientation will be stored. Should be length 15.
+ *		  float* orient - the array that the orientation will be stored. Should be length 16.
  *
  * @return int - -1 if the file could not be read.
  * 				  0 if the operation was normal.
  *				  1 if the end of the file was reached and the cursor was reset.
  *
  */
-int tdl_read(int fd, float* pos, float* orient);
+int tdl_read(int fd, double pos[3], float orient[9]);
 
 /*
  * Creates a new empty tdl file. This will setup 
@@ -60,13 +60,15 @@ int tdl_create(char* path, char* name);
  * 		  float* orient - the orientation array
  *
  */
-void tdl_write(int fd, float* pos, float* orient);
+void tdl_write(int fd, double pos[3], float orient[9]);
 
 /*
  * Checks the headers of a file to make sure it is a proper tdl file.
  * Note: the position of the cursor in the file MUST be at the CUR_START
  *
  * @param int fd - a file descripter pointing to the file.
+ *		  float* pos - the array containing the position data. Should be length 3.
+ *		  float* orient - the array containing the orientation data. Should be length 16.
  *
  * @return (C)int - 0 - the file is not valid.
  *					1 - the file is valid.
