@@ -294,6 +294,7 @@ void display()
 		}
 	}
 	
+	/* Syncronize the DGR objects */
 	dgr_setget("paddleA", &paddleA, sizeof(Paddle));
 	dgr_setget("paddleB", &paddleB, sizeof(Paddle));
 	dgr_setget("ball", &ball, sizeof(Ball));
@@ -376,7 +377,7 @@ void display()
 		if(ball.color[1] < 0) ball.color[1] = 0;
 		if(ball.color[2] < 0) ball.color[2] = 0;
 		bounceBall();
-		}
+	}
 	
 	glFlush();
 	glutSwapBuffers();
@@ -390,10 +391,13 @@ int main( int argc, char* argv[] )
 	
 	/* Initialize glut */
 	glutInit(&argc, argv); //initialize the toolkit
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);  //set display mode
+	glutSetOption(GLUT_MULTISAMPLE, 4); // set msaa samples; default to 4
+	/* Ask GLUT to for a double buffered, full color window that includes a depth buffer */
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);  //set display mode
 	glutInitWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT); //set window size
 	glutInitWindowPosition(0, 0); //set window position on screen
 	glutCreateWindow(argv[0]); //open the screen window
+	glEnable(GL_MULTISAMPLE);
 	
 	/* Initialize glew */
 	int glew_err = glewInit();
