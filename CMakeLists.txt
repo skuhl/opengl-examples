@@ -223,7 +223,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/lib)
 # build sample programs
 add_subdirectory(${PROJECT_SOURCE_DIR}/samples)
 # build fake vrpn server
-add_subdirectory(${PROJECT_SOURCE_DIR}/vrpn-fake)
+add_subdirectory(${PROJECT_SOURCE_DIR}/vrpn)
 # build DGR relay
 add_subdirectory(${PROJECT_SOURCE_DIR}/dgr)
 
