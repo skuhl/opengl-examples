@@ -20,6 +20,26 @@ extern "C" {
 int tdl_prepare(int fd, char** name);
 
 /*
+ * Creates a new empty tdl file. This will setup 
+ *
+ * Proper header: 219  84  68  76  13  10  26  10
+ * ASCII  header: INV   T   D   L  \r  \n \032 \n
+ * We use this combination of invalid ascii and different returns to make
+ * the file not openable with text editors since it is a binary file.
+ *
+ * @param char* path - the path to the file and the file name. 
+ * 				       ".tdl" will be appended to the file name if
+ *					   it is not specified in the path.
+ *		  char* name - the name of the object that the file contains.
+ *					   There is a limit of 32 chars for the object name,
+ *					   anything longer will be truncated.
+ *
+ * @return int - a file descripter pointing to the newly created file.
+ */
+ 
+int tdl_create(char* path, char* name);
+
+/*
  * Returns the next tracked point in the file.
  * If the end of the file is reached, the file cursor will be
  * moved back to the beginning of the file.
@@ -34,23 +54,6 @@ int tdl_prepare(int fd, char** name);
  *
  */
 int tdl_read(int fd, double pos[3], float orient[9]);
-
-/*
- * Creates a new empty tdl file. This will setup 
- *
- * Proper header: 219  84  68  76  13  10  26  10
- * ASCII  header: INV   T   D   L  \r  \n \032 \n
- * We use this combination of invalid ascii and different returns to make
- * the file not openable with text editors since it is a binary file.
- *
- * @param char* path - the path to the file and the file name. 
- * 				       ".tdl" will be appended to the file name if
- *					   it is not specified in the path.
- *		  char* name - the name of the object that the file contains.
- *
- * @return int - a file descripter pointing to the newly created file.
- */
-int tdl_create(char* path, char* name);
 
 /*
  * Writes the position and orientation properly formated to a file.
