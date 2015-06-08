@@ -4,6 +4,9 @@
    This file is based heavily on a VRPN server tutorial written by
    Sebastian Kuntz for VR Geeks (http://www.vrgeeks.org) in August
    2011.
+   
+   Modified by John Thomas to support multiple Tracked objects
+   and reading from log files. (2015) 
 */
 
 #define LINE_UP "\033[F"
@@ -73,7 +76,24 @@ void myTracker::mainloop()
 	vrpn_gettimeofday(&_timestamp, NULL);
 	vrpn_Tracker::timestamp = _timestamp;
 
-
+	double filePos[3];
+	float fileOrient[9];
+	int readVal = -1;
+	if(type == FILE_TRACKER)
+	{
+		readVal = tdl_read(fd, filePos, fileOrient);
+	
+		//Handle the end of the file or an error.
+		if(readVal == 1)
+		{
+			tdl_prepare(fd, NULL);
+		}
+		else if(readVal == -1)
+		{
+			exit(0);
+		}
+	}
+	
 	if(!quiet)
 	{
 		printf(LINE_CLEAR "%s:\n", trackerName);	
@@ -83,13 +103,23 @@ void myTracker::mainloop()
 	double angle = kuhl_milliseconds_start() / 1000.0;
 
 	// Position
-	pos[0] = sin( angle + this->modifier ) ;
-	pos[1] = 1.55f; // approx normal eyeheight
-	pos[2] = 0.0f;
-
+	if(type == DATA_TRACKER)
+	{
+		pos[0] = sin( angle + this->modifier ) ;
+		pos[1] = 1.55f; // approx normal eyeheight
+		pos[2] = 0.0f;
+	}
+	else
+	{
+		pos[0] = filePos[0];
+		pos[1] = filePos[1];
+		pos[2] = filePos[2];
+	}
+	
+	double r[10];
 	if(noise)
 	{
-		double r[10]; // generate some random numbers to simulate imperfect tracking system.
+		// generate some random numbers to simulate imperfect tracking system
 		for(int i=0; i<10; i++)
 		{
 			r[i] = 0;
@@ -103,14 +133,35 @@ void myTracker::mainloop()
 	}
 
 	if(!quiet)printf(LINE_CLEAR "Pos = %f %f %f\n", pos[0], pos[1], pos[2]);
-
+	
 	// Orientation
 	float rotMat[9];
-	// mat3f_rotateEuler_new(rotMat, 0, 0, 0, "XYZ");  // no rotation
-	mat3f_rotateEuler_new(rotMat, 0, angle*10, 0, "XYZ"); // yaw
-	//mat3f_rotateEuler_new(rotMat, r[3]*.05, angle*10 + r[4]*.05, r[5]*.05, "XYZ"); // yaw + noise
+	if(type == DATA_TRACKER)
+	{
+		if(noise)
+		{
+			mat3f_rotateEuler_new(rotMat, r[3]*.05, angle*10 + r[4]*.05, r[5]*.05, "XYZ"); // yaw + noise
+		}
+		else
+		{
+			mat3f_rotateEuler_new(rotMat, 0, angle*10, 0, "XYZ"); // yaw
+		}
+	}
+	else
+	{
+		rotMat[0] = fileOrient[0];
+		rotMat[1] = fileOrient[1];
+		rotMat[2] = fileOrient[2];
+		rotMat[3] = fileOrient[3];
+		rotMat[4] = fileOrient[4];
+		rotMat[5] = fileOrient[5];
+		rotMat[6] = fileOrient[6];
+		rotMat[7] = fileOrient[7];
+		rotMat[8] = fileOrient[8];
+	}
+	
 	if(!quiet)mat3f_print(rotMat);
-
+		
 	// Convert rotation matrix into quaternion
 	float quat[4];
 	quatf_from_mat3f(quat, rotMat);
@@ -253,6 +304,7 @@ int main(int argc, char* argv[])
 		}
 		printf("-------------------\n");
 	}
+
 	
 	if(verbose)printf("Opening VRPN connection\n");
 	vrpn_Connection_IP* m_Connection = new vrpn_Connection_IP();
@@ -275,9 +327,6 @@ int main(int argc, char* argv[])
 		}
 		else
 		{
-			fprintf(stderr, "Sorry, files aren't implemented yet.\n");
-    		exit(1);
-			/*
 			int fd = open(filesv[i], O_RDONLY);
 			if(fd == -1)
 			{
@@ -286,10 +335,11 @@ int main(int argc, char* argv[])
     		}
     		
     		char* name;
-			tdl_prepare(fd, &name);
+			tdl_prepare(fd, &name);	
+			
 			if(verbose)printf("Creating tracker for %s from file %s\n", name, filesv[i]);
 			trackersv[i] = new myTracker(name, flags, m_Connection, fd);
-			*/
+			
 		}
 	}
 
@@ -307,7 +357,6 @@ int main(int argc, char* argv[])
 			if(!quiet)printf(LINE_UP LINE_UP LINE_UP LINE_UP LINE_UP LINE_UP LINE_UP LINE_UP);
 		}
 
-		//serverTracker->mainloop();
 		m_Connection->mainloop();
 		kuhl_limitfps(100);
 	}
