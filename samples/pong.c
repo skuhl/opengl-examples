@@ -261,36 +261,42 @@ void display()
 	 * processes/computers synchronized. */
 	dgr_update();
 	
-	/* Try to connect to VRPN server */
-	vrpn_get(TRACKED_OBJ_A, NULL, vrpnPos, vrpnOrient);
-	paddleA.xpos = vrpnPos[0];
-
-	vrpn_get(TRACKED_OBJ_B, NULL, vrpnPos, vrpnOrient);
-	paddleB.xpos = vrpnPos[0];
-	
-	
-	
-	
-	if(!startedFlag)
+	/* If DGR is enabled, only do this in the master*/
+	if(dgr_is_enabled() == 0 || dgr_is_master())
 	{
-		if(time(NULL)-startTime < 5)
-		{
-			ball.xdir = 0;
-			ball.ydir = 0;
-		}
-		else
-		{
-			srand48(startTime);
-			startedFlag = true;
-			ball.ydir = 1;
-			if(drand48() < .5)
-				ball.ydir = -1;
+		//Grab the tracking data from VRPN
+		vrpn_get(TRACKED_OBJ_A, NULL, vrpnPos, vrpnOrient);
+		paddleA.xpos = vrpnPos[0];
 
-			ball.color[0] = ball.fastColor[0];
-			ball.color[1] = ball.fastColor[1];
-			ball.color[2] = ball.fastColor[2];
+		vrpn_get(TRACKED_OBJ_B, NULL, vrpnPos, vrpnOrient);
+		paddleB.xpos = vrpnPos[0];
+		
+		//Start the ball moving
+		if(!startedFlag)
+		{
+			if(time(NULL)-startTime < 5)
+			{
+				ball.xdir = 0;
+				ball.ydir = 0;
+			}
+			else
+			{
+				srand48(startTime);
+				startedFlag = true;
+				ball.ydir = 1;
+				if(drand48() < .5)
+					ball.ydir = -1;
+
+				ball.color[0] = ball.fastColor[0];
+				ball.color[1] = ball.fastColor[1];
+				ball.color[2] = ball.fastColor[2];
+			}
 		}
 	}
+	
+	dgr_setget("paddleA", &paddleA, sizeof(Paddle));
+	dgr_setget("paddleB", &paddleB, sizeof(Paddle));
+	dgr_setget("ball", &ball, sizeof(Ball));
 
 	glEnable(GL_LIGHTING) ;
 	glEnable(GL_LIGHT0);
@@ -310,6 +316,7 @@ void display()
 	glLoadIdentity();
 	
 	glDisable(GL_LIGHTING);
+	
 	// background quad
 	glBegin(GL_QUADS);
 	glColor3f(.2,.2,.2);
@@ -356,24 +363,26 @@ void display()
 	glScalef(1,screenAspectRatio,1);
 	glutSolidSphere(ball.radius, 100, 100);
 	glPopMatrix();
-
-	ball.xpos+=ball.xdir/ball.speed;
-	ball.ypos+=ball.ydir/ball.speed;
-	ball.color[0] = ball.color[0] - .005;
-	ball.color[1] = ball.color[1] - .005;
-	ball.color[2] = ball.color[2] - .005;
-	if(ball.color[0] < 0) ball.color[0] = 0;
-	if(ball.color[1] < 0) ball.color[1] = 0;
-	if(ball.color[2] < 0) ball.color[2] = 0;
-	bounceBall();
-
+	
+	/* If DGR is enabled, only do this in the master*/
+	if(dgr_is_enabled() == 0 || dgr_is_master())
+	{
+		ball.xpos+=ball.xdir/ball.speed;
+		ball.ypos+=ball.ydir/ball.speed;
+		ball.color[0] = ball.color[0] - .005;
+		ball.color[1] = ball.color[1] - .005;
+		ball.color[2] = ball.color[2] - .005;
+		if(ball.color[0] < 0) ball.color[0] = 0;
+		if(ball.color[1] < 0) ball.color[1] = 0;
+		if(ball.color[2] < 0) ball.color[2] = 0;
+		bounceBall();
+		}
 	
 	glFlush();
 	glutSwapBuffers();
 	glutPostRedisplay(); // call display() repeatedly
 
 }
-
 
 int main( int argc, char* argv[] )
 {	
