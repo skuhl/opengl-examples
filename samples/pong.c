@@ -31,77 +31,111 @@
 #define SCREEN_HEIGHT ((1080.0*4)/8.0)
 const float screenAspectRatio = SCREEN_WIDTH/SCREEN_HEIGHT;
 
-float player1Xpos=0, player2Xpos=0;
-float player1Color1[3] = {87/255.0, 159/255.0, 210/255.0}; // blue
-float player1Color2[3] = {19/255.0,119/255.0,189/255.0};
-float player2Color1[3] = {225/255.0,95/255.0,93/255.0}; // red
-float player2Color2[3] = {220/255.0,50/255.0,47/255.0}; 
 float vrpnPos[3];
 float vrpnOrient[16];
-float ballPos[2] = { 0,0 };
-float ballDir[2] = { 0,1 };
-float ballColor[3] = { 0,0,0 };
-const float ballGreenColor[3] = { 146/255.0, 158/255.0, 64/255.0 };
-
-
-int ballBouncesTillSpeedup = 4; // number of paddle hits before we speed up.
-int ballBounceCount = 0; // counter of paddle hits so far
-float ballSpeed = 70; // speed of ball (larger=slower)
-const float ballSpeedSlowest = 70;
 
 time_t startTime = 0;
 bool startedFlag = false;
 bool hasAlreadyMissed = false; // ball went past paddle.
 
-float paddleWidth1 = .1;
-float paddleWidth2 = .1;
-const float paddleWidthIncrement = .02;
-const float paddleThickness = .04;
-const float player2Ypos = -.9;
-const float player1Ypos = .9; //This should be -player2Ypos but c doesn't like expressions in intializers, so it's now harcoded
-const float ballRadius = 0.02;
+//Make the paddles
+typedef struct
+{
+    float width;
+    float increment;
+    float thickness;
+    float color1[3], color2[3];
+    float xpos, ypos;
+} Paddle;
+
+Paddle paddleA = {.1, .02, .04, {87/255.0, 159/255.0, 210/255.0}, {19/255.0,119/255.0,189/255.0}, 0, .9}; //Create a blue paddle at the top of the screen
+Paddle paddleB = {.1, .02, .04, {225/255.0,95/255.0,93/255.0}, {220/255.0,50/255.0,47/255.0}, 0, -.9}; //Create a red paddle at the bottom of the screen
+
+//Make the ball
+typedef struct
+{
+	float radius;
+	int bounceCount; // counter of paddle hits so far
+	int speedUp; // number of paddle hits before we speed up.
+	float speed; // speed of ball (larger=slower)
+	float minSpeed;
+	float color[3], fastColor[3];
+	float xdir, ydir;
+	float xpos, ypos;
+} Ball;
+
+Ball ball = {.02, 0, 4, 70, 70, {0,0,0}, {146/255.0, 158/255.0, 64/255.0}, 0, 1, 0, 0}; //Create a ball that turns green when it speeds up.
 
 void clampPaddles()
 {
 	// left screen boundary
-	if(player1Xpos < -1+paddleWidth1/2)
-		player1Xpos = -1+paddleWidth1/2;
-	if(player2Xpos < -1+paddleWidth2/2)
-		player2Xpos = -1+paddleWidth2/2;
+	if(paddleA.xpos < -1+paddleA.width/2)
+		paddleA.xpos = -1+paddleA.width/2;
+	if(paddleB.xpos < -1+paddleB.width/2)
+		paddleB.xpos = -1+paddleB.width/2;
 	// right screen boundary
-	if(player1Xpos > 1-paddleWidth1/2)
-		player1Xpos = 1-paddleWidth1/2;
-	if(player2Xpos > 1-paddleWidth2/2)
-		player2Xpos = 1-paddleWidth2/2;
+	if(paddleA.xpos > 1-paddleA.width/2)
+		paddleA.xpos = 1-paddleA.width/2;
+	if(paddleB.xpos > 1-paddleB.width/2)
+		paddleB.xpos = 1-paddleB.width/2;
+}
+
+/* Called by GLUT whenever a key is pressed. */
+void keyboard(unsigned char key, int x, int y)
+{
+	switch(key)
+	{
+		case 'q':
+		case 'Q':
+		case 27: // ASCII code for Escape key
+			exit(0);
+			break;
+		case 'f': // full screen
+			glutFullScreen();
+			break;
+		case 'F': // switch to window from full screen mode
+			glutPositionWindow(0,0);
+			break;
+		case 'a':
+			paddleA.xpos -= .01;
+			paddleB.xpos += .01;
+			clampPaddles();
+			break;
+		case 'd':
+			paddleA.xpos += .01;
+			paddleB.xpos -= .01;
+			clampPaddles();
+			break;
+	}
 }
 
 void bounceBall()
 {
-  if(ballSpeed > ballSpeedSlowest)
+  if(ball.speed > ball.minSpeed)
     {
-      ballSpeed = ballSpeedSlowest;
+      ball.speed = ball.minSpeed;
     }
 
 
 	bool isBounce = false;
-	if(ballPos[0]+ballRadius > 1) // right wall
+	if(ball.xpos+ball.radius > 1) // right wall
 	{
-		ballPos[0] = 1-ballRadius;
-		ballDir[0] = -ballDir[0];
+		ball.xpos = 1-ball.radius;
+		ball.xdir = -ball.xdir;
 		isBounce = true;
 	}
-	if(ballPos[1] > 1+ballRadius*screenAspectRatio*1.1) // top wall
+	if(ball.ypos > 1+ball.radius*screenAspectRatio*1.1) // top wall
 	{
 #if 0
-		ballPos[1] = 1;
-		ballDir[1] = -ballDir[1];
+		ball.ypos = 1;
+		ball.ydir = -ball.ydir;
 		isBounce = true;
 #endif
 
-		ballBounceCount = 0;
-		paddleWidth1 -= paddleWidthIncrement;
-		paddleWidth2 += paddleWidthIncrement;
-		if(paddleWidth1 < 0.001)
+		ball.bounceCount = 0;
+		paddleA.width -= paddleA.increment;
+		paddleB.width += paddleB.increment;
+		if(paddleA.width < 0.001)
 		{
 			printf("player 1 (top) loses\n");
 			exit(1);
@@ -109,32 +143,32 @@ void bounceBall()
 		else // missed paddle and didn't lose
 		{
 			sleep(1);
-			ballPos[0] = 0;
-			ballPos[1] = 0;
-			ballSpeed /= .7;
-			ballBouncesTillSpeedup--;
+			ball.xpos = 0;
+			ball.ypos = 0;
+			ball.speed /= .7;
+			ball.speedUp--;
 			hasAlreadyMissed = false;
 			
 		}
 	}
-	if(ballPos[0]-ballRadius < -1) // left wall
+	if(ball.xpos-ball.radius < -1) // left wall
 	{
-		ballPos[0] = -1+ballRadius;
-		ballDir[0] = -ballDir[0];
+		ball.xpos = -1+ball.radius;
+		ball.xdir = -ball.xdir;
 		isBounce = true;
 	}
 
-	if(ballPos[1] < -1-ballRadius*screenAspectRatio*1.1) // bottom wall
+	if(ball.ypos < -1-ball.radius*screenAspectRatio*1.1) // bottom wall
 	{
 #if 0
-		ballPos[1] = -1;
-		ballDir[1] = -ballDir[1];
+		ball.ypos = -1;
+		ball.ydir = -ball.ydir;
 		isBounce = true;
 #endif
-		ballBounceCount = 0;
-		paddleWidth1 += paddleWidthIncrement;
-		paddleWidth2 -= paddleWidthIncrement;
-		if(paddleWidth2 < 0.001)
+		ball.bounceCount = 0;
+		paddleA.width += paddleA.increment;
+		paddleB.width -= paddleB.increment;
+		if(paddleB.width < 0.001)
 		{
 			printf("player 2 (bottom) loses\n");
 			exit(1);
@@ -142,10 +176,10 @@ void bounceBall()
 		else // missed paddle and didn't lose
 		{
 			sleep(1);
-			ballPos[0] = 0;
-			ballPos[1] = 0;
-			ballSpeed /= .7;
-			ballBouncesTillSpeedup--;
+			ball.xpos = 0;
+			ball.ypos = 0;
+			ball.speed /= .7;
+			ball.speedUp--;
 			hasAlreadyMissed = false;
 		}
 	}
@@ -154,16 +188,16 @@ void bounceBall()
 	if(!hasAlreadyMissed)
 	{
 		// check for player 1 (top) paddle hit
-		if(ballPos[1] > player1Ypos-ballRadius*screenAspectRatio && ballDir[1] > 0)
+		if(ball.ypos > paddleA.ypos-ball.radius*screenAspectRatio && ball.ydir > 0)
 		{
 			// if we hit paddle
-			if(ballPos[0]+ballRadius*.9 > player1Xpos-paddleWidth1/2 &&
-			   ballPos[0]-ballRadius*.9 < player1Xpos+paddleWidth1/2)
+			if(ball.xpos+ball.radius*.9 > paddleA.xpos-paddleA.width/2 &&
+			   ball.xpos-ball.radius*.9 < paddleA.xpos+paddleA.width/2)
 			{
-				ballPos[1] = player1Ypos-ballRadius*screenAspectRatio;
-				ballDir[1] = -ballDir[1];
+				ball.ypos = paddleA.ypos-ball.radius*screenAspectRatio;
+				ball.ydir = -ball.ydir;
 				isBounce = true;
-				ballBounceCount++;
+				ball.bounceCount++;
 			}
 			else // missed paddle
 			{
@@ -172,16 +206,16 @@ void bounceBall()
 		}
 
 		// check for player 2 (bottom) paddle hit
-		if(ballPos[1] < player2Ypos+ballRadius*screenAspectRatio && ballDir[1] < 0)
+		if(ball.ypos < paddleB.ypos+ball.radius*screenAspectRatio && ball.ydir < 0)
 		{
 			// if we hit paddle
-			if(ballPos[0]+ballRadius*.9 > player2Xpos-paddleWidth2/2 &&
-			   ballPos[0]-ballRadius*.9 < player2Xpos+paddleWidth2/2)
+			if(ball.xpos+ball.radius*.9 > paddleB.xpos-paddleB.width/2 &&
+			   ball.xpos-ball.radius*.9 < paddleB.xpos+paddleB.width/2)
 			{
-				ballPos[1] = player2Ypos+ballRadius*screenAspectRatio;
-				ballDir[1] = -ballDir[1];
+				ball.ypos = paddleB.ypos+ball.radius*screenAspectRatio;
+				ball.ydir = -ball.ydir;
 				isBounce = true;
-				ballBounceCount++;
+				ball.bounceCount++;
 			}
 			else
 			{
@@ -191,81 +225,70 @@ void bounceBall()
 	}
 	
 	// speedup the ball periodically
-	if(ballBounceCount == ballBouncesTillSpeedup)
+	if(ball.bounceCount == ball.speedUp)
 	{
-		ballBounceCount = 0;
-		ballSpeed = ballSpeed * .7;
-		ballBouncesTillSpeedup++;
-		ballColor[0] = ballGreenColor[0];
-		ballColor[1] = ballGreenColor[1];
-		ballColor[2] = ballGreenColor[2];
+		ball.bounceCount = 0;
+		ball.speed = ball.speed * .7;
+		ball.speedUp++;
+		ball.color[0] = ball.fastColor[0];
+		ball.color[1] = ball.fastColor[1];
+		ball.color[2] = ball.fastColor[2];
 	}
 
 	// add noise to bounces so they don't bounce perfectly.
 	if(isBounce)
 	{
 		double noise = drand48()/30.0-(1/30.0/2);
-		ballDir[0] += noise;
-		ballDir[1] -= noise;
+		ball.xdir += noise;
+		ball.ydir -= noise;
 
 		const float minYdir = .2;
-		if(fabs(ballDir[1]) < minYdir)
+		if(fabs(ball.ydir) < minYdir)
 		{
 			printf("too little vertical movement\n");
-			float diff = minYdir-ballDir[1];
-			ballDir[0] -= diff;
-			ballDir[1] += diff;
+			float diff = minYdir-ball.ydir;
+			ball.xdir -= diff;
+			ball.ydir += diff;
 		}
 	}
 
 	
 }
 
-void keyboard(unsigned char key, int x, int y)
-{
-	if (key == 27 || key == 'q')  // escape key, exit program
-		exit(0);
-
-	if(key == 'a')
-	{
-		player1Xpos -= .01;
-		player2Xpos += .01;
-		clampPaddles();
-	}
-
-	if(key == 'd')
-	{
-		player1Xpos += .01;
-		player2Xpos -= .01;
-		clampPaddles();
-	}
-}
-
-
 void display()
 {
 	/* If we are using DGR, send or receive data to keep multiple
 	 * processes/computers synchronized. */
-	//dgr_update();
+	dgr_update();
+	
+	/* Try to connect to VRPN server */
+	vrpn_get(TRACKED_OBJ_A, NULL, vrpnPos, vrpnOrient);
+	paddleA.xpos = vrpnPos[0];
 
+	vrpn_get(TRACKED_OBJ_B, NULL, vrpnPos, vrpnOrient);
+	paddleB.xpos = vrpnPos[0];
+	
+	
+	
+	
 	if(!startedFlag)
 	{
 		if(time(NULL)-startTime < 5)
 		{
-			ballDir[0] = 0;
-			ballDir[1] = 0;
+			ball.xdir = 0;
+			ball.ydir = 0;
 		}
 		else
 		{
 			srand48(startTime);
 			startedFlag = true;
-			ballDir[1] = 1;
+			ball.ydir = 1;
 			if(drand48() < .5)
-				ballDir[1] = -1;
+				ball.ydir = -1;
 
-			ballColor[0] = ballGreenColor[0];
-			ballColor[1] = ballGreenColor[1];
-			ballColor[2] = ballGreenColor[2];
+			ball.color[0] = ball.fastColor[0];
+			ball.color[1] = ball.fastColor[1];
+			ball.color[2] = ball.fastColor[2];
 		}
 	}
 
@@ -286,14 +309,6 @@ void display()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	
-	
-	/* Try to connect to VRPN server */
-	vrpn_get(TRACKED_OBJ_A, NULL, vrpnPos, vrpnOrient);
-	player1Xpos = vrpnPos[0];
-
-	vrpn_get(TRACKED_OBJ_B, NULL, vrpnPos, vrpnOrient);
-	player2Xpos = vrpnPos[0];
-	
 	glDisable(GL_LIGHTING);
 	// background quad
 	glBegin(GL_QUADS);
@@ -307,48 +322,49 @@ void display()
 
 	// top player (player 1) paddle
 	glPushMatrix();
-	glTranslatef(player1Xpos,0,0);
+	glTranslatef(paddleA.xpos,0,0);
 	glBegin(GL_QUADS);
-	glColor3fv(player1Color1);
-	glVertex3f( paddleWidth1/2, player1Ypos+paddleThickness, 0); // top left
-	glVertex3f(-paddleWidth1/2, player1Ypos+paddleThickness, 0);
-	glColor3fv(player1Color2);
-	glVertex3f(-paddleWidth1/2, player1Ypos, 0);
-	glVertex3f( paddleWidth1/2, player1Ypos, 0);
+	glColor3fv(paddleA.color1);
+	glVertex3f( paddleA.width/2, paddleA.ypos+paddleA.thickness, 0); // top left
+	glVertex3f(-paddleA.width/2, paddleA.ypos+paddleA.thickness, 0);
+	glColor3fv(paddleA.color2);
+	glVertex3f(-paddleA.width/2, paddleA.ypos, 0);
+	glVertex3f( paddleA.width/2, paddleA.ypos, 0);
 	glEnd();
 	glPopMatrix();
 
 	// bottom player (player 2) paddle
 	glPushMatrix();
-	glTranslatef(player2Xpos,0,0);
+	glTranslatef(paddleB.xpos,0,0);
 	glBegin(GL_QUADS);
-	glColor3fv(player2Color1);
-	glVertex3f( paddleWidth2/2, player2Ypos, 0); // top left
-	glVertex3f(-paddleWidth2/2, player2Ypos, 0);
-	glColor3fv(player2Color2);
-	glVertex3f(-paddleWidth2/2, player2Ypos-paddleThickness, 0);
-	glVertex3f( paddleWidth2/2, player2Ypos-paddleThickness, 0);
+	glColor3fv(paddleB.color1);
+	glVertex3f( paddleB.width/2, paddleB.ypos, 0); // top left
+	glVertex3f(-paddleB.width/2, paddleB.ypos, 0);
+	glColor3fv(paddleB.color2);
+	glVertex3f(-paddleB.width/2, paddleB.ypos-paddleB.thickness, 0);
+	glVertex3f( paddleB.width/2, paddleB.ypos-paddleB.thickness, 0);
 	glEnd();
 	glPopMatrix();
 
 	// ball
-	glColor3fv(ballColor);
+	glColor3fv(ball.color);
 	glEnable(GL_LIGHTING);
 	glPushMatrix();
-	glTranslatef(ballPos[0], ballPos[1],0);
+	glTranslatef(ball.xpos, ball.ypos,0);
+	
 	// make ball round even though screen is stretched horizontally
 	glScalef(1,screenAspectRatio,1);
-	glutSolidSphere(ballRadius, 100, 100);
+	glutSolidSphere(ball.radius, 100, 100);
 	glPopMatrix();
 
-	ballPos[0]+=ballDir[0]/ballSpeed;
-	ballPos[1]+=ballDir[1]/ballSpeed;
-	ballColor[0] = ballColor[0] - .005;
-	ballColor[1] = ballColor[1] - .005;
-	ballColor[2] = ballColor[2] - .005;
-	if(ballColor[0] < 0) ballColor[0] = 0;
-	if(ballColor[1] < 0) ballColor[1] = 0;
-	if(ballColor[2] < 0) ballColor[2] = 0;
+	ball.xpos+=ball.xdir/ball.speed;
+	ball.ypos+=ball.ydir/ball.speed;
+	ball.color[0] = ball.color[0] - .005;
+	ball.color[1] = ball.color[1] - .005;
+	ball.color[2] = ball.color[2] - .005;
+	if(ball.color[0] < 0) ball.color[0] = 0;
+	if(ball.color[1] < 0) ball.color[1] = 0;
+	if(ball.color[2] < 0) ball.color[2] = 0;
 	bounceBall();
 
 	
@@ -378,6 +394,10 @@ int main( int argc, char* argv[] )
 	/* Initialize call backs */
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
+	
+	/* Initialize DGR */
+	dgr_init();     /* Initialize DGR based on environment variables. */
+	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
 	
 	glutMainLoop();
 }
