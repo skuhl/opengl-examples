@@ -20,6 +20,8 @@ int main(int argc, char* argv[])
 	if(argc < 3)
 	{
 		printf("Usage\n\trecorder <file name> <object name>\n");
+		printf("\n");
+		printf("This program reads data from a VRPN server and saves it to a file that can be played back later.\n");
 		exit(1);
 	}
 
@@ -27,7 +29,8 @@ int main(int argc, char* argv[])
 	int fd = tdl_create(argv[1], argv[2]);
 	if(fd == -1)
 	{
-		exit(1);
+		printf("Failed to create file: %s\n", argv[1]);
+		exit(EXIT_FAILURE);
 	}
 	
 	//Buffers for the data.

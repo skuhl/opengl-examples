@@ -3,7 +3,6 @@
 /libOVR*.so*
 
 # Generated Binaries
-/fake
 /dgr-relay
 /ogl2-slideshow
 /ogl2-texture
@@ -23,3 +22,7 @@
 /ik
 /panorama
 /pong
+
+# Binaries created in vrpn folder
+/fake-server
+/recorder
