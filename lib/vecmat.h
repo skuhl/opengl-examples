@@ -403,12 +403,13 @@ static inline double vec4d_norm(const double A[4])
  * @param result Resulting vector
  * @param v Input vector
  * @param scalar Value to divide by.
- * @param n Number of components in vector. */
+ * @param n Number of components in vector. Can't be larger than 16.
+ */
 static inline void vecNf_scalarDiv_new(float result[], const float v[], const float scalar, const int n)
 {
 	/* If result and v point to the same place, we need a copy of v
 	 * that we can print if we divided by zero to aid in debugging. */
-	float vOrig[n];
+	float vOrig[16];
 	vecNf_copy(vOrig, v, n);
 	for(int i=0; i<n; i++)
 		result[i] = v[i]/scalar;
@@ -422,12 +423,12 @@ static inline void vecNf_scalarDiv_new(float result[], const float v[], const fl
  * @param result Resulting vector
  * @param v Input vector
  * @param scalar Value to divide by.
- * @param n Number of components in vector. */
+ * @param n Number of components in vector. Can't be larger than 16. */
 static inline void vecNd_scalarDiv_new(double result[], const double v[], const double scalar, const int n)
 {
 	/* If result and v point to the same place, we need a copy of v
 	 * that we can print if we divided by zero to aid in debugging. */
-	double vOrig[n];
+	double vOrig[16];
 	vecNd_copy(vOrig, v, n);
 	for(int i=0; i<n; i++)
 		result[i] = v[i]/scalar;
@@ -1060,13 +1061,19 @@ static inline void mat4f_copy(float dest[16], const float src[16])
 static inline void mat4d_copy(double dest[16], const double src[16])
 { matNd_copy(dest, src, 4); }
 
-/* Multiplies two matrices together. result = matrixA * matrixB  */
+/** Multiplies two matrices together.
+
+    @param result The resulting n x n matrix containing matA * matB.
+    @param matA The left operand. An n x n matrix.
+    @param matB The right operand. An n x n matrix.
+    @param n The size of the matrices. Can't be larger than 4.
+ */
 static inline void matNf_mult_matNf_new(float  result[  ], const float  matA[  ], const float  matB[  ], const int n)
 {
 	/* Use a temporary matrix so callers can do:
 	   matrixA = matrixA * matrixB */
-	float tempMatrix[n*n];
-	float vecA[n], vecB[n];
+	float tempMatrix[4*4]; // avoid use of VLAs
+	float vecA[4], vecB[4];
 	for(int i=0; i<n; i++)
 	{
 		/* Get the ith row from matrix a */
@@ -1081,12 +1088,19 @@ static inline void matNf_mult_matNf_new(float  result[  ], const float  matA[  ]
 	}
 	matNf_copy(result, tempMatrix, n);
 }
+/** Multiplies two matrices together.
+
+    @param result The resulting n x n matrix containing matA * matB.
+    @param matA The left operand. An n x n matrix.
+    @param matB The right operand. An n x n matrix.
+    @param n The size of the matrices. Can't be larger than 4.
+ */
 static inline void matNd_mult_matNd_new(double result[  ], const double matA[ ], const double matB[], const int n)
 {
 	/* Use a temporary matrix so callers can do:
 	   matrixA = matrixA * matrixB */
-	double tempMatrix[n*n];
-	double vecA[n], vecB[n];
+	double tempMatrix[4*4]; // avoid use of VLAs
+	double vecA[4], vecB[4];
 	for(int i=0; i<n; i++)
 	{
 		/* Get the ith row from matrix a */
