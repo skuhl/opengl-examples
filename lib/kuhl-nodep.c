@@ -418,6 +418,7 @@ int kuhl_randomInt(int min, int max)
 void kuhl_shuffle(void *array, int n, int size)
 {
 	char *arr = (char*) array; // Use a char array which we know uses 1 byte pointer arithmetic
+	char *tmp = malloc(size); // avoid use of VLA
 
 	// https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
 	for(int i=n-1; i>=1; i--)
@@ -425,11 +426,12 @@ void kuhl_shuffle(void *array, int n, int size)
 		int j = kuhl_randomInt(0, i); // index to swap
 
 		// Swap the values
-		char tmp[size];
 		memcpy(tmp,        arr+j*size, size);
 		memcpy(arr+j*size, arr+i*size, size);
 		memcpy(arr+i*size, tmp,        size);
 	}
+
+	free(tmp);
 }
 
 /** Removes any whitespace characters at the beginning or end of the string in place.
