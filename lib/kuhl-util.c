@@ -1628,7 +1628,7 @@ static float kuhl_read_texture_file_im(const char *filename, GLuint *texName, GL
 	free(newFilename);
 	if(image == NULL)
 	{
-		msg(ERROR, "Unable to read '%s'.\n", __func__, filename);
+		msg(ERROR, "Unable to read '%s'.\n", filename);
 		return -1;
 	}
 
