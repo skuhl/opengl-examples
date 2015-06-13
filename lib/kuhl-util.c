@@ -1753,7 +1753,7 @@ static void kuhl_screenshot_im(const char *outputImageFilename)
 	int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
 
 	// Allocate space for data from window
-	char data[windowWidth*windowHeight*3];
+	char *data = kuhl_malloc(windowWidth * windowHeight * 3);
 	// Read pixels from the window
 	glReadPixels(0,0,windowWidth,windowHeight,
 	             GL_RGB,GL_UNSIGNED_BYTE, data);
@@ -1772,6 +1772,7 @@ static void kuhl_screenshot_im(const char *outputImageFilename)
 	// Write image to disk
 	imageout(&info_out, data);
 	free(info_out.filename); // cleanup
+	free(data);
 }
 #else // KUHL_UTIL_USE_IMAGEMAGICK
 
@@ -1783,7 +1784,7 @@ static void kuhl_screenshot_stb(const char *outputImageFilename)
 	int comp = 3; // 3 = RGB, 4 = RGBA
 	int stride_in_bytes = windowWidth*comp*sizeof(char);
 	// Allocate space for data from window
-	unsigned char data[stride_in_bytes*windowHeight];
+	unsigned char *data = kuhl_malloc(stride_in_bytes*windowHeight);
 	// Read pixels from the window
 	glReadPixels(0,0,windowWidth,windowHeight,
 	             GL_RGB,GL_UNSIGNED_BYTE, data);
@@ -1799,6 +1800,7 @@ static void kuhl_screenshot_stb(const char *outputImageFilename)
 		ok = stbi_write_tga(s, windowWidth, windowHeight, comp, data);
 	else if(strlen(s) > 4 && !strcmp(s + strlen(s) - 4, ".bmp"))
 		ok = stbi_write_bmp(s, windowWidth, windowHeight, comp, data);
+	free(data);
 	
 	if (!ok)
 	{
