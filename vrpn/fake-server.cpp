@@ -316,7 +316,12 @@ int main(int argc, char* argv[])
 	int trackersc = trackerst ? filesc : objNamesc;
 	
 	//Make an array of tracker objects that is the size of the number of trackers we need.
-	myTracker* trackersv[trackersc];
+	myTracker* trackersv[128];
+	if(trackersc > 128)
+	{
+		fprintf(stderr, "Too many tracker objects specified.\n");
+		exit(EXIT_FAILURE);
+	}
 	
 	bool flags[4] = {verbose, quiet, noise, trackerst};
 	for(int i = 0; i < trackersc; i++)
