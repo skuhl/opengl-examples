@@ -99,12 +99,13 @@ static inline void vec4d_copy(double result[4], const double a[4])
 */
 static inline void vecNf_print(const float v[ ], const int n)
 {
-	// use temporary variable since arguments to printf are not const.
-	float tmp[n]; 
-	vecNf_copy(tmp, v, n);
 	printf("vec%df(",n);
 	for(int i=0; i<n; i++)
-		printf("%10.3f ",tmp[i]);
+	{
+		// Use a temporary variable since printf() parameters are not const.
+		float tmp = v[i];
+		printf("%10.3f ",tmp);
+	}
 	printf(")\n");
 }
 /** Print an N-component double vector to stdout (all on one line).
@@ -113,12 +114,13 @@ static inline void vecNf_print(const float v[ ], const int n)
 */
 static inline void vecNd_print(const double v[ ], const int n)
 {
-	// use temporary variable since arguments to printf are not const.
-	double tmp[n];
-	vecNd_copy(tmp, v, n);
 	printf("vec%dd(",n);
 	for(int i=0; i<n; i++)
-		printf("%10.3f ",tmp[i]);
+	{
+		// Use a temporary variable since printf() parameters are not const.
+		double tmp = v[i];
+		printf("%10.3f ",tmp);
+	}
 	printf(")\n");
 }
 
@@ -1110,11 +1112,19 @@ static inline void mat4d_mult_mat4d_new(double result[16], const double matA[16]
 
 
 
-/* multiply a column vector by a matrix: result=m*v (n=dimension,
-   typically 3 or 4) Works even if result and v point to the same memory location */
+/** Multiply a column vector by a matrix (i.e., matrix *
+    vector). Works even if the result parameter and the vector
+    parameter point to the same location.
+
+    @param result The resulting vector.
+    @param m The n x n matrix to multiply the vector against.
+    @param v The n component vector to multiply against the matrix.
+    @param n The size of the matrix and vector (usually 3 or 4). Can't
+    be larger than 4.
+*/
 static inline void matNf_mult_vecNf_new(float result[], const float m[], const float v[], const int n)
 {
-	float tmp[n];
+	float tmp[4*4]; // avoid using a variable length array
 	for(int i=0; i<n; i++)
 	{
 		tmp[i] = 0;
@@ -1123,9 +1133,20 @@ static inline void matNf_mult_vecNf_new(float result[], const float m[], const f
 	}
 	vecNf_copy(result, tmp, n);
 }
+
+/** Multiply a column vector by a matrix (i.e., matrix *
+    vector). Works even if the result parameter and the vector
+    parameter point to the same location.
+
+    @param result The resulting vector.
+    @param m The n x n matrix to multiply the vector against.
+    @param v The n component vector to multiply against the matrix.
+    @param n The size of the matrix and vector (usually 3 or 4). Can't
+    be larger than 4.
+*/
 static inline void matNd_mult_vecNd_new(double result[], const double m[], const double v[], const int n)
 {
-	double tmp[n];
+	double tmp[4*4]; // avoid using a variable length array
 	for(int i=0; i<n; i++)
 	{
 		tmp[i] = 0;
