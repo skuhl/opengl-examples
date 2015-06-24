@@ -32,7 +32,7 @@
 const float screenAspectRatio = SCREEN_WIDTH/SCREEN_HEIGHT;
 
 float vrpnPos[3];
-float vrpnOrient[16];
+float vrpnOrient[9];
 
 time_t startTime = 0;
 bool startedFlag = false;
@@ -311,7 +311,8 @@ void display()
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(-1,1,-1,1,-1,1);
+	
+	glOrtho(-1, 1, -1, 1, -1, 1);
 	  
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
