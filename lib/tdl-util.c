@@ -92,13 +92,13 @@ int tdl_prepare(int fd, char** name)
  *
  * @return int - a file descripter pointing to the newly created file.
  */
-int tdl_create(char* path, char* name)
+int tdl_create(const char* path, const char* name)
 {
 	int pathLen = strlen(path);
 	int nameLen = strlen(name);
 	nameLen = nameLen > 32 ? 32 : nameLen;
-	
-	char buff[pathLen+4];
+
+	char buff[1024];
 	//Check the last 4 chars in the path to see if they are .tdl.
 	if(pathLen < 4 || strncmp(path + pathLen - 4, ".tdl", 4) != 0)
 	{

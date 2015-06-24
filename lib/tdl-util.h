@@ -36,8 +36,8 @@ int tdl_prepare(int fd, char** name);
  *
  * @return int - a file descripter pointing to the newly created file.
  */
- 
-int tdl_create(char* path, char* name);
+int tdl_create(const char* path, const char* name);
+
 
 /*
  * Returns the next tracked point in the file.

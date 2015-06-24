@@ -276,7 +276,7 @@ static int dgr_get(const char *name, void* buffer, int bufferSize)
  * @param buffer A pointer to the variable.
  * @param size The number of bytes used by the variable.
  */
-static void dgr_set(const char *name, void *buffer, int size)
+static void dgr_set(const char *name, const void *buffer, int size)
 {
 	if(dgr_disabled)
 		return;
@@ -401,9 +401,9 @@ char* dgr_serialize(int *size)
  * @param size Length of the serialized data.
  * @param serialized The serialized data as an array of bytes.
  **/
-static void dgr_unserialize(int size, char *serialized)
+static void dgr_unserialize(int size, const char *serialized)
 {
-	char *ptr = serialized;
+	const char *ptr = serialized;
 
 	while(ptr < serialized + size)
 	{
@@ -422,13 +422,9 @@ static void dgr_unserialize(int size, char *serialized)
 		memcpy(&size, ptr, sizeof(int));
 		ptr += sizeof(int);
 
-		char data[size];
-		memcpy(data, ptr, size);
+		dgr_set(name, ptr, size);
 		ptr += size;
-
-		dgr_set(name, data, size);
 	}
-
 }
 
 
