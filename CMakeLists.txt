@@ -14,8 +14,8 @@ project("opengl-examples" C CXX)  # This project uses C and C++
 # -march=native will cause the compiler to use features that are available on the current CPU (SSE, etc)---but will make the resulting executable less portable.
 #   -march=native is removed because it doesn't work on IVS as of May 2015
 # -Wshadow should probably be added eventually
-# -Wvla is included because Visual Studio does not support VLAs, so we avoid using them. They are optional in C11 even though they were part of C99.
-set(C_CXX_FLAGS "-Wall -Wextra -g -O2  -Wvla -Wformat -Wno-unused-parameter -Wno-unused-function")  # Compiler options used by both the C++ and C compiler
+# -Wvla should be included because Visual Studio does not support VLAs, so we avoid using them. They are optional in C11 even though they were part of C99. However, older versions of GCC do not support the flag.
+set(C_CXX_FLAGS "-Wall -Wextra -g -O2  -Wformat -Wno-unused-parameter -Wno-unused-function")  # Compiler options used by both the C++ and C compiler
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_CXX_FLAGS} -std=gnu99")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${C_CXX_FLAGS}")
