@@ -71,62 +71,85 @@ void projmat_init()
 {
 	projmat_init_window();
 
+	int foundFrustum = 0;
+	int foundMasterFrustum = 0;
+	int foundFov = 0;
+
 	const char* frustumString = getenv("PROJMAT_FRUSTUM");
 	const char* masterFrustumString = getenv("PROJMAT_MASTER_FRUSTUM");
-
+	
 	if(frustumString != NULL)
 	{
-		projmat_mode = 1;
 		if(sscanf(frustumString, "%f %f %f %f %f %f",
 		          &(projmat_frustum[0]), &(projmat_frustum[1]), &(projmat_frustum[2]),
 		          &(projmat_frustum[3]), &(projmat_frustum[4]), &(projmat_frustum[5])) != 6)
-		{
 			msg(ERROR, "Unable to parse PROJMAT_FRUSTUM environment variable.\n");
-			projmat_mode = -1;
-		}
-
-		/* Copy this frustum over to the master view frustum in case a
-		 * master view frustum isn't set */
-		for(int i=0; i<6; i++)
-			projmat_master_frustum[i] = projmat_frustum[i];
-		
-		if(masterFrustumString == NULL ||
-		   sscanf(masterFrustumString, "%f %f %f %f %f %f",
-		          &(projmat_master_frustum[0]), &(projmat_master_frustum[1]), &(projmat_master_frustum[2]),
-		          &(projmat_master_frustum[3]), &(projmat_master_frustum[4]), &(projmat_master_frustum[5])) != 6)
-		{
-			/* Copy this frustum over to the master view frustum in case a
-			 * master view frustum isn't set */
-			for(int i=0; i<6; i++)
-				projmat_master_frustum[i] = projmat_frustum[i];
-
-			msg(ERROR, "Error parsing master frustum.\n");
-		}
-
+		else
+			foundFrustum = 1;
 	}
 
+	if(masterFrustumString != NULL)
+	{
+		if(sscanf(masterFrustumString, "%f %f %f %f %f %f",
+		          &(projmat_master_frustum[0]), &(projmat_master_frustum[1]), &(projmat_master_frustum[2]),
+		          &(projmat_master_frustum[3]), &(projmat_master_frustum[4]), &(projmat_master_frustum[5])) != 6)
+			msg(ERROR, "Unable to parse PROJMAT_MASTER_FRUSTUM environment variable.\n");
+		else
+			foundMasterFrustum = 1;
+	}
+	
 	const char* vfovString = getenv("PROJMAT_VFOV");
 	if(vfovString != NULL)
 	{
-		projmat_mode = 0;
 		if(sscanf(vfovString, "%f", &projmat_vfov) != 1)
-		{
 			msg(ERROR, "Unable to parse PROJMAT_VFOV environment variable.\n");
-			projmat_vfov = -1;
-		}
+		else
+			foundFov = 1;
 	}
 
-	if(projmat_mode == -1)
-		msg(INFO, "Using default perspective projection.\n");
-	else if(projmat_mode == 0)
+	if(foundFov == 1)
+	{
+		projmat_mode = 0;
 		msg(INFO, "Using a simple perspective projection (vfov=%f degrees).\n", projmat_vfov);
-	else if(projmat_mode == 1)
-		msg(INFO, "Using a view frustum.\n");
+	}
+	else if(foundMasterFrustum == 1 && foundFrustum == 1)
+	{
+		projmat_mode = 1;
+		msg(INFO, "Using custom view frustum.\n");
+	}
+	else if(foundMasterFrustum == 0 && foundFrustum == 1)
+	{
+		projmat_mode = 1;
+		// If running on a multi-computer cluster, environment
+		// variables must specify the overall frustum and the
+		// individual screen frustum.
+		msg(WARNING, "PROJMAT_FRUSTUM was defined but PROJMAT_MASTER_FRUSTUM was not.");
+		msg(WARNING, "Assuming that the two frustums are the same (should work if running on a single machine).");
+		for(int i=0; i<6; i++)
+			projmat_master_frustum[i] = projmat_frustum[i];
+	}
+	else if(foundMasterFrustum == 1 && foundFrustum == 0)
+	{
+		projmat_mode = 1;
+		// If running on a multi-computer cluster, environment
+		// variables must specify the overall frustum and the
+		// individual screen frustum.
+		msg(WARNING, "PROJMAT_MASTER_FRUSTUM was defined but PROJMAT_FRUSTUM was not.");
+		msg(WARNING, "Assuming that the two frustums are the same (should work if running on a single machine).");
+		for(int i=0; i<6; i++)
+			projmat_frustum[i] = projmat_master_frustum[i];
+	}
 	else
 	{
-		msg(FATAL, "projmat is confused.\n");
-		exit(EXIT_FAILURE);
+		projmat_mode = -1;
+		msg(INFO, "Using default perspective projection.\n");
 	}
+
+	msg(INFO, "View frustum: left=%f right=%f bot=%f top=%f near=%f far=%f\n",
+	    projmat_frustum[0], projmat_frustum[1], projmat_frustum[2],
+	    projmat_frustum[3], projmat_frustum[4], projmat_frustum[5]);
+	if(projmat_frustum[4] < 0 || projmat_frustum[5] < 0)
+		msg(WARNING, "The near and far values in the frustum should be positive (i.e., this matches the behavior of the old OpenGL glFrustum() function call.)");
 
 }
 
