@@ -262,9 +262,9 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 		/* Print additional details to console for fatal errors */
 		if(type == FATAL)
 		{
-			fprintf(stream, "%s %s%s\n", prepend, typestr, msgbuf);
+			fprintf(stream, "%s %s%s\n", typestr, prepend, msgbuf);
 			fprintf(stream, "%s %sOccurred at %s:%d in the function %s()\n",
-			        typestr, shortFileName, prepend, lineNum, funcName);
+			        typestr, prepend, shortFileName, lineNum, funcName);
 		}
 		else
 			fprintf(stream, "%s %s%s\n", typestr, prepend, msgbuf);
