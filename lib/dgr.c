@@ -499,7 +499,7 @@ static void dgr_receive(int timeout)
 		int seconds = 15;
 		if(time(NULL) - dgr_time_lastreceive >= seconds)
 		{
-			msg(FATAL, "DGR Slave: dgr_receive() hasn't received packets within %d seconds. We did receive some one or more packets earlier. Did the master or relay die? Exiting...\n", seconds);
+			msg(FATAL, "DGR Slave: dgr_receive() hasn't received packets within %d seconds. We did receive one or more packets earlier. Did the master or relay die? Exiting...\n", seconds);
 			exit(EXIT_FAILURE);
 		}
 	}
