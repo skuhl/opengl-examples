@@ -5,12 +5,12 @@
 #include <stdbool.h>
 #include <time.h>
 #include <GL/glew.h>
+#include <GL/gl.h>
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
 #include <GL/freeglut.h>
 #endif
-
 #include "kuhl-util.h"
 #include "vecmat.h"
 #include "dgr.h"
@@ -54,12 +54,17 @@ typedef struct
 	int speedUp; // number of paddle hits before we speed up.
 	float speed; // speed of ball (larger=faster)
 	float minSpeed;
-	float color[3], fastColor[3];
+	float color[3], baseColor[3], fastColor[3];
 	float xdir, ydir;
 	float xpos, ypos;
 } Ball;
 
-Ball ball = {.02, 0, 4, .013, .013, {0,.5,0}, {146/255.0, 158/255.0, 64/255.0}, 0, 1, 0, 0}; //Create a ball that turns green when it speeds up.
+Ball ball = {.02, 0, 4, .013, .013, {0,0,0}, {150/255.0,150/255.0,150/255.0}, {50/255.0, 210/255.0, 50/255.0}, 0, 1, 0, 0}; //Create a ball that turns green when it speeds up.
+
+GLuint texIdEarth;
+GLuint texIdClouds;
+float ticks = 200.0f;
+float cloudTicks = 200.0f;
 
 void clampPaddles()
 {
@@ -281,19 +286,22 @@ void display()
 	if(dgr_is_enabled() == 0 || dgr_is_master())
 	{
 		//Grab the tracking data from VRPN
-		vrpn_get(TRACKED_OBJ_A, NULL, vrpnPos, vrpnOrient);
+		/*vrpn_get(TRACKED_OBJ_A, NULL, vrpnPos, vrpnOrient);
 		paddleA.xpos = vrpnPos[0];
 
 		vrpn_get(TRACKED_OBJ_B, NULL, vrpnPos, vrpnOrient);
-		paddleB.xpos = vrpnPos[0];
+		paddleB.xpos = vrpnPos[0];*/
 		
 		//Start the ball moving
 		if(!startedFlag)
 		{
-			if(time(NULL)-startTime < 5)
+			if(true)//time(NULL)-startTime < 5)
 			{
 				ball.xdir = 0;
 				ball.ydir = 0;
+								ball.color[0] = ball.fastColor[0];
+				ball.color[1] = ball.fastColor[1];
+				ball.color[2] = ball.fastColor[2];
 			}
 			else
 			{
@@ -315,12 +323,19 @@ void display()
 	dgr_setget("paddleB", &paddleB, sizeof(Paddle));
 	dgr_setget("ball", &ball, sizeof(Ball));
 
-	glEnable(GL_LIGHTING) ;
+	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	glEnable(GL_COLOR_MATERIAL);
 	glEnable(GL_NORMALIZE);
 	glEnable(GL_DEPTH_TEST);
-	
+	glShadeModel(GL_SMOOTH);
+		
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_COLOR, GL_DST_COLOR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
 	glClearColor(0,0,0,0);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glColor3f(1,1,1);
@@ -331,39 +346,85 @@ void display()
 	float frustum[6];
 	projmat_get_frustum(frustum, -1, -1);
 	glOrtho(frustum[0], frustum[1], frustum[2], frustum[3], frustum[4], frustum[5]);
-//	glOrtho(-1, 1, -1, 1, -1, 1);
 	  
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	
-	glDisable(GL_LIGHTING);
 
 	// Pick a depth that is between the near and far planes.
 	float depth = -(frustum[4] + frustum[5])/2.0;
 
-	// background quad
+	// Move the light source
+	GLfloat position[] = { 1.0f, 1.0f, depth+1.5f, 1.0f };
+	glLightfv(GL_LIGHT0, GL_POSITION, position);
+	
+	GLfloat ambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
+	
+	// background
 	float masterfrust[6];
 	projmat_get_master_frustum(masterfrust);
 	       
 	glBegin(GL_QUADS);
-	glColor3f(.2,.2,.2);
-	glVertex3f(masterfrust[1], masterfrust[3], depth-.1);
-	glVertex3f(masterfrust[0], masterfrust[3], depth-.1);
-	glColor3f(1,1,1);
-	glVertex3f(masterfrust[0], masterfrust[2], depth-.1);
-	glVertex3f(masterfrust[1], masterfrust[2], depth-.1);
+	glColor3f(0.0,0.0,0.0);
+	glVertex3f(masterfrust[1], masterfrust[3], depth-3.0);
+	glVertex3f(masterfrust[0], masterfrust[3], depth-3.0);
+	glVertex3f(masterfrust[0], masterfrust[2], depth-3.0);
+	glVertex3f(masterfrust[1], masterfrust[2], depth-3.0);
 	glEnd();
-
+	
+	//Draw the earth
+	GLUquadricObj *earth = gluNewQuadric();
+    gluQuadricDrawStyle(earth, GLU_FILL);
+    gluQuadricTexture(earth, GL_TRUE);
+    gluQuadricNormals(earth, GLU_SMOOTH);
+   
+   	glPushMatrix();
+   	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glBindTexture(GL_TEXTURE_2D, texIdEarth);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+	glTranslatef(-0.08, -0.32, depth-3.0);
+	glRotatef(25.0f, 0.0f, 0.0f, 1.0f);
+	glRotatef(-90, 1.0f, 0.0f, 0.0f);
+	glRotatef(ticks, 0.0f, 0.0f, 1.0f);
+	ticks += .005;
+	if(ticks > 360.0f)ticks = 0.0f;
+	gluSphere(earth, 0.3, 200, 200);
+	glPopMatrix();
+    
+    //Draw the clouds
+	GLUquadricObj *clouds = gluNewQuadric();
+    gluQuadricDrawStyle(clouds, GLU_FILL);
+    gluQuadricTexture(clouds, GL_TRUE);
+    gluQuadricNormals(clouds, GLU_SMOOTH);
+   
+   	glPushMatrix();
+    glBindTexture(GL_TEXTURE_2D, texIdClouds);
+    glLoadIdentity();
+	glTranslatef(-0.08, -0.32, depth-3.0);
+	glRotatef(25.0f, 0.0f, 0.0f, 1.0f);
+	glRotatef(-90, 1.0f, 0.0f, 0.0f);
+	glRotatef(cloudTicks, 1.0f, 0.0f, 1.0f);
+	cloudTicks += .005;
+	if(cloudTicks > 360.0f)cloudTicks = 0.0f;
+	gluSphere(clouds, 0.301f, 200, 200);
+	glPopMatrix();
+    
+    // Reset somethings for the rest of the scene
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_BLEND);
+		
 	// top player (player 1) paddle
+	glDisable(GL_LIGHTING);
 	glPushMatrix();
 	glTranslatef(paddleA.xpos,0,0);
 	glBegin(GL_QUADS);
 	glColor3fv(paddleA.color1);
-	glVertex3f( paddleA.width/2, paddleA.ypos+paddleA.thickness, depth); // top left
-	glVertex3f(-paddleA.width/2, paddleA.ypos+paddleA.thickness, depth);
+	glVertex3f( paddleA.width/2, paddleA.ypos+paddleA.thickness, depth+1.0f); // top left
+	glVertex3f(-paddleA.width/2, paddleA.ypos+paddleA.thickness, depth+1.0f);
 	glColor3fv(paddleA.color2);
-	glVertex3f(-paddleA.width/2, paddleA.ypos, depth);
-	glVertex3f( paddleA.width/2, paddleA.ypos, depth);
+	glVertex3f(-paddleA.width/2, paddleA.ypos, depth+1.0f);
+	glVertex3f( paddleA.width/2, paddleA.ypos, depth+1.0f);
 	glEnd();
 	glPopMatrix();
 
@@ -381,12 +442,10 @@ void display()
 	glPopMatrix();
 
 	// ball
-	glColor3fv(ball.color);
 	glEnable(GL_LIGHTING);
+    glColor3fv(ball.color);
 	glPushMatrix();
 	glTranslatef(ball.xpos, ball.ypos, depth);
-	
-	// make ball round even though screen is stretched horizontally
 	glutSolidSphere(ball.radius, 100, 100);
 	glPopMatrix();
 	
@@ -398,9 +457,9 @@ void display()
 		ball.color[0] = ball.color[0] - .005;
 		ball.color[1] = ball.color[1] - .005;
 		ball.color[2] = ball.color[2] - .005;
-		if(ball.color[0] < 0) ball.color[0] = 0;
-		if(ball.color[1] < 0) ball.color[1] = 0;
-		if(ball.color[2] < 0) ball.color[2] = 0;
+		if(ball.color[0] < ball.baseColor[0]) ball.color[0] = ball.baseColor[0];
+		if(ball.color[1] < ball.baseColor[1]) ball.color[1] = ball.baseColor[1];
+		if(ball.color[2] < ball.baseColor[2]) ball.color[2] = ball.baseColor[2];
 		bounceBall();
 	}
 	
@@ -416,6 +475,7 @@ int main( int argc, char* argv[] )
 	
 	/* Initialize glut */
 	glutInit(&argc, argv); //initialize the toolkit
+	glEnable(GL_POINT_SMOOTH);
 	glutSetOption(GLUT_MULTISAMPLE, 4); // set msaa samples; default to 4
 	/* Ask GLUT to for a double buffered, full color window that includes a depth buffer */
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);  //set display mode
@@ -459,6 +519,9 @@ int main( int argc, char* argv[] )
 	msg(INFO, "Initial paddle B position %f %f\n", paddleB.xpos, paddleB.ypos);
 
 	ball.radius = (frustum[1]-frustum[0])/50.0;
+	
+	kuhl_read_texture_file("../images/earth.png", &texIdEarth);
+	kuhl_read_texture_file("../images/clouds.png", &texIdClouds);
 	
 	glutMainLoop();
 }
