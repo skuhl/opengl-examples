@@ -65,6 +65,9 @@ GLuint texIdEarth;
 GLuint texIdClouds;
 float ticks = 200.0f;
 float cloudTicks = 200.0f;
+float planet[3] = {0.0f,0.0f,0.0f};
+GLUquadricObj *earth = NULL;
+GLUquadricObj *clouds = NULL;
 
 void clampPaddles()
 {
@@ -286,16 +289,16 @@ void display()
 	if(dgr_is_enabled() == 0 || dgr_is_master())
 	{
 		//Grab the tracking data from VRPN
-		/*vrpn_get(TRACKED_OBJ_A, NULL, vrpnPos, vrpnOrient);
+		vrpn_get(TRACKED_OBJ_A, NULL, vrpnPos, vrpnOrient);
 		paddleA.xpos = vrpnPos[0];
 
 		vrpn_get(TRACKED_OBJ_B, NULL, vrpnPos, vrpnOrient);
-		paddleB.xpos = vrpnPos[0];*/
+		paddleB.xpos = vrpnPos[0];
 		
 		//Start the ball moving
 		if(!startedFlag)
 		{
-			if(true)//time(NULL)-startTime < 5)
+			if(time(NULL)-startTime < 5)
 			{
 				ball.xdir = 0;
 				ball.ydir = 0;
@@ -322,6 +325,7 @@ void display()
 	dgr_setget("paddleA", &paddleA, sizeof(Paddle));
 	dgr_setget("paddleB", &paddleB, sizeof(Paddle));
 	dgr_setget("ball", &ball, sizeof(Ball));
+	dgr_setget("planet", planet, sizeof(float)*3);
 
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
@@ -329,10 +333,7 @@ void display()
 	glEnable(GL_NORMALIZE);
 	glEnable(GL_DEPTH_TEST);
 	glShadeModel(GL_SMOOTH);
-		
 	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_COLOR, GL_DST_COLOR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
@@ -354,11 +355,8 @@ void display()
 	float depth = -(frustum[4] + frustum[5])/2.0;
 
 	// Move the light source
-	GLfloat position[] = { 1.0f, 1.0f, depth+1.5f, 1.0f };
+	GLfloat position[] = { 1.0f, -1.0f, depth+5.5f, 1.0f };
 	glLightfv(GL_LIGHT0, GL_POSITION, position);
-	
-	GLfloat ambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
 	
 	// background
 	float masterfrust[6];
@@ -372,65 +370,56 @@ void display()
 	glVertex3f(masterfrust[1], masterfrust[2], depth-3.0);
 	glEnd();
 	
-	//Draw the earth
-	GLUquadricObj *earth = gluNewQuadric();
-    gluQuadricDrawStyle(earth, GLU_FILL);
-    gluQuadricTexture(earth, GL_TRUE);
-    gluQuadricNormals(earth, GLU_SMOOTH);
-   
+	//Draw the earth   
    	glPushMatrix();
    	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBindTexture(GL_TEXTURE_2D, texIdEarth);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-	glTranslatef(-0.08, -0.32, depth-3.0);
+	glTranslatef(planet[0], planet[1], depth-3.0);
 	glRotatef(25.0f, 0.0f, 0.0f, 1.0f);
 	glRotatef(-90, 1.0f, 0.0f, 0.0f);
 	glRotatef(ticks, 0.0f, 0.0f, 1.0f);
 	ticks += .005;
 	if(ticks > 360.0f)ticks = 0.0f;
-	gluSphere(earth, 0.3, 200, 200);
+	gluSphere(earth, planet[2]*1.65f, 200, 200);
 	glPopMatrix();
     
     //Draw the clouds
-	GLUquadricObj *clouds = gluNewQuadric();
-    gluQuadricDrawStyle(clouds, GLU_FILL);
-    gluQuadricTexture(clouds, GL_TRUE);
-    gluQuadricNormals(clouds, GLU_SMOOTH);
-   
+   	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_COLOR, GL_DST_COLOR);   
    	glPushMatrix();
     glBindTexture(GL_TEXTURE_2D, texIdClouds);
     glLoadIdentity();
-	glTranslatef(-0.08, -0.32, depth-3.0);
+	glTranslatef(planet[0], planet[1], depth-3.0);
 	glRotatef(25.0f, 0.0f, 0.0f, 1.0f);
 	glRotatef(-90, 1.0f, 0.0f, 0.0f);
 	glRotatef(cloudTicks, 1.0f, 0.0f, 1.0f);
 	cloudTicks += .005;
 	if(cloudTicks > 360.0f)cloudTicks = 0.0f;
-	gluSphere(clouds, 0.301f, 200, 200);
+	gluSphere(clouds, planet[2]*1.66f, 200, 200);
 	glPopMatrix();
+	
     
     // Reset somethings for the rest of the scene
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_BLEND);
-		
+
 	// top player (player 1) paddle
 	glDisable(GL_LIGHTING);
 	glPushMatrix();
-	glTranslatef(paddleA.xpos,0,0);
+	glTranslatef(paddleA.xpos,0,depth+5.0f);
 	glBegin(GL_QUADS);
 	glColor3fv(paddleA.color1);
-	glVertex3f( paddleA.width/2, paddleA.ypos+paddleA.thickness, depth+1.0f); // top left
-	glVertex3f(-paddleA.width/2, paddleA.ypos+paddleA.thickness, depth+1.0f);
+	glVertex3f( paddleA.width/2, paddleA.ypos+paddleA.thickness, 0); // top left
+	glVertex3f(-paddleA.width/2, paddleA.ypos+paddleA.thickness, 0);
 	glColor3fv(paddleA.color2);
-	glVertex3f(-paddleA.width/2, paddleA.ypos, depth+1.0f);
-	glVertex3f( paddleA.width/2, paddleA.ypos, depth+1.0f);
+	glVertex3f(-paddleA.width/2, paddleA.ypos, 0);
+	glVertex3f( paddleA.width/2, paddleA.ypos, 0);
 	glEnd();
 	glPopMatrix();
 
 	// bottom player (player 2) paddle
 	glPushMatrix();
-	glTranslatef(paddleB.xpos,0,depth);
+	glTranslatef(paddleB.xpos,0,depth+5.0f);
 	glBegin(GL_QUADS);
 	glColor3fv(paddleB.color1);
 	glVertex3f( paddleB.width/2, paddleB.ypos, 0); // top left
@@ -445,7 +434,7 @@ void display()
 	glEnable(GL_LIGHTING);
     glColor3fv(ball.color);
 	glPushMatrix();
-	glTranslatef(ball.xpos, ball.ypos, depth);
+	glTranslatef(ball.xpos, ball.ypos, depth+4.0f);
 	glutSolidSphere(ball.radius, 100, 100);
 	glPopMatrix();
 	
@@ -519,6 +508,19 @@ int main( int argc, char* argv[] )
 	msg(INFO, "Initial paddle B position %f %f\n", paddleB.xpos, paddleB.ypos);
 
 	ball.radius = (frustum[1]-frustum[0])/50.0;
+	
+	planet[0] = ((frustum[0] + frustum[1])/2.0f) - ((frustum[1] - frustum[0])/2.4f);
+	planet[1] = ((frustum[2] + frustum[3])/2.0f) - ((frustum[1] - frustum[0])*1.7f);
+	planet[2] = (frustum[1] - frustum[0]);
+	
+	earth = gluNewQuadric();
+	clouds = gluNewQuadric();
+	gluQuadricDrawStyle(earth, GLU_FILL);
+	gluQuadricTexture(earth, GL_TRUE);
+	gluQuadricNormals(earth, GLU_SMOOTH);
+	gluQuadricDrawStyle(clouds, GLU_FILL);
+	gluQuadricTexture(clouds, GL_TRUE);
+	gluQuadricNormals(clouds, GLU_SMOOTH);
 	
 	kuhl_read_texture_file("../images/earth.png", &texIdEarth);
 	kuhl_read_texture_file("../images/clouds.png", &texIdClouds);
