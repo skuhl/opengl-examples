@@ -37,6 +37,7 @@ void keyboard(unsigned char key, int x, int y)
 		case 'q':
 		case 'Q':
 		case 27: // ASCII code for Escape key
+			dgr_exit();
 			exit(0);
 			break;
 	}

@@ -23,7 +23,8 @@ void dgr_setget(const char *name, void* buffer, int bufferSize);
 void dgr_print_list();
 int dgr_is_master();
 int dgr_is_enabled();
-
+void dgr_exit();
+	
 #ifdef __cplusplus
 } // end extern "C"
 #endif

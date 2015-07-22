@@ -60,6 +60,7 @@ void * receiver(void *) {
 			perror("DGR Relay: ERROR recvfrom");
 			exit(EXIT_FAILURE);
 		}
+
 		receivedPacket = true;
 		framesPassed = 0;
 
@@ -70,6 +71,15 @@ void * receiver(void *) {
 				perror("DGR Relay: ERROR sendto");
 				exit(EXIT_FAILURE);
 			}
+		}
+
+		/* Check if the frame that we just forwarded was informing
+		 * processes to exit. */
+		if(bytesReceived > (int) strlen("!!!dgr_died!!!") &&
+		   strcmp(buf, "!!!dgr_died!!!") == 0)
+		{
+			printf("DGR Relay: Received message from master indicating that DGR communication is complete.\n");
+			exit(EXIT_SUCCESS);
 		}
 	}
 }

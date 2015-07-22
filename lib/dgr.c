@@ -70,6 +70,7 @@ static void dgr_free()
 	dgr_list_size = 0;
 }
 
+
 /** Initializes a master DGR process that will send packets out on the network. */
 static void dgr_init_master()
 {
@@ -247,8 +248,10 @@ static int dgr_findIndex(const char *name)
  * get data from DGR, store it in buffer and return the actual size of
  * the data we copied into the buffer.
  *
- * @return Returns -1 if DGR didn't know about the name. Returns -2 the buffer you
- * provided was too small. Returns -3 if DGR is not enabled.
+ * @return Returns the size of the data if success, and a negative
+ * number upon error. Returns -1 if DGR didn't know about the
+ * name. Returns -2 the buffer you provided was too small. Returns -3
+ * if DGR is not enabled.
  */
 static int dgr_get(const char *name, void* buffer, int bufferSize)
 {
@@ -452,9 +455,10 @@ static void dgr_send()
 #ifndef __MINGW32__
 	if(dgr_disabled)
 		return;
+
 	int  bufSize = 0;
 	char *buf = dgr_serialize(&bufSize);
-
+	
 	// no need to send an empty packet.
 	if(bufSize == 0 || dgr_list_size == 0)
 		return;
@@ -567,11 +571,34 @@ void dgr_update()
 	if(dgr_mode)
 		dgr_send();
 	else
+	{
 		// if it is our first time receiving, allow for a delay.
 		if(dgr_time_lastreceive == 0)
 			dgr_receive(10000);
 		else
 			dgr_receive(0);
+
+		int died = 0;
+		if(dgr_get("!!!dgr_died!!!", &died, sizeof(int)) >= 0 &&
+		   died == 1)
+		{
+			msg(DEBUG, "The master told slaves to exit. Exiting...\n");
+			exit(EXIT_SUCCESS);
+		}
+	}
 }
 
-
+/** If master, sends a special DGR message to the slave machines
+ * indicating that they should exit. If slave, does nothing.
+ */
+void dgr_exit()
+{
+	if(dgr_is_enabled() && dgr_is_master())
+	{
+		int died = 1;
+		msg(DEBUG, "dgr_exit() is informing slaves that the master is exiting.\n");
+		dgr_list_size = 0; // empty the list.
+		dgr_set("!!!dgr_died!!!", &died, sizeof(int));
+		dgr_update();
+	}
+}
