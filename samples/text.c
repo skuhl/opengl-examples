@@ -40,7 +40,8 @@ void keyboard(unsigned char key, int x, int y)
 	switch(key)
 	{
 		case 27: // ASCII code for Escape key
-			exit(0);
+			dgr_exit();
+			exit(EXIT_SUCCESS);
 			break;
 		case '\b':
 			if (bufferLen > 0)

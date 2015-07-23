@@ -29,8 +29,10 @@ typedef enum {
 void msg_details(msg_type type, const char *fileName, int lineNum, const char *funcName, const char *msg, ...);
 void msg_assimp_callback(const char* msg, char *usr);
 
-/** Prints the message and saves information to a logfile. */
-#define msg(TYPE, M, ...) msg_details(TYPE, __FILE__, __LINE__, __func__, M, ##__VA_ARGS__)
+/** Prints the message and saves information to a logfile. C99
+ * requires that __VA_ARGS__ corresponds to at least one parameter
+ * (not zero parameters). */
+#define msg(TYPE, ...) msg_details(TYPE, __FILE__, __LINE__, __func__, __VA_ARGS__)
 
 
 #ifdef __cplusplus

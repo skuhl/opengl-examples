@@ -63,12 +63,13 @@ static int dgr_disabled = 0; /**< Set to 1 if we are running in a DGR environmen
 
 
 /** Frees resources that DGR has used. */
-static void dgr_free()
+static void dgr_free(void)
 {
 	for(int i=0; i<dgr_list_size; i++)
 		free(dgr_list[i].buffer);
 	dgr_list_size = 0;
 }
+
 
 /** Initializes a master DGR process that will send packets out on the network. */
 static void dgr_init_master()
@@ -180,14 +181,14 @@ static void dgr_init_slave()
 
     @return 1 if we are a master process, 0 if we are a slave process.
 */
-int dgr_is_master()
+int dgr_is_master(void)
 { return dgr_mode; }
 
 /** Indicates if DGR is properly enabled or if it is disabled.
 
     @return 1 if DGR is working, 0 if it is not.
 */
-int dgr_is_enabled()
+int dgr_is_enabled(void)
 {
 	if(dgr_disabled)
 		return 0;
@@ -198,7 +199,7 @@ int dgr_is_enabled()
 /** Initialize DGR. DGR options are specified via environment
  * variables. This function should typically be called once near the
  * beginning of a DGR program. */
-void dgr_init()
+void dgr_init(void)
 {
 	const char* mode = getenv("DGR_MODE");
 
@@ -247,8 +248,10 @@ static int dgr_findIndex(const char *name)
  * get data from DGR, store it in buffer and return the actual size of
  * the data we copied into the buffer.
  *
- * @return Returns -1 if DGR didn't know about the name. Returns -2 the buffer you
- * provided was too small. Returns -3 if DGR is not enabled.
+ * @return Returns the size of the data if success, and a negative
+ * number upon error. Returns -1 if DGR didn't know about the
+ * name. Returns -2 the buffer you provided was too small. Returns -3
+ * if DGR is not enabled.
  */
 static int dgr_get(const char *name, void* buffer, int bufferSize)
 {
@@ -429,7 +432,7 @@ static void dgr_unserialize(int size, const char *serialized)
 
 
 /** Prints a list of variables that DGR is aware of. */
-void dgr_print_list()
+void dgr_print_list(void)
 {
 	if(dgr_disabled)
 	{
@@ -447,14 +450,15 @@ void dgr_print_list()
 }
 
 /** Serializes and sends DGR data out across a network. */
-static void dgr_send()
+static void dgr_send(void)
 {
 #ifndef __MINGW32__
 	if(dgr_disabled)
 		return;
+
 	int  bufSize = 0;
 	char *buf = dgr_serialize(&bufSize);
-
+	
 	// no need to send an empty packet.
 	if(bufSize == 0 || dgr_list_size == 0)
 		return;
@@ -561,17 +565,42 @@ static void dgr_receive(int timeout)
  * DGR master, dgr_update() will send data to the network. if we are
  * DGR slave, dgr_update() will receive data from the network. In an
  * OpenGL DGR program, you would typically call this method every time
- * you render a frame. */
-void dgr_update()
+ * you render a frame. This function may call exit() if we are a slave
+ * which has received a special packet indicating that we should
+ * exit. */
+void dgr_update(void)
 {
 	if(dgr_mode)
 		dgr_send();
 	else
+	{
 		// if it is our first time receiving, allow for a delay.
 		if(dgr_time_lastreceive == 0)
 			dgr_receive(10000);
 		else
 			dgr_receive(0);
+
+		int died = 0;
+		if(dgr_get("!!!dgr_died!!!", &died, sizeof(int)) >= 0 &&
+		   died == 1)
+		{
+			msg(DEBUG, "The master told slaves to exit. Exiting...\n");
+			exit(EXIT_SUCCESS);
+		}
+	}
 }
 
-
+/** If master, sends a special DGR message to the slave machines
+ * indicating that they should exit. If slave, does nothing.
+ */
+void dgr_exit(void)
+{
+	if(dgr_is_enabled() && dgr_is_master())
+	{
+		int died = 1;
+		msg(DEBUG, "dgr_exit() is informing slaves that the master is exiting.\n");
+		dgr_free(); // clear the list of records to send.
+		dgr_set("!!!dgr_died!!!", &died, sizeof(int));
+		dgr_update();
+	}
+}

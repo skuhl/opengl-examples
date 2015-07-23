@@ -94,6 +94,7 @@ void keyboard(unsigned char key, int x, int y)
 		case 'q':
 		case 'Q':
 		case 27: // ASCII code for Escape key
+			dgr_exit();
 			exit(0);
 			break;
 		case 'f': // full screen
@@ -147,9 +148,7 @@ void bounceBall()
 		if(paddleA.width < 0.001)
 		{
 			msg(WARNING, "Player 1 (top) loses\n");
-			int exiting = 1;
-			dgr_setget("exiting", &exiting, sizeof(int));
-			dgr_update();
+			dgr_exit();
 			exit(0);
 		}
 		else // missed paddle and didn't lose
@@ -183,9 +182,7 @@ void bounceBall()
 		if(paddleB.width < 0.001)
 		{
 			msg(WARNING, "Player 2 (bottom) loses\n");
-			int exiting = 1;
-			dgr_setget("exiting", &exiting, sizeof(int));
-			dgr_update();
+			dgr_exit();
 			exit(0);
 		}
 		else // missed paddle and didn't lose
@@ -329,12 +326,7 @@ void display()
 	dgr_setget("paddleB", &paddleB, sizeof(Paddle));
 	dgr_setget("ball", &ball, sizeof(Ball));
 	dgr_setget("planet", planet, sizeof(float)*3);
-
-	int exiting = 0;
-	dgr_setget("exiting", &exiting, sizeof(int)); // send 0 when master exits.
-	if(exiting == 1)
-		exit(1);
-
+	
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	glEnable(GL_COLOR_MATERIAL);
