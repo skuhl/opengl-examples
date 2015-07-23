@@ -48,7 +48,7 @@ void keyboard(unsigned char key, int x, int y)
 		case 'Q':
 		case 27: // ASCII code for Escape key
 			dgr_exit();
-			exit(0);
+			exit(EXIT_SUCCESS);
 			break;
 		case 's': // swap the left & right images
 		{
