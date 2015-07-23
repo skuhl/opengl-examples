@@ -938,6 +938,8 @@ static viewmat_eye viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 		return VIEWMAT_EYE_LEFT;
 	else
 		return VIEWMAT_EYE_RIGHT;
+#else
+	return VIEWMAT_EYE_LEFT;
 #endif
 }
 
@@ -1011,7 +1013,7 @@ static void viewmat_validate_fps(int viewportID)
 	 * expect to always get a FPS close to the monitor. Setting this
 	 * to 55 (instead of 60) will prevent messages from getting
 	 * printed out constantly on such machines. */
-	static const int targetFps = 55;
+#define targetFps 55 // older compilers won't let us use a static const variable to calculate another static const variable.
 	static const int timeBudget = 1000000.0f / targetFps;
 	
 	if(viewportID > 0)

@@ -13,12 +13,12 @@ project("opengl-examples" C CXX)  # This project uses C and C++
 # -O2 or -O3 is necessary to get the compiler to inline the inlined functions used by vecmat.c and vecmat.h
 # -march=native will cause the compiler to use features that are available on the current CPU (SSE, etc)---but will make the resulting executable less portable.
 #   -march=native is removed because it doesn't work on IVS as of May 2015
-# -Wpedantic forces warnings when non-C99 extensions are used.
+# -pedantic forces warnings when non-C99 extensions are used.
 
 # Options which we may add in future (not supported by older compilers):
 # -Wshadow should probably be added eventually
 # -Wvla should be included because Visual Studio does not support VLAs, so we avoid using them. They are optional in C11 even though they were part of C99.
-set(C_CXX_FLAGS "-Wall -Wextra -Wpedantic -g -O2  -Wformat -Wno-unused-parameter -Wno-unused-function")  # Compiler options used by both the C++ and C compiler
+set(C_CXX_FLAGS "-Wall -Wextra -pedantic -g -O2  -Wformat -Wno-unused-parameter -Wno-unused-function")  # Compiler options used by both the C++ and C compiler
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_CXX_FLAGS} -std=gnu99")
 
 # Use no-variadic-macros to prevent C++ programs from warning about the variadic msg() macro
