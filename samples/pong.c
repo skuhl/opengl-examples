@@ -6,6 +6,7 @@
 #include <time.h>
 #include <GL/glew.h>
 #include <GL/gl.h>
+#include <pthread.h>
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
@@ -20,6 +21,13 @@
 
 #define TRACKED_OBJ_A "HandL"
 #define TRACKED_OBJ_B "HandR"
+
+// These images are available to MTU students on the Linux file system
+// on most machines. These files are not included in the git
+// repository.
+#define STARS "pong/stars.png"
+#define EARTH "pong/earth.png"
+#define CLOUDS "pong/clouds.png"
 
 // Make a new client
 //Client MyClient;
@@ -289,16 +297,16 @@ void display()
 	if(dgr_is_enabled() == 0 || dgr_is_master())
 	{
 		//Grab the tracking data from VRPN
-		/*vrpn_get(TRACKED_OBJ_A, NULL, vrpnPos, vrpnOrient);
+		vrpn_get(TRACKED_OBJ_A, NULL, vrpnPos, vrpnOrient);
 		paddleA.xpos = vrpnPos[0];
 
 		vrpn_get(TRACKED_OBJ_B, NULL, vrpnPos, vrpnOrient);
-		paddleB.xpos = vrpnPos[0];*/
+		paddleB.xpos = vrpnPos[0];
 		
 		//Start the ball moving
 		if(!startedFlag)
 		{
-			if(true)//time(NULL)-startTime < 5)
+			if(time(NULL)-startTime < 5)
 			{
 				ball.xdir = 0;
 				ball.ydir = 0;
@@ -446,7 +454,8 @@ void display()
 	glTranslatef(ball.xpos, ball.ypos, depth+4.0f);
 	glutSolidSphere(ball.radius, 100, 100);
 	glPopMatrix();
-	
+
+		
 	/* If DGR is enabled, only do this in the master*/
 	if(dgr_is_enabled() == 0 || dgr_is_master())
 	{
@@ -458,7 +467,7 @@ void display()
 		if(ball.color[0] < ball.baseColor[0]) ball.color[0] = ball.baseColor[0];
 		if(ball.color[1] < ball.baseColor[1]) ball.color[1] = ball.baseColor[1];
 		if(ball.color[2] < ball.baseColor[2]) ball.color[2] = ball.baseColor[2];
-		bounceBall();
+		bounceBall();	
 	}
 	
 	glFlush();
@@ -500,6 +509,8 @@ int main( int argc, char* argv[] )
 	projmat_get_frustum(frustum, -1, -1);
 	ball.xpos = (frustum[0] + frustum[1])/2.0;
 	ball.ypos = (frustum[2] + frustum[3])/2.0;
+	ball.speed = ball.minSpeed = (frustum[3]-frustum[2]) / 178.462f;
+	
 	paddleA.xpos = ball.xpos;
 	paddleA.ypos = frustum[3]-(frustum[3]-frustum[2])/20.0;
 	paddleA.width = (frustum[1]-frustum[0])/10.0;
@@ -515,6 +526,7 @@ int main( int argc, char* argv[] )
 	msg(INFO, "Initial ball position %f %f\n", ball.xpos, ball.ypos);
 	msg(INFO, "Initial paddle A position %f %f\n", paddleA.xpos, paddleA.ypos);
 	msg(INFO, "Initial paddle B position %f %f\n", paddleB.xpos, paddleB.ypos);
+	msg(INFO, "Ball speed: %f\n", frustum[3]-frustum[2], ball.speed);
 
 	ball.radius = (frustum[1]-frustum[0])/50.0;
 	
@@ -531,11 +543,11 @@ int main( int argc, char* argv[] )
 	gluQuadricTexture(clouds, GL_TRUE);
 	gluQuadricNormals(clouds, GLU_SMOOTH);
 
-	// These files are on the filesystem at MTU and are not available
-	// to non-MTU users.
-	kuhl_read_texture_file("pong/earth.png", &texIdEarth);
-	kuhl_read_texture_file("pong/clouds.png", &texIdClouds);
-	kuhl_read_texture_file("pong/stars.png", &texIdStars);
+	printf("%d\n",kuhl_can_read_file(EARTH));
+	
+	kuhl_read_texture_file(EARTH, &texIdEarth);
+	kuhl_read_texture_file(CLOUDS, &texIdClouds);
+	kuhl_read_texture_file(STARS, &texIdStars);
 
 	glutMainLoop();
 }
