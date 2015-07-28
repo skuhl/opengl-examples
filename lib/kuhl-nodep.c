@@ -187,9 +187,9 @@ char* kuhl_find_file(const char *filename)
 #endif
 
 	/* Search for file in common paths. */
-	char *commonDirs[] = { "/home/kuhl/public-ogl/data",
-	                       "/home/campus11/kuhl/public-ogl/data",
-	                       "/research/kuhl/public-ogl/data" };
+	char *commonDirs[] = { "/home/kuhl/public-ogl/data",  // CCSR
+	                       "/home/campus11/kuhl/public-ogl/data", // Rekhi
+	                       "/research/kuhl/public-ogl/data" }; // IVS
 	for(int i=0; i<3; i++)
 	{
 		char *newPathFile = malloc(sizeof(char)*1024);
@@ -200,7 +200,7 @@ char* kuhl_find_file(const char *filename)
 			return newPathFile;
 		}
 		/* Try converting path separators too */
-		snprintf(newPathFile, 2014, "%s/%s", commonDirs[i], pathSepChange);
+		snprintf(newPathFile, 1024, "%s/%s", commonDirs[i], pathSepChange);
 		if(kuhl_can_read_file(newPathFile))
 		{
 			free(pathSepChange);
