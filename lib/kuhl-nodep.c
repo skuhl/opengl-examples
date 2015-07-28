@@ -186,6 +186,30 @@ char* kuhl_find_file(const char *filename)
 	}
 #endif
 
+	/* Search for file in common paths. */
+	char *commonDirs[] = { "/home/kuhl/public-ogl/data",
+	                       "/home/campus11/kuhl/public-ogl/data",
+	                       "/research/kuhl/public-ogl/data" };
+	for(int i=0; i<3; i++)
+	{
+		char *newPathFile = malloc(sizeof(char)*1024);
+		snprintf(newPathFile, 1024, "%s/%s", commonDirs[i], filename);
+		if(kuhl_can_read_file(newPathFile))
+		{
+			free(pathSepChange);
+			return newPathFile;
+		}
+		/* Try converting path separators too */
+		snprintf(newPathFile, 2014, "%s/%s", commonDirs[i], pathSepChange);
+		if(kuhl_can_read_file(newPathFile))
+		{
+			free(pathSepChange);
+			return newPathFile;
+		}
+
+		free(newPathFile);
+	}
+	
 	free(pathSepChange);
 	return strdup(filename);
 }
