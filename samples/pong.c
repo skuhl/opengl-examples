@@ -63,9 +63,11 @@ Ball ball = {.02, 0, 4, .013, .013, {0,0,0}, {150/255.0,150/255.0,150/255.0}, {5
 
 GLuint texIdEarth;
 GLuint texIdClouds;
+GLuint texIdStars;
 float ticks = 200.0f;
 float cloudTicks = 200.0f;
 float planet[3] = {0.0f,0.0f,0.0f};
+float screen_width = 0.0f, screen_height = 0.0f;
 GLUquadricObj *earth = NULL;
 GLUquadricObj *clouds = NULL;
 
@@ -275,8 +277,6 @@ void bounceBall()
 		ball.xdir = newXdir;
 		ball.ydir = newYdir;
 	}
-
-	
 }
 
 void display()
@@ -289,16 +289,16 @@ void display()
 	if(dgr_is_enabled() == 0 || dgr_is_master())
 	{
 		//Grab the tracking data from VRPN
-		vrpn_get(TRACKED_OBJ_A, NULL, vrpnPos, vrpnOrient);
+		/*vrpn_get(TRACKED_OBJ_A, NULL, vrpnPos, vrpnOrient);
 		paddleA.xpos = vrpnPos[0];
 
 		vrpn_get(TRACKED_OBJ_B, NULL, vrpnPos, vrpnOrient);
-		paddleB.xpos = vrpnPos[0];
+		paddleB.xpos = vrpnPos[0];*/
 		
 		//Start the ball moving
 		if(!startedFlag)
 		{
-			if(time(NULL)-startTime < 5)
+			if(true)//time(NULL)-startTime < 5)
 			{
 				ball.xdir = 0;
 				ball.ydir = 0;
@@ -336,7 +336,7 @@ void display()
 	glEnable(GL_TEXTURE_2D);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
+
 	glClearColor(0,0,0,0);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	glColor3f(1,1,1);
@@ -358,21 +358,30 @@ void display()
 	GLfloat position[] = { 1.0f, -1.0f, depth+5.5f, 1.0f };
 	glLightfv(GL_LIGHT0, GL_POSITION, position);
 	
-	// background
+	// Draw the background stars
 	float masterfrust[6];
 	projmat_get_master_frustum(masterfrust);
-	       
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glBindTexture(GL_TEXTURE_2D, texIdStars);
+ 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	
+	float tickmod = ticks / 200.0f;
 	glBegin(GL_QUADS);
-	glColor3f(0.0,0.0,0.0);
+	glTexCoord2f(tickmod+1.0f, -tickmod);
 	glVertex3f(masterfrust[1], masterfrust[3], depth-3.0);
+	glTexCoord2f(tickmod, -tickmod);
 	glVertex3f(masterfrust[0], masterfrust[3], depth-3.0);
+	glTexCoord2f(tickmod, 1.0f-tickmod);
 	glVertex3f(masterfrust[0], masterfrust[2], depth-3.0);
+	glTexCoord2f(tickmod+1.0f, 1.0f-tickmod);
 	glVertex3f(masterfrust[1], masterfrust[2], depth-3.0);
 	glEnd();
 	
 	//Draw the earth   
+   	glMatrixMode(GL_MODELVIEW);
    	glPushMatrix();
-   	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBindTexture(GL_TEXTURE_2D, texIdEarth);
 	glTranslatef(planet[0], planet[1], depth-3.0);
 	glRotatef(25.0f, 0.0f, 0.0f, 1.0f);
@@ -524,6 +533,7 @@ int main( int argc, char* argv[] )
 	
 	kuhl_read_texture_file("../images/earth.png", &texIdEarth);
 	kuhl_read_texture_file("../images/clouds.png", &texIdClouds);
-	
+	kuhl_read_texture_file("../images/stars.png", &texIdStars);
+
 	glutMainLoop();
 }
