@@ -530,10 +530,12 @@ int main( int argc, char* argv[] )
 	gluQuadricDrawStyle(clouds, GLU_FILL);
 	gluQuadricTexture(clouds, GL_TRUE);
 	gluQuadricNormals(clouds, GLU_SMOOTH);
-	
-	kuhl_read_texture_file("../images/earth.png", &texIdEarth);
-	kuhl_read_texture_file("../images/clouds.png", &texIdClouds);
-	kuhl_read_texture_file("../images/stars.png", &texIdStars);
+
+	// These files are on the filesystem at MTU and are not available
+	// to non-MTU users.
+	kuhl_read_texture_file("pong/earth.png", &texIdEarth);
+	kuhl_read_texture_file("pong/clouds.png", &texIdClouds);
+	kuhl_read_texture_file("pong/stars.png", &texIdStars);
 
 	glutMainLoop();
 }
