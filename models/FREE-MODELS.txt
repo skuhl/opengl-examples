@@ -1,3 +1,11 @@
+=== 
+If you have a Michigan Tech login, you can access a collection of 3D models and images at the following locations. If you pass a file to kuhl_find_file() using a path relative to one of the location below, it will automatically find the file. Each copy of the data should contain the same set of files. Do not redistribute the data found in these folders unless you have confirmed that you have permission to do so.
+
+Rekhi Linux labs: /home/campus11/kuhl/public-ogl/data
+CCSR: /home/kuhl/public-ogl/data
+IVS: /research/kuhl/public-ogl/data
+
+===
 If you are looking for model files, try the following URLs:
 
 http://graphics.stanford.edu/data/3Dscanrep/
@@ -13,6 +21,4 @@ Other interesting models that are more difficult to obtain or are in a format no
 http://graphics.stanford.edu/projects/mich/   (only available to researchers)
 http://resources.mpi-inf.mpg.de/mpimodel/v1.0/  (MPI informatics building, available on VRML and MAX formats)
 http://graphics.cs.brown.edu/games/brown-mesh-set/  (IFS file format)
-
-
 
