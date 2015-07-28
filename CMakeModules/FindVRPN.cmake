@@ -1,20 +1,20 @@
 include(FindPackageHandleStandardArgs)
 
 # Search paths for CCSR
-set(CMAKE_LIBRARY_PATH /home/kuhl/public-vrlab/vrpn/build ${CMAKE_LIBRARY_PATH})
-set(CMAKE_LIBRARY_PATH /home/kuhl/public-vrlab/vrpn/build/quat ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH /home/kuhl/public-vrlab/vrpn/ ${CMAKE_INCLUDE_PATH})
-set(CMAKE_INCLUDE_PATH /home/kuhl/public-vrlab/vrpn/quat ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH /home/kuhl/public-ogl/vrpn/build ${CMAKE_LIBRARY_PATH})
+set(CMAKE_LIBRARY_PATH /home/kuhl/public-ogl/vrpn/build/quat ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH /home/kuhl/public-ogl/vrpn/ ${CMAKE_INCLUDE_PATH})
+set(CMAKE_INCLUDE_PATH /home/kuhl/public-ogl/vrpn/quat ${CMAKE_INCLUDE_PATH})
 # Search paths for IVS
-set(CMAKE_LIBRARY_PATH /research/kuhl/public-vrlab/vrpn/build ${CMAKE_LIBRARY_PATH})
-set(CMAKE_LIBRARY_PATH /research/kuhl/public-vrlab/vrpn/build/quat ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH /research/kuhl/public-vrlab/vrpn/ ${CMAKE_INCLUDE_PATH})
-set(CMAKE_INCLUDE_PATH /research/kuhl/public-vrlab/vrpn/quat ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH /research/kuhl/public-ogl/vrpn/build ${CMAKE_LIBRARY_PATH})
+set(CMAKE_LIBRARY_PATH /research/kuhl/public-ogl/vrpn/build/quat ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH /research/kuhl/public-ogl/vrpn/ ${CMAKE_INCLUDE_PATH})
+set(CMAKE_INCLUDE_PATH /research/kuhl/public-ogl/vrpn/quat ${CMAKE_INCLUDE_PATH})
 # Search path for Rekhi lab
-set(CMAKE_LIBRARY_PATH /home/campus11/kuhl/public-cs4611/vrpn/build ${CMAKE_LIBRARY_PATH})
-set(CMAKE_LIBRARY_PATH /home/campus11/kuhl/public-cs4611/vrpn/build/quat ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH /home/campus11/kuhl/public-cs4611/vrpn/ ${CMAKE_INCLUDE_PATH})
-set(CMAKE_INCLUDE_PATH /home/campus11/kuhl/public-cs4611/vrpn/quat ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH /home/campus11/kuhl/public-ogl/vrpn/build ${CMAKE_LIBRARY_PATH})
+set(CMAKE_LIBRARY_PATH /home/campus11/kuhl/public-ogl/vrpn/build/quat ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH /home/campus11/kuhl/public-ogl/vrpn/ ${CMAKE_INCLUDE_PATH})
+set(CMAKE_INCLUDE_PATH /home/campus11/kuhl/public-ogl/vrpn/quat ${CMAKE_INCLUDE_PATH})
 
 
 

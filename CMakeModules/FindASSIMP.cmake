@@ -1,14 +1,14 @@
 include(FindPackageHandleStandardArgs)
 
 # Search paths for CCSR
-set(CMAKE_LIBRARY_PATH /home/kuhl/public-vrlab/assimp/lib ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH /home/kuhl/public-vrlab/assimp/include ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH /home/kuhl/public-ogl/assimp/lib ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH /home/kuhl/public-ogl/assimp/include ${CMAKE_INCLUDE_PATH})
 # Search paths for IVS
-set(CMAKE_LIBRARY_PATH /research/kuhl/public-vrlab/assimp/lib ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH /research/kuhl/public-vrlab/assimp/include ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH /research/kuhl/public-ogl/assimp/lib ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH /research/kuhl/public-ogl/assimp/include ${CMAKE_INCLUDE_PATH})
 # Search path for Rekhi lab
-set(CMAKE_LIBRARY_PATH /home/campus11/kuhl/public-cs4611/assimp/lib ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH /home/campus11/kuhl/public-cs4611/assimp/include ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH /home/campus11/kuhl/public-ogl/assimp/lib ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH /home/campus11/kuhl/public-ogl/assimp/include ${CMAKE_INCLUDE_PATH})
 
 
 # The assimp library is linked to zlib

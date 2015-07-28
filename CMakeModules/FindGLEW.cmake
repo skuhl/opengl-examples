@@ -3,12 +3,12 @@ set(CMAKE_LIBRARY_PATH "/usr/local/glew/1.9.0/lib" ${CMAKE_LIBRARY_PATH})
 set(CMAKE_INCLUDE_PATH "/usr/local/glew/1.9.0/include" ${CMAKE_INCLUDE_PATH})
 
 # Search paths for IVS machine - NOTE: The copy of GLEW in /opt/viz is too old---haven't investigated exactly which version is needed.
-set(CMAKE_LIBRARY_PATH "/research/kuhl/public-vrlab/glew/lib" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "/research/kuhl/public-vrlab/glew/include" ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH "/research/kuhl/public-ogl/glew/lib" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "/research/kuhl/public-ogl/glew/include" ${CMAKE_INCLUDE_PATH})
 
 # Search paths for Rekhi Lab machines
-set(CMAKE_LIBRARY_PATH "/home/campus11/kuhl/public-cs4611/glew/lib" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "/home/campus11/kuhl/public-cs4611/glew/include" ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH "/home/campus11/kuhl/public-ogl/glew/lib" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "/home/campus11/kuhl/public-ogl/glew/include" ${CMAKE_INCLUDE_PATH})
 
 
 

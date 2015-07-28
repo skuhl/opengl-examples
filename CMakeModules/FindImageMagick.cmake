@@ -1,10 +1,10 @@
 
 # IVS - installed version is too old.
-set(CMAKE_LIBRARY_PATH "/research/kuhl/public-vrlab/ImageMagick-6.8.9-5/magick/.libs/" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "/research/kuhl/public-vrlab/ImageMagick-6.8.9-5/" ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH "/research/kuhl/public-ogl/ImageMagick-6.8.9-5/magick/.libs/" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "/research/kuhl/public-ogl/ImageMagick-6.8.9-5/" ${CMAKE_INCLUDE_PATH})
 # CCSR - installed version is too old.
-set(CMAKE_LIBRARY_PATH "/home/kuhl/public-vrlab/ImageMagick-6.8.9-6/magick/.libs/" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "/home/kuhl/public-vrlab/ImageMagick-6.8.9-6/" ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH "/home/kuhl/public-ogl/ImageMagick-6.8.9-6/magick/.libs/" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "/home/kuhl/public-ogl/ImageMagick-6.8.9-6/" ${CMAKE_INCLUDE_PATH})
 
 
 
