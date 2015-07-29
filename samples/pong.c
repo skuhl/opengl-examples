@@ -18,6 +18,11 @@
 #include "viewmat.h"
 #include "vrpn-help.h"
 
+// Set this to 1 if you want to use the tracking system to control the
+// paddles. Set it to 0 to use the keyboard to control the paddles.
+#define USE_VRPN 0
+
+// Names of the tracked objects which will form the paddles.
 #define TRACKED_OBJ_A "HandL"
 #define TRACKED_OBJ_B "HandR"
 
@@ -27,6 +32,7 @@
 #define STARS "pong/stars.png"
 #define EARTH "pong/earth.png"
 #define CLOUDS "pong/clouds.png"
+
 
 #define GS_WAITING 0
 #define GS_READY 1
@@ -141,22 +147,19 @@ void game()
 {
 	float frustum[6];
 	projmat_get_frustum(frustum, -1, -1);
-	
-	//Grab the tracking data from VRPN
-	//vrpn_get(TRACKED_OBJ_A, NULL, vrpnPos, vrpnOrient);
-	//paddleA.xpos = vrpnPos[0];
 
-	if(vrpnPos[1] <= .5)
+	if(USE_VRPN)
 	{
-		paddleA.ready = true;
-	}
-
-	//vrpn_get(TRACKED_OBJ_B, NULL, vrpnPos, vrpnOrient);
-	//paddleB.xpos = vrpnPos[0];
-	
-	if(vrpnPos[1] <= .5)
-	{
-		paddleB.ready = true;
+		vrpn_get(TRACKED_OBJ_A, NULL, vrpnPos, vrpnOrient);
+		vrpn_get(TRACKED_OBJ_B, NULL, vrpnPos, vrpnOrient);
+		
+		paddleA.xpos = vrpnPos[0];
+		if(vrpnPos[1] <= .5)
+			paddleA.ready = true;
+		
+		paddleB.xpos = vrpnPos[0];
+		if(vrpnPos[1] <= .5)
+			paddleB.ready = true;
 	}
 	
 	//Preform the action based on the game state
