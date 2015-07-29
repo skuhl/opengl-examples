@@ -269,7 +269,9 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 	{
 		/* If this is our first time, create a tracker for the object@hostname string, register the callback handler. */
 		msg(INFO, "Connecting to VRPN server: %s\n", hostnamecpp.c_str());
+		// If we are making a TCP connection and the server isn't up, the following function call may hang for a long time
 		vrpn_Connection *connection = vrpn_get_connection_by_name(hostnamecpp.c_str());
+
 		/* Wait for a bit to see if we can connect. Sometimes we don't immediately connect! */
 		for(int i=0; i<1000 && !connection->connected(); i++)
 		{
@@ -281,7 +283,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 		{
 		    delete connection;
 		    msg(ERROR, "Failed to connect to tracker: %s\n", fullname.c_str());
-		    exit(EXIT_FAILURE);
+		    return 0;
 		}
 		vrpn_Tracker_Remote *tkr = new vrpn_Tracker_Remote(fullname.c_str(), connection);
 		nameToTracker[fullname] = tkr;
