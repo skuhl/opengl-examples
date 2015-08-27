@@ -2218,10 +2218,10 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 {
 	/* If we get here, we need to add the file to the sceneMap. */
 	msg(INFO, "Loading model: %s\n", modelFilename);
-	/* Write assimp messages to command line */
-	struct aiLogStream stream;
 
-	// stream = aiGetPredefinedLogStream(aiDefaultLogStream_STDOUT,NULL);
+	/* Write assimp messages to msg log */
+	struct aiLogStream stream;
+	stream = aiGetPredefinedLogStream(aiDefaultLogStream_STDOUT,NULL);
 	if(stream.callback != msg_assimp_callback)
 	{
 		// we only need to set this up once.
