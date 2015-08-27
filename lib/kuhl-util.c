@@ -2735,7 +2735,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 				if(colorComps == 4)
 					colors[i*colorComps+3] = mesh->mColors[0][i].a;
 			}
-			kuhl_geometry_attrib(geom, colors, 4, "in_Color", 0);
+			kuhl_geometry_attrib(geom, colors, colorComps, "in_Color", 0);
 			free(colors);
 		}
 		/* If there are no vertex colors, try to use material colors instead */
