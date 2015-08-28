@@ -145,11 +145,18 @@ void projmat_init()
 		msg(INFO, "Using default perspective projection.\n");
 	}
 
-	msg(INFO, "View frustum: left=%f right=%f bot=%f top=%f near=%f far=%f\n",
-	    projmat_frustum[0], projmat_frustum[1], projmat_frustum[2],
-	    projmat_frustum[3], projmat_frustum[4], projmat_frustum[5]);
-	if(projmat_frustum[4] < 0 || projmat_frustum[5] < 0)
-		msg(WARNING, "The near and far values in the frustum should be positive (i.e., this matches the behavior of the old OpenGL glFrustum() function call.)");
+	// If the frustum was defined via environment variables, print it
+	// out. If no frustum was specified, the actual projection frustum
+	// depends on the size of the window---so we can't print out the
+	// frustum values here.
+	if(projmat_mode == 1)
+	{
+		msg(INFO, "View frustum: left=%f right=%f bot=%f top=%f near=%f far=%f\n",
+		    projmat_frustum[0], projmat_frustum[1], projmat_frustum[2],
+		    projmat_frustum[3], projmat_frustum[4], projmat_frustum[5]);
+		if(projmat_frustum[4] < 0 || projmat_frustum[5] < 0)
+			msg(WARNING, "The near and far values in the frustum should be positive (i.e., this matches the behavior of the old OpenGL glFrustum() function call.)");
+	}
 
 }
 
