@@ -52,6 +52,9 @@ find_package_handle_standard_args(OVR DEFAULT_MSG
 	OVR_xrandr
 	OVR_rt)
 
+# TODO: Change PATH to DIRECTORY below when Rekhi lab uses a version of cmake newer than 2.8.11
+get_filename_component(OVR_LIBRARY_DIR ${OVR_LIBRARY_SO} PATH)
+
 # append the two include directories together.
 set(OVR_INCLUDE_DIRS ${OVR_INCLUDE_DIR_LIB} ${OVR_INCLUDE_DIR_SRC})
-set(OVR_LIBRARIES ${OVR_LIBRARIES} ${OVR_LIBRARY_SO} ${OVR_pthread} ${OVR_gl} ${OVR_x11} ${OVR_xrandr} ${OVR_rt})
+set(OVR_LIBRARIES ${OVR_LIBRARIES} -Wl,-rpath=${OVR_LIBRARY_DIR} ${OVR_LIBRARY_SO} ${OVR_pthread} ${OVR_gl} ${OVR_x11} ${OVR_xrandr} ${OVR_rt})
