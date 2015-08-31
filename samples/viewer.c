@@ -34,14 +34,11 @@ kuhl_geometry *modelgeom = NULL;
 kuhl_geometry *origingeom = NULL;
 float bbox[6];
 
-/** Set this variable to 1 to force this program to scale the entire
- * model and translate it so that we can see the entire model. This is
- * a useful setting to use when you are loading a new model that you
- * are unsure about the units and position of the model geometry. */
-#define FIT_TO_VIEW 0
-/** If FIT_TO_VIEW is set, this is the place to put the
+int fitToView=0;  // was --fit option used?
+
+/** If fitToView is set, this is the place to put the
  * center of the bottom face of the bounding box. If
- * FIT_TO_VIEW is not set, this is the location in world
+ * fitToView is not set, this is the location in world
  * coordinates that we want to model's origin to appear at. */
 float placeToPutModel[3] = { 0, 0, 0 };
 /** SketchUp produces files that older versions of ASSIMP think 1 unit
@@ -218,7 +215,7 @@ void keyboard(unsigned char key, int x, int y)
 void get_model_matrix(float result[16])
 {
 	mat4f_identity(result);
-	if(FIT_TO_VIEW == 0)
+	if(fitToView == 0)
 	{
 		/* Translate the model to where we were asked to put it */
 		float translate[16];
@@ -489,24 +486,37 @@ int main(int argc, char** argv)
 {
 	char *modelFilename    = NULL;
 	char *modelTexturePath = NULL;
+
+	int currentArgIndex = 1; // skip program name
+	if(argc > 1 && strcmp(argv[1], "--fit")==0)
+	{
+		fitToView = 1;
+		currentArgIndex++;
+	}
 	
-	if(argc == 2)
+	if(argc > currentArgIndex)
 	{
-		modelFilename = argv[1];
+		modelFilename = argv[currentArgIndex];
 		modelTexturePath = NULL;
+		currentArgIndex++;
 	}
-	else if(argc == 3)
+
+	if(argc > currentArgIndex)
 	{
-		modelFilename = argv[1];
-		modelTexturePath = argv[2];
+		modelTexturePath = argv[currentArgIndex];
+		currentArgIndex++;
 	}
-	else
+
+	// If we have no model to load or if there were too many arguments.
+	if(modelFilename == NULL || argc > currentArgIndex)
 	{
 		printf("Usage:\n"
-		       "%s modelFile     - Textures are assumed to be in the same directory as the model.\n"
+		       "%s [--fit] modelFile     - Textures are assumed to be in the same directory as the model.\n"
 		       "- or -\n"
-		       "%s modelFile texturePath\n", argv[0], argv[0]);
-		exit(1);
+		       "%s [--fit] modelFile texturePath\n"
+		       "If the optional --fit parameter is included, the model will be scaled and translated to fit within the approximate view of the camera\n",
+		       argv[0], argv[0]);
+		exit(EXIT_FAILURE);
 	}
 
 	/* set up our GLUT window */

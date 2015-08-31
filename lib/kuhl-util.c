@@ -2218,10 +2218,10 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 {
 	/* If we get here, we need to add the file to the sceneMap. */
 	msg(INFO, "Loading model: %s\n", modelFilename);
-	/* Write assimp messages to command line */
-	struct aiLogStream stream;
 
-	// stream = aiGetPredefinedLogStream(aiDefaultLogStream_STDOUT,NULL);
+	/* Write assimp messages to msg log */
+	struct aiLogStream stream;
+	stream = aiGetPredefinedLogStream(aiDefaultLogStream_STDOUT,NULL);
 	if(stream.callback != msg_assimp_callback)
 	{
 		// we only need to set this up once.
@@ -2735,7 +2735,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 				if(colorComps == 4)
 					colors[i*colorComps+3] = mesh->mColors[0][i].a;
 			}
-			kuhl_geometry_attrib(geom, colors, 4, "in_Color", 0);
+			kuhl_geometry_attrib(geom, colors, colorComps, "in_Color", 0);
 			free(colors);
 		}
 		/* If there are no vertex colors, try to use material colors instead */

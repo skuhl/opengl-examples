@@ -200,7 +200,8 @@ if(OVR_FOUND)
 	# LibOVR relies on a LibOVRRT library at run time. It must be in /usr/lib or /usr/local/lib or in the same directory as the binary.
 	# Here, we make "cmake ." result in the so files getting copied into the bin folder.
 	add_custom_target(copyOVR)
-	get_filename_component(ovrSoDir ${OVR_LIBRARY_SO} DIRECTORY)
+	# TODO: The PATH variable below should be renamed to DIRECTORY once all computers use versions newer than cmake 2.8.11 (Rekhi lab uses 2.8.11)
+	get_filename_component(ovrSoDir ${OVR_LIBRARY_SO} PATH)
 	file(GLOB SO_FILES "${ovrSoDir}/*.so" "${ovrSoDir}/*.so.*")
 	foreach(SOFILE ${SO_FILES})
 	    add_custom_command(TARGET copyOVR PRE_BUILD
