@@ -131,8 +131,10 @@ int kuhl_can_read_file(const char *filename)
    Windows-style path separators.
 
    3) Search for file relative to directory of executable (on Linux)
+   (also, try changing the path separators.)
 
-   4) Combine possibilities 2 and 3 (on Linux)
+   4) Search for file using a list of hard-coded directories (also,
+   try changing the path separators).
 
    @param filename The name of the file the caller wants to open.
    @return A path to the file that may be different than the path
