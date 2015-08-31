@@ -36,6 +36,13 @@ float bbox[6];
 
 int fitToView=0;  // was --fit option used?
 
+/** The following variable toggles the display an "origin+axis" marker
+ * which draws a small box at the origin and draws lines of length 1
+ * on each axis. Depending on which matrices are applied to the
+ * marker, the marker will be in object, world, etc coordinates. */
+int showOrigin=0; // was --origin option used?
+
+
 /** If fitToView is set, this is the place to put the
  * center of the bottom face of the bounding box. If
  * fitToView is not set, this is the location in world
@@ -47,12 +54,6 @@ float placeToPutModel[3] = { 0, 0, 0 };
  * meters. Newer versions of ASSIMP correctly read the same files and
  * give us units in meters. */
 #define INCHES_TO_METERS 0
-
-/** The following variable toggles the display an "origin+axis" marker
- * which draws a small box at the origin and draws lines of length 1
- * on each axis. Depending on which matrices are applied to the
- * marker, the marker will be in object, world, etc coordinates. */
-#define SHOW_ORIGIN 0
 
 #define GLSL_VERT_FILE "assimp.vert"
 #define GLSL_FRAG_FILE "assimp.frag"
@@ -363,7 +364,7 @@ void display()
 		kuhl_errorcheck();
 		kuhl_geometry_draw(modelgeom); /* Draw the model */
 		kuhl_errorcheck();
-		if(SHOW_ORIGIN)
+		if(showOrigin)
 		{
 			/* Save current line width */
 			GLfloat origLineWidth;
@@ -488,33 +489,36 @@ int main(int argc, char** argv)
 	char *modelTexturePath = NULL;
 
 	int currentArgIndex = 1; // skip program name
-	if(argc > 1 && strcmp(argv[1], "--fit")==0)
+	int usageError = 0;
+	while(argc > currentArgIndex)
 	{
-		fitToView = 1;
-		currentArgIndex++;
-	}
-	
-	if(argc > currentArgIndex)
-	{
-		modelFilename = argv[currentArgIndex];
-		modelTexturePath = NULL;
-		currentArgIndex++;
-	}
-
-	if(argc > currentArgIndex)
-	{
-		modelTexturePath = argv[currentArgIndex];
+		if(strcmp(argv[currentArgIndex], "--fit") == 0)
+			fitToView = 1;
+		else if(strcmp(argv[currentArgIndex], "--origin") == 0)
+			showOrigin = 1;
+		else if(modelFilename == NULL)
+		{
+			modelFilename = argv[currentArgIndex];
+			modelTexturePath = NULL;
+		}
+		else if(modelTexturePath == NULL)
+			modelTexturePath = argv[currentArgIndex];
+		else
+		{
+			usageError = 1;
+		}
 		currentArgIndex++;
 	}
 
 	// If we have no model to load or if there were too many arguments.
-	if(modelFilename == NULL || argc > currentArgIndex)
+	if(modelFilename == NULL || usageError)
 	{
 		printf("Usage:\n"
-		       "%s [--fit] modelFile     - Textures are assumed to be in the same directory as the model.\n"
+		       "%s [--fit] [--origin] modelFile     - Textures are assumed to be in the same directory as the model.\n"
 		       "- or -\n"
-		       "%s [--fit] modelFile texturePath\n"
-		       "If the optional --fit parameter is included, the model will be scaled and translated to fit within the approximate view of the camera\n",
+		       "%s [--fit] [--origin] modelFile texturePath\n"
+		       "If the optional --fit parameter is included, the model will be scaled and translated to fit within the approximate view of the camera\n"
+		       "If the optional --origin parameter is included, a box will is drawn at the origin and unit-length lines are drawn down each axis.\n",
 		       argv[0], argv[0]);
 		exit(EXIT_FAILURE);
 	}
@@ -573,7 +577,7 @@ int main(int argc, char** argv)
 
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
-	if(SHOW_ORIGIN)
+	if(showOrigin)
 		origingeom = kuhl_load_model("../models/origin/origin.obj", NULL, program, NULL);
 	
 	init_geometryQuad(&labelQuad, program);
