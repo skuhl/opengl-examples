@@ -84,8 +84,8 @@ float readfile(char *filename, GLuint *texName, GLuint *numTiles)
 	int height = -1;
 	int comp = -1;
 	int requestedComponents = STBI_rgb_alpha;
+	stbi_set_flip_vertically_on_load(1);
 	unsigned char *image = (unsigned char*) stbi_load(filename, &width, &height, &comp, requestedComponents);
-	kuhl_flip_texture_rgba_array(image,width,height,requestedComponents);
 #endif
 
 	if(image == NULL)
