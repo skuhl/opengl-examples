@@ -28,7 +28,13 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#else
 #include <GL/gl.h>
+#endif
+
 #include "kuhl-nodep.h"
 
 #ifdef __cplusplus
