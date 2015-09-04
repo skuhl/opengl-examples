@@ -216,7 +216,8 @@ char* kuhl_find_file(const char *filename)
 	if(kuhl_can_read_file(pathSepChange))
 		return pathSepChange;
 
-#ifdef __linux
+	char *newPath = NULL; // needs to be declared for all OSs
+#ifdef __linux__
 	/* If we can't open the filename directly, then try opening it
 	   with the full path based on the path to the
 	   executable. This allows us to more easily run programs from
@@ -227,7 +228,7 @@ char* kuhl_find_file(const char *filename)
 	ssize_t len = readlink("/proc/self/exe", exe, 1023);
 	exe[len]='\0';
 	char *dir = dirname(exe);
-	char *newPath = kuhl_path_concat_read(dir, filename);
+	newPath = kuhl_path_concat_read(dir, filename);
 	if(newPath)
 	{
 		free(pathSepChange);
