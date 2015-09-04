@@ -8,10 +8,10 @@
  */
 
 #ifdef MOUSEMOVE_GLUT
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#else
+#ifdef FREEGLUT
 #include <GL/freeglut.h>
+#else
+#include <GLUT/glut.h>
 #endif
 #endif
 

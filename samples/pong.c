@@ -6,13 +6,12 @@
 #include <time.h>
 #include <GL/glew.h>
 
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#include <OpenGL/gl.h>
-#else
+#ifdef FREEGLUT
 #include <GL/freeglut.h>
-#include <GL/gl.h>
+#else
+#include <GLUT/glut.h>
 #endif
+
 #include "kuhl-util.h"
 #include "vecmat.h"
 #include "dgr.h"
@@ -524,17 +523,20 @@ void drawPaddle(Paddle paddle, float depth)
 
 int main( int argc, char* argv[] )
 {	
-	/* Initialize glut */
-	glutInit(&argc, argv); //initialize the toolkit
-	glEnable(GL_POINT_SMOOTH);
+	glutInit(&argc, argv);
+	glutInitWindowSize(768, 512);
+	glutInitWindowPosition(0, 0);
+#ifdef FREEGLUT
 	glutSetOption(GLUT_MULTISAMPLE, 4); // set msaa samples; default to 4
-	
-	/* Ask GLUT to for a double buffered, full color window that includes a depth buffer */
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);  //set display mode
-	glutInitWindowSize(768, 512); //set window size
-	glutInitWindowPosition(0, 0); //set window position on screen
-	glutCreateWindow(argv[0]); //open the screen window
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
+	glutInitContextVersion(3,2);
+	glutInitContextProfile(GLUT_CORE_PROFILE);
+#else
+	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
+#endif
+	glutCreateWindow(argv[0]);
 	glEnable(GL_MULTISAMPLE);
+	glEnable(GL_POINT_SMOOTH);
 	
 	/* Initialize glew */
 	int glew_err = glewInit();
