@@ -56,6 +56,10 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 	endif()
 
 	target_link_libraries(${arg} ${GLEW_LIBRARIES} ${M_LIB} ${GLUT_LIBRARIES} ${OPENGL_LIBRARIES} )
+	if(APPLE)
+		# Some Mac OSX machines need this to ensure that freeglut.h is found.
+		target_include_directories(${arg} PUBLIC "/opt/X11/include/freetype2/")
+	endif()
 
 	set_target_properties(${arg} PROPERTIES LINKER_LANGUAGE "CXX")
 	set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
