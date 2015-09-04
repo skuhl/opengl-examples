@@ -1581,10 +1581,10 @@ float kuhl_make_label(const char *label, GLuint *texName, float color[3], float 
 }
 
 
-
-/** STB defaults with the first pixel at the upper left
- * corner. OpenGL and other packages put the first pixel at the bottom
- * left corner.  This code flips the image. */
+/** This code flips an image vertically. This is helpful since OpenGL
+ * puts the first pixel at the bottom left corner and other
+ * image-handling libraries may put the pixel in the top left
+ * corner. */
 void kuhl_flip_texture_rgba_array(unsigned char *image, const int width, const int height, const int components) {
 	// printf("Flipping texture with width = %d, height = %d\n", width, height);
 	unsigned int bytesPerRow = components * width; // 1 byte per component
@@ -1671,6 +1671,12 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName, G
 	int height = -1;
 	int comp = -1;
 	int requestedComponents = STBI_rgb_alpha;
+
+	/** STB defaults with the first pixel at the upper left
+	 * corner. OpenGL and other packages put the first pixel at the
+	 * bottom left corner. But, it allows us to indicate that the
+	 * image should be flipped. */
+	stbi_set_flip_vertically_on_load(1);
 	unsigned char *image = (unsigned char*) stbi_load(newFilename, &width, &height, &comp, requestedComponents);
 	free(newFilename);
 	if(image == NULL)
@@ -1678,7 +1684,6 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName, G
 		msg(ERROR, "Unable to read '%s'.\n", filename);
 		return -1;
 	}
-	kuhl_flip_texture_rgba_array(image, width, height, requestedComponents);
 
 	/* "image" is a 1D array of characters (unsigned bytes) with four
 	 * bytes for each pixel (red, green, blue, alpha). The data in "image"
