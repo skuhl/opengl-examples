@@ -24,7 +24,7 @@
 #include <sys/time.h> // gettimeofday()
 #include <unistd.h> // usleep()
 #include <time.h> // time()
-#ifdef __linux
+#ifdef __linux__
 #include <sys/prctl.h> // kill a forked child when parent exits
 #include <signal.h>
 #endif
@@ -3436,7 +3436,7 @@ GLint kuhl_gen_framebuffer_msaa(int width, int height, GLuint *texture, GLuint *
  */
 void kuhl_play_sound(const char *filename)
 {
-#if __linux
+#ifdef __linux__
 	int forkRet = fork();
 	if(forkRet == -1) // if fork() error
 		perror("fork");
@@ -3470,6 +3470,6 @@ void kuhl_play_sound(const char *filename)
 	}
 
 #else
-	msg(ERROR "This sound function only works on Linux.\n");
+	msg(ERROR, "This sound function only works on Linux.\n");
 #endif
 }
