@@ -3,7 +3,7 @@ is available in homebrew on OSX.
 
 To install, follow these steps:
 
-wget 'http://www.cs.unc.edu/Research/vrpn/downloads/vrpn_07_33.zip'
+wget 'https://github.com/vrpn/vrpn/releases/download/v07.33/vrpn_07_33.zip'
 unzip vrpn_07_33.zip
 cd vrpn
 mkdir build
