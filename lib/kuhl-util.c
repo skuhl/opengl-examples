@@ -2181,7 +2181,7 @@ static char* kuhl_private_assimp_fullpath(const char *textureFile, const char *m
 {
 	if(textureFile == NULL || strlen(textureFile) == 0)
 	{
-		msg(ERROR, "textureFile was NULL or a zero character string.");
+		msg(FATAL, "textureFile was NULL or a zero character string.");
 		exit(EXIT_FAILURE);
 	}
 	
@@ -2191,7 +2191,7 @@ static char* kuhl_private_assimp_fullpath(const char *textureFile, const char *m
 	{
 		if(modelFile == NULL)
 		{
-			msg(ERROR, "modelFile was NULL");
+			msg(FATAL, "modelFile was NULL");
 			exit(EXIT_FAILURE);
 		}
 		char *editable = strdup(modelFile);
@@ -2324,11 +2324,14 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 				}
 			}
 			if(alreadyExists > 0) // no need to reload an already loaded texture
-				continue;
+			{
+				free(fullpath);
+				continue; // skip to next material.
+			}
 
 			if(kuhl_read_texture_file(fullpath, &texIndex) < 0)
 			{
-				printf("%s: WARNING: %s refers to texture %s which we could not find at %s\n", __func__, modelFilename, path.data, fullpath);
+				msg(WARNING, "%s refers to texture %s which we could not find at %s\n", modelFilename, path.data, fullpath);
 			}
 
 			/* Store the texture information in our list structure so
@@ -2336,12 +2339,13 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 			 * render the scene. */
 			if(textureIdMapSize >= textureIdMapMaxSize)
 			{
-				fprintf(stderr, "%s: You have loaded more textures than the hardcoded limit. Exiting.\n", __func__);
+				msg(FATAL, "You have loaded more textures than the hardcoded limit. Exiting.\n");
 				exit(EXIT_FAILURE);
 			}
 			textureIdMap[textureIdMapSize].textureFileName = strdup(fullpath);
 			textureIdMap[textureIdMapSize].textureID = texIndex;
 			textureIdMapSize++;
+			free(fullpath);
 		}
 
 		/* If we failed to load a diffuse texture and there are no
@@ -2730,7 +2734,10 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		// Note: mesh->mColors is a C array, not a pointer
 		if(mesh->mColors[0] != NULL)
 		{
-			static const int colorComps = 3; // don't use alpha by default.
+			/* Don't use alpha by default; changing this to 4 may
+			   require the size of in_Color the vertex program to be
+			   adjusted. */
+			static const int colorComps = 3; 
 			float *colors = kuhl_malloc(sizeof(float)*mesh->mNumVertices*colorComps);
 			for(unsigned int i=0; i<mesh->mNumVertices; i++)
 			{
@@ -2755,14 +2762,17 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 			struct aiColor4D diffuse;
 			if(AI_SUCCESS == aiGetMaterialColor(mtl, AI_MATKEY_COLOR_DIFFUSE, &diffuse))
 			{
-				float *colors = kuhl_malloc(sizeof(float)*mesh->mNumVertices*3);
+				static const int colorComps = 3;
+				float *colors = kuhl_malloc(sizeof(float)*mesh->mNumVertices*colorComps);
 				for(unsigned int i=0; i<mesh->mNumVertices; i++)
 				{
-					colors[i*3+0] = diffuse.r;
-					colors[i*3+1] = diffuse.g;
-					colors[i*3+2] = diffuse.b;
+					colors[i*colorComps+0] = diffuse.r;
+					colors[i*colorComps+1] = diffuse.g;
+					colors[i*colorComps+2] = diffuse.b;
+					// Alpha is not handled for now.
 				}
-				kuhl_geometry_attrib(geom, colors, 3, "in_Color", 0);
+				kuhl_geometry_attrib(geom, colors, colorComps, "in_Color", 0);
+				free(colors);
 			}
 		}
 		
