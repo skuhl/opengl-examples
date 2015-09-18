@@ -60,7 +60,7 @@ void display()
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will
 	 * run twice for HMDs (once for the left eye and once for the
-	 * right. */
+	 * right). */
 	viewmat_begin_frame();
 	for(int viewportID=0; viewportID<viewmat_num_viewports(); viewportID++)
 	{
@@ -84,7 +84,7 @@ void display()
 		glEnable(GL_DEPTH_TEST); // turn on depth testing
 		kuhl_errorcheck();
 
-		/* Get the view or camera matrix; update the frustum values if needed. */
+		/* Get the view matrix and the projection matrix */
 		float viewMat[16], perspective[16];
 		viewmat_get(viewMat, perspective, viewportID);
 
@@ -108,9 +108,12 @@ void display()
 		mat4f_mult_mat4f_new(modelview, viewMat, scaleMatrix);
 		mat4f_mult_mat4f_new(modelview, modelview, rotateMat);
 
+		/* Tell OpenGL which GLSL program the subsequent
+		 * glUniformMatrix4fv() calls are for. */
 		kuhl_errorcheck();
 		glUseProgram(program);
 		kuhl_errorcheck();
+		
 		/* Send the perspective projection matrix to the vertex program. */
 		glUniformMatrix4fv(kuhl_get_uniform("Projection"),
 		                   1, // number of 4x4 float matrices
@@ -225,6 +228,9 @@ int main(int argc, char** argv)
 	/* Compile and link a GLSL program composed of a vertex shader and
 	 * a fragment shader. */
 	program = kuhl_create_program("triangle.vert", "triangle.frag");
+
+	/* Use the GLSL program so subsequent calls to glUniform*() send the variable to
+	   the correct program. */
 	glUseProgram(program);
 	kuhl_errorcheck();
 	/* Set the uniform variable in the shader that is named "red" to the value 1. */
