@@ -58,7 +58,7 @@ void display()
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will
 	 * run twice for HMDs (once for the left eye and once for the
-	 * right. */
+	 * right). */
 	viewmat_begin_frame();
 	for(int viewportID=0; viewportID<viewmat_num_viewports(); viewportID++)
 	{
@@ -67,11 +67,12 @@ void display()
 		/* Where is the viewport that we are drawing onto and what is its size? */
 		int viewport[4]; // x,y of lower left corner, width, height
 		viewmat_get_viewport(viewport, viewportID);
+		/* Tell OpenGL the area of the window that we will be drawing in. */
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
 		/* Clear the current viewport. Without glScissor(), glClear()
 		 * clears the entire screen. We could call glClear() before
-		 * this viewport loop---but on order for all variations of
+		 * this viewport loop---but in order for all variations of
 		 * this code to work (Oculus support, etc), we can only draw
 		 * after viewmat_begin_eye(). */
 		glScissor(viewport[0], viewport[1], viewport[2], viewport[3]);
@@ -82,7 +83,7 @@ void display()
 		glEnable(GL_DEPTH_TEST); // turn on depth testing
 		kuhl_errorcheck();
 
-		/* Get the view or camera matrix; update the frustum values if needed. */
+		/* Get the view matrix and the projection matrix */
 		float viewMat[16], perspective[16];
 		viewmat_get(viewMat, perspective, viewportID);
 
@@ -106,9 +107,12 @@ void display()
 		mat4f_mult_mat4f_new(modelview, viewMat, scaleMatrix);
 		mat4f_mult_mat4f_new(modelview, modelview, rotateMat);
 
+		/* Tell OpenGL which GLSL program the subsequent
+		 * glUniformMatrix4fv() calls are for. */
 		kuhl_errorcheck();
 		glUseProgram(program);
 		kuhl_errorcheck();
+		
 		/* Send the perspective projection matrix to the vertex program. */
 		glUniformMatrix4fv(kuhl_get_uniform("Projection"),
 		                   1, // number of 4x4 float matrices
@@ -199,7 +203,12 @@ int main(int argc, char** argv)
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
 
+	/* Compile and link a GLSL program composed of a vertex shader and
+	 * a fragment shader. */
 	program = kuhl_create_program("triangle-color.vert", "triangle-color.frag");
+
+	/* Use the GLSL program so subsequent calls to glUniform*() send the variable to
+	   the correct program. */
 	glUseProgram(program);
 	kuhl_errorcheck();
 

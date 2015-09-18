@@ -199,17 +199,20 @@ static void msg_init(void)
 		fprintf(f, "============================================================\n");
 		fprintf(f, "=== Program started ========================================\n");
 		fprintf(f, "============================================================\n");
-		msg(INFO, "Messages are being appended to '%s'\n", logfile);
 	}
 	else
-	{
 		f = fopen(logfile, "w"); // overwrite
-		msg(INFO, "Messages are being written to '%s'\n", logfile);
-	}
 
 	// Header for log file
 	fprintf(f, "[TYPE ]    seconds     filename:line message\n");
 	fprintf(f, "------------------------------------------\n");
+
+	// Write message so user knows the log file is being created.
+	if(append)
+		msg(INFO, "Messages are being appended to '%s'\n", logfile);
+	else
+		msg(INFO, "Messages are being written to '%s'\n", logfile);
+
 }
 
 /** Writes a message to the log file.

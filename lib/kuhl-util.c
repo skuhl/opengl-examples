@@ -70,7 +70,7 @@ int kuhl_errorcheckFileLine(const char *file, int line, const char *func)
 	if(errCode != GL_NO_ERROR)
 	{
 		msg(ERROR, "OpenGL error '%s' occurred before %s:%d",
-		        gluErrorString(errCode), file, line);
+		    gluErrorString(errCode), file, line);
 		return 1;
 	}
 	return 0;
@@ -96,8 +96,8 @@ GLuint kuhl_create_shader(const char *filename, GLuint shader_type)
 	    shader_type != GL_VERTEX_SHADER ) ||
 	   filename == NULL)
 	{
-		fprintf(stderr, "%s: ERROR: You passed inappropriate information into this function.\n", __func__);
-		return 0;
+		msg(FATAL, "You passed inappropriate information into this function.\n");
+		exit(EXIT_FAILURE);
 	}
 
 	/* Make sure that the shader program functions are available via
@@ -110,7 +110,7 @@ GLuint kuhl_create_shader(const char *filename, GLuint shader_type)
 	}
 	if(shader_type == GL_VERTEX_SHADER && !glewIsSupported("GL_ARB_vertex_shader") && !glewIsSupported("GL_VERSION_2_0"))
 	{
-		msg(FATAL, "glew said vertex shaders are not supported on this machine.\n", __func__);
+		msg(FATAL, "glew said vertex shaders are not supported on this machine.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -173,7 +173,7 @@ void kuhl_print_program_info(GLuint program)
 		buflen += snprintf(buf+buflen, 1024-buflen, "%s@%d ", attribName, location);
 	}
 	if(numVarsInProg == 0)
-		printf("[none!]");
+		buflen += snprintf(buf+buflen, 1024-buflen, "[none!]");
 
 	msg(INFO, "%s", buf);
 	
@@ -195,7 +195,7 @@ void kuhl_print_program_info(GLuint program)
 		buflen += snprintf(buf+buflen, 1024-buflen, "%s@%d ", attribName, location);
 	}
 	if(numVarsInProg == 0)
-		printf("[none!]");
+		buflen += snprintf(buf+buflen, 1024-buflen, "[none!]");
 
 	msg(INFO, "%s", buf);
 	

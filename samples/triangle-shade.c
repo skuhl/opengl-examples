@@ -69,11 +69,12 @@ void display()
 		/* Where is the viewport that we are drawing onto and what is its size? */
 		int viewport[4]; // x,y of lower left corner, width, height
 		viewmat_get_viewport(viewport, viewportID);
+		/* Tell OpenGL the area of the window that we will be drawing in. */
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
 		/* Clear the current viewport. Without glScissor(), glClear()
 		 * clears the entire screen. We could call glClear() before
-		 * this viewport loop---but on order for all variations of
+		 * this viewport loop---but in order for all variations of
 		 * this code to work (Oculus support, etc), we can only draw
 		 * after viewmat_begin_eye(). */
 		glScissor(viewport[0], viewport[1], viewport[2], viewport[3]);
