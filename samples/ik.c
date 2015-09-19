@@ -3,7 +3,7 @@
  * the file named "LICENSE" for a full copy of the license.
  */
 
-/** @file Demonstrates kinematics
+/** @file Demonstrates inverse kinematics using a Jacobian transpose approach.
  *
  * @author Scott Kuhl
  */
@@ -52,10 +52,11 @@ float placeToPutModel[3] = { 0, 0, 0 };
 #define GLSL_VERT_FILE "assimp.vert"
 #define GLSL_FRAG_FILE "assimp.frag"
 
-float arm1X = 0;
-float arm1Z = 0;
-float arm2X = 0;
-float arm2Z = 0;
+float angles[] = { 10, 15, 20,  // arm 1
+                   20, 25, 30,  // arm 2
+};
+int anglesCount = 6;
+float target[4] = { 0, 4, 0, 1};
 
 /* Called by GLUT whenever a key is pressed. */
 void keyboard(unsigned char key, int x, int y)
@@ -74,14 +75,12 @@ void keyboard(unsigned char key, int x, int y)
 		case 'F': // switch to window from full screen mode
 			glutPositionWindow(0,0);
 			break;
-		case 'a': arm1X+=1; break;
-		case 'A': arm1X-=1; break;
-		case 'z': arm1Z+=1; break;
-		case 'Z': arm1Z-=1; break;
-		case 's': arm2X+=1; break;
-		case 'S': arm2X-=1; break;
-		case 'x': arm2Z+=1; break;
-		case 'X': arm2Z-=1; break;
+		case 'a': target[0]+=.05; break;
+		case 'A': target[0]-=.05; break;
+		case 's': target[1]+=.05; break;
+		case 'S': target[1]-=.05; break;
+		case 'd': target[2]+=.05; break;
+		case 'D': target[2]-=.05; break;
 		case 'r':
 		{
 			// Reload GLSL program from disk
@@ -252,6 +251,193 @@ void get_model_matrix(float result[16])
 }
 
 
+/* Get arm matrices given a set of angles. The arm2 matrix already has
+ * the arm1 matrix applied to it. */
+void get_arm_matrices(float arm1[16], float arm2[16], float angles[])
+{
+	list *stack = list_new(16, sizeof(float)*16, NULL);
+
+	float baseRotate[16];
+	mat4f_rotateEuler_new(baseRotate, angles[0], angles[1], angles[2], "XYZ");
+	mat4f_stack_mult(stack, baseRotate);
+	mat4f_stack_push(stack);
+
+	float scale[16];
+	mat4f_scale_new(scale, .5, 4, .5);
+	float decenter[16];
+	mat4f_translate_new(decenter, 0, .5, 0);
+
+	mat4f_stack_mult(stack, scale);
+	mat4f_stack_mult(stack, decenter);
+	mat4f_stack_peek(stack, arm1);
+	mat4f_stack_pop(stack);
+
+	float trans[16];
+	mat4f_translate_new(trans, 0, 4, 0);
+	mat4f_stack_mult(stack, trans);
+
+	mat4f_rotateEuler_new(baseRotate, angles[3], angles[4], angles[5], "XYZ");
+	mat4f_stack_mult(stack, baseRotate);
+	mat4f_stack_push(stack);
+
+	mat4f_stack_mult(stack, scale);
+	mat4f_stack_mult(stack, decenter);
+	mat4f_stack_peek(stack, arm2);
+	mat4f_stack_pop(stack);
+
+	list_free(stack);
+}
+
+/* Given a list of angles, calculate end affector location */
+void end_affector_loc(float loc[4], float angles[])
+{
+	float arm1mat[16], arm2mat[16];
+	get_arm_matrices(arm1mat, arm2mat, angles);
+	vec4f_set(loc, 0, .5, 0, 1);
+	mat4f_mult_vec4f_new(loc, arm2mat, loc);
+}
+
+/* Get a jacobian matrix. It is 3 elements tall and angleCount
+ * elements wide. Each column represents how (x,y,z) of the end
+ * affector will change given a small change in the angle. */
+float* get_jacobian(float delta)
+{
+	float *jacobian = malloc(sizeof(float)*3*anglesCount);
+
+	float origLoc[3];
+	end_affector_loc(origLoc, angles);
+	
+	for(int i=0; i<anglesCount; i++)
+	{
+		angles[i] += delta;
+		float newLoc[3];
+		end_affector_loc(newLoc, angles);
+		float deltaLoc[3];
+		vec3f_sub_new(deltaLoc, newLoc, origLoc);
+		for(int j=0; j<3; j++)
+			jacobian[i*3+j] = deltaLoc[j];
+		angles[i] -= delta;
+	}
+
+
+	printf("jacobian:\n");
+	for(int i=0; i<anglesCount; i++)
+	{
+		for(int j=0; j<3; j++)
+			printf("%8.4f ", jacobian[j*anglesCount+i]);
+		printf("\n");
+	}
+	
+	return jacobian;
+}
+
+
+void affector_target(float target[4])
+{
+	while(1)
+	{
+		/* Get current location of end effector */
+		float currentLoc[4]; 
+		end_affector_loc(currentLoc, angles);
+		/* Get a vector pointing to target from current end effector location */
+		float deltaTarget[3];
+		vec3f_sub_new(deltaTarget, target, currentLoc);
+		float distance = vec3f_norm(deltaTarget);
+
+		if(distance < .001)
+			break;
+
+		printf("pre: location, target, delta:\n");
+		vec3f_print(currentLoc);
+		vec3f_print(target);
+		vec3f_print(deltaTarget);
+		printf("distance: %f\n", distance);
+		printf("angles:\n");
+		vecNf_print(angles, anglesCount);
+
+		float *jacobian = get_jacobian(2);
+
+		/* Jacobian is in column-major order. Each column represents
+		 * the change in (x,y,z) given a change in a specific angle:
+
+		   angle0  angle1  ...
+		   -----------------
+		   x       x
+		   y       y
+		   z       z
+
+		   We can "transpose" the jacobian simply by changing the way
+		   we index into the array. To transpose it, we simply assume
+		   that the array is in row-major order---meaning that a row
+		   represents a change in (x,y,z) given a change in a specific
+		   angle.
+
+		   Transposed jacobian is (we can assume it is in row-major order to transpose)
+
+		   x y z
+		   x y z
+		   ...
+
+		*/
+
+
+		/* Multiply the change in the end effector by the transposed
+		 * Jacobian. The result will approximate the change in angle
+		 * of each of the joints that we want. */
+		float *changeInAngle = malloc(sizeof(float)*anglesCount);
+		for(int i=0; i<anglesCount; i++) // for each row in the transposed Jacobian
+		{
+			// take the dot product of the transposed jacobian row with the target position:
+			changeInAngle[i] = vec3f_dot(&(jacobian[i*3]), deltaTarget);
+		}
+
+		/* Calculate how these changes in angle would influence end
+		   effector based on the original Jacobian */
+		float expectedChangeInEffector[3] = { 0,0,0 };
+		for(int i=0; i<3; i++)
+		{
+			// Dot product of the first row of the jacobian with the changeInAngle
+			for(int j=0; j<anglesCount; j++)
+				expectedChangeInEffector[i] += changeInAngle[j] * jacobian[j*3+i];
+		}
+		printf("expected change in effector:\n");
+		vec3f_print(expectedChangeInEffector);
+
+		/* Calculate a reasonable alpha according to:
+		   http://www.math.ucsd.edu/~sbuss/ResearchWeb/ikmethods/iksurvey.pdf
+		*/
+		float alpha = vec3f_dot(expectedChangeInEffector, deltaTarget) /
+			vec3f_dot(expectedChangeInEffector, expectedChangeInEffector);
+		printf("alpha: %f\n", alpha);
+
+		/* Apply our angle changes (multiplied by alpha) to the robots angles */
+		printf("Change in angles: ");
+		for(int i=0; i<anglesCount; i++)
+		{
+			angles[i] += alpha*changeInAngle[i];
+			angles[i] = fmod(angles[i], 360); // Keep angles within 0 to 360
+			printf("%f ", changeInAngle[i]);
+		}
+		printf("\n");
+
+		float newLoc[3];
+		end_affector_loc(newLoc, angles);
+		float actualChange[3];
+		vec3f_sub_new(actualChange, newLoc, currentLoc);
+		printf("Actual change in end effector\n");
+		vec3f_print(actualChange);
+		
+		free(changeInAngle);
+		free(jacobian);
+
+		// Uncomment to see IK solution change
+		// break;
+	}
+
+}
+
+
+
 /* Called by GLUT whenever the window needs to be redrawn. This
  * function should not be called directly by the programmer. Instead,
  * we can call glutPostRedisplay() to request that GLUT call display()
@@ -337,9 +523,7 @@ void display()
 		/* Get the view or camera matrix; update the frustum values if needed. */
 		float viewMat[16], perspective[16];
 		viewmat_get(viewMat, perspective, viewportID);
-		
-		list *stack = list_new(16, sizeof(float)*16, NULL);
-		mat4f_stack_mult(stack, viewMat);
+
 
 		glUseProgram(program);
 
@@ -356,24 +540,19 @@ void display()
 		                   0, // transpose
 		                   perspective); // value
 
-		float modelMat[16];
-		get_model_matrix(modelMat);
-		mat4f_stack_mult(stack, modelMat);
+//		float modelMat[16];
+//		get_model_matrix(modelMat);
+//		mat4f_stack_mult(stack, modelMat);
 
-		float baseRotate[16];
-		mat4f_rotateEuler_new(baseRotate, arm1X, 0, arm1Z, "XYZ");
-		mat4f_stack_mult(stack, baseRotate);
-		mat4f_stack_push(stack);
 
-		float scale[16];
-		float decenter[16];
-		mat4f_scale_new(scale, .5, 4, .5);
-		mat4f_translate_new(decenter, 0, .5, 0);
-		mat4f_stack_mult(stack, scale);
-		mat4f_stack_mult(stack, decenter);
 
+		affector_target(target);
+		
+		float arm1Mat[16],arm2Mat[16];
+		get_arm_matrices(arm1Mat, arm2Mat, angles);
+		
 		float modelview[16];
-		mat4f_stack_peek(stack, modelview);
+		mat4f_mult_mat4f_new(modelview, viewMat, arm1Mat);
 		glUniformMatrix4fv(kuhl_get_uniform("ModelView"),
 		                   1, // number of 4x4 float matrices
 		                   0, // transpose
@@ -382,28 +561,18 @@ void display()
 		kuhl_geometry_draw(modelgeom); /* Draw the model */
 		kuhl_errorcheck();
 
-		mat4f_stack_pop(stack);
-
-		float trans[16];
-		mat4f_translate_new(trans, 0, 4, 0);
-		mat4f_stack_mult(stack, trans);
-
-		mat4f_rotateEuler_new(baseRotate, arm2X, 0, arm2Z, "XYZ");
-		mat4f_stack_mult(stack, baseRotate);
-		mat4f_stack_push(stack);
-
-		mat4f_stack_mult(stack, scale);
-		mat4f_stack_mult(stack, decenter);
-		
-		/* Send the modelview matrix to the vertex program. */
-		mat4f_stack_peek(stack, modelview);
+		mat4f_mult_mat4f_new(modelview, viewMat, arm2Mat);
 		glUniformMatrix4fv(kuhl_get_uniform("ModelView"),
 		                   1, // number of 4x4 float matrices
 		                   0, // transpose
 		                   modelview); // value
-		kuhl_geometry_draw(modelgeom);
+		kuhl_errorcheck();
+		kuhl_geometry_draw(modelgeom); /* Draw the model */
+		kuhl_errorcheck();
 
-		list_free(stack);
+		float ealoc[4];
+		end_affector_loc(ealoc, arm2Mat);
+
 		
 		if(dgr_is_enabled() == 0 || dgr_is_master())
 		{
