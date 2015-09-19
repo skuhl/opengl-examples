@@ -288,8 +288,8 @@ void get_arm_matrices(float arm1[16], float arm2[16], float angles[])
 	list_free(stack);
 }
 
-/* Given a list of angles, calculate end affector location */
-void end_affector_loc(float loc[4], float angles[])
+/* Given a list of angles, calculate end effector location */
+void end_effector_loc(float loc[4], float angles[])
 {
 	float arm1mat[16], arm2mat[16];
 	get_arm_matrices(arm1mat, arm2mat, angles);
@@ -299,19 +299,19 @@ void end_affector_loc(float loc[4], float angles[])
 
 /* Get a jacobian matrix. It is 3 elements tall and angleCount
  * elements wide. Each column represents how (x,y,z) of the end
- * affector will change given a small change in the angle. */
+ * effector will change given a small change in the angle. */
 float* get_jacobian(float delta)
 {
 	float *jacobian = malloc(sizeof(float)*3*anglesCount);
 
 	float origLoc[3];
-	end_affector_loc(origLoc, angles);
+	end_effector_loc(origLoc, angles);
 	
 	for(int i=0; i<anglesCount; i++)
 	{
 		angles[i] += delta;
 		float newLoc[3];
-		end_affector_loc(newLoc, angles);
+		end_effector_loc(newLoc, angles);
 		float deltaLoc[3];
 		vec3f_sub_new(deltaLoc, newLoc, origLoc);
 		for(int j=0; j<3; j++)
@@ -332,13 +332,13 @@ float* get_jacobian(float delta)
 }
 
 
-void affector_target(float target[4])
+void effector_target(float target[4])
 {
 	while(1)
 	{
 		/* Get current location of end effector */
 		float currentLoc[4]; 
-		end_affector_loc(currentLoc, angles);
+		end_effector_loc(currentLoc, angles);
 		/* Get a vector pointing to target from current end effector location */
 		float deltaTarget[3];
 		vec3f_sub_new(deltaTarget, target, currentLoc);
@@ -421,7 +421,7 @@ void affector_target(float target[4])
 		printf("\n");
 
 		float newLoc[3];
-		end_affector_loc(newLoc, angles);
+		end_effector_loc(newLoc, angles);
 		float actualChange[3];
 		vec3f_sub_new(actualChange, newLoc, currentLoc);
 		printf("Actual change in end effector\n");
@@ -546,7 +546,7 @@ void display()
 
 
 
-		affector_target(target);
+		effector_target(target);
 		
 		float arm1Mat[16],arm2Mat[16];
 		get_arm_matrices(arm1Mat, arm2Mat, angles);
@@ -571,7 +571,7 @@ void display()
 		kuhl_errorcheck();
 
 		float ealoc[4];
-		end_affector_loc(ealoc, arm2Mat);
+		end_effector_loc(ealoc, arm2Mat);
 
 		
 		if(dgr_is_enabled() == 0 || dgr_is_master())
