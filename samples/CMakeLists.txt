@@ -1,3 +1,9 @@
+if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
+    message(FATAL_ERROR "Don't run cmake here. Run it in the root folder of this repository.")
+endif()
+cmake_minimum_required(VERSION 2.6)
+
+
 ####################################
 # Edit the following areas to add or remove programs to compile
 #
@@ -8,6 +14,8 @@
 set(NEED_ASSIMP viewer slerp explode flock ik)
 # Programs that don't rely on ASSIMP
 set(NEED_NOTHING text triangle triangle-color triangle-shade prerend picker teartest texture panorama ogl2-triangle ogl2-slideshow ogl2-texture pong)
+
+
 
 
 # Construct a list of programs that we want to compile based on which libraries are available.
@@ -63,7 +71,7 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 
 	set_target_properties(${arg} PROPERTIES LINKER_LANGUAGE "CXX")
 	set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
-	add_dependencies(${arg} kuhl)
+	# add_dependencies(${arg} kuhl)
 
 	# Any time we make this program, copy all of the vertex and fragment program files into bin.
 	add_dependencies(${arg} copyGLSL)
