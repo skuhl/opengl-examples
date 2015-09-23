@@ -78,8 +78,8 @@ void main()
 	}
 	else if(renderStyle == 8)
 	{
-		/* out_CamCoord is the position of this fragment in eye
-		 * coordinates. Since the camera is at 0,0,0 in eye
+		/* out_CamCoord is the position of this fragment in camera
+		 * coordinates. Since the camera is at 0,0,0 in camera
 		 * coordinates, we can interpret it as a vector pointing from
 		 * the camera to the fragment. out_Normal is a normal vector
 		 * on the triangle. If the sign of the dot product is
