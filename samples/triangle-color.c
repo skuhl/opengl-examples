@@ -155,7 +155,9 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
 	kuhl_geometry_new(geom, prog, 3, // num vertices
 	                  GL_TRIANGLES); // primitive type
 
-	/* The data that we want to draw */
+	/* Vertices that we want to form triangles out of. Every 3 numbers
+	 * is a vertex position. Since no indices are provided, every
+	 * three vertex positions form a single triangle.*/
 	GLfloat vertexPositions[] = {0, 0, 0,
 	                             1, 0, 0,
 	                             1, 1, 0};
@@ -164,12 +166,12 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
 	                     "in_Position", // GLSL variable
 	                     KG_WARN); // warn if attribute is missing in GLSL program?
 
+	/* The colors of each of the vertices */
 	GLfloat colorData[] = {1,0,0,
 	                       0,1,0,
 	                       0,0,1 };
 	kuhl_geometry_attrib(geom, colorData, 3, "in_Color", KG_WARN);
 }
-
 
 int main(int argc, char** argv)
 {

@@ -171,7 +171,9 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
 	kuhl_geometry_new(geom, prog, 3, // num vertices
 	                  GL_TRIANGLES); // primitive type
 
-	/* The data that we want to draw */
+	/* Vertices that we want to form triangles out of. Every 3 numbers
+	 * is a vertex position. Since no indices are provided, every
+	 * three vertex positions form a single triangle.*/
 	GLfloat vertexPositions[] = {0, 0, 0,
 	                             1, 0, 0,
 	                             1, 1, 0};
@@ -195,7 +197,9 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 	                  4, // number of vertices
 	                  GL_TRIANGLES); // type of thing to draw
 
-	/* The data that we want to draw */
+	/* Vertices that we want to form triangles out of. Every 3 numbers
+	 * is a vertex position. Below, we provide indices to form
+	 * triangles out of these vertices. */
 	GLfloat vertexPositions[] = {0+1.1, 0, 0,
 	                             1+1.1, 0, 0,
 	                             1+1.1, 1, 0,
@@ -212,8 +216,11 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 	                        0, 0, 1};
 	kuhl_geometry_attrib(geom, normalData, 3, "in_Normal", KG_WARN);
 	
-	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
-	                       0, 2, 3 }; // indices of second triangle.
+	/* A list of triangles that we want to draw. "0" refers to the
+	 * first vertex in our list of vertices. Every three numbers forms
+	 * a single triangle. */
+	GLuint indexData[] = { 0, 1, 2,  
+	                       0, 2, 3 };
 	kuhl_geometry_indices(geom, indexData, 6);
 
 	kuhl_errorcheck();
