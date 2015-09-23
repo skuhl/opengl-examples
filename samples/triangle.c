@@ -113,8 +113,7 @@ void display()
 
 		/* Construct a modelview matrix: modelview = viewMat * modelMat */
 		float modelview[16];
-		mat4f_mult_mat4f_new(modelview, viewMat, scaleMat);
-		mat4f_mult_mat4f_new(modelview, modelview, rotateMat);
+		mat4f_mult_mat4f_new(modelview, viewMat, modelMat);
 
 		/* Tell OpenGL which GLSL program the subsequent
 		 * glUniformMatrix4fv() calls are for. */
