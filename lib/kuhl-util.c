@@ -1087,18 +1087,18 @@ void kuhl_geometry_indices(kuhl_geometry *geom, GLuint *indices, GLuint indexCou
 {
 	if(indexCount == 0 || indices == NULL)
 	{
-		printf("%s: WARNING: indexCount was zero or indices array was NULL\n", __func__);
+		msg(WARNING, "indexCount was zero or indices array was NULL\n");
 		return;
 	}
 
 	if(geom->primitive_type == GL_TRIANGLES && indexCount % 3 != 0)
 	{
-		printf("%s: ERROR: indexCount=%u was not a multiple of 3 even though this geometry has triangles in it.", __func__, indexCount);
+		msg(FATAL, "indexCount=%u was not a multiple of 3 even though this geometry has triangles in it.", indexCount);
 		exit(EXIT_FAILURE);
 	}
 	else if(geom->primitive_type == GL_LINES && indexCount % 2 != 0)
 	{
-		printf("%s: ERROR: indexCount=%u was not a multiple of 2 even though this geometry has lines in it.", __func__, indexCount);
+		msg(FATAL, "indexCount=%u was not a multiple of 2 even though this geometry has lines in it.", indexCount);
 		exit(EXIT_FAILURE);
 	}
 	
@@ -1111,7 +1111,8 @@ void kuhl_geometry_indices(kuhl_geometry *geom, GLuint *indices, GLuint indexCou
 	for(GLuint i=0; i<geom->indices_len; i++)
 	{
 		if(geom->indices[i] >= geom->vertex_count)
-			fprintf(stderr, "%s: kuhl_geometry has %d vertices but indices[%d] is asking for vertex at index %d to be drawn.\n", __func__, geom->vertex_count, i, geom->indices[i]);
+			msg(ERROR, "kuhl_geometry has %d vertices but indices[%d] is asking for vertex at index %d to be drawn.\n",
+			    geom->vertex_count, i, geom->indices[i]);
 	}
 
 	/* Enable VAO */
