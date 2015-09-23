@@ -1,3 +1,9 @@
+if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
+    message(FATAL_ERROR "Don't run cmake here. Run it in the root folder of this repository.")
+endif()
+cmake_minimum_required(VERSION 2.6)
+
+
 set(FILES_IN_LIBKUHL kuhl-util.c kuhl-nodep.c vecmat.c dgr.c mousemove.c hmd-dsight-orient.c projmat.c viewmat.c vrpn-help.cpp kalman.c font-helper.c msg.c list.c queue.c tdl-util.c)
 
 if(ImageMagick_FOUND)

@@ -96,18 +96,24 @@ void display()
 		float angle = count / 10000.0 * 360; // rotate 360 degrees every 10 seconds
 		/* Make sure all computers/processes use the same angle */
 		dgr_setget("angle", &angle, sizeof(GLfloat));
+
 		/* Create a 4x4 rotation matrix based on the angle we computed. */
 		float rotateMat[16];
 		mat4f_rotateAxis_new(rotateMat, angle, 0,1,0);
 
 		/* Create a scale matrix. */
-		float scaleMatrix[16];
-		mat4f_scale_new(scaleMatrix, 3, 3, 3);
+		float scaleMat[16];
+		mat4f_scale_new(scaleMat, 3, 3, 3);
 
-		// Modelview = (viewMatrix * scaleMatrix) * rotationMatrix
+		/* Combine the scale and rotation matrices into a single model matrix.
+		   modelMat = scaleMat * rotateMat
+		*/
+		float modelMat[16];
+		mat4f_mult_mat4f_new(modelMat, scaleMat, rotateMat);
+
+		/* Construct a modelview matrix: modelview = viewMat * modelMat */
 		float modelview[16];
-		mat4f_mult_mat4f_new(modelview, viewMat, scaleMatrix);
-		mat4f_mult_mat4f_new(modelview, modelview, rotateMat);
+		mat4f_mult_mat4f_new(modelview, viewMat, modelMat);
 
 		/* Tell OpenGL which GLSL program the subsequent
 		 * glUniformMatrix4fv() calls are for. */
