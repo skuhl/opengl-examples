@@ -15,7 +15,7 @@ void main()
 
 	// Calculate diffuse lighting:
 	float diffuse = dot(camLook, out_Normal.xyz);
-	diffuse = abs(diffuse); // Light front and back the same way:
+	diffuse = abs(diffuse); // Light front and back the same way
 
 	// Don't let the diffuse term get too small (otherwise object
 	// would be black!). We do this by making the diffuse term range
