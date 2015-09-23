@@ -18,8 +18,8 @@ uniform mat4 GeomTransform;
 out vec2 out_TexCoord;
 out vec3 out_Color;
 out float out_Depth;
-out vec3 out_Normal;   // normal vector (camera/eye coordinates)
-out vec3 out_EyeCoord; // vertex position (camera/eye coordinates)
+out vec3 out_Normal;   // normal vector (camera coordinates)
+out vec3 out_CamCoord; // vertex position (camera coordinates)
 
 void main() 
 {
@@ -56,6 +56,6 @@ void main()
 	// plane.
 	out_Depth = ((actualModelView*vec4(in_Position.xyz, 1)).z)/-farPlane ;
 
-	// Calculate the position of the vertex in eye coordinates:
-	out_EyeCoord = vec3(actualModelView * vec4(in_Position.xyz, 1));
+	// Calculate the position of the vertex in camera coordinates:
+	out_CamCoord = vec3(actualModelView * vec4(in_Position.xyz, 1));
 }

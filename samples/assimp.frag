@@ -3,8 +3,8 @@
 out vec4 fragColor;
 in vec2 out_TexCoord; // Vertex texture coordinate
 in vec3 out_Color;    // Vertex color
-in vec3 out_Normal;   // Normal vector in eye coordinates
-in vec3 out_EyeCoord; // Position of fragment in eye coordinates
+in vec3 out_Normal;   // Normal vector in camera coordinates
+in vec3 out_CamCoord; // Position of fragment in camera coordinates
 
 in float out_Depth;   // Depth of fragment (range 0 through 1)
 
@@ -17,8 +17,8 @@ void main()
 {
 	/* Head-lamp style diffuse shading. The camera is at 0,0,0 in
 	 * eye coordinates, so a vector that points at the camera from
-	 * the fragment is (0,0,0)-out_EyeCoord = out_EyeCoord */
-	vec3 camLook = normalize(-out_EyeCoord.xyz);
+	 * the fragment is (0,0,0)-out_CamCoord = out_CamCoord */
+	vec3 camLook = normalize(-out_CamCoord.xyz);
 	// Generate a diffuse value, clamp it to between 0 and 1,
 	// divide+add to get it to range from .5 to 1.
 	float diffuse = clamp(dot(camLook, normalize(out_Normal.xyz)), 0,1) / 2+.5;
@@ -54,7 +54,7 @@ void main()
 	else if(renderStyle == 4)
 	{
 		/* Diffuse (headlamp style) with vertex colors */
-		vec3 camLook = normalize(-out_EyeCoord.xyz);
+		vec3 camLook = normalize(-out_CamCoord.xyz);
 		float diffuse = clamp(dot(camLook, normalize(out_Normal.xyz)), 0,1) / 2+.5;
 		fragColor = vec4(out_Color * diffuse, 1);
 	}
@@ -78,7 +78,7 @@ void main()
 	}
 	else if(renderStyle == 8)
 	{
-		/* out_EyeCoord is the position of this fragment in eye
+		/* out_CamCoord is the position of this fragment in eye
 		 * coordinates. Since the camera is at 0,0,0 in eye
 		 * coordinates, we can interpret it as a vector pointing from
 		 * the camera to the fragment. out_Normal is a normal vector
@@ -86,7 +86,7 @@ void main()
 		 * negative, the angle between the vectors is greater than 90
 		 * degrees---telling us that they are pointing in "opposite"
 		 * directions. */
-		if(dot(out_Normal, out_EyeCoord) < 0)
+		if(dot(out_Normal, out_CamCoord) < 0)
 			fragColor = vec4(0,.3,0,1); // green are front faces
 		else
 			fragColor = vec4(.3,0,0,1); // red are back faces
