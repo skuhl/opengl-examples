@@ -363,8 +363,8 @@ GLint kuhl_get_uniform(const char *uniformName)
 		missingUniformCount++;
 		if(missingUniformCount == 50)
 		{
-			msg(ERROR, "Hiding any additional error messages.\n");
-			msg(ERROR, "Remember that the GLSL variables that do not affect the appearance of your program will be set to inactive by the GLSL compiler\n");
+			msg(ERROR, "Hiding any additional error messages related to missing/inactive uniform variables.\n");
+			msg(ERROR, "Remember that the GLSL variables that do not affect the appearance of your program will be set to inactive by the GLSL compiler.\n");
 		}
 	}
 	return loc;
