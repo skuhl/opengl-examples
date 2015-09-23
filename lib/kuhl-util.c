@@ -466,14 +466,14 @@ static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
 {
 	if(geom->program == 0)
 	{
-		msg(ERROR, "The program element was not set in your kuhl_geometry struct. You must specify which GLSL program will be used with this geometry.\n");
+		msg(FATAL, "The program element was not set in your kuhl_geometry struct. You must specify which GLSL program will be used with this geometry.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	/* Check if the program is valid (we don't need to enable it here). */
 	if(!glIsProgram(geom->program))
 	{
-		msg(ERROR, "The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", geom->program);
+		msg(FATAL, "The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", geom->program);
 		exit(EXIT_FAILURE);
 	}
 
@@ -487,14 +487,14 @@ static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
 	if(validated == GL_FALSE)
 	{
 		kuhl_print_program_log(geom->program);
-		msg(ERROR, "Failed to validate GLSL program %d.\n", geom->program);
+		msg(FATAL, "Failed to validate GLSL program %d.\n", geom->program);
 		exit(EXIT_FAILURE);
 	}
 
 	
 	if(geom->vertex_count < 1)
 	{
-		msg(ERROR, "vertex_count must be greater than 0.\n");
+		msg(FATAL, "vertex_count must be greater than 0.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -691,7 +691,7 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 	/* If we are writing past the end of the array. */
 	if(destIndex == MAX_TEXTURES)
 	{
-		msg(ERROR, "You tried to add more than %d textures to a kuhl_geometry object\n", MAX_TEXTURES);
+		msg(FATAL, "You tried to add more than %d textures to a kuhl_geometry object\n", MAX_TEXTURES);
 		exit(EXIT_FAILURE);
 	}
 
@@ -823,7 +823,10 @@ void kuhl_geometry_program(kuhl_geometry *geom, GLuint program, int kg_options)
 	}
 	
 	geom->program = program;
-	
+
+	/* Iterate through the vertex attributes in this kuhl_geometry
+	 * object and determine where these attributes should go in the
+	 * newly specified program. */
 	glBindVertexArray(geom->vao);
 	for(unsigned int i=0; i<geom->attrib_count; i++)
 	{
@@ -831,6 +834,7 @@ void kuhl_geometry_program(kuhl_geometry *geom, GLuint program, int kg_options)
 		glBindBuffer(GL_ARRAY_BUFFER, attrib->bufferobject);
 		kuhl_errorcheck();
 
+		// Find attribute location in the new program; enable that location
 		GLint attribLocation = kuhl_get_attribute(geom->program, attrib->name);
 		glEnableVertexAttribArray(attribLocation);
 
@@ -939,7 +943,7 @@ void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint compo
 		if(glIsBuffer(geom->attribs[destIndex].bufferobject))
 			glDeleteBuffers(1, &(geom->attribs[destIndex].bufferobject));
 	}
-//	printf("%s: Storing attribute %s at index %d in kuhl_geometry; connected to location %d in program %d\n", __func__, name, destIndex, attribLocation, geom->program);
+	msg(DEBUG, "Storing attribute %s at index %d in kuhl_geometry; connected to location %d in program %d", name, destIndex, attribLocation, geom->program);
 	
 	/* If we are writing past the end of the array. */
 	if(destIndex == MAX_ATTRIBUTES)
@@ -1040,7 +1044,7 @@ void kuhl_geometry_new(kuhl_geometry *geom, GLuint program, unsigned int vertexC
 	/* Check if the program is valid (we don't need to enable it here). */
 	if(!glIsProgram(program))
 	{
-		msg(ERROR, "The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", geom->program);
+		msg(FATAL, "The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", geom->program);
 		exit(EXIT_FAILURE);
 	}
 
@@ -1196,8 +1200,8 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	/* Check that there is a valid program and VAO object for us to use. */
 	if(glIsProgram(geom->program) == 0 || glIsVertexArray(geom->vao) == 0)
 	{
-		fprintf(stderr, "%s: Program (%d) or vertex array object (%d) were invalid\n",
-		        __func__, geom->program, geom->vao);
+		msg(ERROR, "Program (%d) or vertex array object (%d) were invalid\n",
+		    geom->program, geom->vao);
 		kuhl_errorcheck();
 		return;
 	}
@@ -1866,12 +1870,12 @@ void kuhl_video_record(const char *fileLabel, int fps)
 	{
 		kuhl_video_record_prev_sec  = tv.tv_sec;
 		kuhl_video_record_prev_usec = tv.tv_usec;
-		printf("%s: Recording %d frames per second\n", __func__, fps);
-		printf("Use either of the following commands to assemble Ogg video (Ogg video files are widely supported and not encumbered by patent restrictions):\n");
-		printf("ffmpeg -r %d -f image2 -i %s-%%08d.%s -qscale:v 7 %s.ogv\n", fps, fileLabel, exten, fileLabel);
-		printf(" - or -\n");
-		printf("avconv -r %d -f image2 -i %s-%%08d.%s -qscale:v 7 %s.ogv\n", fps, fileLabel, exten, fileLabel);
-		printf("In either program, the -qscale:v parameter sets the quality: 0 (lowest) to 10 (highest)\n");
+		msg(INFO, "Recording %d frames per second\n", fps);
+		msg(INFO, "Use either of the following commands to assemble Ogg video (Ogg video files are widely supported and not encumbered by patent restrictions):\n");
+		msg(INFO, "ffmpeg -r %d -f image2 -i %s-%%08d.%s -qscale:v 7 %s.ogv\n", fps, fileLabel, exten, fileLabel);
+		msg(INFO, " - or -\n");
+		msg(INFO, "avconv -r %d -f image2 -i %s-%%08d.%s -qscale:v 7 %s.ogv\n", fps, fileLabel, exten, fileLabel);
+		msg(INFO, "In either program, the -qscale:v parameter sets the quality: 0 (lowest) to 10 (highest)\n");
 	}
 
 	time_t sec       = tv.tv_sec;
@@ -2642,15 +2646,15 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		/* Confirm that the mesh has only one primitive type. */
 		if(mesh->mPrimitiveTypes == 0)
 		{
-			printf("%s: ERROR: Primitive type not set by ASSIMP in mesh.\n", __func__);
+			msg(ERROR, "Primitive type not set by ASSIMP in mesh.\n");
 			continue;
 		}
 		// Check if more than one bit (i.e., primitive type) is in this mesh.
 		if((mesh->mPrimitiveTypes & (mesh->mPrimitiveTypes-1)) != 0) 
 		{
-			printf("%s: ERROR: This mesh has more than one primitive "
-			       "type in it. The model should be loaded with the "
-			       "aiProcess_SortByPType flag set.\n", __func__);
+			msg(ERROR, "This mesh has more than one primitive "
+			    "type in it. The model should be loaded with the "
+			    "aiProcess_SortByPType flag set.\n");
 			continue;
 		}
 
@@ -2676,12 +2680,12 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		else if(mesh->mPrimitiveTypes & aiPrimitiveType_POLYGON)
 		{
 			msg(WARNING, "Mesh %u (%u/%u meshes in node \"%s\"): We only "
-			       "support drawing triangle, line, or point meshes. "
-			       "This mesh contained polygons, and we are skipping it. "
-			       "To resolve this problem, ensure that the file is loaded "
-			       "with aiProcess_Triangulage to force ASSIMP to triangulate "
-			       "the model.\n",
-			       nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
+			    "support drawing triangle, line, or point meshes. "
+			    "This mesh contained polygons, and we are skipping it. "
+			    "To resolve this problem, ensure that the file is loaded "
+			    "with aiProcess_Triangulage to force ASSIMP to triangulate "
+			    "the model.\n",
+			    nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
 			continue;
 		}
 		else
@@ -2796,8 +2800,8 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		{
 			if(mesh->mNumBones > MAX_BONES)
 			{
-				printf("%s: This mesh has %d bones but we only support %d\n",
-				       __func__, mesh->mNumBones, MAX_BONES);
+				msg(FATAL, "This mesh has %d bones but we only support %d",
+				    mesh->mNumBones, MAX_BONES);
 				exit(EXIT_FAILURE);
 			}
 			
@@ -2842,7 +2846,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 			{
 				if(weights[i*4+0] == 0)
 				{
-					fprintf(stderr, "%s: ERROR Every vertex should have at least one weight but vertex %ud has no weights!\n", __func__, i);
+					msg(FATAL, "Every vertex should have at least one weight but vertex %ud has no weights!", i);
 					exit(EXIT_FAILURE);
 				}
 			}
@@ -2870,8 +2874,9 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 			}
 			if(texture == 0)
 			{
-				printf("%s: WARNING: Mesh %u uses texture '%s'. This texture should have been loaded earlier, but we can't find it now.\n",
-				       __func__, nd->mMeshes[n], texPath.data);
+				msg(WARNING, "Mesh %u uses texture '%s'."
+				    "This texture should have been loaded earlier, but we can't find it now.",
+				    nd->mMeshes[n], texPath.data);
 			}
 			else
 			{
@@ -2916,7 +2921,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 			geom->bones = bones;
 		}
 
-		msg(DEBUG, "Mesh #%03u in node \"%s\" (node has %d meshes): verts=%d indices=%d primType=%d normals=%s colors=%s texCoords=%s bones=%d tex=%s\n",
+		msg(DEBUG, "Mesh #%03u in node \"%s\" (node has %d meshes): verts=%d indices=%d primType=%d normals=%s colors=%s texCoords=%s bones=%d tex=%s",
 		       nd->mMeshes[n], nd->mName.data, nd->mNumMeshes,
 		       mesh->mNumVertices,
 		       mesh->mNumFaces*meshPrimitiveType,
@@ -3001,7 +3006,7 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
 			const struct aiNode *node = kuhl_assimp_find_node(g->bones->boneList[b]->mName.data, scene->mRootNode);
 			if(node == NULL)
 			{
-				msg(ERROR, "Failed to find node that corresponded to bone: %s\n", g->bones->boneList[b]->mName.data);
+				msg(FATAL, "Failed to find node that corresponded to bone: %s\n", g->bones->boneList[b]->mName.data);
 				exit(EXIT_FAILURE);
 			}
 			const struct aiBone *bone = g->bones->boneList[b];
@@ -3148,6 +3153,51 @@ void kuhl_bbox_fit(float result[16], const float bbox[6], int sitOnXZPlane)
 }
 
 
+/** Prints an error message to clarify the cause of a problem related
+    to the creation of an OpenGL framebuffer. Used internally.
+*/
+static void kuhl_framebuffer_errormsg(GLenum fbStatus)
+{
+	if(fbStatus != GL_FRAMEBUFFER_COMPLETE)
+	{
+		msg(FATAL, "glCheckFramebufferStatus() indicated a the following problem with the framebuffer:");
+		switch(fbStatus)
+		{
+			case GL_FRAMEBUFFER_UNDEFINED:
+				msg(FATAL, "GL_FRAMEBUFFER_UNDEFINED");
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+				msg(FATAL, "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+				msg(FATAL, "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+				msg(FATAL, "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER");
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+				msg(FATAL, "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER");
+				break;
+			case GL_FRAMEBUFFER_UNSUPPORTED:
+				msg(FATAL, "GL_FRAMEBUFFER_UNSUPPORTED");
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+				msg(FATAL, "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE");
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
+				msg(FATAL, "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS");
+				break;
+			default:
+				msg(FATAL, "Unknown error.");
+				break;
+		}
+		exit(EXIT_FAILURE);
+	}
+}
+
+
+
+
 /* Creates a new framebuffer object (with a depth buffer) that we can
  * render to and therefore render directly to a texture.
  *
@@ -3178,8 +3228,8 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 	if(width < 0 || width > maxTextureSize ||
 	   height< 0 || height> maxTextureSize)
 	{
-		msg(ERROR, "Requested %d x %d texture but maximum allowed is %d\n",
-		            width, height, maxTextureSize);
+		msg(FATAL, "Requested %d x %d texture but maximum allowed is %d\n",
+		    width, height, maxTextureSize);
 		exit(EXIT_FAILURE);
 	}
 	
@@ -3249,41 +3299,7 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 	kuhl_errorcheck();
 
 	GLenum fbStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	if(fbStatus != GL_FRAMEBUFFER_COMPLETE)
-	{
-		printf("%s: glCheckFramebufferStatus() indicated a the following problem with the framebuffer:\n", __func__);
-		switch(fbStatus)
-		{
-			case GL_FRAMEBUFFER_UNDEFINED:
-				printf("%s: GL_FRAMEBUFFER_UNDEFINED\n", __func__);
-				break;
-			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT\n", __func__);
-				break;
-			case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT\n", __func__);
-				break;
-			case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
-				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER\n", __func__);
-				break;
-			case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
-				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER\n", __func__);
-				break;
-			case GL_FRAMEBUFFER_UNSUPPORTED:
-				printf("%s: GL_FRAMEBUFFER_UNSUPPORTED\n", __func__);
-				break;
-			case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
-				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE\n", __func__);
-				break;
-			case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
-				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS\n", __func__);
-				break;
-			default:
-				printf("%s: Unknown error.\n", __func__);
-				break;
-		}
-		exit(EXIT_FAILURE);
-	}
+	kuhl_framebuffer_errormsg(fbStatus);
 	kuhl_errorcheck();
 
 	// Restore binding
@@ -3391,41 +3407,7 @@ GLint kuhl_gen_framebuffer_msaa(int width, int height, GLuint *texture, GLuint *
 	kuhl_errorcheck();
 
 	GLenum fbStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	if(fbStatus != GL_FRAMEBUFFER_COMPLETE)
-	{
-		msg(ERROR, "glCheckFramebufferStatus() indicated a the following problem with the framebuffer:\n");
-		switch(fbStatus)
-		{
-			case GL_FRAMEBUFFER_UNDEFINED:
-				printf("%s: GL_FRAMEBUFFER_UNDEFINED\n", __func__);
-				break;
-			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT\n", __func__);
-				break;
-			case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT\n", __func__);
-				break;
-			case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
-				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER\n", __func__);
-				break;
-			case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
-				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER\n", __func__);
-				break;
-			case GL_FRAMEBUFFER_UNSUPPORTED:
-				printf("%s: GL_FRAMEBUFFER_UNSUPPORTED\n", __func__);
-				break;
-			case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
-				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE\n", __func__);
-				break;
-			case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
-				printf("%s: GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS\n", __func__);
-				break;
-			default:
-				printf("%s: Unknown error.\n", __func__);
-				break;
-		}
-		exit(EXIT_FAILURE);
-	}
+	kuhl_framebuffer_errormsg(fbStatus);
 	kuhl_errorcheck();
 
 	// Restore binding
