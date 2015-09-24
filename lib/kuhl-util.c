@@ -2211,7 +2211,8 @@ static char* kuhl_private_assimp_fullpath(const char *textureFile, const char *m
 
 
 /** Uses ASSIMP to load model (if needed) and returns ASSIMP aiScene
- * object. This function also reads texture files that the model
+ * object. This function also calls kuhl_tead_texture_file() when
+ * necessary to load the appropriate texture files that the model
  * refers to. This function does not create any kuhl_geometry structs
  * for the model.
  *
