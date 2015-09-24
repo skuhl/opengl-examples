@@ -1711,8 +1711,9 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName, G
 
 
 
-/** Uses imageio to read in an image, and binds it to an OpenGL
- * texture name.  Requires OpenGL 2.0 or better.
+/** Uses either ImageMagick (preferred) or STB (a fallback) to read an
+ * image file from disk and bind it to an OpenGL texture name.
+ * Requires OpenGL 2.0 or better.
  *
  * @param filename name of file to load
  *
@@ -1737,18 +1738,9 @@ float kuhl_read_texture_file_wrap(const char *filename, GLuint *texName, GLuint 
 #endif
 }
 
-/** Uses imageio to read in an image, and binds it to an OpenGL
- * texture name.  Requires OpenGL 2.0 or better.
- *
- * @param filename name of file to load
- *
- * @param texName A pointer to where the OpenGL texture name should be stored.
- * (Remember that the "texture name" is really just some unsigned int).
- *
- * @returns The aspect ratio of the image in the file. Since texture
- * coordinates range from 0 to 1, the caller doesn't really need to
- * know how large the image actually is. Returns a negative number on
- * error.
+/** An alias for kuhl_read_texture_file_wrap() with the clamp-to-edge option.
+
+    @see kuhl_read_texture_file_wrap()
  */
 float kuhl_read_texture_file(const char *filename, GLuint *texName)
 {
