@@ -659,8 +659,7 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 		return;
 	}
 	
-	/* If this attribute isn't available in the GLSL program, move
-	 * on to the next one. */
+	/* Find the uniform variable location inside of the GLSL program. */
 	GLint samplerLocation = glGetUniformLocation(geom->program, name);
 	if(samplerLocation == -1)
 	{
