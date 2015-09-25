@@ -158,16 +158,17 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
 	kuhl_geometry_attrib(geom, texcoordData, 2, "in_TexCoord", KG_WARN);
 
 
-/* The data that we want to draw */
+	/* The data that we want to draw */
 	GLfloat vertexData[] = {0, 0, 0,
 	                        1, 0, 0,
 	                        1, 1, 0};
 	kuhl_geometry_attrib(geom, vertexData, 3, "in_Position", KG_WARN);
 
 
-	/* Load the texture. It will be bound to texName */
+	/* Load the texture. It will be bound to texId */	
 	GLuint texId = 0;
 	kuhl_read_texture_file("../images/rainbow.png", &texId);
+	/* Tell this piece of geometry to use the texture we just loaded. */
 	kuhl_geometry_texture(geom, texId, "tex", KG_WARN);
 
 	kuhl_errorcheck();
