@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <math.h>
 #include <string.h>
 #include "vecmat.h"
@@ -278,6 +279,110 @@ extern inline void mat4f_from_mat3f(float  dest[16], const float  src[ 9]);
 extern inline void mat4d_from_mat3d(double dest[16], const double src[ 9]);
 extern inline void mat3f_from_mat4f(float  dest[ 9], const float  src[16]);
 extern inline void mat3d_from_mat4d(double dest[ 9], const double src[16]);
+
+
+/** Multiply an arbitrary list of matrices together. The last matrix must be NULL.
+
+    @param out The product of all of the other matrices.
+    @param in One or more matrices to be multiplied together.
+ */
+void mat4f_mult_mat4f_many(float out[16], const float *in, ...)
+{
+	/* Initialize argList. */
+	va_list argList;
+	va_start(argList, in);
+
+	/* Handle first matrix */
+	mat4f_copy(out, in);
+
+	/* Multiply all of the other matrices with the existing one until
+	 * we reach NULL. */
+	float *this = va_arg(argList, float*);
+	while(this != NULL)
+	{
+		mat4f_mult_mat4f_new(out, out, this);
+		this = va_arg(argList,float*);
+	}
+	va_end(argList);
+}
+
+/** Multiply an arbitrary list of matrices together. The last matrix must be NULL.
+
+    @param out The product of all of the other matrices.
+    @param in One or more matrices to be multiplied together.
+ */
+void mat4d_mult_mat4d_many(double out[16], const double *in, ...)
+{
+	/* Initialize argList. */
+	va_list argList;
+	va_start(argList, in);
+
+	/* Handle first matrix */
+	mat4d_copy(out, in);
+
+	/* Multiply all of the other matrices with the existing one until
+	 * we reach NULL. */
+	double *this = va_arg(argList, double*);
+	while(this != NULL)
+	{
+		mat4d_mult_mat4d_new(out, out, this);
+		this = va_arg(argList,double*);
+	}
+	va_end(argList);
+}
+
+/** Multiply an arbitrary list of matrices together. The last matrix must be NULL.
+
+    @param out The product of all of the other matrices.
+    @param in One or more matrices to be multiplied together.
+ */
+void mat3f_mult_mat3f_many(float out[9], const float *in, ...)
+{
+	/* Initialize argList. */
+	va_list argList;
+	va_start(argList, in);
+
+	/* Handle first matrix */
+	mat3f_copy(out, in);
+
+	/* Multiply all of the other matrices with the existing one until
+	 * we reach NULL. */
+	float *this = va_arg(argList, float*);
+	while(this != NULL)
+	{
+		mat3f_mult_mat3f_new(out, out, this);
+		this = va_arg(argList,float*);
+	}
+	va_end(argList);
+}
+
+/** Multiply an arbitrary list of matrices together. The last matrix must be NULL.
+
+    @param out The product of all of the other matrices.
+    @param in One or more matrices to be multiplied together.
+ */
+void mat3d_mult_mat3d_many(double out[9], const double *in, ...)
+{
+	/* Initialize argList. */
+	va_list argList;
+	va_start(argList, in);
+
+	/* Handle first matrix */
+	mat3d_copy(out, in);
+
+	/* Multiply all of the other matrices with the existing one until
+	 * we reach NULL. */
+	double *this = va_arg(argList, double*);
+	while(this != NULL)
+	{
+		mat3d_mult_mat3d_new(out, out, this);
+		this = va_arg(argList,double*);
+	}
+	va_end(argList);
+}
+
+
+
 
 /** Inverts a 4x4 float matrix.
  *
