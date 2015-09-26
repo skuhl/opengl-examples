@@ -659,8 +659,7 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 		return;
 	}
 	
-	/* If this attribute isn't available in the GLSL program, move
-	 * on to the next one. */
+	/* Find the uniform variable location inside of the GLSL program. */
 	GLint samplerLocation = glGetUniformLocation(geom->program, name);
 	if(samplerLocation == -1)
 	{
@@ -1711,8 +1710,9 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName, G
 
 
 
-/** Uses imageio to read in an image, and binds it to an OpenGL
- * texture name.  Requires OpenGL 2.0 or better.
+/** Uses either ImageMagick (preferred) or STB (a fallback) to read an
+ * image file from disk and bind it to an OpenGL texture name.
+ * Requires OpenGL 2.0 or better.
  *
  * @param filename name of file to load
  *
@@ -1737,18 +1737,9 @@ float kuhl_read_texture_file_wrap(const char *filename, GLuint *texName, GLuint 
 #endif
 }
 
-/** Uses imageio to read in an image, and binds it to an OpenGL
- * texture name.  Requires OpenGL 2.0 or better.
- *
- * @param filename name of file to load
- *
- * @param texName A pointer to where the OpenGL texture name should be stored.
- * (Remember that the "texture name" is really just some unsigned int).
- *
- * @returns The aspect ratio of the image in the file. Since texture
- * coordinates range from 0 to 1, the caller doesn't really need to
- * know how large the image actually is. Returns a negative number on
- * error.
+/** An alias for kuhl_read_texture_file_wrap() with the clamp-to-edge option.
+
+    @see kuhl_read_texture_file_wrap()
  */
 float kuhl_read_texture_file(const char *filename, GLuint *texName)
 {
@@ -2211,7 +2202,8 @@ static char* kuhl_private_assimp_fullpath(const char *textureFile, const char *m
 
 
 /** Uses ASSIMP to load model (if needed) and returns ASSIMP aiScene
- * object. This function also reads texture files that the model
+ * object. This function also calls kuhl_tead_texture_file() when
+ * necessary to load the appropriate texture files that the model
  * refers to. This function does not create any kuhl_geometry structs
  * for the model.
  *

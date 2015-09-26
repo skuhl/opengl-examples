@@ -21,8 +21,7 @@ function cleandir()
 # the current working directory).
 THIS_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-# Clean the directory the script is in.
-cleandir ${THIS_DIR}
+# Clean subdirectories
 for D in *; do # For each file and directory
     if [ -d "${D}" ]; then # If it is a directory
 		if [[ -e "${D}/CMakeLists.txt" ]]; then # if CMakeLists file is present
@@ -31,17 +30,21 @@ for D in *; do # For each file and directory
     fi
 done
 
+# Clean directory this script is in
+cleandir ${THIS_DIR}
 rm -vrf "${THIS_DIR}/doxygen-docs"
 rm -vf "${THIS_DIR}/bin/"*.frag "${THIS_DIR}/bin/"*.vert "${THIS_DIR}/bin/"*libOVR*.so*
 rm -vf "${THIS_DIR}/"*.exe
 
+# Find any log files anywhere in this tree and delete them.
+find ${THIS_DIR} -type f \( -name 'log.txt' -o -name 'log-ivs-left.txt' -o -name 'log-ivs-right.txt' \) -exec rm -vf "{}" \;
 
 if [[ -x "${THIS_DIR}/.git" && -x /usr/bin/git ]]; then
 	echo
 	echo
 	echo "Consider removing the following files because they are not in the git repo and are not ignored:"
 	echo
-	pushd "${THIS_DIR}"
+	pushd "${THIS_DIR}" > /dev/null
 	git ls-files --others --exclude-standard
-	popd
+	popd > /dev/null
 fi
