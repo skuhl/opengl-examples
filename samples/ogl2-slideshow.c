@@ -221,10 +221,22 @@ void loadTexture(int textureIndex)
 
 void display(void)
 {
+	// If master, send the latest data out.
+	if(dgr_is_enabled() && dgr_is_master())
+	{
+		dgr_setget("currentTex", &currentTexture, sizeof(int));
+		dgr_setget("scrollAmount", &scrollAmount, sizeof(float));
+		dgr_update();
+	}
+
 	kuhl_limitfps(100);
-	dgr_update();
-	// Make sure slaves get updates ASAP
-	dgr_setget("currentTex", &currentTexture, sizeof(int));
+
+	if(dgr_is_enabled() && !dgr_is_master())
+	{
+		dgr_update();
+		dgr_setget("currentTex", &currentTexture, sizeof(int));
+		dgr_setget("scrollAmount", &scrollAmount, sizeof(float));
+	}
 	
 	/* If the texture has changed since we were previously in display() */
 	if(alreadyDisplayedTexture != currentTexture)
@@ -308,8 +320,6 @@ void display(void)
 		}
 	}
 
-	dgr_setget("scrollAmount", &scrollAmount, sizeof(float));
-
 	/* If autoadvance is set and we are not scrolling (or done
 	 * scrolling) figure out if it is now time to advance to the next
 	 * image. */
@@ -320,8 +330,6 @@ void display(void)
 		{
 			msg(INFO, "Automatically advancing to next image, please wait.\n");
 			currentTexture = getNextTexture();
-			dgr_setget("currentTexture", &currentTexture, sizeof(int));
-			dgr_update();
 		}
 	}
 
@@ -418,7 +426,10 @@ void keyboard(unsigned char key, int x, int y)
 
 
 	if (key == 27 || key == 'q')  // escape key, exit program
+	{
+		dgr_exit();
 		exit(EXIT_SUCCESS);
+	}
 	if(key == 's')
 	{
 		if(autoAdvance == 1)
@@ -430,7 +441,6 @@ void keyboard(unsigned char key, int x, int y)
 		{
 			msg(INFO, "starting auto-advance.\n");
 			autoAdvance = 1;
-
 		}
 	}
 	glutPostRedisplay();
