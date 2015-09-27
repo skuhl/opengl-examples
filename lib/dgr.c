@@ -248,6 +248,13 @@ static int dgr_findIndex(const char *name)
  * get data from DGR, store it in buffer and return the actual size of
  * the data we copied into the buffer.
  *
+ * @param name The label or name to apply to the piece of data to be retrieved from DGR.
+ *
+ * @param buffer A buffer for the retrieved data should be stored in.
+ *
+ * @param bufferSize The size of the buffer.
+ *
+ *
  * @return Returns the size of the data if success, and a negative
  * number upon error. Returns -1 if DGR didn't know about the
  * name. Returns -2 the buffer you provided was too small. Returns -3
@@ -527,8 +534,6 @@ static void dgr_receive(int timeout)
 		}
 		return;
 	}
-
-
 	
 	struct sockaddr_storage their_addr;
 	socklen_t addr_len = sizeof their_addr;

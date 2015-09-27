@@ -529,8 +529,8 @@ int main( int argc, char* argv[] )
 #ifdef FREEGLUT
 	glutSetOption(GLUT_MULTISAMPLE, 4); // set msaa samples; default to 4
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
-	glutInitContextVersion(3,2);
-	glutInitContextProfile(GLUT_CORE_PROFILE);
+//	glutInitContextVersion(3,2);
+//	glutInitContextProfile(GLUT_CORE_PROFILE);
 #else
 	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
 #endif

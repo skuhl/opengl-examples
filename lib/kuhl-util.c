@@ -69,8 +69,8 @@ int kuhl_errorcheckFileLine(const char *file, int line, const char *func)
 	GLenum errCode = glGetError();
 	if(errCode != GL_NO_ERROR)
 	{
-		msg(ERROR, "OpenGL error '%s' occurred before %s:%d",
-		    gluErrorString(errCode), file, line);
+		msg_details(ERROR, file, line, func,
+		            "OpenGL error '%s' occurred before %s:%d",  gluErrorString(errCode), file, line);
 		return 1;
 	}
 	return 0;
@@ -1487,6 +1487,8 @@ GLuint kuhl_read_texture_rgba_array_wrap(const unsigned char* array, int width, 
 		return 0;
 	}
 
+	kuhl_errorcheck();
+
 	/* The recommended way to produce mipmaps depends on your OpenGL
 	 * version. */
 	if (glGenerateMipmap != NULL)
@@ -1643,7 +1645,7 @@ static float kuhl_read_texture_file_im(const char *filename, GLuint *texName, GL
 	int width  = (int)iioinfo.width;
 	int height = (int)iioinfo.height;
 	float aspectRatio = (float)width/height;
-	msg(DEBUG, "Finished reading '%s' (%dx%d)\n", filename, width, height);
+	msg(DEBUG, "Finished reading '%s' (%dx%d) with ImageMagick\n", filename, width, height);
 	*texName = kuhl_read_texture_rgba_array_wrap(image, width, height, wrapS, wrapT);
 
 	if(iioinfo.comment)
@@ -1694,7 +1696,7 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName, G
 	 * is in row major order. The first 4 bytes are the color information
 	 * for the lowest left pixel in the texture. */
 	float aspectRatio = (float)width/height;
-	msg(DEBUG, "Finished reading '%s' (%dx%d)\n", filename, width, height);
+	msg(DEBUG, "Finished reading '%s' (%dx%d) with STB\n", filename, width, height);
 	*texName = kuhl_read_texture_rgba_array_wrap(image, width, height, wrapS, wrapT);
 	stbi_image_free(image);
 	
