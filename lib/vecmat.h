@@ -1532,6 +1532,11 @@ static inline void mat3d_scaleVec_new(double result[9], const double xyz[3])
 { mat3d_scale_new(result, xyz[0], xyz[1], xyz[2]); }
 
 
+/* Multiply two or more matrices together. */
+void mat4f_mult_mat4f_many(float  out[16], const float  *in, ...);
+void mat4d_mult_mat4d_many(double out[16], const double *in, ...);
+void mat3f_mult_mat3f_many(float  out[9],  const float  *in, ...);
+void mat3d_mult_mat3d_many(double out[9],  const double *in, ...);
 	
 /* mat[43][df]_invert_new() will invert a matrix and store the
  * inverted matrix at a new location. However, these functions work
