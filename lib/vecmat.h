@@ -1562,17 +1562,18 @@ void mat4f_rotateEuler_new(float result[16], float a1_degrees, float a2_degrees,
 void mat4d_rotateEuler_new(double result[16], double a1_degrees, double a2_degrees, double a3_degrees, const char order[3]);
 
 /* Calculate Euler angles from rotation matrices. */
-void eulerf_from_mat3f(float  angles[3], const float  m[9], const char order[3]);
-void eulerd_from_mat3d(double angles[3], const double m[9], const char order[3]);
-void eulerf_from_mat4f(float angles[3], const float m[16], const char order[3]);
+void eulerf_from_mat3f(float  angles[3], const float  m[9],  const char order[3]);
+void eulerd_from_mat3d(double angles[3], const double m[9],  const char order[3]);
+void eulerf_from_mat4f(float  angles[3], const float  m[16], const char order[3]);
 void eulerd_from_mat4d(double angles[3], const double m[16], const char order[3]);
 
 
-/* Creates a new 3x3 rotation matrix which produces a rotation around
-   the given "axis" by the given number of "degrees".  Stores the
-   resulting matrix in the "result" matrix (translation part of 4x4
-   matrix set to identity). Any data in the 'result' matrix that you
-   pass to these functions will be ignored and lost. */
+/* Creates a new 3x3 rotation matrix (or a 4x4 matrix with 0,0,0,1 in
+   the 4th column and 4th row). The matrix will rotate a point around
+   the given "axis" by the number of "degrees".  Stores the resulting
+   matrix in the "result" matrix (translation part of 4x4 matrix set
+   to identity). Any data in the 'result' matrix that you pass to
+   these functions will be ignored and lost. */
 void mat3f_rotateAxisVec_new(float  result[ 9], float  degrees, const float  axis[3]);
 void mat3d_rotateAxisVec_new(double result[ 9], double degrees, const double axis[3]);
 void mat4f_rotateAxisVec_new(float  result[16], float  degrees, const float  axis[3]);
@@ -1587,15 +1588,15 @@ void mat3f_rotateQuatVec_new(float matrix[9], const float quat[4]);
 void mat3d_rotateQuatVec_new(double matrix[9], const double quat[4]);
 void mat4f_rotateQuatVec_new(float matrix[16], const float quat[4]);
 void mat4d_rotateQuatVec_new(double matrix[16], const double quat[4]);
-void mat3f_rotateQuat_new(float matrix[9], float x, float y, float z, float w);
-void mat3d_rotateQuat_new(double matrix[9], double x, double y, double z, double w);
-void mat4f_rotateQuat_new(float matrix[16], float x, float y, float z, float w);
+void mat3f_rotateQuat_new(float  matrix[9],  float  x, float  y, float  z, float w);
+void mat3d_rotateQuat_new(double matrix[9],  double x, double y, double z, double w);
+void mat4f_rotateQuat_new(float  matrix[16], float  x, float  y, float  z, float w);
 void mat4d_rotateQuat_new(double matrix[16], double x, double y, double z, double w);
 
 /* Create unit quaternion from a rotation matrix */
-void quatf_from_mat3f(float quat[4], const float matrix[9]);
+void quatf_from_mat3f(float  quat[4], const float  matrix[9]);
 void quatd_from_mat3d(double quat[4], const double matrix[9]);
-void quatf_from_mat4f(float quat[4], const float matrix[16]);
+void quatf_from_mat4f(float  quat[4], const float  matrix[16]);
 void quatd_from_mat4d(double quat[4], const double matrix[16]);
 
 /* Create a quaternion (x,y,z,w) based an axis and angle */
