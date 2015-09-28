@@ -28,13 +28,13 @@ endif()
 
 
 # Make a target that lets us copy all of the vert and frag files from this directory into the bin directory.
-file(GLOB ShaderFiles "*.vert" "*.frag")
-add_custom_target(copyGLSL)
-foreach(ShaderFile ${ShaderFiles})
-    add_custom_command(TARGET copyGLSL PRE_BUILD
-        COMMAND ${CMAKE_COMMAND} -E
-        copy ${ShaderFile} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-endforeach()
+# file(GLOB ShaderFiles "*.vert" "*.frag")
+# add_custom_target(copyGLSL)
+# foreach(ShaderFile ${ShaderFiles})
+#     add_custom_command(TARGET copyGLSL PRE_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E
+#         copy ${ShaderFile} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+# endforeach()
 
 
 # Compile the list of programs.
@@ -74,7 +74,7 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 	# add_dependencies(${arg} kuhl)
 
 	# Any time we make this program, copy all of the vertex and fragment program files into bin.
-	add_dependencies(${arg} copyGLSL)
+	# add_dependencies(${arg} copyGLSL)
 	if(OVR_FOUND)
 	    add_dependencies(${arg} copyOVR)
 	endif()

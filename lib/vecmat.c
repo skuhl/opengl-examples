@@ -193,8 +193,6 @@ extern inline void mat4f_setRow(float  matrix[16], const float  m[4], const int 
 extern inline void mat4d_setRow(double matrix[16], const double m[4], const int row);
 
 
-
-
 /* Copy a matrix */
 extern inline void matNf_copy(float  dest[], const float  src[], const int n);
 extern inline void matNd_copy(double dest[], const double src[], const int n);
@@ -380,7 +378,7 @@ int mat4d_invert_new(double out[16], const double m[16])
  */
 int mat3f_invert_new(float out[9], const float m[9])
 {
-	float inv[9];
+	float inv[9], det;
 	inv[0] = m[4] * m[8] - m[5] * m[7];
 	inv[3] = m[6] * m[5] - m[3] * m[8];
 	inv[6] = m[3] * m[7] - m[6] * m[4];
@@ -390,9 +388,7 @@ int mat3f_invert_new(float out[9], const float m[9])
 	inv[2] = m[1] * m[5] - m[2] * m[4];
 	inv[5] = m[2] * m[3] - m[0] * m[5];
 	inv[8] = m[0] * m[4] - m[1] * m[3];
-	float det = m[0] * (m[4] * m[8] - m[5] * m[7]) -
-	            m[3] * (m[1] * m[8] - m[7] * m[2]) +
-	            m[6] * (m[1] * m[5] - m[4] * m[2]);
+	det = m[0]*inv[0] + m[3]*inv[1] + m[6]*inv[2];
 	if (det == 0)
 	{
 		printf("%s: Failed to invert the following matrix:\n", __func__);
@@ -419,7 +415,7 @@ int mat3f_invert_new(float out[9], const float m[9])
  */
 int mat3d_invert_new(double out[9], const double m[9])
 {
-	float inv[9];
+	double inv[9], det;
 	inv[0] = m[4] * m[8] - m[5] * m[7];
 	inv[3] = m[6] * m[5] - m[3] * m[8];
 	inv[6] = m[3] * m[7] - m[6] * m[4];
@@ -429,9 +425,7 @@ int mat3d_invert_new(double out[9], const double m[9])
 	inv[2] = m[1] * m[5] - m[2] * m[4];
 	inv[5] = m[2] * m[3] - m[0] * m[5];
 	inv[8] = m[0] * m[4] - m[1] * m[3];
-	float det = m[0] * (m[4] * m[8] - m[5] * m[7]) -
-	            m[3] * (m[1] * m[8] - m[7] * m[2]) +
-	            m[6] * (m[1] * m[5] - m[4] * m[2]);
+	det = m[0]*inv[0] + m[3]*inv[1] + m[6]*inv[2];
 	if (det == 0)
 	{
 		printf("%s: Failed to invert the following matrix:\n", __func__);

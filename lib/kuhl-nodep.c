@@ -216,7 +216,13 @@ char* kuhl_find_file(const char *filename)
 	if(kuhl_can_read_file(pathSepChange))
 		return pathSepChange;
 
-	char *newPath = NULL; // needs to be declared for all OSs
+	char commonDirs[32][256];
+	int commonDirsLen = 0;
+	strncpy(commonDirs[commonDirsLen++], "../samples", 255); // Find fragment programs in samples directory
+	strncpy(commonDirs[commonDirsLen++], "/home/kuhl/public-ogl/data", 255); // CCSR
+	strncpy(commonDirs[commonDirsLen++], "/home/campus11/kuhl/public-ogl/data", 255); // Rekhi
+	strncpy(commonDirs[commonDirsLen++], "/research/kuhl/public-ogl/data", 255); // IVS
+
 #ifdef __linux__
 	/* If we can't open the filename directly, then try opening it
 	   with the full path based on the path to the
@@ -228,27 +234,26 @@ char* kuhl_find_file(const char *filename)
 	ssize_t len = readlink("/proc/self/exe", exe, 1023);
 	exe[len]='\0';
 	char *dir = dirname(exe);
-	newPath = kuhl_path_concat_read(dir, filename);
-	if(newPath)
-	{
-		free(pathSepChange);
-		return newPath;
-	}
-	/* Try using executable directory along with the path that has
-	 * corrected file path separators */
-	newPath = kuhl_path_concat_read(dir, pathSepChange);
-	if(newPath)
-	{
-		free(pathSepChange);
-		return newPath;
-	}
+
+	/* For every relative path in commonDirs, add an additional
+	 * directory which has the path to the executable prepended to
+	 * it. */
+	int origLen = commonDirsLen;
+	strncpy(commonDirs[commonDirsLen++], dir, 255); // Rekhi
+	for(int i=0; i<origLen; i++)
+		if(commonDirs[i][0] != '/')
+			snprintf(commonDirs[commonDirsLen++], 256, "%s/%s", dir, commonDirs[i]);
 #endif
 
-	/* Search for file in common paths. */
-	char *commonDirs[] = { "/home/kuhl/public-ogl/data",  // CCSR
-	                       "/home/campus11/kuhl/public-ogl/data", // Rekhi
-	                       "/research/kuhl/public-ogl/data" }; // IVS
-	for(int i=0; i<3; i++)
+	/*
+	printf("File search paths besides the current directory:\n");
+	for(int i=0; i<commonDirsLen; i++)
+		printf("%s\n", commonDirs[i]);
+	*/
+		
+	
+	char *newPath = NULL;
+	for(int i=0; i<commonDirsLen; i++)
 	{
 		newPath = kuhl_path_concat_read(commonDirs[i], filename);
 		if(newPath)
