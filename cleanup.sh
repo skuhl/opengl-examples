@@ -21,6 +21,9 @@ function cleandir()
 # the current working directory).
 THIS_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
+# Clean top level directory first so 'make clean' will work.
+cleandir ${THIS_DIR}
+
 # Clean subdirectories
 for D in *; do # For each file and directory
     if [ -d "${D}" ]; then # If it is a directory
@@ -30,8 +33,8 @@ for D in *; do # For each file and directory
     fi
 done
 
-# Clean directory this script is in
-cleandir ${THIS_DIR}
+echo
+echo "=== Cleaning other files"
 rm -vrf "${THIS_DIR}/doxygen-docs"
 rm -vf "${THIS_DIR}/bin/"*.frag "${THIS_DIR}/bin/"*.vert "${THIS_DIR}/bin/"*libOVR*.so*
 rm -vf "${THIS_DIR}/"*.exe
