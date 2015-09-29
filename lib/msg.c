@@ -272,8 +272,8 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 			snprintf(prepend, 1024, "(%s) ", logfile);
 		
 		msg_start_color(type, stream);
-		/* Print additional details to console for fatal errors */
-		if(type == FATAL)
+		/* Print additional details to console for significant errors */
+		if(type == FATAL || type == ERROR)
 		{
 			fprintf(stream, "%s %s%s\n", typestr, prepend, msgbuf);
 			fprintf(stream, "%s %sOccurred at %s:%d in the function %s()\n",
