@@ -421,8 +421,10 @@ int mat4f_invert_new(float out[16], const float m[16])
 	det = m[0]*inv[0] + m[1]*inv[4] + m[2]*inv[8] + m[3]*inv[12];
 	if (det == 0)
 	{
-		printf("%s: Failed to invert the following matrix:\n", __func__);
-		mat4f_print(m);
+		msg(ERROR, "Failed to invert the following matrix\n");
+		char str[256];
+		matNf_print_to_string(str, 256, m, 4);
+		msg(ERROR, "%s", str);
 		return 0;
 	}
 
@@ -465,8 +467,10 @@ int mat4d_invert_new(double out[16], const double m[16])
 	det = m[0]*inv[0] + m[1]*inv[4] + m[2]*inv[8] + m[3]*inv[12];
 	if (det == 0)
 	{
-		printf("%s: Failed to invert the following matrix:\n", __func__);
-		mat4d_print(m);
+		msg(ERROR, "Failed to invert the following matrix\n");
+		char str[256];
+		matNd_print_to_string(str, 256, m, 4);
+		msg(ERROR, "%s", str);
 		return 0;
 	}
 
@@ -502,8 +506,10 @@ int mat3f_invert_new(float out[9], const float m[9])
 	det = m[0]*inv[0] + m[3]*inv[1] + m[6]*inv[2];
 	if (det == 0)
 	{
-		printf("%s: Failed to invert the following matrix:\n", __func__);
-		mat3f_print(m);
+		msg(ERROR, "Failed to invert the following matrix\n");
+		char str[256];
+		matNf_print_to_string(str, 256, m, 3);
+		msg(ERROR, "%s", str);
 		return 0;
 	}
 
@@ -539,8 +545,10 @@ int mat3d_invert_new(double out[9], const double m[9])
 	det = m[0]*inv[0] + m[3]*inv[1] + m[6]*inv[2];
 	if (det == 0)
 	{
-		printf("%s: Failed to invert the following matrix:\n", __func__);
-		mat3d_print(m);
+		msg(ERROR, "Failed to invert the following matrix\n");
+		char str[256];
+		matNf_print_to_string(str, 256, m, 3);
+		msg(ERROR, "%s", str);
 		return 0;
 	}
 
@@ -629,7 +637,7 @@ void mat3f_rotateEuler_new(float result[9], float a1_degrees, float a2_degrees, 
 		else if(order[i] == 'Z' || order[i] == '3')
 			mat3f_rotateAxis_new(rot, angles[i], 0, 0, 1);
 		else
-			printf("%s: Unknown axis: %c\n", __func__, order[i]);
+			msg(ERROR, "Unknown axis: %c\n", order[i]);
 		mat3f_mult_mat3f_new(result, rot, result);
 	}
 }
@@ -654,7 +662,7 @@ void mat3d_rotateEuler_new(double result[9], double a1_degrees, double a2_degree
 		else if(order[i] == 'Z' || order[i] == '3')
 			mat3d_rotateAxis_new(rot, 0, 0, 1, angles[i]);
 		else
-			printf("%s: Unknown axis: %c\n", __func__, order[i]);
+			msg(ERROR, "Unknown axis: %c\n", order[i]);
 		mat3d_mult_mat3d_new(result, rot, result);
 	}
 }
@@ -734,7 +742,7 @@ void eulerf_from_mat3f(float angles[3], const float m[9], const char order[3])
 		else if(order[i] == 'Z' || order[i] == '3')
 			index[i] = 2;
 		else
-			printf("%s: Unknown axis: %c\n", __func__, order[i]);
+			msg(ERROR, "Unknown axis: %c\n", order[i]);
 	}
 
     // Check if the first and last rotations are around the same axis.
@@ -837,7 +845,7 @@ void eulerd_from_mat3d(double angles[3], const double m[9], const char order[3])
 		else if(order[i] == 'Z' || order[i] == '3')
 			index[i] = 2;
 		else
-			printf("%s: Unknown axis: %c\n", __func__, order[i]);
+			msg(ERROR, "Unknown axis: %c\n", order[i]);
 	}
 
     // Check if the first and last rotations are around the same axis.
@@ -968,7 +976,7 @@ void mat3f_rotateAxisVec_new(float result[9], float degrees, const float axis[3]
 	float length = vec3f_norm(axis);
 	if(length < .00001)
 	{
-		printf("%s: Vector to rotate around was 0!", __func__);
+		msg(ERROR, "Vector to rotate around was 0!");
 		mat3f_identity(result);
 		return;
 	}
@@ -1017,7 +1025,7 @@ void mat3d_rotateAxisVec_new(double result[9], double degrees, const double axis
 	double length = vec3d_norm(axis);
 	if(length < .00001)
 	{
-		printf("%s: Vector to rotate around was 0!", __func__);
+		msg(ERROR, "Vector to rotate around was 0!");
 		mat3d_identity(result);
 		return;
 	}
@@ -1629,7 +1637,7 @@ void mat4f_frustum_new(float result[16], float left, float right, float bottom, 
 	mat4f_identity(result);
 	if(left == right || bottom == top || near == far || near == 0)
 	{
-		fprintf(stderr, "%s: Invalid view frustum matrix.\n", __func__);
+		msg(ERROR, "Invalid view frustum matrix.\n");
 		return;
 	}
 	result[0]  =  2.0f * near / (right - left);
@@ -1664,7 +1672,7 @@ void mat4d_frustum_new(double result[16], double left, double right, double bott
 	mat4d_identity(result);
 	if(left == right || bottom == top || near == far || near == 0)
 	{
-		fprintf(stderr, "%s: Invalid view frustum matrix.\n", __func__);
+		msg(ERROR, "Invalid view frustum matrix.\n");
 		return;
 	}
 	result[0]  =  2.0f * near / (right - left);
@@ -1697,7 +1705,7 @@ void mat4f_ortho_new(float result[16], float left, float right, float bottom, fl
 	mat4f_identity(result);
 	if(left == right || bottom == top || near == far)
 	{
-		fprintf(stderr, "%s: Invalid orthographic projection matrix.\n", __func__);
+		msg(ERROR, "Invalid orthographic projection matrix.\n");
 		return;
 	}
 	result[0]  =  2 / (right-left);
@@ -1728,7 +1736,7 @@ void mat4d_ortho_new(double result[16], double left, double right, double bottom
 	mat4d_identity(result);
 	if(left == right || bottom == top || near == far)
 	{
-		fprintf(stderr, "%s: Invalid orthographic projection matrix.\n", __func__);
+		msg(ERROR, "Invalid orthographic projection matrix.\n");
 		return;
 	}
 	result[0]  =  2 / (right-left);
@@ -1757,7 +1765,7 @@ void mat4f_perspective_new(float result[16], float  fovy, float  aspect, float  
 	far = fabsf(far);
 	if(near == 0)
 	{
-		fprintf(stderr, "%s: Invalid perspective projection matrix.\n", __func__);
+		msg(ERROR, "Invalid perspective projection matrix.\n");
 		return;
 	}
 	float fovyRad = fovy * M_PI/180.0f;
@@ -1783,7 +1791,7 @@ void mat4d_perspective_new(double result[16], double fovy, double aspect, double
 	far = fabs(far);
 	if(near == 0)
 	{
-		fprintf(stderr, "%s: Invalid perspective projection matrix.\n", __func__);
+		msg(ERROR, "Invalid perspective projection matrix.\n");
 		mat4d_identity(result);
 		return;
 	}
