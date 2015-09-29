@@ -92,6 +92,57 @@ static inline void vec4d_copy(double result[4], const double a[4])
 { vecNd_copy(result, a, 4); }
 
 
+/** Print an N-component float vector into a string. String is null
+    terminated. It does NOT end with a space or a newline.
+
+    @param dest A buffer to store the string in. It must be allocated
+    to contain at least destSize bytes.
+
+    @param destSize The amount of space available in dest.
+
+    @param v A vector to print to the string.
+
+    @param n The number of components in the vector.
+*/
+static inline void vecNf_print_to_string(char *dest, const int destSize,
+                                         const float v[ ], const int n)
+{
+	int used = 0;
+	used += snprintf(dest+used, destSize-used, "vec%df(", n);
+	for(int i=0; i<n; i++)
+	{
+		// Use a temporary variable since printf() parameters are not const.
+		float tmp = v[i];
+		used += snprintf(dest+used, destSize-used, "%10.3f ",tmp);
+	}
+	used += snprintf(dest+used, destSize-used, ")");
+}
+
+/** Print an N-component double vector into a string. String is null
+    terminated. It does NOT end with a space or a newline.
+
+    @param dest A buffer to store the string in. It must be allocated
+    to contain at least destSize bytes.
+
+    @param destSize The amount of space available in dest.
+
+    @param v A vector to print to the string.
+
+    @param n The number of components in the vector.
+*/
+static inline void vecNd_print_to_string(char *dest, const int destSize,
+                                         const double v[ ], const int n)
+{
+	int used = 0;
+	used += snprintf(dest+used, destSize-used, "vec%dd(", n);
+	for(int i=0; i<n; i++)
+	{
+		// Use a temporary variable since printf() parameters are not const.
+		double tmp = v[i];
+		used += snprintf(dest+used, destSize-used, "%10.3f ",tmp);
+	}
+	used += snprintf(dest+used, destSize-used, ")");
+}
 
 /** Print an N-component float vector to stdout (all on one line).
     @param v The N-component vector to print.
@@ -99,29 +150,20 @@ static inline void vec4d_copy(double result[4], const double a[4])
 */
 static inline void vecNf_print(const float v[ ], const int n)
 {
-	printf("vec%df(",n);
-	for(int i=0; i<n; i++)
-	{
-		// Use a temporary variable since printf() parameters are not const.
-		float tmp = v[i];
-		printf("%10.3f ",tmp);
-	}
-	printf(")\n");
+	char str[128];
+	vecNf_print_to_string(str, 128, v, n);
+	printf("%s\n", str);
 }
+
 /** Print an N-component double vector to stdout (all on one line).
     @param v The N-component vector to print.
     @param n The number of components in the vector.
 */
 static inline void vecNd_print(const double v[ ], const int n)
 {
-	printf("vec%dd(",n);
-	for(int i=0; i<n; i++)
-	{
-		// Use a temporary variable since printf() parameters are not const.
-		double tmp = v[i];
-		printf("%10.3f ",tmp);
-	}
-	printf(")\n");
+	char str[128];
+	vecNd_print_to_string(str, 128, v, n);
+	printf("%s\n", str);
 }
 
 /** Print a vec3f vector to stdout (all on one line).
@@ -415,8 +457,10 @@ static inline void vecNf_scalarDiv_new(float result[], const float v[], const fl
 		result[i] = v[i]/scalar;
 	if(!isfinite(result[0]))
 	{
-		printf("%s: WARNING: Divided the following vector by 0:\n", __func__);
-		vecNf_print(vOrig, n);
+		msg(WARNING, "Divided the following vector by 0:\n");
+		char str[128];
+		vecNf_print_to_string(str, 128, vOrig, n);
+		msg(WARNING, "%s", str);
 	}
 }
 /** Divide each element in a double vector by a scalar.
@@ -434,8 +478,10 @@ static inline void vecNd_scalarDiv_new(double result[], const double v[], const 
 		result[i] = v[i]/scalar;
 	if(!isfinite(result[0]))
 	{
-		printf("%s: WARNING: Divided the following vector by 0:\n", __func__);
-		vecNd_print(vOrig, n);
+		msg(WARNING, "Divided the following by 0:\n");
+		char str[128];
+		vecNd_print_to_string(str, 128, vOrig, n);
+		msg(WARNING, "%s", str);
 	}
 }
 /** Divide each element in a 3-component float vector by a scalar.
@@ -812,7 +858,7 @@ static inline void vec4d_sub_new(double result[4], const double a[4], const doub
 static inline void matNf_getColumn(float  result[ ], const float  m[  ], const int col, const int n)
 {
 	if(col >= n)
-		printf("%s: Column %d must be less than %d\n", __func__, col, n);
+		msg(ERROR, "Column %d must be less than %d\n", col, n);
 	for(int i=0; i<n; i++)
 		result[i] = m[i+col*n];
 }
@@ -825,7 +871,7 @@ static inline void matNf_getColumn(float  result[ ], const float  m[  ], const i
 static inline void matNd_getColumn(double result[ ], const double m[  ], const int col, const int n)
 {
 	if(col >= n)
-		printf("%s: Column %d must be less than %d\n", __func__, col, n);
+		msg(ERROR, "Column %d must be less than %d\n", col, n);
 	for(int i=0; i<n; i++)
 		result[i] = m[i+col*n];
 }
@@ -868,7 +914,7 @@ static inline void mat3d_getColumn(double result[3], const double m[ 9], const i
 static inline void matNf_getRow(float  result[ ], const float  m[  ], const int row, const int n)
 {
 	if(row >= n)
-		printf("%s: Row %d must be less than %d\n", __func__, row, n);
+		msg(ERROR, "Row %d must be less than %d\n", row, n);
 	for(int i=0; i<n; i++)
 		result[i] = m[row+i*n];
 }
@@ -881,7 +927,7 @@ static inline void matNf_getRow(float  result[ ], const float  m[  ], const int 
 static inline void matNd_getRow(double result[ ], const double m[  ], const int row, const int n)
 {
 	if(row >= n)
-		printf("%s: Row %d must be less than %d\n", __func__, row, n);
+		msg(ERROR, "Row %d must be less than %d\n", row, n);
 	for(int i=0; i<n; i++)
 		result[i] = m[row+i*n];
 }
@@ -924,7 +970,7 @@ static inline void mat3d_getRow(double result[3], const double m[ 9], const int 
 static inline void matNf_setColumn(float  matrix[  ], const float  v[ ], const int col, const int n)
 {
 	if(col >= n)
-		printf("%s: Column %d must be less than %d\n", __func__, col, n);
+		msg(ERROR, "Column %d must be less than %d\n", col, n);
 	for(int row=0; row<n; row++)
 		matrix[matN_getIndex(row, col, n)] = v[row];
 }
@@ -937,7 +983,7 @@ static inline void matNf_setColumn(float  matrix[  ], const float  v[ ], const i
 static inline void matNd_setColumn(double matrix[  ], const double v[ ], const int col, const int n)
 {
 	if(col >= n)
-		printf("%s: Column %d must be less than %d\n", __func__, col, n);
+		msg(ERROR, "Column %d must be less than %d\n", col, n);
 	for(int row=0; row<n; row++)
 		matrix[matN_getIndex(row, col, n)] = v[row];
 }
@@ -979,7 +1025,7 @@ static inline void mat4d_setColumn(double matrix[16], const double v[4], const i
 static inline void matNf_setRow(float  matrix[  ], const float  v[ ], const int row, const int n)
 {
 	if(row >= n)
-		printf("%s: Row %d must be less than %d\n", __func__, row, n);
+		msg(ERROR, "Row %d must be less than %d\n", row, n);
 	for(int col=0; col<n; col++)
 		matrix[matN_getIndex(row, col, n)] = v[col];
 }
@@ -992,7 +1038,7 @@ static inline void matNf_setRow(float  matrix[  ], const float  v[ ], const int 
 static inline void matNd_setRow(double matrix[  ], const double v[ ], const int row, const int n)
 {
 	if(row >= n)
-		printf("%s: Row %d must be less than %d\n", __func__, row, n);
+		msg(ERROR, "Row %d must be less than %d\n", row, n);
 	for(int col=0; col<n; col++)
 		matrix[matN_getIndex(row, col, n)] = v[col];
 }
@@ -1331,19 +1377,82 @@ static inline void mat4f_identity(float m[16])
 static inline void mat4d_identity(double m[16])
 { matNd_identity(m, 4); }
 
+/** Print an N-component float matrix into a string. String is null
+    terminated. It does NOT end with a space or a newline.
+
+    @param dest A buffer to store the string in. It must be allocated
+    to contain at least destSize bytes.
+
+    @param destSize The amount of space available in dest.
+
+    @param v A vector to print to the string.
+
+    @param n The number of components in the vector.
+*/
+static inline void matNf_print_to_string(char *dest, const int destSize,
+                                         const float m[ ], const int n)
+{
+	int used = 0;
+	used += snprintf(dest+used, destSize-used, "mat%df [ ", n);
+	for(int i=0; i<n; i++)
+	{
+		if(i > 0)
+			used += snprintf(dest+used, destSize-used, "      [ ");
+		for(int j=0; j<n; j++)
+		{
+			// Use a temporary variable since printf() parameters are not const.
+			float tmp = m[matN_getIndex(i,j,n)];
+			used += snprintf(dest+used, destSize-used, "%10.3f ", tmp);
+		}
+		used += snprintf(dest+used, destSize-used, "]");
+		if(i < n-1)
+			used += snprintf(dest+used, destSize-used, "\n");
+	}
+}
+
+/** Print an N-component double matrix into a string. String is null
+    terminated. It does NOT end with a space or a newline.
+
+    @param dest A buffer to store the string in. It must be allocated
+    to contain at least destSize bytes.
+
+    @param destSize The amount of space available in dest.
+
+    @param v A vector to print to the string.
+
+    @param n The number of components in the vector.
+*/
+static inline void matNd_print_to_string(char *dest, const int destSize,
+                                         const double m[ ], const int n)
+{
+	int used = 0;
+	used += snprintf(dest+used, destSize-used, "mat%dd [ ", n);
+	for(int i=0; i<n; i++)
+	{
+		if(i > 0)
+			used += snprintf(dest+used, destSize-used, "      [ ");
+		for(int j=0; j<n; j++)
+		{
+			// Use a temporary variable since printf() parameters are not const.
+			double tmp = m[matN_getIndex(i,j,n)];
+			used += snprintf(dest+used, destSize-used, "%10.3f ", tmp);
+		}
+		used += snprintf(dest+used, destSize-used, "]");
+		if(i < n-1)
+			used += snprintf(dest+used, destSize-used, "\n");
+	}
+}
+
+
 /** Print a NxN float matrix to standard out.
  @param m The matrix to print.
  @param n The size of the matrix.
 */
 static inline void matNf_print(const float  m[], const int n)
 {
-	printf("matrix:\n");
-	for(int i=0; i<n; i++)
-	{
-		for(int j=0; j<n; j++)
-			printf("%10.3f ", m[matN_getIndex(i,j,n)]);
-		printf("\n");
-	}
+	char str[256];
+	matNf_print_to_string(str, 256, m, n);
+	printf("%s\n", str);
 }
 /** Print a NxN double matrix to standard out.
  @param m The matrix to print.
@@ -1351,13 +1460,9 @@ static inline void matNf_print(const float  m[], const int n)
 */
 static inline void matNd_print(const double m[], const int n)
 {
-	printf("matrix:\n");
-	for(int i=0; i<n; i++)
-	{
-		for(int j=0; j<n; j++)
-			printf("%10.3f ", m[matN_getIndex(i,j,n)]);
-		printf("\n");
-	}
+	char str[256];
+	matNd_print_to_string(str, 256, m, n);
+	printf("%s\n", str);
 }
 /** Print a 3x3 float matrix to standard out.
  @param m The matrix to print.

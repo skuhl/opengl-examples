@@ -140,6 +140,12 @@ extern inline void vec3d_sub_new(double result[3], const double a[3], const doub
 extern inline void vec4f_sub_new(float  result[4], const float  a[4], const float  b[4]);
 extern inline void vec4d_sub_new(double result[4], const double a[4], const double b[4]);
 
+/* Print a vector to a string */
+static inline void vecNf_print_to_string(char *dest, const int destSize,
+                                         const float v[ ], const int n);
+static inline void vecNd_print_to_string(char *dest, const int destSize,
+                                         const double v[ ], const int n);
+
 /* Print the vector to standard out. */
 extern inline void vecNf_print(const float  v[ ], const int n);
 extern inline void vecNd_print(const double v[ ], const int n);
