@@ -10,6 +10,13 @@
 extern "C" {
 #endif
 
+// __func__ may not be available on Windows, use __FUNCTION__ instead.
+// See: https://stackoverflow.com/questions/2281970/
+#if defined ( WIN32 )
+#define __func__ __FUNCTION__
+#endif
+
+	
 typedef enum {
 	/* Types of messages used internally by libkuhl, can be used by applications that use libkuhl too: */
 	DEBUG,   /*< Messages that are occasionally useful when troubleshooting (written to logfile) */

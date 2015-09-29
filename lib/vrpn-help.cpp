@@ -126,7 +126,7 @@ char* vrpn_default_host()
 	} while(*vrpnString == '#' || strlen(vrpnString) == 0);  // allow for comments and blank lines in vrpn-server file.
 	fclose(f);
 
-	// printf("%s: Found in %s: '%s'\n", __func__, path, vrpnString);
+	// msg(DEBUG, "Found in %s: '%s'\n", path, vrpnString);
 	return vrpnString;
 	
 }

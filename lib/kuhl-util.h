@@ -36,6 +36,7 @@
 #endif
 
 #include "kuhl-nodep.h"
+#include "msg.h"
 
 #ifdef __cplusplus
 extern "C" {
