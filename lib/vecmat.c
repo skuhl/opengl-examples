@@ -547,7 +547,7 @@ int mat3d_invert_new(double out[9], const double m[9])
 	{
 		msg(ERROR, "Failed to invert the following matrix\n");
 		char str[256];
-		matNf_print_to_string(str, 256, m, 3);
+		matNd_print_to_string(str, 256, m, 3);
 		msg(ERROR, "%s", str);
 		return 0;
 	}
