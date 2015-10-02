@@ -109,11 +109,9 @@ typedef struct _kuhl_geometry_
 	kuhl_texture textures[MAX_TEXTURES];
 	unsigned int texture_count;
 
-	GLuint *indices; /**< Allows you to specify which vertices are a part of a primitive. This is useful if a single vertex is shared by multiple primitives. If this is set to NULL, the vertices are drawn in order. - User should set this. */
 	GLuint indices_len; /**< How many indices are there? - User should set this. */
 	GLuint indices_bufferobject; /**< What is the OpenGL buffer object that holds the indices? - Set by kuhl_geometry_init(). */
 
-	
 	float matrix[16]; /**< A matrix that all of this geometry should be transformed by */
 	int has_been_drawn; /**< Has this piece of geometry been drawn yet? */
 	

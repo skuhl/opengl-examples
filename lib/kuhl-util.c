@@ -1059,7 +1059,6 @@ void kuhl_geometry_new(kuhl_geometry *geom, GLuint program, unsigned int vertexC
 	geom->attrib_count = 0;
 	geom->texture_count = 0;
 
-	geom->indices = NULL;
 	geom->indices_len = 0;
 	geom->indices_bufferobject = 0;
 
@@ -1106,16 +1105,15 @@ void kuhl_geometry_indices(kuhl_geometry *geom, GLuint *indices, GLuint indexCou
 	}
 	
 	geom->indices_len = indexCount;
-	geom->indices     = indices;
 
 	/* Verify that the indices the user passed in are
 	 * appropriate. If there are only 10 vertices, then a user
 	 * can't draw a vertex at index 10, 11, 13, etc. */
 	for(GLuint i=0; i<geom->indices_len; i++)
 	{
-		if(geom->indices[i] >= geom->vertex_count)
+		if(indices[i] >= geom->vertex_count)
 			msg(ERROR, "kuhl_geometry has %d vertices but indices[%d] is asking for vertex at index %d to be drawn.\n",
-			    geom->vertex_count, i, geom->indices[i]);
+			    geom->vertex_count, i, indices[i]);
 	}
 
 	/* Enable VAO */
@@ -1129,7 +1127,7 @@ void kuhl_geometry_indices(kuhl_geometry *geom, GLuint *indices, GLuint indexCou
 
 	/* Copy the indices data into the currently bound buffer. */
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*geom->indices_len,
-	             geom->indices, GL_STATIC_DRAW);
+	             indices, GL_STATIC_DRAW);
 	kuhl_errorcheck();
 	// Don't unbind GL_ELEMENT_ARRAY_BUFFER since the VAO keeps track of this for us.
 
