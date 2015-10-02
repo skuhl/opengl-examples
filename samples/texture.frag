@@ -13,6 +13,6 @@ void main()
 	}
 	else
 	{
-		fragColor = vec4(out_TexCoord.xy,0,1);		
+		fragColor = vec4(out_TexCoord,0,1);
 	}
 }
