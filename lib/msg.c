@@ -36,6 +36,11 @@
 static FILE *f = NULL;  /*< The file stream for our log file */
 static char *logfile = NULL;
 
+/** Writes a timestamp string to a pre-allocated char array.
+
+    @param buf A buffer of len bytes where the timestamp should be stored.
+    @param len The length of the buffer.
+*/
 static void msg_timestamp(char *buf, int len)
 {
 	struct timeval tv;
@@ -61,6 +66,12 @@ static void msg_timestamp(char *buf, int len)
 #endif
 }
 
+/** Given a message type, creates a string describing that message type.
+
+    @param type The message type.
+    @param buf A buffer to store a string which describes the message type.
+    @param len The length of the buffer.
+*/
 static void msg_type_string(msg_type type, char *buf, int len)
 {
 	switch(type)
@@ -115,8 +126,17 @@ static int msg_show_type(msg_type type)
 	}
 }
 
+/** Writes bytes to a file stream to enable colors, bold, etc for special messages.
+
+    @param type The message type.
+    
+    @param stream A stream that the bytes should be written to.
+ */
 static void msg_start_color(msg_type type, FILE *stream)
 {
+	/* Don't do anything if the stream is invalid or if the stream is
+	 * not associated with a tty (i.e., we only use colors if writing
+	 * to stdout or stderr, not when writing to a file. */
 	if(stream == NULL || isatty(fileno(stream)) == 0)
 		return;
 
@@ -158,6 +178,7 @@ static void msg_start_color(msg_type type, FILE *stream)
 
 }
 
+/** Writes bytes to a stream to reset the colors back to he default. */
 static void msg_end_color(msg_type type, FILE *stream)
 {
 	if(stream == NULL || isatty(fileno(stream)) == 0)
