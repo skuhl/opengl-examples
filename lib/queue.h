@@ -9,23 +9,12 @@
     buffer using the list structure. The list will be resized as
     needed as items are added to the queue.
 
-    For example, if you want to store an int in the list, you would use:
-
-    TODO
-
     Note that the queue will store a *copy* of the int inside of the
     queue---the queue does not store a list of pointers. If you want to
     make a queue of pointers, you should pass a pointer to a pointer
     into queue_enqueue();
-
     
-    It is important to note that the list struct contains three
-    variables that can be read but should not be changed by functions
-    outside of queue.c:
-
-    TODO
-
-    @author Scott Kuhl
+    @author Scott Kuhl 
  */
 
 #ifndef __QUEUE_H__

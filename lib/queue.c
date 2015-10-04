@@ -1,3 +1,13 @@
+/* Copyright (c) 2014 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
+ */
+
+/** @file
+ * @author Scott Kuhl
+ */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
