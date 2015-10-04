@@ -1642,9 +1642,8 @@ static float kuhl_read_texture_file_im(const char *filename, GLuint *texName, GL
 	 * for the lowest left pixel in the texture. */
 	int width  = (int)iioinfo.width;
 	int height = (int)iioinfo.height;
-	float aspectRatio = (float)width/height;
-	msg(DEBUG, "Finished reading '%s' (%dx%d) with ImageMagick\n", filename, width, height);
 	*texName = kuhl_read_texture_rgba_array_wrap(image, width, height, wrapS, wrapT);
+	msg(DEBUG, "Finished reading '%s' (%dx%d, texName=%d) with ImageMagick\n", filename, width, height, *texName);
 
 	if(iioinfo.comment)
 		free(iioinfo.comment);
@@ -1656,6 +1655,7 @@ static float kuhl_read_texture_file_im(const char *filename, GLuint *texName, GL
 		return -1;
 	}
 
+	float aspectRatio = (float)width/height;
 	return aspectRatio;
 }
 #else // KUHL_UTIL_USE_IMAGEMAGICK
@@ -1693,9 +1693,8 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName, G
 	 * bytes for each pixel (red, green, blue, alpha). The data in "image"
 	 * is in row major order. The first 4 bytes are the color information
 	 * for the lowest left pixel in the texture. */
-	float aspectRatio = (float)width/height;
-	msg(DEBUG, "Finished reading '%s' (%dx%d) with STB\n", filename, width, height);
 	*texName = kuhl_read_texture_rgba_array_wrap(image, width, height, wrapS, wrapT);
+	msg(DEBUG, "Finished reading '%s' (%dx%d, texName=%d) with STB\n", filename, width, height, *texName);
 	stbi_image_free(image);
 	
 	if(*texName == 0)
@@ -1704,6 +1703,7 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName, G
 		return -1;
 	}
 
+	float aspectRatio = (float)width/height;
 	return aspectRatio;
 }
 #endif // end else part of ifdef KUHL_UTIL_USE_IMAGEMAGICK
