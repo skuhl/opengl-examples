@@ -211,18 +211,20 @@ static void msg_init(void)
 	else
 		logfile = strdup("log.txt"); // default log file name
 
-	// Open the log file
+	f = fopen(logfile, append ? "a" : "w");
+	if(f == NULL)
+	{
+		fprintf(stderr, "Unable to %s to log file %s\n", append ? "append" : "write", logfile);
+		exit(EXIT_FAILURE);
+	}
+		
 	if(append)
 	{
-		f = fopen(logfile, "a");
-		// Add a header to make it easier to distinguish between the
 		// outputs of multiple runs.
 		fprintf(f, "============================================================\n");
 		fprintf(f, "=== Program started ========================================\n");
 		fprintf(f, "============================================================\n");
 	}
-	else
-		f = fopen(logfile, "w"); // overwrite
 
 	// Header for log file
 	fprintf(f, "[TYPE ]    seconds     filename:line message\n");
