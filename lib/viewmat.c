@@ -481,7 +481,7 @@ static void viewmat_init_mouse(float pos[3], float look[3], float up[3])
 static void viewmat_init_hmd_oculus(float pos[3])
 {
 #ifdef MISSING_OVR
-	msg(ERROR, "Oculus support is missing: You have not compiled this code against the LibOVR library.\n");
+	msg(FATAL, "Oculus support is missing: You have not compiled this code against the LibOVR library.\n");
 	exit(EXIT_FAILURE);
 #else
 	ovr_Initialize(NULL);
@@ -874,11 +874,6 @@ static void viewmat_get_mouse(float viewmatrix[16], int viewportNum)
 	}
 	
 	mat4f_lookatVec_new(viewmatrix, pos, look, up);
-
-	if(viewportNum == 0)
-		dgr_setget("!!viewMat0", viewmatrix, sizeof(float)*16);
-	else
-		dgr_setget("!!viewMat1", viewmatrix, sizeof(float)*16);
 }
 
 
@@ -946,8 +941,8 @@ static void viewmat_get_orient_sensor(float viewmatrix[16], int viewportNum)
 	// Don't need to use DGR!
 }
 
-/** Get a view matrix appropriate for the Oculus HMD */
-static void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
+/** Get view and projection matrices appropriate for the Oculus HMD */
+static void viewmat_get_hmd_oculus(float viewmatrix[16], float projmatrix[16], int viewportID)
 {
 #ifndef MISSING_OVR
 	/* Oculus recommends the order that we should render eyes. We
@@ -958,6 +953,15 @@ static void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 	 * the right eye). */
 	ovrEyeType eye = hmd->EyeRenderOrder[viewportID];
 
+	/* Oculus doesn't provide us with easy access to the view
+	 * frustum information. We get the projection matrix directly
+	 * from libovr. */
+	ovrMatrix4f ovrpersp = ovrMatrix4f_Projection(hmd->DefaultEyeFov[eye], 0.5, 500, 1);
+	mat4f_setRow(projmatrix, &(ovrpersp.M[0][0]), 0);
+	mat4f_setRow(projmatrix, &(ovrpersp.M[1][0]), 1);
+	mat4f_setRow(projmatrix, &(ovrpersp.M[2][0]), 2);
+	mat4f_setRow(projmatrix, &(ovrpersp.M[3][0]), 3);
+	
 	float offsetMat[16], rotMat[16], posMat[16], initPosMat[16];
 	mat4f_identity(offsetMat);  // Viewpoint offset (IPD, etc);
 	mat4f_identity(rotMat);     // tracking system rotation
@@ -1027,6 +1031,14 @@ static void viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 		printf("Final view matrix: ");
 		mat4f_print(viewmatrix);
 	}
+#else
+	/* We shouldn't ever get here, but we'll generate a generic view
+	 * and projection matrix just in case... */
+	mat4f_lookat_new(viewmatrix,
+	                 0,1.55,0,
+	                 0,1.55,-1,
+	                 0,1,0);
+	mat4f_perspective_new(projmatrix, 50, 1, 0.5, 500);
 #endif
 }
 
@@ -1042,7 +1054,8 @@ static void viewmat_get_ivs(float viewmatrix[16], float frustum[6])
 	float pos[3];
 	if((dgr_is_enabled() && dgr_is_master()) || dgr_is_enabled()==0)
 	{
-		if(viewmat_vrpn_obj != NULL)
+		if(viewmat_control_mode == VIEWMAT_CONTROL_VRPN &&
+		   viewmat_vrpn_obj != NULL)
 		{
 			/* get information from vrpn */
 			float orient[16];
@@ -1221,11 +1234,19 @@ viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewport
 	float f[6]; // left, right, bottom, top, near>0, far>0
 	projmat_get_frustum(f, viewport[2], viewport[3]);
 
-	if(viewmat_control_mode == VIEWMAT_CONTROL_VRPN &&
-	   viewmat_display_mode == VIEWMAT_IVS)
+	/* If we are running in IVS mode and using the tracking systems,
+	 * all computers need to update their frustum differently. The
+	 * master process will be controlled by VRPN, and all slaves will
+	 * have their controllers set to "none". Here, we detect for this
+	 * situation and make sure all processes work correctly.
+	 */
+	if(viewmat_display_mode == VIEWMAT_IVS && 
+	   (viewmat_control_mode == VIEWMAT_CONTROL_VRPN ||
+	    viewmat_control_mode == VIEWMAT_CONTROL_NONE))
 	{
-		// dynamic frustum
+		// Will update view matrix and frustum information
 		viewmat_get_ivs(viewmatrix, f);
+		mat4f_frustum_new(projmatrix, f[0], f[1], f[2], f[3], f[4], f[5]);
 	}
 	else
 	{
@@ -1233,21 +1254,26 @@ viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewport
 		{
 			case VIEWMAT_CONTROL_MOUSE:    // mouse movement
 				viewmat_get_mouse(viewmatrix, viewportID);
+				mat4f_frustum_new(projmatrix, f[0], f[1], f[2], f[3], f[4], f[5]);
 				break;
 			case VIEWMAT_CONTROL_NONE:
 				// Get the view matrix from the mouse movement code...but
 				// we haven't registered mouse movement callback
 				// functions, so mouse movement won't work.
 				viewmat_get_mouse(viewmatrix, viewportID);
+				mat4f_frustum_new(projmatrix, f[0], f[1], f[2], f[3], f[4], f[5]);
 				break;
 			case VIEWMAT_CONTROL_ORIENT:
 				viewmat_get_orient_sensor(viewmatrix, viewportID);
+				mat4f_frustum_new(projmatrix, f[0], f[1], f[2], f[3], f[4], f[5]);
 				break;
 			case VIEWMAT_CONTROL_OCULUS:
-				viewmat_get_hmd_oculus(viewmatrix, viewportID);
+				viewmat_get_hmd_oculus(viewmatrix, projmatrix, viewportID);
+				// previous function sets projmatrix for us...
 				break;
 			case VIEWMAT_CONTROL_VRPN:
 				viewmat_get_vrpn(viewmatrix, viewportID);
+				mat4f_frustum_new(projmatrix, f[0], f[1], f[2], f[3], f[4], f[5]);
 				break;
 
 			default:
@@ -1255,26 +1281,16 @@ viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewport
 				exit(EXIT_FAILURE);
 		}
 	}
-		
-	/* The following code calculates the projection matrix. */
-	if(viewmat_display_mode == VIEWMAT_OCULUS)
-	{
-#ifndef MISSING_OVR
-		/* Oculus doesn't provide us with easy access to the view
-		 * frustum information. We get the projection matrix directly
-		 * from libovr. */
-		ovrMatrix4f ovrpersp = ovrMatrix4f_Projection(hmd->DefaultEyeFov[viewportID], 0.5, 500, 1);
-		mat4f_setRow(projmatrix, &(ovrpersp.M[0][0]), 0);
-		mat4f_setRow(projmatrix, &(ovrpersp.M[1][0]), 1);
-		mat4f_setRow(projmatrix, &(ovrpersp.M[2][0]), 2);
-		mat4f_setRow(projmatrix, &(ovrpersp.M[3][0]), 3);
-#endif
-	}
-	else
-	{
-		mat4f_frustum_new(projmatrix, f[0], f[1], f[2], f[3], f[4], f[5]);
-	}
 
+	/* Send the view matrix to DGR. At some point in the future, we
+	 * may have multiple computers using different view matrices. For
+	 * now, even in IVS mode, all processes will use the same view
+	 * matrix (IVS uses different view frustums per process). */
+	char dgrkey[128];
+	snprintf(dgrkey, 128, "!!viewmat%d", viewportID);
+	dgr_setget(dgrkey, viewmatrix, sizeof(float)*16);
+
+	/* Sanity checks */
 	viewmat_validate_ipd(viewmatrix, viewportID);
 	viewmat_validate_fps(viewportID);
 	return eye;
