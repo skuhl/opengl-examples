@@ -30,7 +30,7 @@ OrientSensorState orient_sensor_init(const char* deviceFileIn, int sensorType)
 	if(deviceFileIn != NULL)
 		deviceFile = deviceFileIn;
 	else
-		deviceFile = getenv("ORIENT_SENSOR_TTY");
+		deviceFile = strdup(getenv("ORIENT_SENSOR_TTY"));
 
 	if(deviceFile == NULL)
 	{
@@ -41,7 +41,8 @@ OrientSensorState orient_sensor_init(const char* deviceFileIn, int sensorType)
 	if(sensorType == ORIENT_SENSOR_NONE)
 	{
 		const char *type = getenv("ORIENT_SENSOR_TYPE");
-		if(strcasecmp(type, "bno005") == 0)
+		printf("%s\n", type);
+		if(strcasecmp(type, "bno055") == 0)
 			sensorType = ORIENT_SENSOR_BNO055;
 		else if(strcasecmp(type, "dsight") == 0)
 			sensorType = ORIENT_SENSOR_DSIGHT;
@@ -49,7 +50,7 @@ OrientSensorState orient_sensor_init(const char* deviceFileIn, int sensorType)
 
 	if(sensorType == ORIENT_SENSOR_NONE)
 	{
-		msg(FATAL, "Can't connect to orientation sensor because sensor tyepe is not set.");
+		msg(FATAL, "Can't connect to orientation sensor because sensor type is not set.");
 		exit(EXIT_FAILURE);
 	}
 
