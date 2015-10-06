@@ -4,7 +4,7 @@ endif()
 cmake_minimum_required(VERSION 2.6)
 
 
-set(FILES_IN_LIBKUHL kuhl-util.c kuhl-nodep.c vecmat.c dgr.c mousemove.c hmd-dsight-orient.c projmat.c viewmat.c vrpn-help.cpp kalman.c font-helper.c msg.c list.c queue.c tdl-util.c)
+set(FILES_IN_LIBKUHL kuhl-util.c kuhl-nodep.c vecmat.c dgr.c mousemove.c projmat.c viewmat.c vrpn-help.cpp kalman.c font-helper.c msg.c list.c queue.c tdl-util.c serial.c)
 
 if(ImageMagick_FOUND)
 	set(FILES_IN_LIBKUHL ${FILES_IN_LIBKUHL} imageio.c)

@@ -18,7 +18,7 @@
 #include "vecmat.h"
 #include "mousemove.h"
 #include "vrpn-help.h"
-#include "hmd-dsight-orient.h"
+#include "hmd-bn0055.h"
 #include "dgr.h"
 
 #include "viewmat.h"
@@ -473,7 +473,9 @@ static void viewmat_init_hmd_dsight()
 
 	/* TODO: Currently this mode only supports the orientation sensor
 	 * in the dSight HMD */
+	char* hmd = strdup(hmdDeviceFile);
 	viewmat_hmd = initHmdControl(hmdDeviceFile);
+	free(hmd);
 }
 
 /** Initialize the Oculus HMD.
@@ -674,8 +676,8 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	}
 	else if(strcasecmp(modeString, "none") == 0)
 	{
-		msg(INFO, "No view matrix handler is being used.\n");
 		viewmat_mode = VIEWMAT_NONE;
+		msg(INFO, "No view matrix handler is being used.\n");
 		// Set our initial position, but don't handle mouse movement.
 		mousemove_set(pos[0],pos[1],pos[2],
 		              look[0],look[1],look[2],
@@ -683,8 +685,8 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	}
 	else if(strcasecmp(modeString, "anaglyph") == 0)
 	{
-		msg(INFO, "Anaglyph image rendering. Use the red filter on the left eye and the cyan filter on the right eye.\n");
 		viewmat_mode = VIEWMAT_ANAGLYPH;
+		msg(INFO, "Anaglyph image rendering. Use the red filter on the left eye and the cyan filter on the right eye.\n");
 		viewmat_init_mouse(pos, look, up);
 	}
 	else
@@ -713,6 +715,18 @@ void viewmat_init(float pos[3], float look[3], float up[3])
  * correct direction. */
 static void viewmat_fix_rotation(float orient[16])
 {
+	if(viewmat_mode == VIEWMAT_HMD_DSIGHT)
+	{
+		float offset1[16],offset2[16];
+		mat4f_identity(offset1);
+		mat4f_identity(offset2);
+		mat4f_rotateAxis_new(offset1, 90, 0,0,1);
+		mat4f_rotateAxis_new(offset2, -90, 0,0,1);
+		mat4f_mult_mat4f_new(orient, offset1, orient);
+		mat4f_mult_mat4f_new(orient, orient, offset2);
+		return;
+	}
+
 	if(viewmat_vrpn_obj == NULL || strlen(viewmat_vrpn_obj) == 0)
 		return;
 
@@ -734,6 +748,8 @@ static void viewmat_fix_rotation(float orient[16])
 	}
 	if(hostname)
 		free(hostname);
+
+
 }
 
 
@@ -830,9 +846,17 @@ static viewmat_eye viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
 	float quaternion[4];
 	updateHmdControl(&viewmat_hmd, quaternion);
 
+	float camPosition[16];
+	mat4f_translate_new(camPosition, 0,1.5,0);
+	mat4f_invert(camPosition);
+	
 	float rotationMatrix[16];
 	mat4f_rotateQuatVec_new(rotationMatrix, quaternion);
+	viewmat_fix_rotation(rotationMatrix);
 
+	float camMatrix[16];
+	mat4f_mult_mat4f_new(camMatrix, rotationMatrix, camPosition);
+	
 	float eyeDist = 0.055;  // TODO: Make this configurable.
 
 	float xShift = (viewportNum == 0 ? -eyeDist : eyeDist) / 2.0f;
@@ -843,7 +867,7 @@ static viewmat_eye viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
 	// apply the shift, then the rotation, then the position
 	// as in (Pos * (Rotation * (Shift * (vector))) == (Pos * Rotation * Shift) * vector
 	// except we have no way of acquiring the Pos matrix, so leave it out
-	mat4f_mult_mat4f_new(viewmatrix, rotationMatrix, shiftMatrix);
+	mat4f_mult_mat4f_new(viewmatrix, camMatrix, shiftMatrix);
 	// Don't need to use DGR!
 
 	if(viewportNum == 0)
@@ -1098,7 +1122,7 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
 		long delay = kuhl_microseconds() - viewmatrix0time;
 		if(ipd > .07 || ipd < .05)
 		{
-			msg(WARNING, "IPD=%.4f meters, delay=%ld us (IPD validation failed; occasional messages are OK!)\n", ipd, delay);
+			//msg(WARNING, "IPD=%.4f meters, delay=%ld us (IPD validation failed; occasional messages are OK!)\n", ipd, delay);
 		}
 		// msg(INFO, "IPD=%.4f meters, delay=%ld us\n", ipd, delay);
 
