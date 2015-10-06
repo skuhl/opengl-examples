@@ -54,5 +54,6 @@ elif [[ `hostname` == "humility" && ${USER} == "kuhl" ]]; then
 fi
 
 
-export VIEWMAT_MODE="oculus"
+export VIEWMAT_DISPLAY_MODE="oculus"
+export VIEWMAT_CONTROL_MODE="oculus"
 "${@}"

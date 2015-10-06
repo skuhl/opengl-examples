@@ -21,15 +21,15 @@ extern "C" {
 
 #include <stdlib.h>
 
-/** This enum is used by some kuhl_geometry related functions */
+/** This enum is used by some serial related functions */
 enum
-{ /* Options used for some serial-related functions */
+{
 	SERIAL_NONE      = 0,  /**< No options */
 	SERIAL_CONSUME   = 1,  /**< When reading, consume extra data */
 	SERIAL_NONBLOCK  = 2   /**< Indicate if we would block. */
 };
 
-
+void serial_discard(int fd);
 void serial_write(const int fd, const char* buf, size_t numBytes);
 int serial_read(int fd, char* buf, size_t numBytes, int options);
 int serial_open(const char *deviceFile, int speed, int parity, int vmin, int vtime);

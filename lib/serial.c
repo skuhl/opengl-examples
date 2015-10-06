@@ -214,12 +214,15 @@ static void serial_settings(int fd, int speed, int parity, int vmin, int vtime)
 	// Apply our new settings
 	if(tcsetattr(fd, TCSANOW, &toptions) == -1)
 		msg(ERROR, "tcgetattr error: %s\n", strerror(errno));
-
-	/* Discard any bytes that is received but not read and written but
-	 * not transmitted. */
-	tcflush(fd, TCIOFLUSH);
 }
 
+
+/** Discards any bytes that are received but not read and written but
+    not transmitted. */
+void serial_discard(int fd)
+{
+	tcflush(fd, TCIOFLUSH);
+}
 
 /** Close a serial connection.
 

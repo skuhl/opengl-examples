@@ -175,9 +175,9 @@ NEAR=3.5
 FAR=100
 BEZEL=.005
 
-# If VIEWMAT_MODE is not set, set to mouse.
-if [[ -z "$VIEWMAT_MODE" ]]; then
-	export VIEWMAT_MODE="mouse"
+# If VIEWMAT_DISPLAY_MODE is not set, set to mouse.
+if [[ -z "$VIEWMAT_DISPLAY_MODE" ]]; then
+	export VIEWMAT_DISPLAY_MODE="mouse"
 fi
 
 export DGR_MODE="master"
@@ -270,7 +270,7 @@ echo "cd ${IVS_TEMP_DIR}
 export PATH=.:\$PATH;
 export DGR_MODE='slave'
 export DGR_SLAVE_LISTEN_PORT='${SUB_SLAVE_LISTEN_PORT}'
-export VIEWMAT_MODE='${VIEWMAT_MODE}'
+export VIEWMAT_DISPLAY_MODE='${VIEWMAT_DISPLAY_MODE}'
 export PROJMAT_WINDOW_POS='${WINDOW_POS}'
 export PROJMAT_WINDOW_SIZE='${WINDOW_SIZE}'
 export PROJMAT_FRUSTUM='${FRUSTUM}'

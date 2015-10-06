@@ -171,9 +171,9 @@ VERT_SCREEN_SIZE=$(bc <<< "scale=6; ${VERT_SIZE} / ${VERT_COUNT}")
 NEAR=3.5
 FAR=100
 
-# If VIEWMAT_MODE is not set, set to mouse.
-if [[ -z "$VIEWMAT_MODE" ]]; then
-	export VIEWMAT_MODE="mouse"
+# If VIEWMAT_DISPLAY_MODE is not set, set to mouse.
+if [[ -z "$VIEWMAT_DISPLAY_MODE" ]]; then
+	export VIEWMAT_DISPLAY_MODE="mouse"
 fi
 
 export DGR_MODE="master"
@@ -265,7 +265,7 @@ for tile in ${ALL_TILES}; do
 export PATH='.:\$PATH;'
 export DGR_MODE='slave'
 export DGR_SLAVE_LISTEN_PORT='${SLAVE_LISTEN_PORT}'
-export VIEWMAT_MODE='${VIEWMAT_MODE}'
+export VIEWMAT_DISPLAY_MODE='${VIEWMAT_DISPLAY_MODE}'
 export PROJMAT_WINDOW_POS='0 0'
 export PROJMAT_WINDOW_SIZE='5760 1080'
 export PROJMAT_FRUSTUM='${FRUSTUM}'

@@ -45,7 +45,7 @@ fi
 PATH=.:$PATH
 
 #Connect to IVS tracking system?
-#export VIEWMAT_MODE="ivs"
+#export VIEWMAT_DISPLAY_MODE="ivs"
 #export VIEWMAT_VRPN_OBJECT="Wand"
 
 # Start the master process

@@ -18,7 +18,7 @@
 #include "vecmat.h"
 #include "mousemove.h"
 #include "vrpn-help.h"
-#include "hmd-bn0055.h"
+#include "orient-sensor.h"
 #include "dgr.h"
 
 #include "viewmat.h"
@@ -56,21 +56,30 @@ float oculus_initialPos[3];
 /** The different modes that viewmat works with. */
 typedef enum
 {
-	VIEWMAT_MOUSE,
 	VIEWMAT_IVS,        /* Michigan Tech's Immersive Visualization Studio */
 	VIEWMAT_HMD,        /* Side-by-side view */
-	VIEWMAT_HMD_DSIGHT, /* Sensics dSight */
-	VIEWMAT_HMD_OCULUS, /* HMDs supported by libovr (Oculus DK1, DK2, etc). */
+	VIEWMAT_OCULUS, /* HMDs supported by libovr (Oculus DK1, DK2, etc). */
 	VIEWMAT_ANAGLYPH,   /* Red-Cyan anaglyph images */
-	VIEWMAT_NONE        /* No matrix handler used */
-} ViewmatModeType;
+	VIEWMAT_DESKTOP        /* No matrix handler used */
+} ViewmatDisplayMode;
+
+typedef enum
+{
+	VIEWMAT_CONTROL_MOUSE,
+	VIEWMAT_CONTROL_VRPN,
+	VIEWMAT_CONTROL_ORIENT,
+	VIEWMAT_CONTROL_OCULUS,
+	VIEWMAT_CONTROL_NONE
+} ViewmatControlMode;
+
 
 #define MAX_VIEWPORTS 32 /**< Hard-coded maximum number of viewports supported. */
 static float viewports[MAX_VIEWPORTS][4]; /**< Contains one or more viewports. The values are the x coordinate, y coordinate, viewport width, and viewport height */
 static int viewports_size = 0; /**< Number of viewports in viewports array */
-static ViewmatModeType viewmat_mode = 0; /**< 0=mousemove, 1=IVS (using VRPN), 2=HMD (using VRPN), 3=none */
+static ViewmatDisplayMode viewmat_display_mode = 0;
+static ViewmatControlMode viewmat_control_mode = 0;
 static const char *viewmat_vrpn_obj = NULL; /**< Name of the VRPN object that we are tracking */
-static HmdControlState viewmat_hmd;
+static OrientSensorState viewmat_orientsense;
 
 
 /** Sometimes calls to glutGet(GLUT_WINDOW_*) take several milliseconds
@@ -138,7 +147,7 @@ static void viewmat_validate_viewportId(int viewportID)
 void viewmat_begin_frame(void)
 {
 #ifndef MISSING_OVR
-	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
+	if(viewmat_display_mode == VIEWMAT_OCULUS)
 	{
 		if(hmd)
 			timing = ovrHmd_BeginFrame(hmd, 0);
@@ -151,7 +160,7 @@ void viewmat_begin_frame(void)
  * been rendered. */
 void viewmat_end_frame(void)
 {
-	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
+	if(viewmat_display_mode == VIEWMAT_OCULUS)
 	{
 #ifndef MISSING_OVR
 		/* Copy the prerendered image from a multisample antialiasing
@@ -180,14 +189,14 @@ void viewmat_end_frame(void)
 			ovrHmd_EndFrame(hmd, pose, &EyeTexture[0].Texture);
 #endif
 	}
-	else if(viewmat_mode == VIEWMAT_ANAGLYPH)
+	else if(viewmat_display_mode == VIEWMAT_ANAGLYPH)
 	{
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	}
 
 	/* Need to swap front and back buffers here unless we are using
 	 * Oculus. (Oculus draws to the screen directly). */
-	if(viewmat_mode != VIEWMAT_HMD_OCULUS)
+	if(viewmat_display_mode != VIEWMAT_OCULUS)
 		glutSwapBuffers();
 }
 
@@ -261,7 +270,7 @@ void viewmat_begin_eye(int viewportID)
 	}
 #endif
 
-	if(viewmat_mode == VIEWMAT_ANAGLYPH)
+	if(viewmat_display_mode == VIEWMAT_ANAGLYPH)
 	{
 		if(viewportID == 0)
 			glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -380,25 +389,23 @@ static void viewmat_oculus_viewports(void)
  * our viewports after a window is resized. */
 static void viewmat_refresh_viewports(void)
 {
-	switch(viewmat_mode)
+	switch(viewmat_display_mode)
 	{
-		case VIEWMAT_MOUSE:
-		case VIEWMAT_NONE:
+		case VIEWMAT_DESKTOP:
 		case VIEWMAT_IVS:
 			viewmat_one_viewport();
 			break;
 		case VIEWMAT_HMD:
-		case VIEWMAT_HMD_DSIGHT:
 			viewmat_two_viewports();
 			break;
-		case VIEWMAT_HMD_OCULUS:
+		case VIEWMAT_OCULUS:
 			viewmat_oculus_viewports();
 			break;
 		case VIEWMAT_ANAGLYPH:
 			viewmat_anaglyph_viewports();
 			break;
 		default:
-			msg(ERROR, "Unknown viewmat mode: %d\n", viewmat_mode);
+			msg(ERROR, "Unknown viewmat mode: %d\n", viewmat_display_mode);
 			exit(EXIT_FAILURE);
 	}
 }
@@ -427,31 +434,32 @@ static int viewmat_init_vrpn(void)
 	return 0;
 }
 
-/** Initialize IVS view matrix calculations, connect to VRPN. */
-void viewmat_init_ivs(void)
+
+/** Checks if ORIENT_SENSE_TTY and ORIENT_SENSE_TYPE are set. if so,
+    set up an orientation sensor.
+    
+    @return Returns 1 if orientation sensor is set up, 0 otherwise.
+*/
+static int viewmat_init_orient_sensor(void)
 {
-	/* If we are using DGR, we only need to connect to VRPN if we are
-	 * the master process. */
-	if(dgr_is_enabled() && dgr_is_master())
-		viewmat_init_vrpn();
-	else if(dgr_is_enabled() == 0)
+	if(getenv("ORIENT_SENSOR_TTY") != NULL &&
+	   getenv("ORIENT_SENSOR_TYPE") != NULL)
 	{
-		// DGR should be enabled with IVS, but still connect to VRPN if we aren't.
-		msg(ERROR, "We are apparently using IVS without DGR?");
-		viewmat_init_vrpn();
+		msg(INFO, "Found an orientation sensor specified in an environment variable...connecting.");
+		viewmat_orientsense = orient_sensor_init(NULL, ORIENT_SENSOR_NONE);
+		return 1;
 	}
+	msg(INFO, "No orientation sensor found");
+	
+	return 0;
 }
+
 
 
 /** Initialize mouse movement. Or, if we have a VRPN object name we
  * are supposed to be tracking, get ready to use that instead. */
 static void viewmat_init_mouse(float pos[3], float look[3], float up[3])
 {
-	// If using VRPN to control the camera, there is nothing we need
-	// to do.
-	if(viewmat_init_vrpn() == 1)
-		return;
-		
 	glutMotionFunc(mousemove_glutMotionFunc);
 	glutMouseFunc(mousemove_glutMouseFunc);
 	mousemove_set(pos[0],pos[1],pos[2],
@@ -461,22 +469,6 @@ static void viewmat_init_mouse(float pos[3], float look[3], float up[3])
 }
 
 
-/** Initialize view matrix for "dSight" mode. */
-static void viewmat_init_hmd_dsight()
-{
-	const char* hmdDeviceFile = getenv("VIEWMAT_DSIGHT_FILE");
-	if (hmdDeviceFile == NULL)
-	{
-		msg(ERROR, "Failed to setup dSight HMD mode, VIEWMAT_DSIGHT_FILE not set\n");
-		exit(EXIT_FAILURE);
-	}
-
-	/* TODO: Currently this mode only supports the orientation sensor
-	 * in the dSight HMD */
-	char* hmd = strdup(hmdDeviceFile);
-	viewmat_hmd = initHmdControl(hmdDeviceFile);
-	free(hmd);
-}
 
 /** Initialize the Oculus HMD.
  *
@@ -645,60 +637,113 @@ static void viewmat_init_hmd_oculus(float pos[3])
  */
 void viewmat_init(float pos[3], float look[3], float up[3])
 {
-	const char* modeString = getenv("VIEWMAT_MODE");
-	if(modeString == NULL)
-		modeString = "mouse";
-	
-	if(strcasecmp(modeString, "ivs") == 0)
+	const char* controlModeString = getenv("VIEWMAT_CONTROL_MODE");
+
+	/* Don't use a control mode if we are a DGR slave */
+	if(dgr_is_enabled() && !dgr_is_master())
 	{
-		viewmat_mode = VIEWMAT_IVS;
-		viewmat_init_ivs();
-		msg(INFO, "Using IVS head tracking mode, tracking object: %s\n", viewmat_vrpn_obj);
+		msg(INFO, "viewmat Control Mode: DGR is present & we are a slave; setting control mode to 'none' (it was previously '%s')", controlModeString);
+		controlModeString = "none";
 	}
-	else if(strcasecmp(modeString, "dsight") == 0)
+	/* Make an intelligent guess if unspecified */
+	if(controlModeString == NULL) 
 	{
-		viewmat_mode = VIEWMAT_HMD_DSIGHT;
-		viewmat_init_hmd_dsight();
-		msg(INFO, "Using dSight HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
+		if(getenv("ORIENT_SENSOR_TTY") != NULL &&
+		   getenv("ORIENT_SENSOR_TYPE") != NULL)
+		{
+			msg(INFO, "viewmat Control Mode: Unspecified, but using orientation sensor.");
+			controlModeString = "orient";
+		}
+		else if(getenv("VIEWMAT_VRPN_OBJECT") != NULL)
+		{
+			msg(INFO, "viewmat Control Mode: Unspecified, but using VRPN.");
+			controlModeString = "vrpn";
+		}
+		else
+			controlModeString = "mouse";
 	}
-	else if(strcasecmp(modeString, "oculus") == 0)
+
+	/* Initialize control mode */
+	if(strcmp(controlModeString, "mouse") == 0)
 	{
-		viewmat_mode = VIEWMAT_HMD_OCULUS;
-		viewmat_init_hmd_oculus(pos);
-		// TODO: Tracking options?
-		msg(INFO, "Using Oculus HMD head tracking mode.\n");
-	}
-	else if(strcasecmp(modeString, "hmd") == 0)
-	{
-		viewmat_mode = VIEWMAT_HMD;
+		viewmat_control_mode = VIEWMAT_CONTROL_MOUSE;
 		viewmat_init_mouse(pos, look, up);
-		msg(INFO, "Using HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
 	}
-	else if(strcasecmp(modeString, "none") == 0)
+	else if(strcmp(controlModeString, "none") == 0)
 	{
-		viewmat_mode = VIEWMAT_NONE;
-		msg(INFO, "No view matrix handler is being used.\n");
+		viewmat_control_mode = VIEWMAT_CONTROL_NONE;
 		// Set our initial position, but don't handle mouse movement.
 		mousemove_set(pos[0],pos[1],pos[2],
 		              look[0],look[1],look[2],
 		              up[0],up[1],up[2]);
 	}
+	else if(strcmp(controlModeString, "orient") == 0)
+	{
+		viewmat_control_mode = VIEWMAT_CONTROL_ORIENT;
+		viewmat_init_orient_sensor();
+	}
+	else if(strcmp(controlModeString, "vrpn") == 0)
+	{
+		viewmat_control_mode = VIEWMAT_CONTROL_VRPN;
+		viewmat_init_vrpn();
+	}
+	else if(strcmp(controlModeString, "oculus") == 0)
+	{
+		viewmat_control_mode = VIEWMAT_CONTROL_OCULUS;
+	}
+	else
+	{
+		msg(FATAL, "viewmat control mode: unhandled mode '%s'.", controlModeString);
+		exit(EXIT_FAILURE);
+	}
+
+
+	const char* modeString = getenv("VIEWMAT_DISPLAY_MODE");
+	if(modeString == NULL)
+		modeString = "none";
+	
+	if(strcasecmp(modeString, "ivs") == 0)
+	{
+		viewmat_display_mode = VIEWMAT_IVS;
+		msg(INFO, "viewmat display mode: Using IVS head tracking mode, tracking object: %s\n", viewmat_vrpn_obj);
+	}
+	else if(strcasecmp(modeString, "oculus") == 0)
+	{
+		viewmat_display_mode = VIEWMAT_OCULUS;
+		msg(INFO, "viewmat display mode: Using Oculus HMD.\n");
+		viewmat_init_hmd_oculus(pos);
+	}
+	else if(strcasecmp(modeString, "hmd") == 0)
+	{
+		viewmat_display_mode = VIEWMAT_HMD;
+		msg(INFO, "viewmat display mode: Side-by-side left/right view.\n");
+	}
+	else if(strcasecmp(modeString, "none") == 0)
+	{
+		viewmat_display_mode = VIEWMAT_DESKTOP;
+		msg(INFO, "viewmat display mode: Single window desktop mode.\n");
+	}
 	else if(strcasecmp(modeString, "anaglyph") == 0)
 	{
-		viewmat_mode = VIEWMAT_ANAGLYPH;
-		msg(INFO, "Anaglyph image rendering. Use the red filter on the left eye and the cyan filter on the right eye.\n");
+		viewmat_display_mode = VIEWMAT_ANAGLYPH;
+		msg(INFO, "viewmat display mode: Anaglyph image rendering. Use the red filter on the left eye and the cyan filter on the right eye.\n");
 		viewmat_init_mouse(pos, look, up);
 	}
 	else
 	{
-		if(strcasecmp(modeString, "mouse") == 0) // if no mode specified, default to mouse
-			msg(INFO, "Using mouse movement.\n");
-		else // if an unrecognized mode was specified.
-			msg(ERROR, "Unrecognized VIEWMAT_MODE: %s; using mouse movement instead.\n", modeString);
-		viewmat_mode = VIEWMAT_MOUSE;
-		viewmat_init_mouse(pos, look, up);
+		msg(FATAL, "viewmat display mode: unhandled mode '%s'.", modeString);
+		exit(EXIT_FAILURE);
 	}
 
+
+	if(viewmat_control_mode == VIEWMAT_CONTROL_OCULUS &&
+	   viewmat_display_mode != VIEWMAT_OCULUS)
+	{
+		msg(FATAL, "viewmat: Oculus can only be used as a control mode if it is also used as a display mode.");
+		exit(EXIT_FAILURE);
+	}
+	
+	
 	viewmat_refresh_viewports();
 
 	// If there are two "viewports" then it is likely that we are
@@ -715,7 +760,7 @@ void viewmat_init(float pos[3], float look[3], float up[3])
  * correct direction. */
 static void viewmat_fix_rotation(float orient[16])
 {
-	if(viewmat_mode == VIEWMAT_HMD_DSIGHT)
+	if(viewmat_control_mode == VIEWMAT_CONTROL_ORIENT)
 	{
 		float offset1[16],offset2[16];
 		mat4f_identity(offset1);
@@ -840,11 +885,11 @@ static viewmat_eye viewmat_get_mouse(float viewmatrix[16], int viewportNum)
 	return eye;
 }
 
-/** Get the view matrix for the dSight HMD. */
-static viewmat_eye viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
+/** Get the view matrix from an orientation sensor. */
+static viewmat_eye viewmat_get_orient_sensor(float viewmatrix[16], int viewportNum)
 {
 	float quaternion[4];
-	updateHmdControl(&viewmat_hmd, quaternion);
+	orient_sensor_get(&viewmat_orientsense, quaternion);
 
 	float camPosition[16];
 	mat4f_translate_new(camPosition, 0,1.5,0);
@@ -1099,7 +1144,7 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
 		 * Oculus may cause this to get swapped. */
 		float flip = 1;
 #ifndef MISSING_OVR
-		if(viewmat_mode == VIEWMAT_HMD_OCULUS &&
+		if(viewmat_display_mode == VIEWMAT_OCULUS &&
 		   hmd->EyeRenderOrder[0] == ovrEye_Right)
 			flip = -1;
 #endif
@@ -1155,8 +1200,6 @@ viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewport
 {
 	viewmat_eye eye = VIEWMAT_EYE_UNKNOWN;
 
-
-
 	
 	int viewport[4]; // x,y of lower left corner, width, height
 	viewmat_get_viewport(viewport, viewportID);
@@ -1165,36 +1208,36 @@ viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewport
 	float f[6]; // left, right, bottom, top, near>0, far>0
 	projmat_get_frustum(f, viewport[2], viewport[3]);
 
-	switch(viewmat_mode)
+	switch(viewmat_control_mode)
 	{
-		case VIEWMAT_MOUSE:    // mouse movement
-		case VIEWMAT_ANAGLYPH: // red/cyan anaglyph
-		case VIEWMAT_HMD:      // side-by-side HMD view
+		case VIEWMAT_CONTROL_MOUSE:    // mouse movement
 			eye = viewmat_get_mouse(viewmatrix, viewportID);
 			break;
-		case VIEWMAT_IVS: // IVS display wall
-			// frustum is updated based on head tracking
-			eye = viewmat_get_ivs(viewmatrix, f);
-			break;
-		case VIEWMAT_HMD_DSIGHT: // dSight HMD
-			eye = viewmat_get_hmd_dsight(viewmatrix, viewportID);
-			break;
-		case VIEWMAT_HMD_OCULUS:
-			eye = viewmat_get_hmd_oculus(viewmatrix, viewportID);
-			break;
-		case VIEWMAT_NONE:
+		case VIEWMAT_CONTROL_NONE:
 			// Get the view matrix from the mouse movement code...but
 			// we haven't registered mouse movement callback
 			// functions, so mouse movement won't work.
 			eye = viewmat_get_mouse(viewmatrix, viewportID);
 			break;
+		case VIEWMAT_CONTROL_ORIENT:
+			eye = viewmat_get_orient_sensor(viewmatrix, viewportID);
+			break;
+		case VIEWMAT_CONTROL_OCULUS:
+			eye = viewmat_get_hmd_oculus(viewmatrix, viewportID);
+			break;
+#if 0
+		case VIEWMAT_IVS: // IVS display wall
+			// frustum is updated based on head tracking
+			eye = viewmat_get_ivs(viewmatrix, f);
+			break;
+#endif
 		default:
-			msg(FATAL, "Unknown viewmat mode: %d\n", viewmat_mode);
+			msg(FATAL, "Unknown viewmat control mode: %d\n", viewmat_control_mode);
 			exit(EXIT_FAILURE);
 	}
 		
 	/* The following code calculates the projection matrix. */
-	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
+	if(viewmat_display_mode == VIEWMAT_OCULUS)
 	{
 #ifndef MISSING_OVR
 		/* Oculus doesn't provide us with easy access to the view
