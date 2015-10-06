@@ -41,10 +41,9 @@ OrientSensorState orient_sensor_init(const char* deviceFileIn, int sensorType)
 	if(sensorType == ORIENT_SENSOR_NONE)
 	{
 		const char *type = getenv("ORIENT_SENSOR_TYPE");
-		if(strcmp(type, "bno005") == 0 ||
-		   strcmp(type, "BNO005"))
+		if(strcasecmp(type, "bno005") == 0)
 			sensorType = ORIENT_SENSOR_BNO055;
-		else if(strcmp(type, "dsight") == 0)
+		else if(strcasecmp(type, "dsight") == 0)
 			sensorType = ORIENT_SENSOR_DSIGHT;
 	}
 
