@@ -94,7 +94,16 @@ void main()
 	
 	else if(renderStyle == 9)
 	{
-		fragColor = vec4(out_Depth, out_Depth, out_Depth, 1);
+		/* gl_FragCoord is the position of the fragment in
+		 * NDC. However, the Z value is also linearly transformed to
+		 * be within a range specified by glDepthRange()---which
+		 * defaults to 0=near and 1=far. Despite the transformation,
+		 * there Z value is still non-linear (as it is in NDC). We use
+		 * pow() to trasnform the values so that the depth value
+		 * differences are easier to see. Without it, all values that
+		 * aren't very close to the camera have values close to 1
+		 * (because there is a lot of resolution near the camera). */
+		float depth = pow(gl_FragCoord.z, 50);
+		fragColor = vec4(depth, depth, depth, 1);
 	}
-
 }

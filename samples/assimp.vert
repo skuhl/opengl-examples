@@ -47,15 +47,6 @@ void main()
 	// Coordinates (NDC).
 	gl_Position = Projection * actualModelView * vec4(in_Position.xyz, 1);
 
-	// For rendering depth onto screen:
-	// To avoid dealing with issues from non-linear z in perspective
-	// projection, we simply transform our point into camera
-	// coordinates and divide by the far plane. When the point is at
-	// the far plane, it will be white. When it is at the camera (it
-	// will be black). This calculation doesn't account for the near
-	// plane.
-	out_Depth = ((actualModelView*vec4(in_Position.xyz, 1)).z)/-farPlane ;
-
 	// Calculate the position of the vertex in camera coordinates:
 	out_CamCoord = vec3(actualModelView * vec4(in_Position.xyz, 1));
 }
