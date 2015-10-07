@@ -29,6 +29,7 @@ enum
 	SERIAL_NONBLOCK  = 2   /**< Indicate if we would block. */
 };
 
+int serial_find(int fd, char *bytes, int len, int maxbytes);
 void serial_discard(int fd);
 void serial_write(const int fd, const char* buf, size_t numBytes);
 int serial_read(int fd, char* buf, size_t numBytes, int options);

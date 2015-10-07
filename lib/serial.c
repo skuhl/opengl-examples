@@ -194,6 +194,7 @@ static void serial_settings(int fd, int speed, int parity, int vmin, int vtime)
 	// stty -F /dev/ttyUSB0 cs8 115200 ignbrk -brkint -icrnl -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke noflsh -ixon -crtscts
 	toptions.c_cflag = (toptions.c_cflag & ~CSIZE) | CS8; // 8 bit	
 	//toptions.c_iflag &= ~IGNBRK;  // disable break processing
+	toptions.c_iflag |= IGNBRK;  // ignore break condition
 	toptions.c_lflag = 0;         // no signaling chars, no echo, no canonical processing
 	toptions.c_lflag = NOFLSH;
 	toptions.c_oflag = 0;         // no remapping, no delays
@@ -214,6 +215,38 @@ static void serial_settings(int fd, int speed, int parity, int vmin, int vtime)
 	// Apply our new settings
 	if(tcsetattr(fd, TCSANOW, &toptions) == -1)
 		msg(ERROR, "tcgetattr error: %s\n", strerror(errno));
+}
+
+/** Reads bytes until a specific byte pattern is found in the
+ * stream. Any bytes after the pattern will not be read.
+
+ @param fd The file descriptor to read from.
+ @param bytes The bytes we are looking for.
+ @param len The number of bytes in bytes.
+ @param maxbytes The maximum number of bytes to read while we are looking for the pattern. Set to -1 to keep reading until pattern is found.
+ @param return 1 if the pattern was found, 0 otherwise.
+ */
+int serial_find(int fd, char *bytes, int len, int maxbytes)
+{
+	int readbytes = 0;
+
+	int matchIndex = 0;
+	while(maxbytes < 0 || readbytes < maxbytes)
+	{
+		char val;
+		serial_read(fd, &val, 1, SERIAL_NONE);
+		readbytes++;
+		
+		if(*(bytes+matchIndex) == val)
+		{
+			matchIndex++;
+			if(matchIndex == len)
+				return 1;
+		}
+		else
+			matchIndex = 0;
+	}
+	return 0;
 }
 
 

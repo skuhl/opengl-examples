@@ -41,7 +41,6 @@ OrientSensorState orient_sensor_init(const char* deviceFileIn, int sensorType)
 	if(sensorType == ORIENT_SENSOR_NONE)
 	{
 		const char *type = getenv("ORIENT_SENSOR_TYPE");
-		printf("%s\n", type);
 		if(strcasecmp(type, "bno055") == 0)
 			sensorType = ORIENT_SENSOR_BNO055;
 		else if(strcasecmp(type, "dsight") == 0)
@@ -77,9 +76,17 @@ OrientSensorState orient_sensor_init(const char* deviceFileIn, int sensorType)
 	if(sensorType == ORIENT_SENSOR_BNO055)
 	{
 		state.fd = serial_open(deviceFile, 115200, 0, 1, 5);
-		// This sleep makes initial connection more reliable
-		usleep(100000); // 1/10th second
 		serial_discard(state.fd);
+		msg(DEBUG, "Waiting for the start of a record from the orientation sensor...");
+		int32_t v = 0x42f6e979; // hex for the 123.456 float sent from arduino
+		if(serial_find(state.fd, &v, 4, 10000) == 0)
+		{
+			msg(FATAL, "Failed to find start of a record from sensor.");
+			exit(EXIT_FAILURE);
+		}
+		// read the rest of the bytes so we finish at the start of a new record.
+		char buf[4*4+4];
+		serial_read(state.fd, buf, 4*4+4, SERIAL_NONE);
 	}
 	else
 		state.fd = serial_open(deviceFile, 115200, 0, 1, 5);
@@ -124,9 +131,16 @@ static void orient_sensor_get_bno055(OrientSensorState *state, float quaternion[
 	memcpy(&first, temp, sizeof(float));
 	while(fabs(first-123.456) > .0001)
 	{
+		for(int i=0; i<20; i++)
+		{
+			float val=0;
+			serial_read(state->fd, (char*)&val, sizeof(float), SERIAL_NONE);
+			printf("%f %x\n", val, *(unsigned int*)&val);
+		}
+		
 		msg(WARNING, "Received unexpected data (expected %f, received %f); reconnecting...\n", 123.456, first);
+		serial_discard(state->fd);
 		serial_close(state->fd);
-		sleep(1);
 		state->isWorking = 0;
 		*state = orient_sensor_init(state->deviceFile, state->type);
 		serial_read(state->fd, temp, RECORD_SIZE, SERIAL_CONSUME);
@@ -162,7 +176,7 @@ static void orient_sensor_get_bno055(OrientSensorState *state, float quaternion[
 
 		calibrationMessage = 1000;
 	}
-	// msg(INFO, "sys=%d gyro=%d accel=%d mag=%d", sys, gyro, accel, mag);
+	msg(INFO, "sys=%d gyro=%d accel=%d mag=%d", sys, gyro, accel, mag);
 	
 	
 	// If we get here, everything seems to be working.
