@@ -2,7 +2,16 @@
  
 out vec4 fragColor;
 
-in vec4 out_VertexPos; // vertex position (camera coordinates)
+/* These "in" variables are interpolated from the values calculated
+ * per vertex in the vertex program. They are the output of our vertex
+ * program. For this program, I have named the variables so they are
+ * correct in the vertex program---and they must have the same name in
+ * the fragment program. */
+in vec4 out_VertexPos; /* Fragment position (in camera
+                        * coordinates). Although it is named
+                        * VertexPos, is actually the fragment position
+                        * because it has been interpolated across the
+                        * face of the triangle. */
 in vec4 out_Normal;    // normal vector   (camera coordinates)
 
 uniform int red;
