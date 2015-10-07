@@ -643,24 +643,18 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 {
 	const char* controlModeString = getenv("VIEWMAT_CONTROL_MODE");
 
-	/* Don't use a control mode if we are a DGR slave */
-	if(dgr_is_enabled() && !dgr_is_master())
-	{
-		msg(INFO, "viewmat Control Mode: DGR is present & we are a slave; setting control mode to 'none' (it was previously '%s')", controlModeString);
-		controlModeString = "none";
-	}
 	/* Make an intelligent guess if unspecified */
 	if(controlModeString == NULL) 
 	{
 		if(getenv("ORIENT_SENSOR_TTY") != NULL &&
 		   getenv("ORIENT_SENSOR_TYPE") != NULL)
 		{
-			msg(INFO, "viewmat Control Mode: Unspecified, but using orientation sensor.");
+			msg(INFO, "viewmat control Mode: Unspecified, but using orientation sensor.");
 			controlModeString = "orient";
 		}
 		else if(getenv("VIEWMAT_VRPN_OBJECT") != NULL)
 		{
-			msg(INFO, "viewmat Control Mode: Unspecified, but using VRPN.");
+			msg(INFO, "viewmat control Mode: Unspecified, but using VRPN.");
 			controlModeString = "vrpn";
 		}
 		else
@@ -670,11 +664,13 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	/* Initialize control mode */
 	if(strcasecmp(controlModeString, "mouse") == 0)
 	{
+		msg(INFO, "viewmat control mode: Mouse movement");
 		viewmat_control_mode = VIEWMAT_CONTROL_MOUSE;
 		viewmat_init_mouse(pos, look, up);
 	}
 	else if(strcasecmp(controlModeString, "none") == 0)
 	{
+		msg(INFO, "viewmat control mode: None (fixed view)");
 		viewmat_control_mode = VIEWMAT_CONTROL_NONE;
 		// Set our initial position, but don't handle mouse movement.
 		mousemove_set(pos[0],pos[1],pos[2],
@@ -683,16 +679,19 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	}
 	else if(strcasecmp(controlModeString, "orient") == 0)
 	{
+		msg(INFO, "viewmat control mode: Orientation sensor");
 		viewmat_control_mode = VIEWMAT_CONTROL_ORIENT;
 		viewmat_init_orient_sensor();
 	}
 	else if(strcasecmp(controlModeString, "vrpn") == 0)
 	{
+		msg(INFO, "viewmat control mode: VRPN");
 		viewmat_control_mode = VIEWMAT_CONTROL_VRPN;
 		viewmat_init_vrpn();
 	}
 	else if(strcasecmp(controlModeString, "oculus") == 0)
 	{
+		msg(INFO, "viewmat control mode: Oculus");
 		viewmat_control_mode = VIEWMAT_CONTROL_OCULUS;
 	}
 	else
@@ -709,7 +708,7 @@ void viewmat_init(float pos[3], float look[3], float up[3])
 	if(strcasecmp(modeString, "ivs") == 0)
 	{
 		viewmat_display_mode = VIEWMAT_IVS;
-		msg(INFO, "viewmat display mode: Using IVS head tracking mode, tracking object: %s\n", viewmat_vrpn_obj);
+		msg(INFO, "viewmat display mode: IVS");
 	}
 	else if(strcasecmp(modeString, "oculus") == 0)
 	{
@@ -1240,9 +1239,8 @@ viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewport
 	 * have their controllers set to "none". Here, we detect for this
 	 * situation and make sure all processes work correctly.
 	 */
-	if(viewmat_display_mode == VIEWMAT_IVS && 
-	   (viewmat_control_mode == VIEWMAT_CONTROL_VRPN ||
-	    viewmat_control_mode == VIEWMAT_CONTROL_NONE))
+	if(viewmat_display_mode == VIEWMAT_IVS &&
+	   viewmat_control_mode == VIEWMAT_CONTROL_VRPN))
 	{
 		// Will update view matrix and frustum information
 		viewmat_get_ivs(viewmatrix, f);

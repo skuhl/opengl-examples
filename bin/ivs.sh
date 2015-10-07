@@ -171,10 +171,11 @@ VERT_SCREEN_SIZE=$(bc <<< "scale=6; ${VERT_SIZE} / ${VERT_COUNT}")
 NEAR=3.5
 FAR=100
 
-# If VIEWMAT_DISPLAY_MODE is not set, set to mouse.
-if [[ -z "$VIEWMAT_DISPLAY_MODE" ]]; then
-	export VIEWMAT_DISPLAY_MODE="mouse"
+# If VIEWMAT_CONTROL_MODE is not set, set to mouse.
+if [[ -z "$VIEWMAT_CONTROL_MODE" ]]; then
+	export VIEWMAT_CONTROL_MODE="mouse"
 fi
+export VIEWMAT_DISPLAY_MODE="ivs"
 
 export DGR_MODE="master"
 export DGR_MASTER_DEST_PORT=${RELAY_LISTEN_PORT}
@@ -266,6 +267,7 @@ export PATH='.:\$PATH;'
 export DGR_MODE='slave'
 export DGR_SLAVE_LISTEN_PORT='${SLAVE_LISTEN_PORT}'
 export VIEWMAT_DISPLAY_MODE='${VIEWMAT_DISPLAY_MODE}'
+export VIEWMAT_CONTROL_MODE='${VIEWMAT_CONTROL_MODE}'
 export PROJMAT_WINDOW_POS='0 0'
 export PROJMAT_WINDOW_SIZE='5760 1080'
 export PROJMAT_FRUSTUM='${FRUSTUM}'
