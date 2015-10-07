@@ -1240,7 +1240,7 @@ viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewport
 	 * situation and make sure all processes work correctly.
 	 */
 	if(viewmat_display_mode == VIEWMAT_IVS &&
-	   viewmat_control_mode == VIEWMAT_CONTROL_VRPN))
+	   viewmat_control_mode == VIEWMAT_CONTROL_VRPN)
 	{
 		// Will update view matrix and frustum information
 		viewmat_get_ivs(viewmatrix, f);
