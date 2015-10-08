@@ -849,30 +849,25 @@ static viewmat_eye viewport_to_eye(int viewportNum)
  **/
 static void viewmat_get_mouse(float viewmatrix[16], int viewportNum)
 {
-	viewmat_eye eye = viewport_to_eye(viewportNum);
-
-	float eyeDist = 0.055;  // TODO: Make this configurable.
-
 	float pos[3],look[3],up[3];
 	mousemove_get(pos, look, up);
-	
-	float lookVec[3], rightVec[3];
-	vec3f_sub_new(lookVec, look, pos);
-	vec3f_normalize(lookVec);
-	vec3f_cross_new(rightVec, lookVec, up);
-	vec3f_normalize(rightVec);
-	
-	if(eye == VIEWMAT_EYE_LEFT || eye == VIEWMAT_EYE_RIGHT)
-	{
-		if(eye == VIEWMAT_EYE_LEFT)
-			vec3f_scalarMult(rightVec, -eyeDist/2.0);
-		else
-			vec3f_scalarMult(rightVec, eyeDist/2.0);
-		vec3f_add_new(look, look, rightVec);
-		vec3f_add_new(pos, pos, rightVec);
-	}
-	
 	mat4f_lookatVec_new(viewmatrix, pos, look, up);
+
+	/* Update the view matrix based on which eye we are rendering */
+	float eyeDist = 0.055;  // TODO: Make this configurable.
+	viewmat_eye eye = viewport_to_eye(viewportNum);
+	float eyeShift = 0;
+	if(eye == VIEWMAT_EYE_LEFT)
+		eyeShift = -eyeDist/2.0;
+	else if(eye == VIEWMAT_EYE_RIGHT)
+		eyeShift = eyeDist/2.0;
+	float shiftMatrix[16];
+	// Negate eyeShift because the matrix would shift the world, not
+	// the eye by default.
+	mat4f_translate_new(shiftMatrix, -eyeShift, 0, 0);
+
+	/* Adjust the view matrix by the eye offset */
+	mat4f_mult_mat4f_new(viewmatrix, shiftMatrix, viewmatrix);
 }
 
 
@@ -911,33 +906,38 @@ static void viewmat_get_vrpn(float viewmatrix[16], int viewportNum)
 /** Get the view matrix from an orientation sensor. */
 static void viewmat_get_orient_sensor(float viewmatrix[16], int viewportNum)
 {
+	/* get quaternion from sensor */
 	float quaternion[4];
 	orient_sensor_get(&viewmat_orientsense, quaternion);
 
+	/* set a default camera position */
 	float camPosition[16];
 	mat4f_translate_new(camPosition, 0,1.5,0);
 	mat4f_invert(camPosition);
-	
+
+	/* create a rotation matrix from quaternion */
 	float rotationMatrix[16];
 	mat4f_rotateQuatVec_new(rotationMatrix, quaternion);
 	viewmat_fix_rotation(rotationMatrix);
 
-	float camMatrix[16];
-	mat4f_mult_mat4f_new(camMatrix, rotationMatrix, camPosition);
-	
+	/* Make a view matrix */
+	mat4f_mult_mat4f_new(viewmatrix, rotationMatrix, camPosition);
+
+	/* Adjust view matrix based on eye */
 	float eyeDist = 0.055;  // TODO: Make this configurable.
-
-	// TODO: Fix me!
-	float xShift = (viewportNum == 0 ? -eyeDist : eyeDist) / 2.0f;
-
+	viewmat_eye eye = viewport_to_eye(viewportNum);
+	float eyeShift = 0;
+	if(eye == VIEWMAT_EYE_LEFT)
+		eyeShift = -eyeDist/2.0;
+	else if(eye == VIEWMAT_EYE_RIGHT)
+		eyeShift = eyeDist/2.0;
 	float shiftMatrix[16];
-	mat4f_translate_new(shiftMatrix, xShift, 0, 0);
+	// Negate eyeShift because the matrix would shift the world, not
+	// the eye by default.
+	mat4f_translate_new(shiftMatrix, -eyeShift, 0, 0);
 
-	// apply the shift, then the rotation, then the position
-	// as in (Pos * (Rotation * (Shift * (vector))) == (Pos * Rotation * Shift) * vector
-	// except we have no way of acquiring the Pos matrix, so leave it out
-	mat4f_mult_mat4f_new(viewmatrix, camMatrix, shiftMatrix);
-	// Don't need to use DGR!
+	/* Adjust the view matrix by the eye offset */
+	mat4f_mult_mat4f_new(viewmatrix, shiftMatrix, viewmatrix);
 }
 
 /** Get view and projection matrices appropriate for the Oculus HMD */

@@ -79,7 +79,7 @@ OrientSensorState orient_sensor_init(const char* deviceFileIn, int sensorType)
 		serial_discard(state.fd);
 		msg(DEBUG, "Waiting for the start of a record from the orientation sensor...");
 		int32_t v = 0x42f6e979; // hex for the 123.456 float sent from arduino
-		if(serial_find(state.fd, &v, 4, 10000) == 0)
+		if(serial_find(state.fd, (char*) &v, 4, 10000) == 0)
 		{
 			msg(FATAL, "Failed to find start of a record from sensor.");
 			exit(EXIT_FAILURE);
@@ -131,12 +131,15 @@ static void orient_sensor_get_bno055(OrientSensorState *state, float quaternion[
 	memcpy(&first, temp, sizeof(float));
 	while(fabs(first-123.456) > .0001)
 	{
+#if 0
+		/* Print a few more values out after the one that didn't match what we expected */
 		for(int i=0; i<20; i++)
 		{
 			float val=0;
 			serial_read(state->fd, (char*)&val, sizeof(float), SERIAL_NONE);
 			printf("%f %x\n", val, *(unsigned int*)&val);
 		}
+#endif
 		
 		msg(WARNING, "Received unexpected data (expected %f, received %f); reconnecting...\n", 123.456, first);
 		serial_discard(state->fd);
@@ -160,23 +163,26 @@ static void orient_sensor_get_bno055(OrientSensorState *state, float quaternion[
 			msg(WARNING, "Sensor calibration is poor.");
 
 		if(gyro == 0)
-			msg(ERROR, "Gyro is uncalibrated. Let sensor sit still.");
+			msg(WARNING, "Gyro is uncalibrated. Let sensor sit still.");
 		else if(gyro == 1)
 			msg(WARNING, "Gyro calibration is poor. Let sensor sit still.");
 
 		if(accel == 0)
-			msg(ERROR, "Accelerometer is uncalibrated. Place sensor on 6 sides of block.");
+			msg(WARNING, "Accelerometer is uncalibrated. Place sensor on 6 sides of block.");
 		else if(accel == 1)
 			msg(WARNING, "Accelerometer calibration is poor. Place sensor on 6 sides of block.");
 		
 		if(mag == 0)
-			msg(ERROR, "Magnetometer is uncalibrated. Use figure 8 motion.");
+			msg(WARNING, "Magnetometer is uncalibrated. Use figure 8 motion.");
 		else if(mag == 1)
 			msg(WARNING, "Magnetometer calibration is poor. Use figure 8 motion.");
 
+		if(sys < 2 || gyro < 2 || accel < 2 || mag < 2)
+			msg(BLUE, "Raw orientation sensor calib data: sys=%d gyro=%d accel=%d mag=%d", sys, gyro, accel, mag);
+
 		calibrationMessage = 1000;
 	}
-	msg(INFO, "sys=%d gyro=%d accel=%d mag=%d", sys, gyro, accel, mag);
+	// msg(INFO, "sys=%d gyro=%d accel=%d mag=%d", sys, gyro, accel, mag);
 	
 	
 	// If we get here, everything seems to be working.

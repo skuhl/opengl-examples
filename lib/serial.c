@@ -185,32 +185,48 @@ static void serial_settings(int fd, int speed, int parity, int vmin, int vtime)
 			exit(EXIT_FAILURE);
 	}
 
-	/* set baud rate both directions */
+	/* 	   
+	   You can verify that the settings are correct by doing:
+	   stty -F /dev/ttyUSB0 sane
+	   Running this program
+	   stty -F /dev/ttyUSB0
+	   stty -F /dev/ttyUSB0 cs8 115200 ignbrk -brkint -icrnl -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke noflsh -ixon -crtscts
+
+	   The output of the last two commands should match. The last
+	   command is what is apparently what Arduino expects based on a
+	   post at http://playground.arduino.cc/Interfacing/LinuxTTY
+	*/
+
+	/* Set baud rate both directions */
 	cfsetispeed(&toptions, baud);
 	cfsetospeed(&toptions, baud);
 
-	// http://playground.arduino.cc/Interfacing/LinuxTTY
-	// Says the following settings are necessary to interface with arduino:
-	// stty -F /dev/ttyUSB0 cs8 115200 ignbrk -brkint -icrnl -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke noflsh -ixon -crtscts
-	toptions.c_cflag = (toptions.c_cflag & ~CSIZE) | CS8; // 8 bit	
-	//toptions.c_iflag &= ~IGNBRK;  // disable break processing
-	toptions.c_iflag |= IGNBRK;  // ignore break condition
-	toptions.c_lflag = 0;         // no signaling chars, no echo, no canonical processing
-	toptions.c_lflag = NOFLSH;
-	toptions.c_oflag = 0;         // no remapping, no delays
-	toptions.c_cc[VMIN] = vmin;   
-	toptions.c_cc[VTIME] = vtime; // If blocking, max time to block in tenths of a second (5 = .5 seconds).
-
+	// Input flags
+	toptions.c_iflag |= IGNBRK;  // set bit to ignore break condition
+	toptions.c_iflag &= ~BRKINT;
+	toptions.c_iflag &= ~ICRNL;
+	toptions.c_iflag &= ~IMAXBEL;
 	toptions.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
-	toptions.c_cflag |= (CLOCAL | CREAD);// ignore modem controls, enable reading
+
+	// Line processing
+	toptions.c_lflag = NOFLSH; // Disable flushing in/out queues for the INT, QUIT, and SUSP characters
+
+	// Output flags
+	toptions.c_oflag = 0;
+
+	// Character processing
+	toptions.c_cflag = (toptions.c_cflag & ~CSIZE) | CS8; // 8 bit	
+	toptions.c_cflag |=  (CLOCAL | CREAD);  // ignore modem controls, enable reading
 	toptions.c_cflag &= ~(PARENB | PARODD); // shut off parity
 	if(parity == 1)
 		toptions.c_cflag |= PARENB|PARODD; // enable odd parity
 	else if(parity == 2)
 		toptions.c_cflag |= PARENB; // enable even parity
-
-	toptions.c_cflag &= ~CSTOPB;  // one stop bit
+	toptions.c_cflag &= ~CSTOPB;  // unset two stop bits, use one stop bit
 	toptions.c_cflag &= ~CRTSCTS; // disable hardware flow control
+
+	toptions.c_cc[VMIN] = vmin; 
+	toptions.c_cc[VTIME] = vtime; // If blocking, max time to block in tenths of a second (5 = .5 seconds).
 
 	// Apply our new settings
 	if(tcsetattr(fd, TCSANOW, &toptions) == -1)
@@ -274,6 +290,8 @@ void serial_close(int fd)
     @param parity 0=no parity; 1=odd parity; 2=even parity
     @param vmin 0 = nonblocking; if >1, block until we have received at least vmin bytes
     @param vtime If blocking, tenths of a second we should block until we give up.
+
+    @return The file descriptor for the serial connection.
 */
 int serial_open(const char *deviceFile, int speed, int parity, int vmin, int vtime)
 {
@@ -287,6 +305,11 @@ int serial_open(const char *deviceFile, int speed, int parity, int vmin, int vti
 	if(fd == -1)
 	{
 		msg(FATAL, "Could not open serial connection to '%s'\n", deviceFile);
+		exit(EXIT_FAILURE);
+	}
+	if(!isatty(fd))
+	{
+		msg(FATAL, "'%s' is not a tty.\n");
 		exit(EXIT_FAILURE);
 	}
 
