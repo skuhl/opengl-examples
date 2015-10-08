@@ -18,7 +18,7 @@
 #include "vecmat.h"
 #include "mousemove.h"
 #include "vrpn-help.h"
-#include "hmd-dsight-orient.h"
+#include "orient-sensor.h"
 #include "dgr.h"
 
 #include "viewmat.h"
@@ -53,24 +53,37 @@ float oculus_initialPos[3];
 
 
 
-/** The different modes that viewmat works with. */
+/** The display mode specifies how images are drawn to the screen. */
 typedef enum
 {
-	VIEWMAT_MOUSE,
+	VIEWMAT_DESKTOP,    /* Single window */
 	VIEWMAT_IVS,        /* Michigan Tech's Immersive Visualization Studio */
 	VIEWMAT_HMD,        /* Side-by-side view */
-	VIEWMAT_HMD_DSIGHT, /* Sensics dSight */
-	VIEWMAT_HMD_OCULUS, /* HMDs supported by libovr (Oculus DK1, DK2, etc). */
+	VIEWMAT_OCULUS,     /* HMDs supported by libovr (Oculus DK1, DK2, etc). */
 	VIEWMAT_ANAGLYPH,   /* Red-Cyan anaglyph images */
-	VIEWMAT_NONE        /* No matrix handler used */
-} ViewmatModeType;
+} ViewmatDisplayMode;
+
+/** The control mode specifies how the viewpoint position/orientation is determined. */
+typedef enum
+{
+	VIEWMAT_CONTROL_NONE,
+	VIEWMAT_CONTROL_MOUSE,
+	VIEWMAT_CONTROL_VRPN,
+	VIEWMAT_CONTROL_ORIENT,
+	VIEWMAT_CONTROL_OCULUS
+} ViewmatControlMode;
+
 
 #define MAX_VIEWPORTS 32 /**< Hard-coded maximum number of viewports supported. */
 static float viewports[MAX_VIEWPORTS][4]; /**< Contains one or more viewports. The values are the x coordinate, y coordinate, viewport width, and viewport height */
 static int viewports_size = 0; /**< Number of viewports in viewports array */
-static ViewmatModeType viewmat_mode = 0; /**< 0=mousemove, 1=IVS (using VRPN), 2=HMD (using VRPN), 3=none */
+static ViewmatDisplayMode viewmat_display_mode = 0;
+static ViewmatControlMode viewmat_control_mode = 0;
 static const char *viewmat_vrpn_obj = NULL; /**< Name of the VRPN object that we are tracking */
-static HmdControlState viewmat_hmd;
+static OrientSensorState viewmat_orientsense;
+
+
+
 
 
 /** Sometimes calls to glutGet(GLUT_WINDOW_*) take several milliseconds
@@ -138,7 +151,7 @@ static void viewmat_validate_viewportId(int viewportID)
 void viewmat_begin_frame(void)
 {
 #ifndef MISSING_OVR
-	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
+	if(viewmat_display_mode == VIEWMAT_OCULUS)
 	{
 		if(hmd)
 			timing = ovrHmd_BeginFrame(hmd, 0);
@@ -151,7 +164,7 @@ void viewmat_begin_frame(void)
  * been rendered. */
 void viewmat_end_frame(void)
 {
-	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
+	if(viewmat_display_mode == VIEWMAT_OCULUS)
 	{
 #ifndef MISSING_OVR
 		/* Copy the prerendered image from a multisample antialiasing
@@ -180,14 +193,14 @@ void viewmat_end_frame(void)
 			ovrHmd_EndFrame(hmd, pose, &EyeTexture[0].Texture);
 #endif
 	}
-	else if(viewmat_mode == VIEWMAT_ANAGLYPH)
+	else if(viewmat_display_mode == VIEWMAT_ANAGLYPH)
 	{
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	}
 
 	/* Need to swap front and back buffers here unless we are using
 	 * Oculus. (Oculus draws to the screen directly). */
-	if(viewmat_mode != VIEWMAT_HMD_OCULUS)
+	if(viewmat_display_mode != VIEWMAT_OCULUS)
 		glutSwapBuffers();
 }
 
@@ -208,7 +221,7 @@ int viewmat_get_blitted_framebuffer(int viewportID)
 	viewmat_validate_viewportId(viewportID);
 	
 #ifndef MISSING_OVR
-	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
+	if(viewmat_display_mode == VIEWMAT_OCULUS)
 	{
 		ovrEyeType eye = hmd->EyeRenderOrder[viewportID];
 		if(eye == ovrEye_Left)
@@ -243,7 +256,7 @@ void viewmat_begin_eye(int viewportID)
 	viewmat_validate_viewportId(viewportID);
 	
 #ifndef MISSING_OVR
-	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
+	if(viewmat_display_mode == VIEWMAT_OCULUS)
 	{
 		/* The EyeRenderOrder array indicates which eye should be
 		 * rendered first. This code assumes that lower viewport IDs
@@ -261,7 +274,7 @@ void viewmat_begin_eye(int viewportID)
 	}
 #endif
 
-	if(viewmat_mode == VIEWMAT_ANAGLYPH)
+	if(viewmat_display_mode == VIEWMAT_ANAGLYPH)
 	{
 		if(viewportID == 0)
 			glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -380,25 +393,23 @@ static void viewmat_oculus_viewports(void)
  * our viewports after a window is resized. */
 static void viewmat_refresh_viewports(void)
 {
-	switch(viewmat_mode)
+	switch(viewmat_display_mode)
 	{
-		case VIEWMAT_MOUSE:
-		case VIEWMAT_NONE:
+		case VIEWMAT_DESKTOP:
 		case VIEWMAT_IVS:
 			viewmat_one_viewport();
 			break;
 		case VIEWMAT_HMD:
-		case VIEWMAT_HMD_DSIGHT:
 			viewmat_two_viewports();
 			break;
-		case VIEWMAT_HMD_OCULUS:
+		case VIEWMAT_OCULUS:
 			viewmat_oculus_viewports();
 			break;
 		case VIEWMAT_ANAGLYPH:
 			viewmat_anaglyph_viewports();
 			break;
 		default:
-			msg(ERROR, "Unknown viewmat mode: %d\n", viewmat_mode);
+			msg(ERROR, "Unknown viewmat mode: %d\n", viewmat_display_mode);
 			exit(EXIT_FAILURE);
 	}
 }
@@ -427,31 +438,32 @@ static int viewmat_init_vrpn(void)
 	return 0;
 }
 
-/** Initialize IVS view matrix calculations, connect to VRPN. */
-void viewmat_init_ivs(void)
+
+/** Checks if ORIENT_SENSE_TTY and ORIENT_SENSE_TYPE are set. if so,
+    set up an orientation sensor.
+    
+    @return Returns 1 if orientation sensor is set up, 0 otherwise.
+*/
+static int viewmat_init_orient_sensor(void)
 {
-	/* If we are using DGR, we only need to connect to VRPN if we are
-	 * the master process. */
-	if(dgr_is_enabled() && dgr_is_master())
-		viewmat_init_vrpn();
-	else if(dgr_is_enabled() == 0)
+	if(getenv("ORIENT_SENSOR_TTY") != NULL &&
+	   getenv("ORIENT_SENSOR_TYPE") != NULL)
 	{
-		// DGR should be enabled with IVS, but still connect to VRPN if we aren't.
-		msg(ERROR, "We are apparently using IVS without DGR?");
-		viewmat_init_vrpn();
+		msg(INFO, "Found an orientation sensor specified in an environment variable...connecting.");
+		viewmat_orientsense = orient_sensor_init(NULL, ORIENT_SENSOR_NONE);
+		return 1;
 	}
+	msg(INFO, "No orientation sensor found");
+	
+	return 0;
 }
+
 
 
 /** Initialize mouse movement. Or, if we have a VRPN object name we
  * are supposed to be tracking, get ready to use that instead. */
 static void viewmat_init_mouse(float pos[3], float look[3], float up[3])
 {
-	// If using VRPN to control the camera, there is nothing we need
-	// to do.
-	if(viewmat_init_vrpn() == 1)
-		return;
-		
 	glutMotionFunc(mousemove_glutMotionFunc);
 	glutMouseFunc(mousemove_glutMouseFunc);
 	mousemove_set(pos[0],pos[1],pos[2],
@@ -461,20 +473,6 @@ static void viewmat_init_mouse(float pos[3], float look[3], float up[3])
 }
 
 
-/** Initialize view matrix for "dSight" mode. */
-static void viewmat_init_hmd_dsight()
-{
-	const char* hmdDeviceFile = getenv("VIEWMAT_DSIGHT_FILE");
-	if (hmdDeviceFile == NULL)
-	{
-		msg(ERROR, "Failed to setup dSight HMD mode, VIEWMAT_DSIGHT_FILE not set\n");
-		exit(EXIT_FAILURE);
-	}
-
-	/* TODO: Currently this mode only supports the orientation sensor
-	 * in the dSight HMD */
-	viewmat_hmd = initHmdControl(hmdDeviceFile);
-}
 
 /** Initialize the Oculus HMD.
  *
@@ -483,7 +481,7 @@ static void viewmat_init_hmd_dsight()
 static void viewmat_init_hmd_oculus(float pos[3])
 {
 #ifdef MISSING_OVR
-	msg(ERROR, "Oculus support is missing: You have not compiled this code against the LibOVR library.\n");
+	msg(FATAL, "Oculus support is missing: You have not compiled this code against the LibOVR library.\n");
 	exit(EXIT_FAILURE);
 #else
 	ovr_Initialize(NULL);
@@ -643,60 +641,114 @@ static void viewmat_init_hmd_oculus(float pos[3])
  */
 void viewmat_init(float pos[3], float look[3], float up[3])
 {
-	const char* modeString = getenv("VIEWMAT_MODE");
-	if(modeString == NULL)
-		modeString = "mouse";
-	
-	if(strcasecmp(modeString, "ivs") == 0)
+	const char* controlModeString = getenv("VIEWMAT_CONTROL_MODE");
+
+	/* Make an intelligent guess if unspecified */
+	if(controlModeString == NULL) 
 	{
-		viewmat_mode = VIEWMAT_IVS;
-		viewmat_init_ivs();
-		msg(INFO, "Using IVS head tracking mode, tracking object: %s\n", viewmat_vrpn_obj);
+		if(getenv("ORIENT_SENSOR_TTY") != NULL &&
+		   getenv("ORIENT_SENSOR_TYPE") != NULL)
+		{
+			msg(INFO, "viewmat control Mode: Unspecified, but using orientation sensor.");
+			controlModeString = "orient";
+		}
+		else if(getenv("VIEWMAT_VRPN_OBJECT") != NULL)
+		{
+			msg(INFO, "viewmat control Mode: Unspecified, but using VRPN.");
+			controlModeString = "vrpn";
+		}
+		else
+			controlModeString = "mouse";
 	}
-	else if(strcasecmp(modeString, "dsight") == 0)
+
+	/* Initialize control mode */
+	if(strcasecmp(controlModeString, "mouse") == 0)
 	{
-		viewmat_mode = VIEWMAT_HMD_DSIGHT;
-		viewmat_init_hmd_dsight();
-		msg(INFO, "Using dSight HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
-	}
-	else if(strcasecmp(modeString, "oculus") == 0)
-	{
-		viewmat_mode = VIEWMAT_HMD_OCULUS;
-		viewmat_init_hmd_oculus(pos);
-		// TODO: Tracking options?
-		msg(INFO, "Using Oculus HMD head tracking mode.\n");
-	}
-	else if(strcasecmp(modeString, "hmd") == 0)
-	{
-		viewmat_mode = VIEWMAT_HMD;
+		msg(INFO, "viewmat control mode: Mouse movement");
+		viewmat_control_mode = VIEWMAT_CONTROL_MOUSE;
 		viewmat_init_mouse(pos, look, up);
-		msg(INFO, "Using HMD head tracking mode. Tracking object: %s\n", viewmat_vrpn_obj);
 	}
-	else if(strcasecmp(modeString, "none") == 0)
+	else if(strcasecmp(controlModeString, "none") == 0)
 	{
-		msg(INFO, "No view matrix handler is being used.\n");
-		viewmat_mode = VIEWMAT_NONE;
+		msg(INFO, "viewmat control mode: None (fixed view)");
+		viewmat_control_mode = VIEWMAT_CONTROL_NONE;
 		// Set our initial position, but don't handle mouse movement.
 		mousemove_set(pos[0],pos[1],pos[2],
 		              look[0],look[1],look[2],
 		              up[0],up[1],up[2]);
 	}
+	else if(strcasecmp(controlModeString, "orient") == 0)
+	{
+		msg(INFO, "viewmat control mode: Orientation sensor");
+		viewmat_control_mode = VIEWMAT_CONTROL_ORIENT;
+		viewmat_init_orient_sensor();
+	}
+	else if(strcasecmp(controlModeString, "vrpn") == 0)
+	{
+		msg(INFO, "viewmat control mode: VRPN");
+		viewmat_control_mode = VIEWMAT_CONTROL_VRPN;
+		viewmat_init_vrpn();
+	}
+	else if(strcasecmp(controlModeString, "oculus") == 0)
+	{
+		msg(INFO, "viewmat control mode: Oculus");
+		viewmat_control_mode = VIEWMAT_CONTROL_OCULUS;
+	}
+	else
+	{
+		msg(FATAL, "viewmat control mode: unhandled mode '%s'.", controlModeString);
+		exit(EXIT_FAILURE);
+	}
+
+
+	const char* modeString = getenv("VIEWMAT_DISPLAY_MODE");
+	if(modeString == NULL)
+		modeString = "none";
+	
+	if(strcasecmp(modeString, "ivs") == 0)
+	{
+		viewmat_display_mode = VIEWMAT_IVS;
+		msg(INFO, "viewmat display mode: IVS");
+	}
+	else if(strcasecmp(modeString, "oculus") == 0)
+	{
+		viewmat_display_mode = VIEWMAT_OCULUS;
+		msg(INFO, "viewmat display mode: Using Oculus HMD.\n");
+		viewmat_init_hmd_oculus(pos);
+	}
+	else if(strcasecmp(modeString, "hmd") == 0)
+	{
+		viewmat_display_mode = VIEWMAT_HMD;
+		msg(INFO, "viewmat display mode: Side-by-side left/right view.\n");
+	}
+	else if(strcasecmp(modeString, "none") == 0)
+	{
+		viewmat_display_mode = VIEWMAT_DESKTOP;
+		msg(INFO, "viewmat display mode: Single window desktop mode.\n");
+	}
 	else if(strcasecmp(modeString, "anaglyph") == 0)
 	{
-		msg(INFO, "Anaglyph image rendering. Use the red filter on the left eye and the cyan filter on the right eye.\n");
-		viewmat_mode = VIEWMAT_ANAGLYPH;
+		viewmat_display_mode = VIEWMAT_ANAGLYPH;
+		msg(INFO, "viewmat display mode: Anaglyph image rendering. Use the red filter on the left eye and the cyan filter on the right eye.\n");
 		viewmat_init_mouse(pos, look, up);
 	}
 	else
 	{
-		if(strcasecmp(modeString, "mouse") == 0) // if no mode specified, default to mouse
-			msg(INFO, "Using mouse movement.\n");
-		else // if an unrecognized mode was specified.
-			msg(ERROR, "Unrecognized VIEWMAT_MODE: %s; using mouse movement instead.\n", modeString);
-		viewmat_mode = VIEWMAT_MOUSE;
-		viewmat_init_mouse(pos, look, up);
+		msg(FATAL, "viewmat display mode: unhandled mode '%s'.", modeString);
+		exit(EXIT_FAILURE);
 	}
 
+	/* We can't use the Oculus orientation sensor if we haven't
+	 * initialized the Oculus code. We do that initialization in the
+	 * Oculus display mode code. */
+	if(viewmat_control_mode == VIEWMAT_CONTROL_OCULUS &&
+	   viewmat_display_mode != VIEWMAT_OCULUS)
+	{
+		msg(FATAL, "viewmat: Oculus can only be used as a control mode if it is also used as a display mode.");
+		exit(EXIT_FAILURE);
+	}
+	
+	
 	viewmat_refresh_viewports();
 
 	// If there are two "viewports" then it is likely that we are
@@ -713,6 +765,18 @@ void viewmat_init(float pos[3], float look[3], float up[3])
  * correct direction. */
 static void viewmat_fix_rotation(float orient[16])
 {
+	if(viewmat_control_mode == VIEWMAT_CONTROL_ORIENT)
+	{
+		float offset1[16],offset2[16];
+		mat4f_identity(offset1);
+		mat4f_identity(offset2);
+		mat4f_rotateAxis_new(offset1, 90, 0,0,1);
+		mat4f_rotateAxis_new(offset2, -90, 0,0,1);
+		mat4f_mult_mat4f_new(orient, offset1, orient);
+		mat4f_mult_mat4f_new(orient, orient, offset2);
+		return;
+	}
+
 	if(viewmat_vrpn_obj == NULL || strlen(viewmat_vrpn_obj) == 0)
 		return;
 
@@ -734,8 +798,43 @@ static void viewmat_fix_rotation(float orient[16])
 	}
 	if(hostname)
 		free(hostname);
+
+
 }
 
+
+/** Viewport 0 is the first viewport to render. In HMDs, the first
+ * viewport to render is often the left eye. However, this does not
+ * always need to be the case. */
+static viewmat_eye viewport_to_eye(int viewportNum)
+{
+	if(viewmat_display_mode == VIEWMAT_OCULUS)
+	{
+#ifndef MISSING_OVR
+		if(hmd->EyeRenderOrder[viewportNum] == ovrEye_Left)
+			return VIEWMAT_EYE_LEFT;
+		else if(hmd->EyeRenderOrder[viewportNum] == ovrEye_Right)
+			return VIEWMAT_EYE_RIGHT;
+		else
+			return VIEWMAT_EYE_UNKNOWN;
+#else
+		return VIEWMAT_EYE_UNKNOWN;
+#endif
+	}
+
+	if(viewports_size == 1 && viewportNum == 0)
+		return VIEWMAT_EYE_MIDDLE;
+	if(viewports_size == 2)
+	{
+		if(viewportNum == 0)
+			return VIEWMAT_EYE_LEFT;
+		else if(viewportNum == 1)
+			return VIEWMAT_EYE_RIGHT;
+		else
+			return VIEWMAT_EYE_UNKNOWN;
+	}
+	return VIEWMAT_EYE_UNKNOWN;
+}
 
 /** Get the view matrix from the mouse. Or, if a VRPN object is
  * specified, get the view matrix from VRPN.
@@ -748,112 +847,101 @@ static void viewmat_fix_rotation(float orient[16])
  *
  * @return The eye that viewportNum corresponds to.
  **/
-static viewmat_eye viewmat_get_mouse(float viewmatrix[16], int viewportNum)
+static void viewmat_get_mouse(float viewmatrix[16], int viewportNum)
 {
-	viewmat_eye eye = VIEWMAT_EYE_MIDDLE;
+	float pos[3],look[3],up[3];
+	mousemove_get(pos, look, up);
+	mat4f_lookatVec_new(viewmatrix, pos, look, up);
 
+	/* Update the view matrix based on which eye we are rendering */
 	float eyeDist = 0.055;  // TODO: Make this configurable.
+	viewmat_eye eye = viewport_to_eye(viewportNum);
+	float eyeShift = 0;
+	if(eye == VIEWMAT_EYE_LEFT)
+		eyeShift = -eyeDist/2.0;
+	else if(eye == VIEWMAT_EYE_RIGHT)
+		eyeShift = eyeDist/2.0;
+	float shiftMatrix[16];
+	// Negate eyeShift because the matrix would shift the world, not
+	// the eye by default.
+	mat4f_translate_new(shiftMatrix, -eyeShift, 0, 0);
 
-	if(viewmat_vrpn_obj == NULL) // if no VRPN object specified, use mouse movement
-	{
-		float pos[3],look[3],up[3];
-		mousemove_get(pos, look, up);
-
-		float lookVec[3], rightVec[3];
-		vec3f_sub_new(lookVec, look, pos);
-		vec3f_normalize(lookVec);
-		vec3f_cross_new(rightVec, lookVec, up);
-		vec3f_normalize(rightVec);
-
-		if(viewports_size == 2) // if 2 viewports, use left/right IPD offset
-		{
-			if(viewportNum == 0)
-			{
-				vec3f_scalarMult(rightVec, -eyeDist/2.0);
-				eye = VIEWMAT_EYE_LEFT;
-			}
-			else
-			{
-				vec3f_scalarMult(rightVec, eyeDist/2.0);
-				eye = VIEWMAT_EYE_RIGHT;
-			}
-
-			vec3f_add_new(look, look, rightVec);
-			vec3f_add_new(pos, pos, rightVec);
-		}
-
-		mat4f_lookatVec_new(viewmatrix, pos, look, up);
-	}
-	else // if VRPN object is specified, use that instead
-	{
-		float pos[3], orient[16];
-		vrpn_get(viewmat_vrpn_obj, NULL, pos, orient);
-
-		float pos4[4] = {pos[0],pos[1],pos[2],1};
-		viewmat_fix_rotation(orient);
-		mat4f_copy(viewmatrix, orient);
-
-		if(viewports_size == 2) // use left/right offset if 2 viewports are used
-		{
-			float rightVec[4];
-			mat4f_getColumn(rightVec, orient, 0);
-			if(viewportNum == 0)
-			{
-				vec3f_scalarMult(rightVec, -eyeDist/2.0);
-				eye = VIEWMAT_EYE_LEFT;
-			}
-			else
-			{
-				vec3f_scalarMult(rightVec, eyeDist/2.0);
-				eye = VIEWMAT_EYE_LEFT;
-			}
-
-			vec4f_add_new(pos4, rightVec, pos4);
-			pos4[3] = 1;
-		}
-			
-		mat4f_setColumn(viewmatrix, pos4, 3);
-		mat4f_invert(viewmatrix);
-	}
-
-	if(viewportNum == 0)
-		dgr_setget("!!viewMat0", viewmatrix, sizeof(float)*16);
-	else
-		dgr_setget("!!viewMat1", viewmatrix, sizeof(float)*16);
-
-	return eye;
+	/* Adjust the view matrix by the eye offset */
+	mat4f_mult_mat4f_new(viewmatrix, shiftMatrix, viewmatrix);
 }
 
-/** Get the view matrix for the dSight HMD. */
-static viewmat_eye viewmat_get_hmd_dsight(float viewmatrix[16], int viewportNum)
-{
-	float quaternion[4];
-	updateHmdControl(&viewmat_hmd, quaternion);
 
+static void viewmat_get_vrpn(float viewmatrix[16], int viewportNum)
+{
+	if(viewmat_vrpn_obj == NULL)
+		return;
+			
+	float pos[3], orient[16];
+	vrpn_get(viewmat_vrpn_obj, NULL, pos, orient);
+	
+	float pos4[4] = {pos[0],pos[1],pos[2],1};
+	viewmat_fix_rotation(orient);
+	mat4f_copy(viewmatrix, orient);
+
+	float eyeDist = 0.055;
+	
+	viewmat_eye eye = viewport_to_eye(viewportNum);
+	if(eye == VIEWMAT_EYE_LEFT || eye == VIEWMAT_EYE_RIGHT)
+	{
+		float rightVec[4];
+		mat4f_getColumn(rightVec, orient, 0);
+		if(eye == VIEWMAT_EYE_LEFT)
+			vec3f_scalarMult(rightVec, -eyeDist/2.0);
+		else
+			vec3f_scalarMult(rightVec, eyeDist/2.0);
+		vec4f_add_new(pos4, rightVec, pos4);
+		pos4[3] = 1;
+	}
+			
+	mat4f_setColumn(viewmatrix, pos4, 3);
+	mat4f_invert(viewmatrix);
+}
+
+
+/** Get the view matrix from an orientation sensor. */
+static void viewmat_get_orient_sensor(float viewmatrix[16], int viewportNum)
+{
+	/* get quaternion from sensor */
+	float quaternion[4];
+	orient_sensor_get(&viewmat_orientsense, quaternion);
+
+	/* set a default camera position */
+	float camPosition[16];
+	mat4f_translate_new(camPosition, 0,1.5,0);
+	mat4f_invert(camPosition);
+
+	/* create a rotation matrix from quaternion */
 	float rotationMatrix[16];
 	mat4f_rotateQuatVec_new(rotationMatrix, quaternion);
+	viewmat_fix_rotation(rotationMatrix);
 
+	/* Make a view matrix */
+	mat4f_mult_mat4f_new(viewmatrix, rotationMatrix, camPosition);
+
+	/* Adjust view matrix based on eye */
 	float eyeDist = 0.055;  // TODO: Make this configurable.
-
-	float xShift = (viewportNum == 0 ? -eyeDist : eyeDist) / 2.0f;
-
+	viewmat_eye eye = viewport_to_eye(viewportNum);
+	float eyeShift = 0;
+	if(eye == VIEWMAT_EYE_LEFT)
+		eyeShift = -eyeDist/2.0;
+	else if(eye == VIEWMAT_EYE_RIGHT)
+		eyeShift = eyeDist/2.0;
 	float shiftMatrix[16];
-	mat4f_translate_new(shiftMatrix, xShift, 0, 0);
+	// Negate eyeShift because the matrix would shift the world, not
+	// the eye by default.
+	mat4f_translate_new(shiftMatrix, -eyeShift, 0, 0);
 
-	// apply the shift, then the rotation, then the position
-	// as in (Pos * (Rotation * (Shift * (vector))) == (Pos * Rotation * Shift) * vector
-	// except we have no way of acquiring the Pos matrix, so leave it out
-	mat4f_mult_mat4f_new(viewmatrix, rotationMatrix, shiftMatrix);
-	// Don't need to use DGR!
-
-	if(viewportNum == 0)
-		return VIEWMAT_EYE_LEFT;
-	else
-		return VIEWMAT_EYE_RIGHT;
+	/* Adjust the view matrix by the eye offset */
+	mat4f_mult_mat4f_new(viewmatrix, shiftMatrix, viewmatrix);
 }
 
-/** Get a view matrix appropriate for the Oculus HMD */
-static viewmat_eye viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
+/** Get view and projection matrices appropriate for the Oculus HMD */
+static void viewmat_get_hmd_oculus(float viewmatrix[16], float projmatrix[16], int viewportID)
 {
 #ifndef MISSING_OVR
 	/* Oculus recommends the order that we should render eyes. We
@@ -864,6 +952,15 @@ static viewmat_eye viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 	 * the right eye). */
 	ovrEyeType eye = hmd->EyeRenderOrder[viewportID];
 
+	/* Oculus doesn't provide us with easy access to the view
+	 * frustum information. We get the projection matrix directly
+	 * from libovr. */
+	ovrMatrix4f ovrpersp = ovrMatrix4f_Projection(hmd->DefaultEyeFov[eye], 0.5, 500, 1);
+	mat4f_setRow(projmatrix, &(ovrpersp.M[0][0]), 0);
+	mat4f_setRow(projmatrix, &(ovrpersp.M[1][0]), 1);
+	mat4f_setRow(projmatrix, &(ovrpersp.M[2][0]), 2);
+	mat4f_setRow(projmatrix, &(ovrpersp.M[3][0]), 3);
+	
 	float offsetMat[16], rotMat[16], posMat[16], initPosMat[16];
 	mat4f_identity(offsetMat);  // Viewpoint offset (IPD, etc);
 	mat4f_identity(rotMat);     // tracking system rotation
@@ -933,13 +1030,14 @@ static viewmat_eye viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
 		printf("Final view matrix: ");
 		mat4f_print(viewmatrix);
 	}
-
-	if(eye == ovrEye_Left)
-		return VIEWMAT_EYE_LEFT;
-	else
-		return VIEWMAT_EYE_RIGHT;
 #else
-	return VIEWMAT_EYE_LEFT;
+	/* We shouldn't ever get here, but we'll generate a generic view
+	 * and projection matrix just in case... */
+	mat4f_lookat_new(viewmatrix,
+	                 0,1.55,0,
+	                 0,1.55,-1,
+	                 0,1,0);
+	mat4f_perspective_new(projmatrix, 50, 1, 0.5, 500);
 #endif
 }
 
@@ -948,14 +1046,15 @@ static viewmat_eye viewmat_get_hmd_oculus(float viewmatrix[16], int viewportID)
  * @param viewmatrix The location where the viewmatrix should be stored.
  * @param frustum The location of the view frustum that should be adjusted.
  */
-static viewmat_eye viewmat_get_ivs(float viewmatrix[16], float frustum[6])
+static void viewmat_get_ivs(float viewmatrix[16], float frustum[6])
 {
 	/* Only get information from VRPN if we are DGR master, or if DGR
 	 * is being used at all. */
 	float pos[3];
 	if((dgr_is_enabled() && dgr_is_master()) || dgr_is_enabled()==0)
 	{
-		if(viewmat_vrpn_obj != NULL)
+		if(viewmat_control_mode == VIEWMAT_CONTROL_VRPN &&
+		   viewmat_vrpn_obj != NULL)
 		{
 			/* get information from vrpn */
 			float orient[16];
@@ -994,7 +1093,6 @@ static viewmat_eye viewmat_get_ivs(float viewmatrix[16], float frustum[6])
 		
 	float up[3] = {0, 1, 0};
 	mat4f_lookatVec_new(viewmatrix, pos, lookat, up);
-	return VIEWMAT_EYE_MIDDLE;
 }
 
 /** Performs a sanity check on how long it took us to render a
@@ -1071,14 +1169,11 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
 	// validate the IPD value.
 	if(viewportID == 1 && viewports_size == 2)
 	{
+		float flip = 1;
 		/* In most cases, viewportID=0 is the left eye. However,
 		 * Oculus may cause this to get swapped. */
-		float flip = 1;
-#ifndef MISSING_OVR
-		if(viewmat_mode == VIEWMAT_HMD_OCULUS &&
-		   hmd->EyeRenderOrder[0] == ovrEye_Right)
+		if(viewport_to_eye(0) == VIEWMAT_EYE_RIGHT)
 			flip = -1;
-#endif
 
 		// Get the position matrix information
 		float pos1[4], pos2[4];
@@ -1129,10 +1224,7 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
  */
 viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 {
-	viewmat_eye eye = VIEWMAT_EYE_UNKNOWN;
-
-
-
+	viewmat_eye eye = viewport_to_eye(viewportID);
 	
 	int viewport[4]; // x,y of lower left corner, width, height
 	viewmat_get_viewport(viewport, viewportID);
@@ -1141,53 +1233,62 @@ viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewport
 	float f[6]; // left, right, bottom, top, near>0, far>0
 	projmat_get_frustum(f, viewport[2], viewport[3]);
 
-	switch(viewmat_mode)
+	/* If we are running in IVS mode and using the tracking systems,
+	 * all computers need to update their frustum differently. The
+	 * master process will be controlled by VRPN, and all slaves will
+	 * have their controllers set to "none". Here, we detect for this
+	 * situation and make sure all processes work correctly.
+	 */
+	if(viewmat_display_mode == VIEWMAT_IVS &&
+	   viewmat_control_mode == VIEWMAT_CONTROL_VRPN)
 	{
-		case VIEWMAT_MOUSE:    // mouse movement
-		case VIEWMAT_ANAGLYPH: // red/cyan anaglyph
-		case VIEWMAT_HMD:      // side-by-side HMD view
-			eye = viewmat_get_mouse(viewmatrix, viewportID);
-			break;
-		case VIEWMAT_IVS: // IVS display wall
-			// frustum is updated based on head tracking
-			eye = viewmat_get_ivs(viewmatrix, f);
-			break;
-		case VIEWMAT_HMD_DSIGHT: // dSight HMD
-			eye = viewmat_get_hmd_dsight(viewmatrix, viewportID);
-			break;
-		case VIEWMAT_HMD_OCULUS:
-			eye = viewmat_get_hmd_oculus(viewmatrix, viewportID);
-			break;
-		case VIEWMAT_NONE:
-			// Get the view matrix from the mouse movement code...but
-			// we haven't registered mouse movement callback
-			// functions, so mouse movement won't work.
-			eye = viewmat_get_mouse(viewmatrix, viewportID);
-			break;
-		default:
-			msg(FATAL, "Unknown viewmat mode: %d\n", viewmat_mode);
-			exit(EXIT_FAILURE);
-	}
-		
-	/* The following code calculates the projection matrix. */
-	if(viewmat_mode == VIEWMAT_HMD_OCULUS)
-	{
-#ifndef MISSING_OVR
-		/* Oculus doesn't provide us with easy access to the view
-		 * frustum information. We get the projection matrix directly
-		 * from libovr. */
-		ovrMatrix4f ovrpersp = ovrMatrix4f_Projection(hmd->DefaultEyeFov[viewportID], 0.5, 500, 1);
-		mat4f_setRow(projmatrix, &(ovrpersp.M[0][0]), 0);
-		mat4f_setRow(projmatrix, &(ovrpersp.M[1][0]), 1);
-		mat4f_setRow(projmatrix, &(ovrpersp.M[2][0]), 2);
-		mat4f_setRow(projmatrix, &(ovrpersp.M[3][0]), 3);
-#endif
+		// Will update view matrix and frustum information
+		viewmat_get_ivs(viewmatrix, f);
+		mat4f_frustum_new(projmatrix, f[0], f[1], f[2], f[3], f[4], f[5]);
 	}
 	else
 	{
-		mat4f_frustum_new(projmatrix, f[0], f[1], f[2], f[3], f[4], f[5]);
+		switch(viewmat_control_mode)
+		{
+			case VIEWMAT_CONTROL_MOUSE:    // mouse movement
+				viewmat_get_mouse(viewmatrix, viewportID);
+				mat4f_frustum_new(projmatrix, f[0], f[1], f[2], f[3], f[4], f[5]);
+				break;
+			case VIEWMAT_CONTROL_NONE:
+				// Get the view matrix from the mouse movement code...but
+				// we haven't registered mouse movement callback
+				// functions, so mouse movement won't work.
+				viewmat_get_mouse(viewmatrix, viewportID);
+				mat4f_frustum_new(projmatrix, f[0], f[1], f[2], f[3], f[4], f[5]);
+				break;
+			case VIEWMAT_CONTROL_ORIENT:
+				viewmat_get_orient_sensor(viewmatrix, viewportID);
+				mat4f_frustum_new(projmatrix, f[0], f[1], f[2], f[3], f[4], f[5]);
+				break;
+			case VIEWMAT_CONTROL_OCULUS:
+				viewmat_get_hmd_oculus(viewmatrix, projmatrix, viewportID);
+				// previous function sets projmatrix for us...
+				break;
+			case VIEWMAT_CONTROL_VRPN:
+				viewmat_get_vrpn(viewmatrix, viewportID);
+				mat4f_frustum_new(projmatrix, f[0], f[1], f[2], f[3], f[4], f[5]);
+				break;
+
+			default:
+				msg(FATAL, "Unknown viewmat control mode: %d\n", viewmat_control_mode);
+				exit(EXIT_FAILURE);
+		}
 	}
 
+	/* Send the view matrix to DGR. At some point in the future, we
+	 * may have multiple computers using different view matrices. For
+	 * now, even in IVS mode, all processes will use the same view
+	 * matrix (IVS uses different view frustums per process). */
+	char dgrkey[128];
+	snprintf(dgrkey, 128, "!!viewmat%d", viewportID);
+	dgr_setget(dgrkey, viewmatrix, sizeof(float)*16);
+
+	/* Sanity checks */
 	viewmat_validate_ipd(viewmatrix, viewportID);
 	viewmat_validate_fps(viewportID);
 	return eye;
@@ -1209,7 +1310,6 @@ void viewmat_get_viewport(int viewportValue[4], int viewportNum)
 	/* Copy the viewport into the location the caller provided. */
 	for(int i=0; i<4; i++)
 		viewportValue[i] = viewports[viewportNum][i];
-
 }
 
 /** Returns the number of viewports that viewmat has.

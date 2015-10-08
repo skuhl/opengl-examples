@@ -1751,12 +1751,17 @@ void mat4d_lookat_new(double result[16], double eyeX, double eyeY, double eyeZ, 
 void mat4f_lookatVec_new(float  result[16], const float  eye[3], const float  center[3], const float  up[3]);
 void mat4d_lookatVec_new(double result[16], const double eye[3], const double center[3], const double up[3]);
 
+/* viewmat to lookat */
+void mat4f_viewmat_to_lookatVec(const float viewmat[16], float eye[3],  float center[3],  float up[3]);
+void mat4d_viewmat_to_lookatVec(const double viewmat[16], double eye[3], double center[3], double up[3]);
+	
+
+	
 /* Matrix stack implementation */
 void mat4f_stack_push(list *l);
 void mat4f_stack_mult(list *l, float m[16]);
 void mat4f_stack_pop(list *l);
 void mat4f_stack_peek(const list *l, float m[16]);
-
 
 	
 #ifdef __cplusplus

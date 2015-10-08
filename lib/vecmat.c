@@ -1919,6 +1919,73 @@ void mat4d_lookat_new(double result[16], double eyeX, double eyeY, double eyeZ, 
 	mat4d_lookatVec_new(result, eye, center, up);
 }
 
+/** Construct a camera position, look point, and a up vector given a
+    view matrix.
+
+    This function is the opposite of mat4f_lookat().
+
+    @param eye The resulting camera position.
+    @param center A point that the camera is pointed at. This value may differ from the one originally used to create the view matrix. However, it should form the same look vector.
+    @param up An up vector for the camera. This value may differ from the one originally used to create the matrix. However, it should be orthogonal to the look vector.
+    @param viewmat A view matrix construct the eye point, center point, and up vector from.
+ */
+void mat4f_viewmat_to_lookatVec(const float viewmat[16], float eye[3], float center[3], float up[3])
+{
+	/* Create a 4x4 which only contains the rotation part of the 3x3 view matrix */
+	float rotation3[9], rotation4[16];
+	mat3f_from_mat4f(rotation3, viewmat);
+	mat4f_from_mat3f(rotation4, rotation3);
+
+	/* recover the translation only part */
+	mat4f_invert(rotation4);
+	float transOnly[16];
+	mat4f_mult_mat4f_new(transOnly, rotation4, viewmat);
+
+	/* Recover camera position */
+	float transVec[4];
+	mat4f_getColumn(transVec, transOnly, 3); // last column
+	vec3f_scalarMult_new(eye, transVec, -1); // invert
+
+	/* Recover up vector */
+	float upVec[4];
+	mat4f_getRow(upVec, viewmat, 1); // 2nd row
+	vec3f_copy(up, upVec);
+
+	/* make up a lookat point consistent with the look vector */
+	float lookVec[4];
+	mat4f_getRow(lookVec, viewmat, 2); // 3rd row
+	vec3f_sub_new(center, eye, lookVec);
+}
+
+void mat4d_viewmat_to_lookatVec(const double viewmat[16], double eye[3], double center[3], double up[3])
+{
+	/* Create a 4x4 which only contains the rotation part of the 3x3 view matrix */
+	double rotation3[9], rotation4[16];
+	mat3d_from_mat4d(rotation3, viewmat);
+	mat4d_from_mat3d(rotation4, rotation3);
+
+	/* recover the translation only part */
+	mat4d_invert(rotation4);
+	double transOnly[16];
+	mat4d_mult_mat4d_new(transOnly, rotation4, viewmat);
+
+	/* Recover camera position */
+	double transVec[4];
+	mat4d_getColumn(transVec, transOnly, 3); // last column
+	vec3d_scalarMult_new(eye, transVec, -1); // invert
+
+	/* Recover up vector */
+	double upVec[4];
+	mat4d_getRow(upVec, viewmat, 1); // 2nd row
+	vec3d_copy(up, upVec);
+
+	/* make up a lookat point consistent with the look vector */
+	double lookVec[4];
+	mat4d_getRow(lookVec, viewmat, 2); // 3rd row
+	vec3d_sub_new(center, eye, lookVec);
+}
+
+
 
 /** Pushes a copy of a matrix currently on top of the stack onto the
     top of the stack. A list structure is used to represent the stack.

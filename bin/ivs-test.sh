@@ -45,8 +45,14 @@ fi
 PATH=.:$PATH
 
 #Connect to IVS tracking system?
-#export VIEWMAT_MODE="ivs"
+#export VIEWMAT_DISPLAY_MODE="ivs"
+#export VIEWMAT_CONTROL_MODE="vrpn"
 #export VIEWMAT_VRPN_OBJECT="Wand"
+
+#export VIEWMAT_CONTROL_MODE="orient"
+#export ORIENT_SENSOR_TTY="/dev/ttyUSB0"
+#export ORIENT_SENSOR_TYPE="bno055"
+
 
 # Start the master process
 export DGR_MODE="master"

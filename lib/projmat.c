@@ -192,7 +192,7 @@ void projmat_get_frustum(float result[6], int viewportWidth, int viewportHeight)
 			viewportHeight  = windowHeight;
 		float aspect = viewportWidth/(float)viewportHeight;
 		float nearPlane = 0.1;
-		float farPlane = 30;
+		float farPlane = 200;
 		float vfov = 65;
 		if(projmat_mode == 0)
 			vfov = projmat_vfov;
