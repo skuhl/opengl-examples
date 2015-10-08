@@ -26,6 +26,7 @@ typedef struct
 	int fd;
 	char deviceFile[32]; /**< Name of the serial device (/dev/ttyUSB0) */
 	float lastData[4]; /**< The last piece of data we received. Useful if we want to use cached data when there isn't new data to read. */
+	int lastDataTime; /**< What time did we receive the data in lastData? */
 	int isWorking; /**< Set to 1 when we have successfully received data */
 	int type;
 } OrientSensorState;
