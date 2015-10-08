@@ -178,7 +178,7 @@ int serial_read(int fd, char* buf, size_t numBytes, int options)
     @param fd The file descriptor corresponding to an open serial connection.
     @param speed The baud rate to be applied to the connection.
     @param parity 0=no parity; 1=odd parity; 2=even parity
-    @param vmin 0 = nonblocking; if >1, block until we have received at least vmin bytes
+    @param vmin 0 = nonblocking; if >=1, block until we have received at least vmin bytes
     @param vtime If blocking, tenths of a second we should block until we give up.
 
     This code is partially based on:
