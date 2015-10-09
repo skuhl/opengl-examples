@@ -71,7 +71,6 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 
 	set_target_properties(${arg} PROPERTIES LINKER_LANGUAGE "CXX")
 	set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
-	# add_dependencies(${arg} kuhl)
 
 	# Any time we make this program, copy all of the vertex and fragment program files into bin.
 	# add_dependencies(${arg} copyGLSL)
