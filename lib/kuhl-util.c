@@ -1238,6 +1238,7 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		kuhl_errorcheck();
 	}
 
+	/* Set the HasTex variable if it exists in the GLSL program. */
 	GLint loc;
 	loc = glGetUniformLocation(geom->program, "HasTex");
 	if(loc != -1)
