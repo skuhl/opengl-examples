@@ -1853,6 +1853,16 @@ void mat4f_lookatVec_new(float result[16],
 	}
 
 	vec3f_cross_new(side, look, upCopy);
+	if(vec3f_normSq(side) < .001)
+	{
+		msg(ERROR, "Your camera is facing the same direction as your up vector.");
+		msg(INFO, "CamPos:         %5.2f %5.2f %5.2f\n", eye[0], eye[1], eye[2]);
+		msg(INFO, "CamLookAtPoint: %5.2f %5.2f %5.2f\n", center[0], center[1], center[2]);
+		msg(INFO, "CamLookVec:     %5.2f %5.2f %5.2f (calculated from camera position and lookat point)\n", look[0], look[1], look[2]);
+		msg(INFO, "CamUp:          %5.2f %5.2f %5.2f\n", upCopy[0], upCopy[1], upCopy[2]);
+		mat4f_identity(result);
+		return;
+	}
 	vec3f_normalize(look);
 	vec3f_normalize(side);
 	vec3f_cross_new(newUp, side, look);
@@ -1906,6 +1916,16 @@ void mat4d_lookatVec_new(double result[16], const double eye[3], const double ce
 	}
 
 	vec3d_cross_new(side, look, upCopy);
+	if(vec3d_normSq(side) < .001)
+	{
+		msg(ERROR, "Your camera is facing the same direction as your up vector.");
+		msg(INFO, "CamPos:         %5.2f %5.2f %5.2f\n", eye[0], eye[1], eye[2]);
+		msg(INFO, "CamLookAtPoint: %5.2f %5.2f %5.2f\n", center[0], center[1], center[2]);
+		msg(INFO, "CamLookVec:     %5.2f %5.2f %5.2f (calculated from camera position and lookat point)\n", look[0], look[1], look[2]);
+		msg(INFO, "CamUp:          %5.2f %5.2f %5.2f\n", upCopy[0], upCopy[1], upCopy[2]);
+		mat4d_identity(result);
+		return;
+	}
 	vec3d_normalize(look);
 	vec3d_normalize(side);
 	vec3d_cross_new(newUp, side, look);
