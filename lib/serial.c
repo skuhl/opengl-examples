@@ -178,7 +178,7 @@ int serial_read(int fd, char* buf, size_t numBytes, int options)
     @param fd The file descriptor corresponding to an open serial connection.
     @param speed The baud rate to be applied to the connection.
     @param parity 0=no parity; 1=odd parity; 2=even parity
-    @param vmin 0 = nonblocking; if >1, block until we have received at least vmin bytes
+    @param vmin 0 = nonblocking; if >=1, block until we have received at least vmin bytes
     @param vtime If blocking, tenths of a second we should block until we give up.
 
     This code is partially based on:
@@ -195,26 +195,25 @@ static void serial_settings(int fd, int speed, int parity, int vmin, int vtime)
 	int baud = 0;
 	switch(speed)
 	{
-		case 100: baud = B110; break;
-		case 300: baud = B300; break;
-		case 600: baud = B600; break;
-		case 1200: baud = B1200; break;
-		case 2400: baud = B2400; break;
-		case 4800: baud = B4800; break;
-		case 9600: baud = B9600; break;
-			//case 14400: baud = B14400; break;
-		case 19200: baud = B19200; break;
-			//case 28800: baud = B28800; break;
-		case 38400: baud = B38400; break;
-			// case 56000: baud = B56000; break;
-		case 57600: baud = B57600; break;
-		case 115200: baud = B115200; break;
-		// other rates: 
-		//case 128000: baud = B128000; break;
-			// case 153600: baud = B153600; break;
-			//case 256000: baud = B256000; break;
-		case 460800: baud = B460800; break;
-		case 921600: baud = B921600; break;
+		case 100:      baud = B110;    break;
+		case 300:      baud = B300;    break;
+		case 600:      baud = B600;    break;
+		case 1200:     baud = B1200;   break;
+		case 2400:     baud = B2400;   break;
+		case 4800:     baud = B4800;   break;
+		case 9600:     baud = B9600;   break;
+		//case 14400:  baud = B14400;  break;  // not on Linux
+		case 19200:    baud = B19200;  break;
+		//case 28800:  baud = B28800;  break;  // not on Linux
+		case 38400:    baud = B38400;  break;
+		//case 56000:  baud = B56000;  break;  // not on Linux
+		case 57600:    baud = B57600;  break;
+		case 115200:   baud = B115200; break;
+		//case 128000: baud = B128000; break; // not on Linux
+		//case 153600: baud = B153600; break; // not on Linux
+		//case 256000: baud = B256000; break; // not on Linux
+		//case 460800: baud = B460800; break; // not on OSX
+		//case 921600: baud = B921600; break; // not on OSX
 		default:
 			msg(FATAL, "Invalid baud rate specified: %d\n", speed);
 			exit(EXIT_FAILURE);

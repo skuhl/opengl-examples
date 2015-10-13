@@ -319,7 +319,7 @@ void kuhl_print_program_log(GLuint program)
 
 
 
-static int missingUniformCount = 0; /**< Used by kuhl_get_uniform() */
+
 /** Provides functionality similar to glGetUniformLocation() with
  * error checking. However, unlike glGetUniformLocation(), this
  * function gets the location of the variable from the active OpenGL
@@ -355,6 +355,7 @@ GLint kuhl_get_uniform(const char *uniformName)
 		return -1;
 	}
 
+	static int missingUniformCount = 0;
 	GLint loc = glGetUniformLocation(currentProgram, uniformName);
 	kuhl_errorcheck();
 	if(loc == -1 && missingUniformCount < 50)
@@ -1238,6 +1239,7 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		kuhl_errorcheck();
 	}
 
+	/* Set the HasTex variable if it exists in the GLSL program. */
 	GLint loc;
 	loc = glGetUniformLocation(geom->program, "HasTex");
 	if(loc != -1)
