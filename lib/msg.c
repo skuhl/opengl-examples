@@ -188,6 +188,33 @@ static void msg_end_color(msg_type type, FILE *stream)
 }
 
 
+/** Prints a backtrace to the stream. The backtrace will list the
+    names of the functions and the addresses. Addresses can be
+    converted to file:line information by running something similar to
+    '/usr/bin/addr2line 0x123456 -e triangle'
+
+    C++ function names may be mangled.
+*/
+void msg_backtrace(FILE *stream)
+{
+#ifdef __GLIBC__
+
+#define BACKTRACE_SIZE 100
+	void *array[BACKTRACE_SIZE];
+	size_t size    = backtrace(array, BACKTRACE_SIZE);
+	char **strings = backtrace_symbols(array, BACKTRACE_SIZE);
+	fprintf(stream, "Backtrace:\n");
+	for(size_t i=0; i<size; i++)
+		fprintf(stream, "   %s\n", strings[i]);
+	free(strings);
+#undef BACKTRACE_SIZE
+
+#else // __GLIBC__
+	fprintf(stream, "msg_backtrace() requires glibc.");
+#endif
+}
+
+
 
 /** Initializes the logging system, creates the log file if
  * needed. Also, writes a message informing the user about the
@@ -295,15 +322,16 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 			snprintf(prepend, 1024, "(%s) ", logfile);
 		
 		msg_start_color(type, stream);
+		fprintf(stream, "%s %s%s\n", typestr, prepend, msgbuf);
 		/* Print additional details to console for significant errors */
 		if(type == FATAL || type == ERROR)
 		{
-			fprintf(stream, "%s %s%s\n", typestr, prepend, msgbuf);
 			fprintf(stream, "%s %sOccurred at %s:%d in the function %s()\n",
 			        typestr, prepend, shortFileName, lineNum, funcName);
+
+			if(type == FATAL)
+				msg_backtrace(stream);
 		}
-		else
-			fprintf(stream, "%s %s%s\n", typestr, prepend, msgbuf);
 		msg_end_color(type, stream);
 	}
 
@@ -324,7 +352,4 @@ void msg_assimp_callback(const char* msg, char *usr)
 {
 	msg_details(DEBUG, "ASSIMP", 0, "", "%s", msg);
 }
-
-
-
 
