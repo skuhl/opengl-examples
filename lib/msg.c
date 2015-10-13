@@ -21,6 +21,7 @@
     @author Scott Kuhl
  */
 
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -188,12 +189,17 @@ static void msg_end_color(msg_type type, FILE *stream)
 }
 
 
+
+#if 0
 /** Prints a backtrace to the stream. The backtrace will list the
     names of the functions and the addresses. Addresses can be
     converted to file:line information by running something similar to
     '/usr/bin/addr2line 0x123456 -e triangle'
 
     C++ function names may be mangled.
+
+    This is a GNU extension. Depending on how this code is compiled,
+    it may produce warnings.
 */
 void msg_backtrace(FILE *stream)
 {
@@ -213,6 +219,7 @@ void msg_backtrace(FILE *stream)
 	fprintf(stream, "msg_backtrace() requires glibc.");
 #endif
 }
+#endif
 
 
 
@@ -329,8 +336,8 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 			fprintf(stream, "%s %sOccurred at %s:%d in the function %s()\n",
 			        typestr, prepend, shortFileName, lineNum, funcName);
 
-			if(type == FATAL)
-				msg_backtrace(stream);
+			// if(type == FATAL)
+			//   msg_backtrace(stream);
 		}
 		msg_end_color(type, stream);
 	}
