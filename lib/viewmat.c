@@ -62,6 +62,7 @@ typedef enum
 	VIEWMAT_OCULUS,     /* HMDs supported by libovr (Oculus DK1, DK2, etc). */
 	VIEWMAT_ANAGLYPH,   /* Red-Cyan anaglyph images */
 } ViewmatDisplayMode;
+static ViewmatDisplayMode viewmat_display_mode = 0; /**< Currently active display mode */
 
 /** The control mode specifies how the viewpoint position/orientation is determined. */
 typedef enum
@@ -72,13 +73,12 @@ typedef enum
 	VIEWMAT_CONTROL_ORIENT,
 	VIEWMAT_CONTROL_OCULUS
 } ViewmatControlMode;
+static ViewmatControlMode viewmat_control_mode = 0; /**< Currently active control mode */
 
 
 #define MAX_VIEWPORTS 32 /**< Hard-coded maximum number of viewports supported. */
 static float viewports[MAX_VIEWPORTS][4]; /**< Contains one or more viewports. The values are the x coordinate, y coordinate, viewport width, and viewport height */
 static int viewports_size = 0; /**< Number of viewports in viewports array */
-static ViewmatDisplayMode viewmat_display_mode = 0;
-static ViewmatControlMode viewmat_control_mode = 0;
 static const char *viewmat_vrpn_obj = NULL; /**< Name of the VRPN object that we are tracking */
 static OrientSensorState viewmat_orientsense;
 
@@ -836,6 +836,37 @@ static viewmat_eye viewport_to_eye(int viewportNum)
 	return VIEWMAT_EYE_UNKNOWN;
 }
 
+/** Given a view matrix for a single eye, return a new view matrix. If
+ * there are two viewports (one for each eye) different matrices will
+ * be returned depending on the viewport.
+ *
+ * @param viewmatrix The new view matrix (filled in by this function)
+ *
+ * @param cyclopsViewMatrix A single view matrix. If two eyes, this
+ * view matrix represents the point between the eyes.
+ *
+ * @param viewportNum The viewport number.
+ */
+static void viewmat_get_generic(float viewmatrix[16], const float cyclopsViewMatrix[16], const int viewportNum)
+{
+	/* Update the view matrix based on which eye we are rendering */
+	float eyeDist = 0.055;  // TODO: Make this configurable.
+	viewmat_eye eye = viewport_to_eye(viewportNum);
+	float eyeShift = 0;
+	if(eye == VIEWMAT_EYE_LEFT)
+		eyeShift = -eyeDist/2.0;
+	else if(eye == VIEWMAT_EYE_RIGHT)
+		eyeShift = eyeDist/2.0;
+	float shiftMatrix[16];
+	// Negate eyeShift because the matrix would shift the world, not
+	// the eye by default.
+	mat4f_translate_new(shiftMatrix, -eyeShift, 0, 0);
+
+	/* Adjust the view matrix by the eye offset */
+	mat4f_mult_mat4f_new(viewmatrix, shiftMatrix, cyclopsViewMatrix);
+}
+
+
 /** Get the view matrix from the mouse. Or, if a VRPN object is
  * specified, get the view matrix from VRPN.
  *
@@ -851,23 +882,9 @@ static void viewmat_get_mouse(float viewmatrix[16], int viewportNum)
 {
 	float pos[3],look[3],up[3];
 	mousemove_get(pos, look, up);
-	mat4f_lookatVec_new(viewmatrix, pos, look, up);
-
-	/* Update the view matrix based on which eye we are rendering */
-	float eyeDist = 0.055;  // TODO: Make this configurable.
-	viewmat_eye eye = viewport_to_eye(viewportNum);
-	float eyeShift = 0;
-	if(eye == VIEWMAT_EYE_LEFT)
-		eyeShift = -eyeDist/2.0;
-	else if(eye == VIEWMAT_EYE_RIGHT)
-		eyeShift = eyeDist/2.0;
-	float shiftMatrix[16];
-	// Negate eyeShift because the matrix would shift the world, not
-	// the eye by default.
-	mat4f_translate_new(shiftMatrix, -eyeShift, 0, 0);
-
-	/* Adjust the view matrix by the eye offset */
-	mat4f_mult_mat4f_new(viewmatrix, shiftMatrix, viewmatrix);
+	float cyclopsViewMatrix[16];
+	mat4f_lookatVec_new(cyclopsViewMatrix, pos, look, up);
+	viewmat_get_generic(viewmatrix, cyclopsViewMatrix, viewportNum);
 }
 
 
@@ -878,67 +895,40 @@ static void viewmat_get_vrpn(float viewmatrix[16], int viewportNum)
 			
 	float pos[3], orient[16];
 	vrpn_get(viewmat_vrpn_obj, NULL, pos, orient);
-	
-	float pos4[4] = {pos[0],pos[1],pos[2],1};
-	viewmat_fix_rotation(orient);
-	mat4f_copy(viewmatrix, orient);
+	viewmat_fix_rotation(orient);	
 
-	float eyeDist = 0.055;
-	
-	viewmat_eye eye = viewport_to_eye(viewportNum);
-	if(eye == VIEWMAT_EYE_LEFT || eye == VIEWMAT_EYE_RIGHT)
-	{
-		float rightVec[4];
-		mat4f_getColumn(rightVec, orient, 0);
-		if(eye == VIEWMAT_EYE_LEFT)
-			vec3f_scalarMult(rightVec, -eyeDist/2.0);
-		else
-			vec3f_scalarMult(rightVec, eyeDist/2.0);
-		vec4f_add_new(pos4, rightVec, pos4);
-		pos4[3] = 1;
-	}
-			
+	float cyclopsViewMatrix[16];
+	mat4f_copy(cyclopsViewMatrix, orient);
+	float pos4[4] = {pos[0],pos[1],pos[2],1};
 	mat4f_setColumn(viewmatrix, pos4, 3);
 	mat4f_invert(viewmatrix);
+
+	viewmat_get_generic(viewmatrix, cyclopsViewMatrix, viewportNum);
 }
 
 
 /** Get the view matrix from an orientation sensor. */
 static void viewmat_get_orient_sensor(float viewmatrix[16], int viewportNum)
 {
-	/* get quaternion from sensor */
 	float quaternion[4];
 	orient_sensor_get(&viewmat_orientsense, quaternion);
-
+	float cyclopsViewMatrix[16];
+	// mat4f_identity(cyclopsViewMatrix);
+	mat4f_rotateQuatVec_new(cyclopsViewMatrix, quaternion);
+	viewmat_fix_rotation(cyclopsViewMatrix);
+	
 	/* set a default camera position */
-	float camPosition[16];
-	mat4f_translate_new(camPosition, 0,1.5,0);
-	mat4f_invert(camPosition);
+	float pos[4] = { 0, 1.5, 0, 1 };  // TODO: fix sign!
+	mat4f_setColumn(cyclopsViewMatrix, pos, 3);
 
-	/* create a rotation matrix from quaternion */
-	float rotationMatrix[16];
-	mat4f_rotateQuatVec_new(rotationMatrix, quaternion);
-	viewmat_fix_rotation(rotationMatrix);
+	// mat4f_invert(cyclopsViewMatrix);
+	
+	// TODO: Put invert function here?
 
-	/* Make a view matrix */
-	mat4f_mult_mat4f_new(viewmatrix, rotationMatrix, camPosition);
-
-	/* Adjust view matrix based on eye */
-	float eyeDist = 0.055;  // TODO: Make this configurable.
-	viewmat_eye eye = viewport_to_eye(viewportNum);
-	float eyeShift = 0;
-	if(eye == VIEWMAT_EYE_LEFT)
-		eyeShift = -eyeDist/2.0;
-	else if(eye == VIEWMAT_EYE_RIGHT)
-		eyeShift = eyeDist/2.0;
-	float shiftMatrix[16];
-	// Negate eyeShift because the matrix would shift the world, not
-	// the eye by default.
-	mat4f_translate_new(shiftMatrix, -eyeShift, 0, 0);
-
-	/* Adjust the view matrix by the eye offset */
-	mat4f_mult_mat4f_new(viewmatrix, shiftMatrix, viewmatrix);
+	viewmat_get_generic(viewmatrix, cyclopsViewMatrix, viewportNum);
+	// exit(1);
 }
+
 
 /** Get view and projection matrices appropriate for the Oculus HMD */
 static void viewmat_get_hmd_oculus(float viewmatrix[16], float projmatrix[16], int viewportID)
