@@ -143,7 +143,6 @@ static void orient_sensor_get_bno055(OrientSensorState *state, float quaternion[
 			return;
 		}
 	}
-	// msg(INFO, "New data\n");
 
 
 	/* Look for magic bytes at beginning of record */
@@ -159,7 +158,7 @@ static void orient_sensor_get_bno055(OrientSensorState *state, float quaternion[
 			uint32_t received;
 			memcpy(&received, temp, 4);
 			msg(WARNING, "Synchronizing to orientation sensor stream (may block if we can't read from sensor)...");
-			msg(DEBUG,   "Synchronizing because we expected 0x%x but  received 0x%x", v, received);
+			msg(DEBUG,   "Synchronizing because we expected 0x%08x but  received 0x%08x", v, received);
 		}
 		state->isWorking = 0;
 		serial_discard(state->fd); // clear input buffer in case it

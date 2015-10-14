@@ -767,13 +767,20 @@ static void viewmat_fix_rotation(float orient[16])
 {
 	if(viewmat_control_mode == VIEWMAT_CONTROL_ORIENT)
 	{
-		float offset1[16],offset2[16];
-		mat4f_identity(offset1);
-		mat4f_identity(offset2);
-		mat4f_rotateAxis_new(offset1, 90, 0,0,1);
-		mat4f_rotateAxis_new(offset2, -90, 0,0,1);
-		mat4f_mult_mat4f_new(orient, offset1, orient);
-		mat4f_mult_mat4f_new(orient, orient, offset2);
+		float adjustLeft[16] = { 0, 1, 0, 0,
+		                         0, 0, 1, 0,
+		                         1, 0, 0, 0,
+		                         0, 0, 0, 1 };
+		mat4f_transpose(adjustLeft); // transpose to column-major order
+
+		float adjustRight[16] = { 0, 0, -1, 0,
+		                         -1, 0,  0, 0,
+		                          0, 1,  0, 0,
+		                          0, 0,  0, 1 };
+		mat4f_transpose(adjustRight);
+
+		mat4f_mult_mat4f_new(orient, adjustLeft, orient);
+		mat4f_mult_mat4f_new(orient, orient, adjustRight);
 		return;
 	}
 
@@ -912,21 +919,17 @@ static void viewmat_get_orient_sensor(float viewmatrix[16], int viewportNum)
 {
 	float quaternion[4];
 	orient_sensor_get(&viewmat_orientsense, quaternion);
+	
 	float cyclopsViewMatrix[16];
-	// mat4f_identity(cyclopsViewMatrix);
 	mat4f_rotateQuatVec_new(cyclopsViewMatrix, quaternion);
 	viewmat_fix_rotation(cyclopsViewMatrix);
 	
 	/* set a default camera position */
-	float pos[4] = { 0, 1.5, 0, 1 };  // TODO: fix sign!
+	float pos[4] = { 0, 1.5, 0, 1 };
 	mat4f_setColumn(cyclopsViewMatrix, pos, 3);
-
-	// mat4f_invert(cyclopsViewMatrix);
-	
-	// TODO: Put invert function here?
+	mat4f_invert(cyclopsViewMatrix);
 
 	viewmat_get_generic(viewmatrix, cyclopsViewMatrix, viewportNum);
-	// exit(1);
 }
 
 

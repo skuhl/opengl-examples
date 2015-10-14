@@ -59,7 +59,7 @@ void serial_write(const int fd, const char* buf, size_t numBytes)
    @param numBytes Number of bytes in the buffer that be read.
    
    @param options If SERIAL_CONSUME bit is set and there are many
-   bytes avaialable to read, discard some multiple of numBytes and
+   bytes available to read, discard some multiple of numBytes and
    return the last set of numBytes. If SERIAL_CACHED is set, the
    return value will indicate if data was read or not.
 
@@ -70,13 +70,13 @@ void serial_write(const int fd, const char* buf, size_t numBytes)
 int serial_read(int fd, char* buf, size_t numBytes, int options)
 {
 	char *ptr = buf;
-	size_t totalBytesRead = 0;
+
 
 	// Determine how many bytes there are to read.
 	size_t bytesAvailable = 0;
 	ioctl(fd, FIONREAD, &bytesAvailable);
 	if(SERIAL_DEBUG)
-		printf("serial_read(): Avail to read: %d\n", (int)bytesAvailable);
+		msg(DEBUG, "serial_read(): Avail to read: %d\n", (int)bytesAvailable);
 
 	/* If SERIAL_NONBLOCK is set, and if there are not enough bytes
 	 * available to read, return 0 so the caller can instead return a
@@ -85,7 +85,7 @@ int serial_read(int fd, char* buf, size_t numBytes, int options)
 	   options & SERIAL_NONBLOCK)
 	{
 		if(SERIAL_DEBUG)
-			printf("serial_read(): Timeout\n");
+			msg(DEBUG, "serial_read(): Timeout\n");
 		return 0;
 	}
 	
@@ -103,13 +103,13 @@ int serial_read(int fd, char* buf, size_t numBytes, int options)
 				// We can get here if the USB cord is disconnected
 				// from the computer. Treat it as a read error.
 				if(SERIAL_DEBUG)
-					printf("serial_read(): Did serial cable get disconnected?\n");
+					msg(DEBUG, "serial_read(): Did serial cable get disconnected?\n");
 				return -1;
 			}
 			else if(r < 0)
 			{
 				if(SERIAL_DEBUG)
-					printf("serial_read(): read error %s\n",  strerror(errno));
+					msg(DEBUG, "serial_read(): read error %s\n",  strerror(errno));
 				return -1;
 			}
 			else
@@ -118,19 +118,22 @@ int serial_read(int fd, char* buf, size_t numBytes, int options)
 			if(SERIAL_DEBUG)
 			{
 				// Print the bytes we consumed
-				printf("serial_read(): consumed a total of %4d bytes: ", (int)r);
+				msg(DEBUG, "serial_read(): consumed a total of %4d bytes: ", (int)r);
+				char *str = malloc(r * 8);
+				int index = 0;
 				for(ssize_t i=0; i<r; i++)
-					printf("%x ", (unsigned char) ptr[i]);
-				printf("\n");
+					index += snprintf(str+index, r*8-index, "%02x ", (unsigned char) ptr[i]);
+				msg(DEBUG, "%s", str);
+				free(str);
 			}
 		} // end consume bytes loop
 
 		if(SERIAL_DEBUG)
-			printf("serial_read(): Avail to read after consumption: %d\n", (int)bytesAvailable);
+			msg(DEBUG, "serial_read(): Avail to read after consumption: %d\n", (int)bytesAvailable);
 	} // end if consume bytes
 
-
 	/* Actually read the data */
+	size_t totalBytesRead = 0;
 	while(totalBytesRead < numBytes)
 	{
 		/* If SERIAL_NONBLOCK was specified and if there are not
@@ -142,13 +145,13 @@ int serial_read(int fd, char* buf, size_t numBytes, int options)
 		{
 			/* This can happen if the USB cable gets disconnected from the computer. */
 			if(SERIAL_DEBUG)
-				printf("serial_read(): Did serial cable get disconnected?\n");
+				msg(DEBUG, "serial_read(): Did serial cable get disconnected?\n");
 			return -1;
 		}
 		else if(bytesRead < 0)
 		{
 			if(SERIAL_DEBUG)
-				printf("serial_read(): read error %s\n",  strerror(errno));
+				msg(DEBUG, "serial_read(): read error %s\n",  strerror(errno));
 			return -1;
 		}
 		else
@@ -161,11 +164,13 @@ int serial_read(int fd, char* buf, size_t numBytes, int options)
 
 	if(SERIAL_DEBUG)
 	{
-		// Print the bytes we read
-		printf("serial_read(): Read a total of %4d bytes: ", (int) totalBytesRead);
-		for(size_t i=0; i<numBytes; i++)
-			printf("%x ", (unsigned char) buf[i]);
-		printf("\n");
+		msg(DEBUG, "serial_read(): Read a total of %4d bytes: ", (int)totalBytesRead);
+		char *str = malloc(totalBytesRead * 8);
+		int index = 0;
+		for(size_t i=0; i<totalBytesRead; i++)
+			index += snprintf(str+index, totalBytesRead*8-index, "i-%02x ", (unsigned char) buf[i]);
+		msg(DEBUG, "%s", str);
+		free(str);
 	}
 
 	/* If we didn't read the full numBytes, we would have exited. */
@@ -224,7 +229,7 @@ static void serial_settings(int fd, int speed, int parity, int vmin, int vtime)
 	   stty -F /dev/ttyUSB0 sane
 	   Running this program
 	   stty -F /dev/ttyUSB0
-	   stty -F /dev/ttyUSB0 cs8 115200 ignbrk -brkint -icrnl -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke noflsh -ixon -crtscts
+	   stty -F /dev/ttyUSB0 cs8 115200 ignbrk -brkint -icrnl -imaxbel -ixon -icanon -isig -echo -echoe -echok -echoctl -echoke noflsh -iexten -opost -onlcr  -crtscts
 
 	   The output of the last two commands should match. The last
 	   command is what is apparently what Arduino expects based on a
@@ -239,17 +244,27 @@ static void serial_settings(int fd, int speed, int parity, int vmin, int vtime)
 	}
 
 	// Input flags
-	toptions.c_iflag |= IGNBRK;  // set bit to ignore break condition
+	// toptions.c_iflag |= IGNBRK;  // set bit to ignore break condition (seems to cause issues with bno055 sensor
 	toptions.c_iflag &= ~BRKINT;
 	toptions.c_iflag &= ~ICRNL;
 	toptions.c_iflag &= ~IMAXBEL;
+
 	toptions.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
 
 	// Line processing
-//	toptions.c_lflag = NOFLSH; // Disable flushing in/out queues for the INT, QUIT, and SUSP characters
+	toptions.c_lflag &= ~ICANON;
+	toptions.c_lflag &= ~ISIG;
+	toptions.c_lflag &= ~ECHO;
+	toptions.c_lflag &= ~ECHOE;
+	toptions.c_lflag &= ~ECHOK;
+	toptions.c_lflag &= ~ECHOCTL;
+	toptions.c_lflag &= ~ECHOKE;
+	toptions.c_lflag |= NOFLSH;
+	toptions.c_lflag &= ~IEXTEN;
 
 	// Output flags
-	toptions.c_oflag = 0;
+	toptions.c_oflag &= ~OPOST;
+	toptions.c_oflag &= ~ONLCR;
 
 	// Character processing
 	toptions.c_cflag = (toptions.c_cflag & ~CSIZE) | CS8; // 8 bit	
@@ -265,11 +280,12 @@ static void serial_settings(int fd, int speed, int parity, int vmin, int vtime)
 	toptions.c_cc[VMIN] = vmin; 
 	toptions.c_cc[VTIME] = vtime; // If blocking, max time to block in tenths of a second (5 = .5 seconds).
 
-//	cfmakeraw(&toptions);
+	cfmakeraw(&toptions);
 	
 	// Apply our new settings, discard data in buffer
-	if(tcsetattr(fd, TCSAFLUSH, &toptions) == -1)
+	if(tcsetattr(fd, TCSANOW, &toptions) == -1)
 		msg(ERROR, "tcgetattr error: %s\n", strerror(errno));
+	serial_discard(fd);
 }
 
 /** Reads bytes until a specific byte pattern is found in the
@@ -311,7 +327,7 @@ int serial_find(int fd, char *bytes, int len, int maxbytes)
 void serial_discard(int fd)
 {
 	if(SERIAL_DEBUG)
-		printf("serial_discard()\n");
+		msg(DEBUG, "serial_discard()\n");
 
 	tcflush(fd, TCIOFLUSH);
 }
