@@ -1568,6 +1568,9 @@ static inline void mat3d_from_mat4d(double dest[ 9], const double src[16])
 static inline void mat4f_scale_new(float  result[16], float x, float y, float z)
 {
 	mat4f_identity(result);
+	if(x == 0.0f) msg(WARNING, "You created a scale matrix with x=0; did you mean to set it to 1?");
+	if(y == 0.0f) msg(WARNING, "You created a scale matrix with y=0; did you mean to set it to 1?");
+	if(z == 0.0f) msg(WARNING, "You created a scale matrix with z=0; did you mean to set it to 1?");
 	result[mat4_getIndex(0,0)] = x;
 	result[mat4_getIndex(1,1)] = y;
 	result[mat4_getIndex(2,2)] = z;
@@ -1581,6 +1584,9 @@ static inline void mat4f_scale_new(float  result[16], float x, float y, float z)
 static inline void mat4d_scale_new(double result[16], double x, double y, double z)
 {
 	mat4d_identity(result);
+	if(x == 0.0) msg(WARNING, "You created a scale matrix with x=0; did you mean to set it to 1?");
+	if(y == 0.0) msg(WARNING, "You created a scale matrix with y=0; did you mean to set it to 1?");
+	if(z == 0.0) msg(WARNING, "You created a scale matrix with z=0; did you mean to set it to 1?");
 	result[mat4_getIndex(0,0)] = x;
 	result[mat4_getIndex(1,1)] = y;
 	result[mat4_getIndex(2,2)] = z;
