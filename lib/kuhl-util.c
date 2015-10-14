@@ -637,17 +637,17 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 	}
 	if(geom == NULL)
 	{
-		msg(WARNING, "Geometry struct is null while trying to set texture %s.\n", name);
+		msg(WARNING, "Geometry struct is null while trying to set texture '%s'.\n", name);
 		return;
 	}
 	if(texture == 0)
 	{
-		msg(WARNING, "Texture was set to 0 while trying to set texture %s\n", name);
+		msg(WARNING, "Texture was set to 0 while trying to set texture '%s'\n", name);
 		return;
 	}
 	if(!glIsTexture(texture))
 	{
-		msg(WARNING, "You tried to set the texture to an invalid texture %d (detected while trying to set texture %s)\n", texture, name);
+		msg(WARNING, "You tried to set the texture to an invalid texture %d (detected while trying to set texture '%s')\n", texture, name);
 		return;
 	}
 
@@ -656,7 +656,7 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 	
 	if(!glIsVertexArray(geom->vao))
 	{
-		msg(WARNING, "This geometry object has an invalid vertex array object %d (detected while setting texture %s)\n", geom->vao, name);
+		msg(WARNING, "This geometry object has an invalid vertex array object %d (detected while setting texture '%s')\n", geom->vao, name);
 		return;
 	}
 	
