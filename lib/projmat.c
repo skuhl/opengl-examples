@@ -20,7 +20,7 @@
 float projmat_frustum[6];
 float projmat_master_frustum[6];
 float projmat_vfov = -1;
-int projmat_mode = -1; /**< -1=undefined, 0=vfov, 1=frustum */
+int projmat_mode = -1; /**< -1=undefined, 0=vfov, 1=frustum 2=dsight */
 
 
 /** 
@@ -71,13 +71,8 @@ void projmat_init()
 {
 	projmat_init_window();
 
-	int foundFrustum = 0;
-	int foundMasterFrustum = 0;
-	int foundFov = 0;
-
 	const char* frustumString = getenv("PROJMAT_FRUSTUM");
-	const char* masterFrustumString = getenv("PROJMAT_MASTER_FRUSTUM");
-	
+	int foundFrustum = 0;
 	if(frustumString != NULL)
 	{
 		if(sscanf(frustumString, "%f %f %f %f %f %f",
@@ -88,6 +83,8 @@ void projmat_init()
 			foundFrustum = 1;
 	}
 
+	const char* masterFrustumString = getenv("PROJMAT_MASTER_FRUSTUM");
+	int foundMasterFrustum = 0;
 	if(masterFrustumString != NULL)
 	{
 		if(sscanf(masterFrustumString, "%f %f %f %f %f %f",
@@ -99,6 +96,7 @@ void projmat_init()
 	}
 	
 	const char* vfovString = getenv("PROJMAT_VFOV");
+	int foundFov = 0;
 	if(vfovString != NULL)
 	{
 		if(sscanf(vfovString, "%f", &projmat_vfov) != 1)
@@ -107,7 +105,20 @@ void projmat_init()
 			foundFov = 1;
 	}
 
-	if(foundFov == 1)
+	const char* dsightString = getenv("PROJMAT_DSIGHT");
+	int foundDsight = 0;
+	if(dsightString != NULL)
+	{
+		foundDsight = 1;
+	}
+	
+
+	if(foundDsight == 1)
+	{
+		projmat_mode = 2;
+		msg(INFO, "Using dsight frustums.");
+	}
+	else if(foundFov == 1)
 	{
 		projmat_mode = 0;
 		msg(INFO, "Using a simple perspective projection (vfov=%f degrees).\n", projmat_vfov);
@@ -180,7 +191,7 @@ void projmat_init()
  * dimensions are necessary to calculate an appropriate aspect ratio
  * for the frustum.
  **/
-void projmat_get_frustum(float result[6], int viewportWidth, int viewportHeight)
+void projmat_get_frustum(float result[6], int viewportWidth, int viewportHeight, int viewportID)
 {
 	if(projmat_mode == -1 || projmat_mode == 0)
 	{
@@ -225,6 +236,36 @@ void projmat_get_frustum(float result[6], int viewportWidth, int viewportHeight)
 		for(int i=0; i<6; i++)
 			result[i] = projmat_frustum[i];
 		return;
+	}
+
+
+	if(projmat_mode == 2) // projection matrix mode
+	{
+		// center to middle edge, 35 degrees
+		float middle = 35;
+		// center to outside edge, 60 degrees
+		float outside = 60;
+		// vertical, 54 degrees total
+		float vertical = 54;
+
+		float far = 200;
+		
+		float scale = .1; // calculate assuming near = 1, then scale all numbers
+		if(viewmat_viewport_to_eye(viewportID) == VIEWMAT_EYE_LEFT)
+		{
+			result[0] = -tanf(outside    * M_PI/180) * scale; // left
+			result[1] = tanf(middle      * M_PI/180) * scale; // right
+		}
+		else
+		{
+			result[0] = -tanf(middle     * M_PI/180) * scale; // left
+			result[1] = tanf(outside     * M_PI/180) * scale; // right
+		}
+		result[2] = -tanf(vertical/2 * M_PI/180) * scale; // bottom
+		result[3] = tanf(vertical/2  * M_PI/180) * scale; // top
+		result[4] = scale; // near
+		result[5] = far;   // far
+
 	}
 }
 

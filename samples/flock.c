@@ -171,10 +171,6 @@ void display()
 		                   perspective); // value
 
 		glUniform1i(kuhl_get_uniform("renderStyle"), renderStyle);
-		// Copy far plane value into vertex program so we can render depth buffer.
-		float f[6]; // left, right, bottom, top, near>0, far>0
-		projmat_get_frustum(f, viewport[2], viewport[3]);
-		glUniform1f(kuhl_get_uniform("farPlane"), f[5]);
 
 		float modelview[16];
 		for(int i=0; i<NUM_MODELS; i++)

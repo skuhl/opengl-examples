@@ -88,7 +88,7 @@ void drawPaddle(Paddle paddle, float depth);
 void clampPaddles()
 {
 	float frustum[6];
-	projmat_get_frustum(frustum, -1, -1);
+	projmat_get_frustum(frustum, -1, -1, 0);
 
     // left screen boundary
 	if(paddleA.xpos < frustum[0]+paddleA.width/2)
@@ -147,7 +147,7 @@ void keyboard(unsigned char key, int x, int y)
 void game()
 {
 	float frustum[6];
-	projmat_get_frustum(frustum, -1, -1);
+	projmat_get_frustum(frustum, -1, -1, 0);
 
 	if(USE_VRPN)
 	{
@@ -384,7 +384,7 @@ void display()
 	glLoadIdentity();
 
 	float frustum[6];
-	projmat_get_frustum(frustum, -1, -1);
+	projmat_get_frustum(frustum, -1, -1, 0);
 	glOrtho(frustum[0], frustum[1], frustum[2], frustum[3], frustum[4], frustum[5]);
 	  
 	glMatrixMode(GL_MODELVIEW);
@@ -553,7 +553,7 @@ int main( int argc, char* argv[] )
 
 	float frustum[6]; // left, right, bottom, top, near, far
 	                  // 0     1      2       3    4     5
-	projmat_get_frustum(frustum, -1, -1);
+	projmat_get_frustum(frustum, -1, -1, 0);
 	ball.xpos = (frustum[0] + frustum[1])/2.0;
 	ball.ypos = (frustum[2] + frustum[3])/2.0;
 	ball.speed = ball.minSpeed = (frustum[3]-frustum[2]) / 178.462f;

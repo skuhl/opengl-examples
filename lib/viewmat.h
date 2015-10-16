@@ -36,6 +36,8 @@ typedef enum { VIEWMAT_EYE_LEFT,    /*< Right eye viewport */
                VIEWMAT_EYE_MIDDLE,  /*< Single viewport */
                VIEWMAT_EYE_UNKNOWN } viewmat_eye;
 
+viewmat_eye viewmat_viewport_to_eye(int viewportNum);
+	
 void viewmat_window_size(int *width, int *height);
 
 void viewmat_begin_frame(void);

@@ -37,7 +37,7 @@ extern "C" {
 #endif
 
 void projmat_init();
-void projmat_get_frustum(float result[6], int viewportWidth, int viewportHeight);
+void projmat_get_frustum(float result[6], int viewportWidth, int viewportHeight, int viewportID);
 void projmat_get_master_frustum(float result[6]);
 
 #ifdef __cplusplus

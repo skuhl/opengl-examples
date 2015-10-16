@@ -10,7 +10,6 @@ in vec4 in_BoneWeight;
 uniform mat4 BoneMat[128];
 uniform int NumBones;
 
-uniform float farPlane;
 uniform mat4 ModelView;
 uniform mat4 Projection;
 uniform mat4 GeomTransform;

@@ -813,7 +813,7 @@ static void viewmat_fix_rotation(float orient[16])
 /** Viewport 0 is the first viewport to render. In HMDs, the first
  * viewport to render is often the left eye. However, this does not
  * always need to be the case. */
-static viewmat_eye viewport_to_eye(int viewportNum)
+viewmat_eye viewmat_viewport_to_eye(int viewportNum)
 {
 	if(viewmat_display_mode == VIEWMAT_OCULUS)
 	{
@@ -858,7 +858,7 @@ static void viewmat_get_generic(float viewmatrix[16], const float cyclopsViewMat
 {
 	/* Update the view matrix based on which eye we are rendering */
 	float eyeDist = 0.055;  // TODO: Make this configurable.
-	viewmat_eye eye = viewport_to_eye(viewportNum);
+	viewmat_eye eye = viewmat_viewport_to_eye(viewportNum);
 	float eyeShift = 0;
 	if(eye == VIEWMAT_EYE_LEFT)
 		eyeShift = -eyeDist/2.0;
@@ -1165,7 +1165,7 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
 		float flip = 1;
 		/* In most cases, viewportID=0 is the left eye. However,
 		 * Oculus may cause this to get swapped. */
-		if(viewport_to_eye(0) == VIEWMAT_EYE_RIGHT)
+		if(viewmat_viewport_to_eye(0) == VIEWMAT_EYE_RIGHT)
 			flip = -1;
 
 		// Get the position matrix information
@@ -1217,14 +1217,14 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
  */
 viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 {
-	viewmat_eye eye = viewport_to_eye(viewportID);
+	viewmat_eye eye = viewmat_viewport_to_eye(viewportID);
 	
 	int viewport[4]; // x,y of lower left corner, width, height
 	viewmat_get_viewport(viewport, viewportID);
 
 	/* Get the view or camera matrix; update the frustum values if needed. */
 	float f[6]; // left, right, bottom, top, near>0, far>0
-	projmat_get_frustum(f, viewport[2], viewport[3]);
+	projmat_get_frustum(f, viewport[2], viewport[3], viewportID);
 
 	/* If we are running in IVS mode and using the tracking systems,
 	 * all computers need to update their frustum differently. The

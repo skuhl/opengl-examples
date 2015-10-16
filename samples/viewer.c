@@ -382,10 +382,9 @@ void display()
 			glLineWidth(origLineWidth);
 		}
 
-
-		if(dgr_is_enabled() == 0 || dgr_is_master())
+		// aspect ratio will be zero when the program starts (and FPS hasn't been computed yet)
+		if((dgr_is_enabled() == 0 || dgr_is_master()) && fpsLabelAspectRatio != 0)
 		{
-
 			/* The shape of the frames per second quad depends on the
 			 * aspect ratio of the label texture and the aspect ratio of
 			 * the window (because we are placing the quad in normalized

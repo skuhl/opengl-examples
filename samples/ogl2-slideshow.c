@@ -259,7 +259,7 @@ void display(void)
 	 * the current process view frustum. If we are running in a
 	 * standalone version, these two frustums will be the same. */
 	projmat_get_master_frustum(masterFrustum);
-	projmat_get_frustum(frustum, -1, -1); // frustum of this process (master or slave)
+	projmat_get_frustum(frustum, -1, -1, 0); // frustum of this process (master or slave)
 
 	/* Set this view frustum for this process. */
 	glMatrixMode(GL_PROJECTION);
