@@ -22,6 +22,7 @@
 /ik
 /panorama
 /pong
+/glinfo
 
 # Binaries created in vrpn folder
 /fake-server
