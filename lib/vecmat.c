@@ -1643,18 +1643,33 @@ void mat4f_frustum_new(float result[16], float left, float right, float bottom, 
 {
 	// glFrustum() requires near and far to be positive numbers.
 	near = fabsf(near);
-	far = fabsf(far);
+	far  = fabsf(far);
 	mat4f_identity(result);
-	if(left == right || bottom == top || near == far || near == 0)
+	if(left == right || bottom == top || near == far)
 	{
-		msg(ERROR, "Invalid view frustum matrix.\n");
+		msg(ERROR, "Frustum values would result in divide by zero.");
+		msg(ERROR, "Frustum values were: l=%f r=%f b=%f t=%f n=%f f=%f",
+		    left, right, bottom, top, near, far);
 		return;
 	}
-	result[0]  =  2.0f * near / (right - left);
-    result[5]  =  2.0f * near / (top - bottom);
+	if(near == 0)
+	{
+		msg(WARNING, "Near plane should be a value greater than 0.");
+		msg(WARNING, "Frustum values were: l=%f r=%f b=%f t=%f n=%f f=%f",
+		    left, right, bottom, top, near, far);
+		
+	}
+	if(left > right || bottom > top || near > far)
+	{
+		msg(WARNING, "Frustum values seemed to be swapped (e.g., left should be less than right).");
+		msg(WARNING, "Frustum values were: l=%f r=%f b=%f t=%f n=%f f=%f",
+		    left, right, bottom, top, near, far);
+	}
+	result[0]  =  2.0f * near    / (right - left);
+    result[5]  =  2.0f * near    / (top   - bottom);
 	result[8]  =  (right + left) / (right - left);
-    result[9]  =  (top + bottom) / (top - bottom);
-    result[10] = -(far + near) / (far - near);
+    result[9]  =  (top + bottom) / (top   - bottom);
+    result[10] = -(far + near)   / (far - near);
     result[11] = -1.0f;
     result[14] = -(2.0f * far * near) / (far - near);
     result[15] =  0.0f;
@@ -1678,28 +1693,42 @@ void mat4d_frustum_new(double result[16], double left, double right, double bott
 {
 	// glFrustum() requires near and far to be positive numbers.
 	near = fabs(near);
-	far = fabs(far);
+	far  = fabs(far);
 	mat4d_identity(result);
-	if(left == right || bottom == top || near == far || near == 0)
+	if(left == right || bottom == top || near == far)
 	{
-		msg(ERROR, "Invalid view frustum matrix.\n");
+		msg(ERROR, "Frustum values would result in divide by zero.");
+		msg(ERROR, "Frustum values were: l=%f r=%f b=%f t=%f n=%f f=%f",
+		    left, right, bottom, top, near, far);
 		return;
 	}
-	result[0]  =  2.0f * near / (right - left);
-    result[5]  =  2.0f * near / (top - bottom);
+	if(near == 0)
+	{
+		msg(WARNING, "Near plane should be a value greater than 0.");
+		msg(WARNING, "Frustum values were: l=%f r=%f b=%f t=%f n=%f f=%f",
+		    left, right, bottom, top, near, far);
+		
+	}
+	if(left > right || bottom > top || near > far)
+	{
+		msg(WARNING, "Frustum values seemed to be swapped (e.g., left should be less than right).");
+		msg(WARNING, "Frustum values were: l=%f r=%f b=%f t=%f n=%f f=%f",
+		    left, right, bottom, top, near, far);
+	}
+	result[0]  =  2.0f * near    / (right - left);
+    result[5]  =  2.0f * near    / (top   - bottom);
 	result[8]  =  (right + left) / (right - left);
-    result[9]  =  (top + bottom) / (top - bottom);
-    result[10] = -(far + near) / (far - near);
+    result[9]  =  (top + bottom) / (top   - bottom);
+    result[10] = -(far + near)   / (far   - near);
     result[11] = -1.0f;
     result[14] = -(2.0f * far * near) / (far - near);
     result[15] =  0.0f;
 }
 
-/** Creates a orthographic projection matrix (float). This
- * creates a matrix similar to the one that glOrtho() would
- * apply to the OpenGL 2.0 matrix stack. A simpler (but less
- * flexible) alternative to this function is mat4f_perspective_new().
- * Prints a message and returns the identity matrix on error.
+/** Creates a orthographic projection matrix (float). This creates a
+ * matrix similar to the one that glOrtho() would apply to the OpenGL
+ * 2.0 matrix stack. Prints a message and returns the identity matrix
+ * on error.
  *
  * @param result The resulting 4x4 orthographic projection matrix.
  *
@@ -1726,11 +1755,10 @@ void mat4f_ortho_new(float result[16], float left, float right, float bottom, fl
 	result[14] = -(far+near)/(far-near);
 }
 
-/** Creates a orthographic projection matrix (double). This
- * creates a matrix similar to the one that glOrtho() would
- * apply to the OpenGL 2.0 matrix stack. A simpler (but less
- * flexible) alternative to this function is mat4d_perspective_new().
- * Prints a message and returns the identity matrix on error.
+/** Creates a orthographic projection matrix (double). This creates a
+ * matrix similar to the one that glOrtho() would apply to the OpenGL
+ * 2.0 matrix stack. Prints a message and returns the identity matrix
+ * on error.
  *
  * @param result The resulting 4x4 orthographic projection matrix.
  *
@@ -1765,17 +1793,30 @@ void mat4d_ortho_new(double result[16], double left, double right, double bottom
  * @param result The resulting 4x4 view frustum projection matrix.
  *
  * @param fovy The field of view in the horizontal direction (degrees)
- * @param aspect The aspect ratio of the screen/window/viewport.
+ *
+ * @param aspect The aspect ratio of the screen/window/viewport. The
+ * aspect ratio is the width of the screen divided by the height of
+ * the screen. Larger numbers mean wider screens.
+ *
  * @param near Near clipping plane distance (positive)
+ *
  * @param far Far clipping plane distance (positive)
  */
 void mat4f_perspective_new(float result[16], float  fovy, float  aspect, float  near, float  far)
 {
 	near = fabsf(near);
 	far = fabsf(far);
-	if(near == 0)
+	mat4f_identity(result);
+	// Our mat*_frustum_new functions check for near=0, near > far, etc.
+	if(aspect <= 0)
 	{
-		msg(ERROR, "Invalid perspective projection matrix.\n");
+		msg(ERROR, "Aspect ratio must be a positive, non-zero number. You set it to %f\n", aspect);
+		return;
+	}
+
+	if(fovy <= 0 || fovy >=180)
+	{
+		msg(ERROR, "Field of view must be between 0 and 180 degrees. You set it to %f\n", fovy);
 		return;
 	}
 	float fovyRad = fovy * M_PI/180.0f;
@@ -1790,21 +1831,34 @@ void mat4f_perspective_new(float result[16], float  fovy, float  aspect, float  
  *
  * @param result The resulting 4x4 view frustum projection matrix.
  *
- * @param fovy The field of view in the horizontal direction (degrees)
+ * @param aspect The aspect ratio of the screen/window/viewport. The
+ * aspect ratio is the width of the screen divided by the height of
+ * the screen. Larger numbers mean wider screens.
+ *
  * @param aspect The aspect ratio of the screen/window/viewport.
+ *
  * @param near Near clipping plane distance (positive)
+ *
  * @param far Far clipping plane distance (positive)
  */
 void mat4d_perspective_new(double result[16], double fovy, double aspect, double near, double far)
 {
 	near = fabs(near);
 	far = fabs(far);
-	if(near == 0)
+	mat4d_identity(result);
+	// Our mat*_frustum_new functions check for near=0, near > far, etc.
+	if(aspect <= 0)
 	{
-		msg(ERROR, "Invalid perspective projection matrix.\n");
-		mat4d_identity(result);
+		msg(ERROR, "Aspect ratio must be a positive, non-zero number. You set it to %f\n", aspect);
 		return;
 	}
+
+	if(fovy <= 0 || fovy >=180)
+	{
+		msg(ERROR, "Field of view must be between 0 and 180 degrees. You set it to %f\n", fovy);
+		return;
+	}
+
 	double fovyRad = fovy * M_PI/180.0;
 	double height = near * tan(fovyRad/2.0);
 	double width = height * aspect;
