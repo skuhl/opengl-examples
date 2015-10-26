@@ -127,9 +127,9 @@ void display()
 		                   modelview); // value
 		kuhl_errorcheck();
 
-			/* Draw the geometry using the matrices that we sent to the
-			 * vertex programs immediately above. Use the stencil buffer
-			 * to keep track of which object appears on top. */
+		/* Draw the geometry using the matrices that we sent to the
+		 * vertex programs immediately above. Use the stencil buffer
+		 * to keep track of which object appears on top. */
 		if(viewportID == 0)
 			glEnable(GL_STENCIL_TEST);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
