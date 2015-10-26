@@ -276,11 +276,11 @@ int main(int argc, char** argv)
 	 * includes a depth buffer */
 #ifdef FREEGLUT
 	glutSetOption(GLUT_MULTISAMPLE, 4); // set msaa samples; default to 4
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE | GLUT_STENCIL);
 	glutInitContextVersion(3,2);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 #else
-	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
+	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE | GLUT_STENCIL);
 #endif
 	glutCreateWindow(argv[0]); // set window title to executable name
 	glEnable(GL_MULTISAMPLE);
@@ -309,9 +309,6 @@ int main(int argc, char** argv)
 	 * a fragment shader. */
 	program = kuhl_create_program("triangle-color.vert", "triangle-color.frag");
 	glUseProgram(program);
-	kuhl_errorcheck();
-	/* Set the uniform variable in the shader that is named "red" to the value 1. */
-	glUniform1i(kuhl_get_uniform("red"), 1);
 	kuhl_errorcheck();
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);
