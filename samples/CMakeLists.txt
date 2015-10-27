@@ -16,6 +16,11 @@ set(NEED_ASSIMP viewer slerp explode flock ik frustum)
 set(NEED_NOTHING text triangle triangle-color triangle-shade prerend picker teartest texture panorama ogl2-triangle ogl2-slideshow ogl2-texture pong glinfo)
 
 
+# IMPORTANT: If ASSIMP is installed, NEED_NOTHING will link against
+# assimp. This is required because the kuhl_geometry struct changes
+# sizes depending on if assimp is present---and the library and the
+# sample programs must be compiled using the same definition of that
+# struct!
 
 
 # Construct a list of programs that we want to compile based on which libraries are available.
@@ -82,11 +87,3 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 	endif()
 
 endforeach()
-
-if(ASSIMP_FOUND)
-    foreach(arg ${NEED_ASSIMP})
-		target_link_libraries(${arg} ${ASSIMP_LIBRARIES})
-		set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE_ALL}")
-    endforeach()
-endif()
-

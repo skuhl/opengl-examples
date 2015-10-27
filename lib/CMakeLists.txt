@@ -11,7 +11,7 @@ if(ImageMagick_FOUND)
 endif()
 
 add_library(kuhl STATIC ${FILES_IN_LIBKUHL})
-set_target_properties(kuhl PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE_ALL}")
+set_target_properties(kuhl PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
 
 if(APPLE)
 	# Some Mac OSX machines need this to ensure that freeglut.h is found.
