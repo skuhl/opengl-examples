@@ -23,13 +23,13 @@
 #include "dgr.h"
 #include "projmat.h"
 #include "viewmat.h"
-GLuint program = 0; // id value for the GLSL program
+GLuint program = 0; /**< id value for the GLSL program */
 
 kuhl_geometry triangle;
 kuhl_geometry quad;
 
 
-/* Called by GLUT whenever a key is pressed. */
+/** Called by GLUT whenever a key is pressed. */
 void keyboard(unsigned char key, int x, int y)
 {
 	switch(key)
@@ -228,7 +228,7 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 
 int main(int argc, char** argv)
 {
-	/* set up our GLUT window */
+	/* Set up our GLUT window */
 	glutInit(&argc, argv);
 	glutInitWindowSize(512, 512);
 	/* Ask GLUT to for a double buffered, full color window that
