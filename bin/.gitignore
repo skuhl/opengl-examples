@@ -23,6 +23,7 @@
 /panorama
 /pong
 /glinfo
+/frustum
 
 # Binaries created in vrpn folder
 /fake-server
