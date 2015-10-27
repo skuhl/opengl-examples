@@ -57,6 +57,9 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 		target_link_libraries(${arg} ${ImageMagick_LIBRARIES})
 	endif()
 	if(ASSIMP_FOUND)
+		# Link to assimp if we found it, even if it isn't needed for
+		# this program. We need to do this because the library will
+		# require assimp even if the program doesn't.
 		target_link_libraries(${arg} ${ASSIMP_LIBRARIES})
 	endif()
 	if(FREETYPE_FOUND)
@@ -79,3 +82,11 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 	endif()
 
 endforeach()
+
+if(ASSIMP_FOUND)
+    foreach(arg ${NEED_ASSIMP})
+		target_link_libraries(${arg} ${ASSIMP_LIBRARIES})
+		set_target_properties(${arg} PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE_ALL}")
+    endforeach()
+endif()
+
