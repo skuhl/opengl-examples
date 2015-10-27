@@ -462,7 +462,7 @@ static int viewmat_init_orient_sensor(void)
 
 /** Initialize mouse movement. Or, if we have a VRPN object name we
  * are supposed to be tracking, get ready to use that instead. */
-static void viewmat_init_mouse(float pos[3], float look[3], float up[3])
+static void viewmat_init_mouse(const float pos[3], const float look[3], const float up[3])
 {
 	glutMotionFunc(mousemove_glutMotionFunc);
 	glutMouseFunc(mousemove_glutMouseFunc);
@@ -478,7 +478,7 @@ static void viewmat_init_mouse(float pos[3], float look[3], float up[3])
  *
  * @param pos The position that we want the Oculus HMD to start at.
  */
-static void viewmat_init_hmd_oculus(float pos[3])
+static void viewmat_init_hmd_oculus(const float pos[3])
 {
 #ifdef MISSING_OVR
 	msg(FATAL, "Oculus support is missing: You have not compiled this code against the LibOVR library.\n");
@@ -639,7 +639,7 @@ static void viewmat_init_hmd_oculus(float pos[3])
  * @param look A point the camera is looking at (if mouse movement is used)
  * @param up An up vector for the camera (if mouse movement is used).
  */
-void viewmat_init(float pos[3], float look[3], float up[3])
+void viewmat_init(const float pos[3], const float look[3], const float up[3])
 {
 	const char* controlModeString = getenv("VIEWMAT_CONTROL_MODE");
 
