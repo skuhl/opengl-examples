@@ -8,6 +8,7 @@
  *
  * @author Scott Kuhl
  */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -23,11 +24,6 @@
 #include "dgr.h"
 #include "projmat.h"
 #include "viewmat.h"
-
-#include <assimp/cimport.h>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <assimp/anim.h>
 
 int renderStyle = 2;
 
@@ -461,6 +457,11 @@ int main(int argc, char** argv)
 
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
+	if(modelgeom == NULL)
+	{
+		msg(FATAL, "Unable to load the requested model: %s", modelFilename);
+		exit(EXIT_FAILURE);
+	}
 
 	/* Count the number of kuhl_geometry objects for this model */
 	unsigned int geomCount = kuhl_geometry_count(modelgeom);

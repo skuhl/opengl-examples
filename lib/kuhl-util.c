@@ -3048,7 +3048,7 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
  *
  * @return Returns a kuhl_geometry object that can be later drawn. If
  * the model contains multiple meshes, kuhl_geometry will be a linked
- * list (i.e., geom->next will not be NULL).
+ * list (i.e., geom->next will not be NULL). Returns NULL on error.
  */
 kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDirname,
                                GLuint program, float bbox[6])

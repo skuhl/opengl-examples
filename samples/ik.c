@@ -7,6 +7,7 @@
  *
  * @author Scott Kuhl
  */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -23,6 +24,7 @@
 #include "projmat.h"
 #include "viewmat.h"
 
+static kuhl_fps_state fps_state;
 GLuint fpsLabel = 0;
 float fpsLabelAspectRatio = 0;
 kuhl_geometry labelQuad;
@@ -42,12 +44,6 @@ float bbox[6];
  * FIT_TO_VIEW is not set, this is the location in world
  * coordinates that we want to model's origin to appear at. */
 float placeToPutModel[3] = { 0, 0, 0 };
-/** SketchUp produces files that older versions of ASSIMP think 1 unit
- * is 1 inch. However, all of this software assumes that 1 unit is 1
- * meter. So, we need to convert some models from inches to
- * meters. Newer versions of ASSIMP correctly read the same files and
- * give us units in meters. */
-#define INCHES_TO_METERS 0
 
 #define GLSL_VERT_FILE "assimp.vert"
 #define GLSL_FRAG_FILE "assimp.frag"
@@ -58,7 +54,7 @@ float angles[] = { 10, 15, 20,  // arm 1
 int anglesCount = 6;
 float target[4] = { 0, 4, 0, 1};
 
-/* Called by GLUT whenever a key is pressed. */
+/** Called by GLUT whenever a key is pressed. */
 void keyboard(unsigned char key, int x, int y)
 {
 	switch(key)
@@ -251,7 +247,7 @@ void get_model_matrix(float result[16])
 }
 
 
-/* Get arm matrices given a set of angles. The arm2 matrix already has
+/** Get arm matrices given a set of angles. The arm2 matrix already has
  * the arm1 matrix applied to it. */
 void get_arm_matrices(float arm1[16], float arm2[16], float angles[])
 {
@@ -442,7 +438,6 @@ void effector_target(float target[4])
  * function should not be called directly by the programmer. Instead,
  * we can call glutPostRedisplay() to request that GLUT call display()
  * at some point. */
-static kuhl_fps_state fps_state;
 void display()
 {
 	/* If we are using DGR, send or receive data to keep multiple
@@ -572,7 +567,6 @@ void display()
 		
 		if(dgr_is_enabled() == 0 || dgr_is_master())
 		{
-
 			/* The shape of the frames per second quad depends on the
 			 * aspect ratio of the label texture and the aspect ratio of
 			 * the window (because we are placing the quad in normalized
@@ -602,7 +596,6 @@ void display()
 			kuhl_geometry_draw(&labelQuad); /* Draw the quad */
 			glEnable(GL_DEPTH_TEST);
 			kuhl_errorcheck();
-
 		}
 
 		glUseProgram(0); // stop using a GLSL program.
@@ -726,6 +719,11 @@ int main(int argc, char** argv)
 
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
+	if(modelgeom == NULL)
+	{
+		msg(FATAL, "Unable to load the requested model: %s", modelFilename);
+		exit(EXIT_FAILURE);
+	}
 	init_geometryQuad(&labelQuad, program);
 
 	kuhl_getfps_init(&fps_state);

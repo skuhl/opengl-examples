@@ -286,8 +286,6 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 
 int main(int argc, char** argv)
 {
-	char *modelFilename = "../models/duck/duck.dae";
-
 	/* set up our GLUT window */
 	glutInit(&argc, argv);
 	glutInitWindowSize(512, 512);
@@ -341,7 +339,12 @@ int main(int argc, char** argv)
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	// Load the model from the file
-	modelgeom = kuhl_load_model(modelFilename, NULL, program, bbox);
+	modelgeom = kuhl_load_model("../models/duck/duck.dae", NULL, program, bbox);
+	if(modelgeom == NULL)
+	{
+		msg(FATAL, "Unable to load duck model.");
+		exit(EXIT_FAILURE);
+	}
 	kuhl_bbox_fit(fitMatrix, bbox, 1);
 	init_geometryQuad(&labelQuad, program);
 

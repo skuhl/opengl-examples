@@ -24,6 +24,7 @@
 #include "projmat.h"
 #include "viewmat.h"
 
+static kuhl_fps_state fps_state;
 GLuint fpsLabel = 0;
 float fpsLabelAspectRatio = 0;
 kuhl_geometry labelQuad;
@@ -58,7 +59,7 @@ float placeToPutModel[3] = { 0, 0, 0 };
 #define GLSL_VERT_FILE "assimp.vert"
 #define GLSL_FRAG_FILE "assimp.frag"
 
-/* Called by GLUT whenever a key is pressed. */
+/** Called by GLUT whenever a key is pressed. */
 void keyboard(unsigned char key, int x, int y)
 {
 	switch(key)
@@ -250,11 +251,11 @@ void get_model_matrix(float result[16])
 }
 
 
-/* Called by GLUT whenever the window needs to be redrawn. This
+
+/** Called by GLUT whenever the window needs to be redrawn. This
  * function should not be called directly by the programmer. Instead,
  * we can call glutPostRedisplay() to request that GLUT call display()
  * at some point. */
-static kuhl_fps_state fps_state;
 void display()
 {
 	/* If we are using DGR, send or receive data to keep multiple
@@ -360,7 +361,7 @@ void display()
 		kuhl_errorcheck();
 		kuhl_geometry_draw(modelgeom); /* Draw the model */
 		kuhl_errorcheck();
-		if(showOrigin)
+		if(showOrigin && origingeom != NULL)
 		{
 			/* Save current line width */
 			GLfloat origLineWidth;
@@ -573,9 +574,6 @@ int main(int argc, char** argv)
 
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
-	if(showOrigin)
-		origingeom = kuhl_load_model("../models/origin/origin.obj", NULL, program, NULL);
-	
 	init_geometryQuad(&labelQuad, program);
 
 	kuhl_getfps_init(&fps_state);
