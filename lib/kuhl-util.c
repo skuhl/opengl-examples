@@ -3099,7 +3099,7 @@ kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDir
 #endif // KUHL_UTIL_USE_ASSIMP
 
 
-/* Create a matrix scale+translation matrix which shrinks the model to
+/** Create a matrix scale+translation matrix which shrinks the model to
  * fit into a 1x1x1 box.
  *
  * @param result The resulting transformation matrix.
