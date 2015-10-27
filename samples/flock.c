@@ -33,6 +33,20 @@ GLuint program = 0; // id value for the GLSL program
 kuhl_geometry *modelgeom = NULL;
 float bbox[6], fitMatrix[16];
 
+/** Initial position of the camera. 1.55 is a good approximate
+ * eyeheight in meters.*/
+const float initCamPos[3]  = {0,1.55,0};
+
+/** A point that the camera should initially be looking at. If
+ * fitToView is set, this will also be the position that model will be
+ * translated to. */
+const float initCamLook[3] = {0,0,-5};
+
+/** A vector indicating which direction is up. */
+const float initCamUp[3]   = {0,1,0};
+
+
+
 #define NUM_MODELS 5000
 float positions[NUM_MODELS][3];
 
@@ -66,12 +80,16 @@ void keyboard(unsigned char key, int x, int y)
 
 void get_model_matrix(float result[16], float placeToPutModel[3])
 {
-	/* Get a matrix that moves the model to the correct location. */
-	float moveToLookPoint[16];
-	mat4f_translateVec_new(moveToLookPoint, placeToPutModel);
+	float transMat[16];
 
-	/* Create a single model matrix. */
-	mat4f_mult_mat4f_new(result, moveToLookPoint, fitMatrix);
+	/* Translate the model to the point the camera is looking at. */
+	mat4f_translateVec_new(transMat, initCamLook);
+	mat4f_mult_mat4f_new(result, transMat, fitMatrix);
+
+	// Then translate based on placeToPutModel
+	mat4f_translateVec_new(transMat, placeToPutModel);
+	mat4f_mult_mat4f_new(result, transMat, result);
+	
 }
 
 
@@ -191,9 +209,9 @@ void display()
 			kuhl_errorcheck();
 		}
 
-		if(dgr_is_enabled() == 0 || dgr_is_master())
+		// aspect ratio will be zero when the program starts (and FPS hasn't been computed yet)
+		if((dgr_is_enabled() == 0 || dgr_is_master()) && fpsLabelAspectRatio != 0)
 		{
-
 			/* The shape of the frames per second quad depends on the
 			 * aspect ratio of the label texture and the aspect ratio of
 			 * the window (because we are placing the quad in normalized
@@ -289,6 +307,7 @@ int main(int argc, char** argv)
 	/* set up our GLUT window */
 	glutInit(&argc, argv);
 	glutInitWindowSize(512, 512);
+
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
 #ifdef FREEGLUT
@@ -329,9 +348,6 @@ int main(int argc, char** argv)
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
 
-	float initCamPos[3]  = {0,1.55,2}; // 1.55m is a good approx eyeheight
-	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
-	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
 	viewmat_init(initCamPos, initCamLook, initCamUp);
 
 	// Clear the screen while things might be loading
