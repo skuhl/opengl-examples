@@ -1196,14 +1196,18 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &previousVAO);
 
 	/* Check that there is a valid program and VAO object for us to use. */
-	if(glIsProgram(geom->program) == 0 || glIsVertexArray(geom->vao) == 0)
+	if(glIsProgram(geom->program) == 0)
 	{
-		msg(ERROR, "Program (%d) or vertex array object (%d) were invalid\n",
-		    geom->program, geom->vao);
+		msg(ERROR, "Program (%d) is invalid.\n", geom->program);
 		kuhl_errorcheck();
 		return;
 	}
-
+	else if (glIsVertexArray(geom->vao) == 0)
+	{
+		msg(ERROR, "Vertex array object (%d) is invalid.\n", geom->vao);
+		kuhl_errorcheck();
+		return;
+	}
 	glUseProgram(geom->program);
 	kuhl_errorcheck();
 
@@ -1304,7 +1308,6 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		kuhl_errorcheck();
 	}
-
 	
 	/* If the user provided us with indices, use glDrawElements() to
 	 * draw the geometry. */
@@ -1337,7 +1340,6 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		glBindTexture(GL_TEXTURE_2D, 0);
 		kuhl_errorcheck();
 	}
-
 	
 	/* Indicate in the struct that we have successfully drawn this
 	 * geom once. */
