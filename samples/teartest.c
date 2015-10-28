@@ -142,46 +142,6 @@ void display()
 	glutPostRedisplay();
 }
 
-void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
-{
-	kuhl_geometry_new(geom, prog, 3, // num vertices
-	                  GL_TRIANGLES); // primitive type
-
-	/* The data that we want to draw */
-	GLfloat vertexPositions[] = {0, 0, 0,
-	                             1, 0, 0,
-	                             1, 1, 0};
-	kuhl_geometry_attrib(geom, vertexPositions, // data
-	                     3, // number of components (x,y,z)
-	                     "in_Position", // GLSL variable
-	                     KG_WARN); // warn if attribute is missing in GLSL program?
-
-}
-
-
-/* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
-void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
-{
-	kuhl_geometry_new(geom, prog,
-	                  4, // number of vertices
-	                  GL_TRIANGLES); // type of thing to draw
-
-	/* The data that we want to draw */
-	GLfloat vertexPositions[] = {0, -10, 0,
-	                             1.5, -10, 0,
-	                             1.5,  10, 0,
-	                             0,  10, 0 };
-	kuhl_geometry_attrib(geom, vertexPositions,
-	                     3, // number of components x,y,z
-	                     "in_Position", // GLSL variable
-	                     KG_WARN); // warn if attribute is missing in GLSL program?
-
-	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
-	                       0, 2, 3 }; // indices of second triangle.
-	kuhl_geometry_indices(geom, indexData, 6);
-
-	kuhl_errorcheck();
-}
 
 int main(int argc, char** argv)
 {
@@ -232,10 +192,6 @@ int main(int argc, char** argv)
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);
 
-	/* Create kuhl_geometry structs for the objects that we want to
-	 * draw. */
-	init_geometryTriangle(&triangle, program);
-	init_geometryQuad(&quad, program);
 
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
