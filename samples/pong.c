@@ -523,26 +523,11 @@ void drawPaddle(Paddle paddle, float depth)
 
 int main( int argc, char* argv[] )
 {	
-	glutInit(&argc, argv);
-	glutInitWindowSize(768, 512);
-	glutInitWindowPosition(0, 0);
-#ifdef FREEGLUT
-	glutSetOption(GLUT_MULTISAMPLE, 4); // set msaa samples; default to 4
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
-//	glutInitContextVersion(3,2);
-//	glutInitContextProfile(GLUT_CORE_PROFILE);
-#else
-	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
-#endif
-	glutCreateWindow(argv[0]);
-	glEnable(GL_MULTISAMPLE);
+	/* Initialize GLUT and GLEW */
+	kuhl_ogl_init(&argc, argv, 768, 512, 0,  // don't use core profile!
+	              GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE, 4);
 	glEnable(GL_POINT_SMOOTH);
 	
-	/* Initialize glew */
-	int glew_err = glewInit();
-	if(glew_err != GLEW_OK)
-		fprintf(stderr, "GLEW Error: %s\n", glewGetErrorString(glew_err));
-
 	/* Initialize call backs */
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);

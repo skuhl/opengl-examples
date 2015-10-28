@@ -662,40 +662,12 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 
 int main(int argc, char** argv)
 {
+	/* Initialize GLUT and GLEW */
+	kuhl_ogl_init(&argc, argv, 512, 512, 32,
+	              GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE, 4);
+
 	char *modelFilename    = "../models/cube/cube.obj";
 	char *modelTexturePath = NULL;
-	
-	/* set up our GLUT window */
-	glutInit(&argc, argv);
-	glutInitWindowSize(512, 512);
-	/* Ask GLUT to for a double buffered, full color window that
-	 * includes a depth buffer */
-#ifdef FREEGLUT
-	glutSetOption(GLUT_MULTISAMPLE, 4); // set msaa samples; default to 4
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
-	glutInitContextVersion(3,2);
-	glutInitContextProfile(GLUT_CORE_PROFILE);
-#else
-	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
-#endif
-	glutCreateWindow(argv[0]); // set window title to executable name
-	glEnable(GL_MULTISAMPLE);
-
-	/* Initialize GLEW */
-	glewExperimental = GL_TRUE;
-	GLenum glewError = glewInit();
-	if(glewError != GLEW_OK)
-	{
-		fprintf(stderr, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
-		exit(EXIT_FAILURE);
-	}
-	/* When experimental features are turned on in GLEW, the first
-	 * call to glGetError() or kuhl_errorcheck() may incorrectly
-	 * report an error. So, we call glGetError() to ensure that a
-	 * later call to glGetError() will only see correct errors. For
-	 * details, see:
-	 * http://www.opengl.org/wiki/OpenGL_Loading_Library */
-	glGetError();
 
 	// setup callbacks
 	glutDisplayFunc(display);
