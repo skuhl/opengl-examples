@@ -34,6 +34,16 @@ extern "C" {
 
 #include "list.h"
 #include "msg.h"
+
+
+#ifndef M_PI
+/** M_PI is an approximation of pi. This variable is often available
+ * in C without defining it yourself, but it isn't guaranteed to exist
+ * according to the C standard. For more information, see:
+ * http://c-faq.com/fp/mpi.html */
+#define M_PI 3.14159265358979323846
+#endif
+
 	
 /** Set the values in a 3-component float vector */
 static inline void   vec3f_set(float  v[3], float  a, float  b, float  c)
