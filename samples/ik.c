@@ -565,7 +565,7 @@ void display()
 		end_effector_loc(ealoc, arm2Mat);
 
 		
-		if(dgr_is_enabled() == 0 || dgr_is_master())
+		if((dgr_is_enabled() == 0 || dgr_is_master()) && fpsLabelAspectRatio > 0)
 		{
 			/* The shape of the frames per second quad depends on the
 			 * aspect ratio of the label texture and the aspect ratio of
