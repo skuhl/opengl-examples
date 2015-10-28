@@ -36,6 +36,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/anim.h>
+#include <assimp/version.h>
 #endif
 
 #include "kuhl-util.h"
@@ -3084,6 +3085,7 @@ kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDir
 	vec3f_add_new(ctr, min, max);
 	vec3f_scalarDiv(ctr, 2);
 
+	msg(DEBUG, "%s: Model loaded with assimp version %d.%d", modelFilename, aiGetVersionMajor(), aiGetVersionMinor());
 	/* Print bounding box information to stout */
 	msg(DEBUG, "%s: bbox min: %10.3f %10.3f %10.3f", modelFilename, min[0], min[1], min[2]);
 	msg(DEBUG, "%s: bbox max: %10.3f %10.3f %10.3f", modelFilename, max[0], max[1], max[2]);
