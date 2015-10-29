@@ -795,7 +795,7 @@ static void viewmat_fix_rotation(float orient[16])
 	
 	/* Some objects in the IVS lab need to be rotated to match the
 	 * orientation that we expect. Apply the fix here. */
-	if(strlen(hostname) > 14 && strncmp(hostname, "tcp://141.219.", 14) == 0) // MTU vicon tracker
+	if(vrpn_is_vicon(hostname)) // MTU vicon tracker
 	{
 		/* Note, orient has not been transposed/inverted yet. Doing
 		 * orient*offset will effectively effectively be rotating the
