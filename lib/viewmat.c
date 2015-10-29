@@ -793,17 +793,33 @@ static void viewmat_fix_rotation(float orient[16])
 	if(hostname == NULL)
 		return;
 	
-	/* Currently, the "DK2" object over in the IVS lab is rotated by
-	 * approx 90 degrees. Apply the fix here. */
-	if(strcmp(viewmat_vrpn_obj, "DK2") == 0 &&
-	   strlen(hostname) > 14 && strncmp(hostname, "tcp://141.219.", 14) == 0) // MTU vicon tracker
+	/* Some objects in the IVS lab need to be rotated to match the
+	 * orientation that we expect. Apply the fix here. */
+	if(strlen(hostname) > 14 && strncmp(hostname, "tcp://141.219.", 14) == 0) // MTU vicon tracker
 	{
-		// The tracked object is oriented the wrong way in the IVS lab.
-		float offsetVicon[16];
-		mat4f_identity(offsetVicon);
-		mat4f_rotateAxis_new(offsetVicon, 90, 1,0,0);
-		// orient = orient * offsetVicon
-		mat4f_mult_mat4f_new(orient, orient, offsetVicon);
+		/* Note, orient has not been transposed/inverted yet. Doing
+		 * orient*offset will effectively effectively be rotating the
+		 * camera---not the world. */ 
+		if(strcmp(viewmat_vrpn_obj, "DK2") == 0)
+		{
+			float offsetVicon[16];
+			mat4f_identity(offsetVicon);
+			mat4f_rotateAxis_new(offsetVicon, 90, 1,0,0);
+			mat4f_mult_mat4f_new(orient, orient, offsetVicon);
+		}
+
+		if(strcmp(viewmat_vrpn_obj, "DSight") == 0)
+		{
+			float offsetVicon1[16];
+			mat4f_identity(offsetVicon1);
+			mat4f_rotateAxis_new(offsetVicon1, 90, 1,0,0);
+			float offsetVicon2[16];
+			mat4f_identity(offsetVicon2);
+			mat4f_rotateAxis_new(offsetVicon2, 180, 0,1,0);
+			
+			// orient = orient * offsetVicon1 * offsetVicon2
+			mat4f_mult_mat4f_many(orient, orient, offsetVicon1, offsetVicon2, NULL);
+		}
 	}
 	if(hostname)
 		free(hostname);
