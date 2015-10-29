@@ -78,6 +78,73 @@ int kuhl_errorcheckFileLine(const char *file, int line, const char *func)
 }
 
 
+/** Performs initialization that almost any OpenGL program needs to
+    do. Should be called before arguments are processed.
+
+    @param argcp A pointer to argc.
+
+    @param argv The argv parameter from the program. Used to look for GLUT-related arguments.
+
+    @param width The initial width of the window.
+
+    @param height The initial height of the window.
+
+    @param oglProfile Set to 32 to use the OpenGL 3.2 core
+    profile. Use 0 to not specify a core profile.
+    
+    @param mode The mode parameter to be passed to
+    glutInitiDisplayMode(). Typically is something like: GLUT_DOUBLE |
+    GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE
+ */
+void kuhl_ogl_init(int *argcp, char **argv, int width, int height,
+                   int oglProfile, unsigned int mode, int msaaSamples)
+{
+	/* Set up our GLUT window */
+	glutInit(argcp, argv); /* Checks arguments for GLUT-related parameters (which will be removed from our variables!) */
+	glutInitWindowSize(width, height);
+
+	/* Ask GLUT to for a double buffered, full color window that
+	 * includes a depth buffer */
+#ifdef FREEGLUT
+	if(msaaSamples > 0)
+	{
+		glutSetOption(GLUT_MULTISAMPLE, msaaSamples);
+		mode |= GLUT_MULTISAMPLE; // if msaaSamples > 0, ensure we tell glut to use multisampling
+	}
+	glutInitDisplayMode(mode);
+	if(oglProfile > 0)
+	{
+		glutInitContextVersion(oglProfile/10, oglProfile%10);
+		glutInitContextProfile(GLUT_CORE_PROFILE);
+	}
+#else // Typically we get here if we are on a Mac.
+	if(mode == 32)
+		mode |= GLUT_3_2_CORE_PROFILE;
+	// TODO: Add more modes and verify they work on a Mac.
+
+	glutInitDisplayMode(mode);
+#endif
+	glutCreateWindow(argv[0]); // set window title to executable name
+
+	if(mode &= GL_MULTISAMPLE)
+		glEnable(GL_MULTISAMPLE);
+
+	/* Initialize GLEW */
+	glewExperimental = GL_TRUE;
+	GLenum glewError = glewInit();
+	if(glewError != GLEW_OK)
+	{
+		msg(FATAL, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
+		exit(EXIT_FAILURE);
+	}
+	/* When experimental features are turned on in GLEW, the first
+	 * call to glGetError() or kuhl_errorcheck() may incorrectly
+	 * report an error. So, we call glGetError() to ensure that a
+	 * later call to glGetError() will only see correct errors. For
+	 * details, see:
+	 * http://www.opengl.org/wiki/OpenGL_Loading_Library */
+	glGetError();
+}
 
 
 
