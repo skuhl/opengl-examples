@@ -287,7 +287,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 		}
 		vrpn_Tracker_Remote *tkr = new vrpn_Tracker_Remote(fullname.c_str(), connection);
 		nameToTracker[fullname] = tkr;
-		tkr->register_change_handler((void*) fullname.c_str(), handle_tracker);
+		tkr->register_change_handler((void*) strdup(fullname.c_str()), handle_tracker);
 		kuhl_getfps_init(&fps_state);
 		kalman_initialize(&kalman, 0.1, 0.1);
 	}
