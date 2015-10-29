@@ -96,7 +96,7 @@ extern "C" {
     @return NULL on failure or a string which should eventually be
     free()'d.
  */
-char* vrpn_default_host()
+char* vrpn_default_host(void)
 {
 	/* Try reading VRPN server information from ~/.vrpn-server
 	   
@@ -165,7 +165,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 	vec3f_set(pos, 10000,10000,10000);
 	mat4f_identity(orient);
 #ifdef MISSING_VRPN
-	printf("You are missing VRPN support.\n");
+	msg(ERROR, "You are missing VRPN support.\n");
 	return 0;
 #else
 	if(object == NULL || strlen(object) == 0)
@@ -189,7 +189,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 			hostnamecpp = hostnameInFile;
 		else
 		{
-			msg(ERROR, "Failed to find hostname of VRPN server.\n");
+			msg(FATAL, "Failed to find hostname of VRPN server.\n");
 			exit(EXIT_FAILURE);
 		}
 		
@@ -239,7 +239,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 			 * By default, OpenGL assumes that:
 			 * X = points to the right (while facing screen in the IVS lab)
 			 * Y = up
-			 * Z = points OUT of the screen (i.e., -Z points into the screen in te IVS lab)
+			 * Z = points OUT of the screen (i.e., -Z points into the screen in the IVS lab)
 			 * (right-handed coordinate system)
 			 *
 			 * Below, we convert the position and orientation

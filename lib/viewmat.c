@@ -765,6 +765,7 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
  * correct direction. */
 static void viewmat_fix_rotation(float orient[16])
 {
+	// Fix rotation for a hard-wired orientation sensor.
 	if(viewmat_control_mode == VIEWMAT_CONTROL_ORIENT)
 	{
 		float adjustLeft[16] = { 0, 1, 0, 0,
@@ -784,6 +785,7 @@ static void viewmat_fix_rotation(float orient[16])
 		return;
 	}
 
+	// Fix rotation for VRPN
 	if(viewmat_vrpn_obj == NULL || strlen(viewmat_vrpn_obj) == 0)
 		return;
 
