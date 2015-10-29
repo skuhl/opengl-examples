@@ -900,15 +900,15 @@ static void viewmat_get_vrpn(float viewmatrix[16], int viewportNum)
 	if(viewmat_vrpn_obj == NULL)
 		return;
 			
-	float pos[3], orient[16];
-	vrpn_get(viewmat_vrpn_obj, NULL, pos, orient);
-	viewmat_fix_rotation(orient);	
+	float pos[3] = { 0,0,0 };
+	float rotMat[16], posMat[16];
+	vrpn_get(viewmat_vrpn_obj, NULL, pos, rotMat);
+	mat4f_translate_new(posMat, -pos[0], -pos[1], -pos[2]); // position
+	viewmat_fix_rotation(rotMat);
+	mat4f_transpose(rotMat); /* orientation sensor rotates camera, not world */
 
 	float cyclopsViewMatrix[16];
-	mat4f_copy(cyclopsViewMatrix, orient);
-	float pos4[4] = {pos[0],pos[1],pos[2],1};
-	mat4f_setColumn(viewmatrix, pos4, 3);
-	mat4f_invert(viewmatrix);
+	mat4f_mult_mat4f_new(cyclopsViewmatrix, rotMat, posMat);
 
 	viewmat_get_generic(viewmatrix, cyclopsViewMatrix, viewportNum);
 }
