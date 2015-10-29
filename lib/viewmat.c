@@ -908,7 +908,7 @@ static void viewmat_get_vrpn(float viewmatrix[16], int viewportNum)
 	mat4f_transpose(rotMat); /* orientation sensor rotates camera, not world */
 
 	float cyclopsViewMatrix[16];
-	mat4f_mult_mat4f_new(cyclopsViewmatrix, rotMat, posMat);
+	mat4f_mult_mat4f_new(cyclopsViewMatrix, rotMat, posMat);
 
 	viewmat_get_generic(viewmatrix, cyclopsViewMatrix, viewportNum);
 }
