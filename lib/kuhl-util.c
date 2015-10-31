@@ -36,6 +36,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/anim.h>
+#include <assimp/version.h>
 #endif
 
 #include "kuhl-util.h"
@@ -77,6 +78,73 @@ int kuhl_errorcheckFileLine(const char *file, int line, const char *func)
 }
 
 
+/** Performs initialization that almost any OpenGL program needs to
+    do. Should be called before arguments are processed.
+
+    @param argcp A pointer to argc.
+
+    @param argv The argv parameter from the program. Used to look for GLUT-related arguments.
+
+    @param width The initial width of the window.
+
+    @param height The initial height of the window.
+
+    @param oglProfile Set to 32 to use the OpenGL 3.2 core
+    profile. Use 0 to not specify a core profile.
+    
+    @param mode The mode parameter to be passed to
+    glutInitiDisplayMode(). Typically is something like: GLUT_DOUBLE |
+    GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE
+ */
+void kuhl_ogl_init(int *argcp, char **argv, int width, int height,
+                   int oglProfile, unsigned int mode, int msaaSamples)
+{
+	/* Set up our GLUT window */
+	glutInit(argcp, argv); /* Checks arguments for GLUT-related parameters (which will be removed from our variables!) */
+	glutInitWindowSize(width, height);
+
+	/* Ask GLUT to for a double buffered, full color window that
+	 * includes a depth buffer */
+#ifdef FREEGLUT
+	if(msaaSamples > 0)
+	{
+		glutSetOption(GLUT_MULTISAMPLE, msaaSamples);
+		mode |= GLUT_MULTISAMPLE; // if msaaSamples > 0, ensure we tell glut to use multisampling
+	}
+	glutInitDisplayMode(mode);
+	if(oglProfile > 0)
+	{
+		glutInitContextVersion(oglProfile/10, oglProfile%10);
+		glutInitContextProfile(GLUT_CORE_PROFILE);
+	}
+#else // Typically we get here if we are on a Mac.
+	if(mode == 32)
+		mode |= GLUT_3_2_CORE_PROFILE;
+	// TODO: Add more modes and verify they work on a Mac.
+
+	glutInitDisplayMode(mode);
+#endif
+	glutCreateWindow(argv[0]); // set window title to executable name
+
+	if(mode &= GL_MULTISAMPLE)
+		glEnable(GL_MULTISAMPLE);
+
+	/* Initialize GLEW */
+	glewExperimental = GL_TRUE;
+	GLenum glewError = glewInit();
+	if(glewError != GLEW_OK)
+	{
+		msg(FATAL, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
+		exit(EXIT_FAILURE);
+	}
+	/* When experimental features are turned on in GLEW, the first
+	 * call to glGetError() or kuhl_errorcheck() may incorrectly
+	 * report an error. So, we call glGetError() to ensure that a
+	 * later call to glGetError() will only see correct errors. For
+	 * details, see:
+	 * http://www.opengl.org/wiki/OpenGL_Loading_Library */
+	glGetError();
+}
 
 
 
@@ -1196,14 +1264,18 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &previousVAO);
 
 	/* Check that there is a valid program and VAO object for us to use. */
-	if(glIsProgram(geom->program) == 0 || glIsVertexArray(geom->vao) == 0)
+	if(glIsProgram(geom->program) == 0)
 	{
-		msg(ERROR, "Program (%d) or vertex array object (%d) were invalid\n",
-		    geom->program, geom->vao);
+		msg(ERROR, "Program (%d) is invalid.\n", geom->program);
 		kuhl_errorcheck();
 		return;
 	}
-
+	else if (glIsVertexArray(geom->vao) == 0)
+	{
+		msg(ERROR, "Vertex array object (%d) is invalid.\n", geom->vao);
+		kuhl_errorcheck();
+		return;
+	}
 	glUseProgram(geom->program);
 	kuhl_errorcheck();
 
@@ -1304,7 +1376,6 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		kuhl_errorcheck();
 	}
-
 	
 	/* If the user provided us with indices, use glDrawElements() to
 	 * draw the geometry. */
@@ -1337,7 +1408,6 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		glBindTexture(GL_TEXTURE_2D, 0);
 		kuhl_errorcheck();
 	}
-
 	
 	/* Indicate in the struct that we have successfully drawn this
 	 * geom once. */
@@ -3048,7 +3118,7 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
  *
  * @return Returns a kuhl_geometry object that can be later drawn. If
  * the model contains multiple meshes, kuhl_geometry will be a linked
- * list (i.e., geom->next will not be NULL).
+ * list (i.e., geom->next will not be NULL). Returns NULL on error.
  */
 kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDirname,
                                GLuint program, float bbox[6])
@@ -3082,6 +3152,7 @@ kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDir
 	vec3f_add_new(ctr, min, max);
 	vec3f_scalarDiv(ctr, 2);
 
+	msg(DEBUG, "%s: Model loaded with assimp version %d.%d", modelFilename, aiGetVersionMajor(), aiGetVersionMinor());
 	/* Print bounding box information to stout */
 	msg(DEBUG, "%s: bbox min: %10.3f %10.3f %10.3f", modelFilename, min[0], min[1], min[2]);
 	msg(DEBUG, "%s: bbox max: %10.3f %10.3f %10.3f", modelFilename, max[0], max[1], max[2]);
@@ -3099,7 +3170,7 @@ kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDir
 #endif // KUHL_UTIL_USE_ASSIMP
 
 
-/* Create a matrix scale+translation matrix which shrinks the model to
+/** Create a matrix scale+translation matrix which shrinks the model to
  * fit into a 1x1x1 box.
  *
  * @param result The resulting transformation matrix.

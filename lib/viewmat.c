@@ -462,7 +462,7 @@ static int viewmat_init_orient_sensor(void)
 
 /** Initialize mouse movement. Or, if we have a VRPN object name we
  * are supposed to be tracking, get ready to use that instead. */
-static void viewmat_init_mouse(float pos[3], float look[3], float up[3])
+static void viewmat_init_mouse(const float pos[3], const float look[3], const float up[3])
 {
 	glutMotionFunc(mousemove_glutMotionFunc);
 	glutMouseFunc(mousemove_glutMouseFunc);
@@ -478,7 +478,7 @@ static void viewmat_init_mouse(float pos[3], float look[3], float up[3])
  *
  * @param pos The position that we want the Oculus HMD to start at.
  */
-static void viewmat_init_hmd_oculus(float pos[3])
+static void viewmat_init_hmd_oculus(const float pos[3])
 {
 #ifdef MISSING_OVR
 	msg(FATAL, "Oculus support is missing: You have not compiled this code against the LibOVR library.\n");
@@ -639,7 +639,7 @@ static void viewmat_init_hmd_oculus(float pos[3])
  * @param look A point the camera is looking at (if mouse movement is used)
  * @param up An up vector for the camera (if mouse movement is used).
  */
-void viewmat_init(float pos[3], float look[3], float up[3])
+void viewmat_init(const float pos[3], const float look[3], const float up[3])
 {
 	const char* controlModeString = getenv("VIEWMAT_CONTROL_MODE");
 
@@ -765,6 +765,7 @@ void viewmat_init(float pos[3], float look[3], float up[3])
  * correct direction. */
 static void viewmat_fix_rotation(float orient[16])
 {
+	// Fix rotation for a hard-wired orientation sensor.
 	if(viewmat_control_mode == VIEWMAT_CONTROL_ORIENT)
 	{
 		float adjustLeft[16] = { 0, 1, 0, 0,
@@ -784,6 +785,7 @@ static void viewmat_fix_rotation(float orient[16])
 		return;
 	}
 
+	// Fix rotation for VRPN
 	if(viewmat_vrpn_obj == NULL || strlen(viewmat_vrpn_obj) == 0)
 		return;
 
@@ -791,17 +793,33 @@ static void viewmat_fix_rotation(float orient[16])
 	if(hostname == NULL)
 		return;
 	
-	/* Currently, the "DK2" object over in the IVS lab is rotated by
-	 * approx 90 degrees. Apply the fix here. */
-	if(strcmp(viewmat_vrpn_obj, "DK2") == 0 &&
-	   strlen(hostname) > 14 && strncmp(hostname, "tcp://141.219.", 14) == 0) // MTU vicon tracker
+	/* Some objects in the IVS lab need to be rotated to match the
+	 * orientation that we expect. Apply the fix here. */
+	if(vrpn_is_vicon(hostname)) // MTU vicon tracker
 	{
-		// The tracked object is oriented the wrong way in the IVS lab.
-		float offsetVicon[16];
-		mat4f_identity(offsetVicon);
-		mat4f_rotateAxis_new(offsetVicon, 90, 1,0,0);
-		// orient = orient * offsetVicon
-		mat4f_mult_mat4f_new(orient, orient, offsetVicon);
+		/* Note, orient has not been transposed/inverted yet. Doing
+		 * orient*offset will effectively effectively be rotating the
+		 * camera---not the world. */ 
+		if(strcmp(viewmat_vrpn_obj, "DK2") == 0)
+		{
+			float offsetVicon[16];
+			mat4f_identity(offsetVicon);
+			mat4f_rotateAxis_new(offsetVicon, 90, 1,0,0);
+			mat4f_mult_mat4f_new(orient, orient, offsetVicon);
+		}
+
+		if(strcmp(viewmat_vrpn_obj, "DSight") == 0)
+		{
+			float offsetVicon1[16];
+			mat4f_identity(offsetVicon1);
+			mat4f_rotateAxis_new(offsetVicon1, 90, 1,0,0);
+			float offsetVicon2[16];
+			mat4f_identity(offsetVicon2);
+			mat4f_rotateAxis_new(offsetVicon2, 180, 0,1,0);
+			
+			// orient = orient * offsetVicon1 * offsetVicon2
+			mat4f_mult_mat4f_many(orient, orient, offsetVicon1, offsetVicon2, NULL);
+		}
 	}
 	if(hostname)
 		free(hostname);
@@ -900,15 +918,15 @@ static void viewmat_get_vrpn(float viewmatrix[16], int viewportNum)
 	if(viewmat_vrpn_obj == NULL)
 		return;
 			
-	float pos[3], orient[16];
-	vrpn_get(viewmat_vrpn_obj, NULL, pos, orient);
-	viewmat_fix_rotation(orient);	
+	float pos[3] = { 0,0,0 };
+	float rotMat[16], posMat[16];
+	vrpn_get(viewmat_vrpn_obj, NULL, pos, rotMat);
+	mat4f_translate_new(posMat, -pos[0], -pos[1], -pos[2]); // position
+	viewmat_fix_rotation(rotMat);
+	mat4f_transpose(rotMat); /* orientation sensor rotates camera, not world */
 
 	float cyclopsViewMatrix[16];
-	mat4f_copy(cyclopsViewMatrix, orient);
-	float pos4[4] = {pos[0],pos[1],pos[2],1};
-	mat4f_setColumn(viewmatrix, pos4, 3);
-	mat4f_invert(viewmatrix);
+	mat4f_mult_mat4f_new(cyclopsViewMatrix, rotMat, posMat);
 
 	viewmat_get_generic(viewmatrix, cyclopsViewMatrix, viewportNum);
 }

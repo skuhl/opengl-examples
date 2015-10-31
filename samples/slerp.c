@@ -28,16 +28,28 @@ GLuint program = 0; // id value for the GLSL program
 kuhl_geometry *modelgeom = NULL;
 float bbox[6];
 
-/** Set this variable to 1 to force this program to scale the entire
- * model and translate it so that we can see the entire model. This is
- * a useful setting to use when you are loading a new model that you
- * are unsure about the units and position of the model geometry. */
-#define FIT_TO_VIEW 1
-/** If FIT_TO_VIEW is set, this is the place to put the
- * center of the bottom face of the bounding box. If
- * FIT_TO_VIEW is not set, this is the location in world
- * coordinates that we want to model's origin to appear at. */
-float placeToPutModel[3] = { 0, 0, 0 };
+int fitToView=1;  // was --fit option used?
+
+/** The following variable toggles the display an "origin+axis" marker
+ * which draws a small box at the origin and draws lines of length 1
+ * on each axis. Depending on which matrices are applied to the
+ * marker, the marker will be in object, world, etc coordinates. */
+int showOrigin=0; // was --origin option used?
+
+
+/** Initial position of the camera. 1.55 is a good approximate
+ * eyeheight in meters.*/
+const float initCamPos[3]  = {0,1.55,0};
+
+/** A point that the camera should initially be looking at. If
+ * fitToView is set, this will also be the position that model will be
+ * translated to. */
+const float initCamLook[3] = {0,0,-5};
+
+/** A vector indicating which direction is up. */
+const float initCamUp[3]   = {0,1,0};
+
+
 /** SketchUp produces files that older versions of ASSIMP think 1 unit
  * is 1 inch. However, all of this software assumes that 1 unit is 1
  * meter. So, we need to convert some models from inches to
@@ -95,23 +107,31 @@ void keyboard(unsigned char key, int x, int y)
 void get_model_matrix(float result[16])
 {
 	mat4f_identity(result);
-	if(FIT_TO_VIEW == 0)
-	{
-		printf("WARNING: FIT_TO_VIEW should be set to 1.\n");
-		
-		/* Translate the model to where we were asked to put it */
-		float translate[16];
-		mat4f_translateVec_new(translate, placeToPutModel);
 
-		/* Do inches to meters conversion if we are asked to. */
-		float scale[16];
-		mat4f_identity(scale);
+	if(fitToView == 1) // if --fit option was provided.
+	{
+		float fitMat[16];
+		float transMat[16];
+		
+		/* Get a matrix to scale+translate the model based on the bounding
+		 * box. If the last parameter is 1, the bounding box will sit on
+		 * the XZ plane. If it is set to 0, the bounding box will be
+		 * centered at the specified point. */
+		kuhl_bbox_fit(fitMat, bbox, 1);
+
+		/* Translate the model to the point the camera is looking at. */
+		mat4f_translateVec_new(transMat, initCamLook);
+
+		mat4f_mult_mat4f_new(result, transMat, fitMat);
+	}
+	else  // if NOT fitting to view.
+	{
+		msg(ERROR, "Fit to view must be used for this program to work.");
 		if(INCHES_TO_METERS)
 		{
 			float inchesToMeters=1/39.3701;
-			mat4f_scale_new(scale, inchesToMeters, inchesToMeters, inchesToMeters);
+			mat4f_scale_new(result, inchesToMeters, inchesToMeters, inchesToMeters);
 		}
-		mat4f_mult_mat4f_new(result, translate, scale);
 		return;
 	}
 	float rotateAnimate[16];
@@ -166,24 +186,27 @@ void get_model_matrix(float result[16])
 		mat4f_rotateQuatVec_new(rotateAnimate, interpQuat);
 	}
 	
+	float fitMat[16];
+	float transMat[16];
+	
 	/* Get a matrix to scale+translate the model based on the bounding
 	 * box. If the last parameter is 1, the bounding box will sit on
 	 * the XZ plane. If it is set to 0, the bounding box will be
 	 * centered at the specified point. */
-	float fitMatrix[16];
-	kuhl_bbox_fit(fitMatrix, bbox, 1);
+	kuhl_bbox_fit(fitMat, bbox, 1);
 
-	/* Get a matrix that moves the model to the correct location. */
-	float moveToLookPoint[16];
-	mat4f_translateVec_new(moveToLookPoint, placeToPutModel);
+	/* Translate the model to the point the camera is looking at. */
+	mat4f_translateVec_new(transMat, initCamLook);
 
 	/* Create a single model matrix. */
-	mat4f_mult_mat4f_new(result, rotateAnimate, fitMatrix);
-	mat4f_mult_mat4f_new(result, moveToLookPoint, result);
+	mat4f_mult_mat4f_new(result, rotateAnimate, fitMat);
+	mat4f_mult_mat4f_new(result, transMat, result);
 }
 
 void display()
 {
+	/* If we are using DGR, send or receive data to keep multiple
+	 * processes/computers synchronized. */
 	dgr_update();
 
 	/* Render the scene once for each viewport. Frequently one
@@ -269,6 +292,10 @@ void display()
 
 int main(int argc, char** argv)
 {
+	/* Initialize GLUT and GLEW */
+	kuhl_ogl_init(&argc, argv, 512, 512, 32,
+	              GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE, 4);
+
 	char *modelFilename    = NULL;
 	char *modelTexturePath = NULL;
 	
@@ -291,38 +318,6 @@ int main(int argc, char** argv)
 		exit(1);
 	}
 
-	/* set up our GLUT window */
-	glutInit(&argc, argv);
-	glutInitWindowSize(512, 512);
-	/* Ask GLUT to for a double buffered, full color window that
-	 * includes a depth buffer */
-#ifdef FREEGLUT
-	glutSetOption(GLUT_MULTISAMPLE, 4); // set msaa samples; default to 4
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
-	glutInitContextVersion(3,2);
-	glutInitContextProfile(GLUT_CORE_PROFILE);
-#else
-	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
-#endif
-	glutCreateWindow(argv[0]); // set window title to executable name
-	glEnable(GL_MULTISAMPLE);
-
-	/* Initialize GLEW */
-	glewExperimental = GL_TRUE;
-	GLenum glewError = glewInit();
-	if(glewError != GLEW_OK)
-	{
-		fprintf(stderr, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
-		exit(EXIT_FAILURE);
-	}
-	/* When experimental features are turned on in GLEW, the first
-	 * call to glGetError() or kuhl_errorcheck() may incorrectly
-	 * report an error. So, we call glGetError() to ensure that a
-	 * later call to glGetError() will only see correct errors. For
-	 * details, see:
-	 * http://www.opengl.org/wiki/OpenGL_Loading_Library */
-	glGetError();
-
 	// setup callbacks
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
@@ -334,9 +329,6 @@ int main(int argc, char** argv)
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
 
-	float initCamPos[3]  = {0,1.55,2}; // 1.55m is a good approx eyeheight
-	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
-	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
 	viewmat_init(initCamPos, initCamLook, initCamUp);
 
 	// Clear the screen while things might be loading

@@ -24,13 +24,14 @@
 #include "projmat.h"
 #include "viewmat.h"
 
+static kuhl_fps_state fps_state;
 GLuint fpsLabel = 0;
 float fpsLabelAspectRatio = 0;
 kuhl_geometry labelQuad;
 int renderStyle = 2;
 
 GLuint program = 0; // id value for the GLSL program
-kuhl_geometry *modelgeom = NULL;
+kuhl_geometry *modelgeom  = NULL;
 kuhl_geometry *origingeom = NULL;
 float bbox[6];
 
@@ -43,11 +44,19 @@ int fitToView=0;  // was --fit option used?
 int showOrigin=0; // was --origin option used?
 
 
-/** If fitToView is set, this is the place to put the
- * center of the bottom face of the bounding box. If
- * fitToView is not set, this is the location in world
- * coordinates that we want to model's origin to appear at. */
-float placeToPutModel[3] = { 0, 0, 0 };
+/** Initial position of the camera. 1.55 is a good approximate
+ * eyeheight in meters.*/
+const float initCamPos[3]  = {0,1.55,0};
+
+/** A point that the camera should initially be looking at. If
+ * fitToView is set, this will also be the position that model will be
+ * translated to. */
+const float initCamLook[3] = {0,0,-5};
+
+/** A vector indicating which direction is up. */
+const float initCamUp[3]   = {0,1,0};
+
+
 /** SketchUp produces files that older versions of ASSIMP think 1 unit
  * is 1 inch. However, all of this software assumes that 1 unit is 1
  * meter. So, we need to convert some models from inches to
@@ -58,7 +67,7 @@ float placeToPutModel[3] = { 0, 0, 0 };
 #define GLSL_VERT_FILE "assimp.vert"
 #define GLSL_FRAG_FILE "assimp.frag"
 
-/* Called by GLUT whenever a key is pressed. */
+/** Called by GLUT whenever a key is pressed. */
 void keyboard(unsigned char key, int x, int y)
 {
 	switch(key)
@@ -213,48 +222,45 @@ void keyboard(unsigned char key, int x, int y)
 }
 
 
+/** Gets a model matrix which is appropriate for the model that we have loaded. */
 void get_model_matrix(float result[16])
 {
 	mat4f_identity(result);
-	if(fitToView == 0)
-	{
-		/* Translate the model to where we were asked to put it */
-		float translate[16];
-		mat4f_translateVec_new(translate, placeToPutModel);
 
-		/* Do inches to meters conversion if we are asked to. */
-		float scale[16];
-		mat4f_identity(scale);
+	if(fitToView == 1) // if --fit option was provided.
+	{
+		float fitMat[16];
+		float transMat[16];
+		
+		/* Get a matrix to scale+translate the model based on the bounding
+		 * box. If the last parameter is 1, the bounding box will sit on
+		 * the XZ plane. If it is set to 0, the bounding box will be
+		 * centered at the specified point. */
+		kuhl_bbox_fit(fitMat, bbox, 1);
+
+		/* Translate the model to the point the camera is looking at. */
+		mat4f_translateVec_new(transMat, initCamLook);
+
+		mat4f_mult_mat4f_new(result, transMat, fitMat);
+		return;
+	}
+	else  // if NOT fitting to view.
+	{
 		if(INCHES_TO_METERS)
 		{
 			float inchesToMeters=1/39.3701;
-			mat4f_scale_new(scale, inchesToMeters, inchesToMeters, inchesToMeters);
+			mat4f_scale_new(result, inchesToMeters, inchesToMeters, inchesToMeters);
 		}
-		mat4f_mult_mat4f_new(result, translate, scale);
 		return;
 	}
-	
-	/* Get a matrix to scale+translate the model based on the bounding
-	 * box. If the last parameter is 1, the bounding box will sit on
-	 * the XZ plane. If it is set to 0, the bounding box will be
-	 * centered at the specified point. */
-	float fitMatrix[16];
-	kuhl_bbox_fit(fitMatrix, bbox, 1);
-
-	/* Get a matrix that moves the model to the correct location. */
-	float moveToLookPoint[16];
-	mat4f_translateVec_new(moveToLookPoint, placeToPutModel);
-
-	/* Create a single model matrix. */
-	mat4f_mult_mat4f_new(result, moveToLookPoint, fitMatrix);
 }
 
 
-/* Called by GLUT whenever the window needs to be redrawn. This
+
+/** Called by GLUT whenever the window needs to be redrawn. This
  * function should not be called directly by the programmer. Instead,
  * we can call glutPostRedisplay() to request that GLUT call display()
  * at some point. */
-static kuhl_fps_state fps_state;
 void display()
 {
 	/* If we are using DGR, send or receive data to keep multiple
@@ -360,7 +366,7 @@ void display()
 		kuhl_errorcheck();
 		kuhl_geometry_draw(modelgeom); /* Draw the model */
 		kuhl_errorcheck();
-		if(showOrigin)
+		if(showOrigin && origingeom != NULL)
 		{
 			/* Save current line width */
 			GLfloat origLineWidth;
@@ -480,6 +486,11 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 
 int main(int argc, char** argv)
 {
+	/* Initialize GLUT and GLEW */
+	kuhl_ogl_init(&argc, argv, 512, 512, 32,
+	              GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE, 4);
+	              
+	
 	char *modelFilename    = NULL;
 	char *modelTexturePath = NULL;
 
@@ -518,38 +529,6 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	/* set up our GLUT window */
-	glutInit(&argc, argv);
-	glutInitWindowSize(512, 512);
-
-	/* Ask GLUT to for a double buffered, full color window that
-	 * includes a depth buffer */
-#ifdef FREEGLUT
-	glutSetOption(GLUT_MULTISAMPLE, 4); // set msaa samples; default to 4
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
-	glutInitContextVersion(3,2);
-	glutInitContextProfile(GLUT_CORE_PROFILE);
-#else
-	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
-#endif
-	glutCreateWindow(argv[0]); // set window title to executable name
-	glEnable(GL_MULTISAMPLE);
-
-	/* Initialize GLEW */
-	glewExperimental = GL_TRUE;
-	GLenum glewError = glewInit();
-	if(glewError != GLEW_OK)
-	{
-		fprintf(stderr, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
-		exit(EXIT_FAILURE);
-	}
-	/* When experimental features are turned on in GLEW, the first
-	 * call to glGetError() or kuhl_errorcheck() may incorrectly
-	 * report an error. So, we call glGetError() to ensure that a
-	 * later call to glGetError() will only see correct errors. For
-	 * details, see:
-	 * http://www.opengl.org/wiki/OpenGL_Loading_Library */
-	glGetError();
 
 	// setup callbacks
 	glutDisplayFunc(display);
@@ -562,9 +541,6 @@ int main(int argc, char** argv)
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
 
-	float initCamPos[3]  = {0,1.55,2}; // 1.55m is a good approx eyeheight
-	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
-	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
 	viewmat_init(initCamPos, initCamLook, initCamUp);
 
 	// Clear the screen while things might be loading
@@ -573,9 +549,6 @@ int main(int argc, char** argv)
 
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
-	if(showOrigin)
-		origingeom = kuhl_load_model("../models/origin/origin.obj", NULL, program, NULL);
-	
 	init_geometryQuad(&labelQuad, program);
 
 	kuhl_getfps_init(&fps_state);

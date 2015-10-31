@@ -3,7 +3,8 @@
  * the file named "LICENSE" for a full copy of the license.
  */
 
-/** @file Demonstrates drawing a shaded 3D triangle.
+/** @file Implements a dynamic view frustum where the camera is
+ * controlled by the keyboard.
  *
  * @author Scott Kuhl
  */
@@ -25,9 +26,13 @@
 #include "viewmat.h"
 GLuint program = 0; /**< id value for the GLSL program */
 
-kuhl_geometry triangle;
-kuhl_geometry quad;
+float camPos[3]  = {0,1.5,0}; /**< location of camera, 1.5 m eyeheight */
 
+/** Position of screen in world coordinates:
+ left, right, bottom, top, near, far */
+const float screen[6] = { -2, 2, 0, 4, -1, -100 };
+
+kuhl_geometry *modelgeom = NULL;
 
 /** Called by GLUT whenever a key is pressed. */
 void keyboard(unsigned char key, int x, int y)
@@ -40,14 +45,38 @@ void keyboard(unsigned char key, int x, int y)
 			dgr_exit();
 			exit(EXIT_SUCCESS);
 			break;
-	}
 
+		case 'a': // left
+			camPos[0] -= .2;
+			break;
+		case 'd': // right
+			camPos[0] += .2;
+			break;
+		case 'w': // up
+			camPos[1] += .2;
+			break;
+		case 's': // down
+			camPos[1] -= .2;
+			break;
+		case 'z': // toward screen
+			camPos[2] -= .2;
+			if(screen[4]-camPos[2] > -.2)
+				camPos[2] = .2+screen[4];
+			break;
+		case 'x': // away from screen
+			camPos[2] += .2;
+			break;
+	}
+	printf("camera position: ");
+	vec3f_print(camPos);
+
+	
 	/* Whenever any key is pressed, request that display() get
 	 * called. */ 
 	glutPostRedisplay();
 }
 
-/* Called by GLUT whenever the window needs to be redrawn. This
+/** Called by GLUT whenever the window needs to be redrawn. This
  * function should not be called directly by the programmer. Instead,
  * we can call glutPostRedisplay() to request that GLUT call display()
  * at some point. */
@@ -87,8 +116,18 @@ void display()
 
 		/* Get the view matrix and the projection matrix */
 		float viewMat[16], perspective[16];
-		viewmat_get(viewMat, perspective, viewportID);
+		// Instead of using viewmat_*() functions to get view and
+		// projection matrices, generate our own.
+		// viewmat_get(viewMat, perspective, viewportID);
+		const float camLook[3] = { camPos[0], camPos[1], camPos[2]-1 }; // look straight ahead
+		const float camUp[3] = { 0, 1, 0 };
+		mat4f_lookatVec_new(viewMat, camPos, camLook, camUp);
+		mat4f_frustum_new(perspective,
+		                  screen[0]-camPos[0], screen[1]-camPos[0], // left, right
+		                  screen[2]-camPos[1], screen[3]-camPos[1], // bottom, top
+		                  screen[4]-camPos[2], screen[5]-camPos[2]); // near, far
 
+		
 		/* Calculate an angle to rotate the
 		 * object. glutGet(GLUT_ELAPSED_TIME) is the number of
 		 * milliseconds since glutInit() was called. */
@@ -97,19 +136,12 @@ void display()
 		/* Make sure all computers/processes use the same angle */
 		dgr_setget("angle", &angle, sizeof(GLfloat));
 
-		/* Create a 4x4 rotation matrix based on the angle we computed. */
-		float rotateMat[16];
-		mat4f_rotateAxis_new(rotateMat, angle, 0,1,0);
-
-		/* Create a scale matrix. */
-		float scaleMat[16];
-		mat4f_scale_new(scaleMat, 3, 3, 3);
-
 		/* Combine the scale and rotation matrices into a single model matrix.
 		   modelMat = scaleMat * rotateMat
 		*/
 		float modelMat[16];
-		mat4f_mult_mat4f_new(modelMat, scaleMat, rotateMat);
+		mat4f_rotateAxis_new(modelMat, 90, 0, 1, 0);
+		//mat4f_identity(modelMat);
 
 		/* Construct a modelview matrix: modelview = viewMat * modelMat */
 		float modelview[16];
@@ -131,24 +163,12 @@ void display()
 		                   1, // number of 4x4 float matrices
 		                   0, // transpose
 		                   modelview); // value
-		
-		/* Generate an appropriate normal matrix based on the model view matrix:
-		  normalMat = transpose(inverse(modelview))
-		*/
-		float normalMat[9];
-		mat3f_from_mat4f(normalMat, modelview);
-		mat3f_invert(normalMat);
-		mat3f_transpose(normalMat);
-		glUniformMatrix3fv(kuhl_get_uniform("NormalMat"),
-		                   1, // number of 3x3 float matrices
-		                   0, // transpose
-		                   normalMat); // value
-
+		GLuint renderStyle = 2;
+		glUniform1i(kuhl_get_uniform("renderStyle"), renderStyle);
 		kuhl_errorcheck();
 		/* Draw the geometry using the matrices that we sent to the
 		 * vertex programs immediately above */
-		kuhl_geometry_draw(&triangle);
-		kuhl_geometry_draw(&quad);
+		kuhl_geometry_draw(modelgeom);
 
 		glUseProgram(0); // stop using a GLSL program.
 
@@ -166,65 +186,6 @@ void display()
 	glutPostRedisplay();
 }
 
-void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
-{
-	kuhl_geometry_new(geom, prog, 3, // num vertices
-	                  GL_TRIANGLES); // primitive type
-
-	/* Vertices that we want to form triangles out of. Every 3 numbers
-	 * is a vertex position. Since no indices are provided, every
-	 * three vertex positions form a single triangle.*/
-	GLfloat vertexPositions[] = {0, 0, 0,
-	                             1, 0, 0,
-	                             1, 1, 0};
-	kuhl_geometry_attrib(geom, vertexPositions, // data
-	                     3, // number of components (x,y,z)
-	                     "in_Position", // GLSL variable
-	                     KG_WARN); // warn if attribute is missing in GLSL program?
-
-	/* The normals for each vertex */
-	GLfloat normalData[] = {0, 0, 1,
-	                        0, 0, 1,
-	                        0, 0, 1};
-	kuhl_geometry_attrib(geom, normalData, 3, "in_Normal", KG_WARN);
-}
-
-
-/* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
-void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
-{
-	kuhl_geometry_new(geom, prog,
-	                  4, // number of vertices
-	                  GL_TRIANGLES); // type of thing to draw
-
-	/* Vertices that we want to form triangles out of. Every 3 numbers
-	 * is a vertex position. Below, we provide indices to form
-	 * triangles out of these vertices. */
-	GLfloat vertexPositions[] = {0+1.1, 0, 0,
-	                             1+1.1, 0, 0,
-	                             1+1.1, 1, 0,
-	                             0+1.1, 1, 0 };
-	kuhl_geometry_attrib(geom, vertexPositions,
-	                     3, // number of components x,y,z
-	                     "in_Position", // GLSL variable
-	                     KG_WARN); // warn if attribute is missing in GLSL program?
-
-	/* The normals for each vertex */
-	GLfloat normalData[] = {0, 0, 1,
-	                        0, 0, 1,
-	                        0, 0, 1,
-	                        0, 0, 1};
-	kuhl_geometry_attrib(geom, normalData, 3, "in_Normal", KG_WARN);
-	
-	/* A list of triangles that we want to draw. "0" refers to the
-	 * first vertex in our list of vertices. Every three numbers forms
-	 * a single triangle. */
-	GLuint indexData[] = { 0, 1, 2,  
-	                       0, 2, 3 };
-	kuhl_geometry_indices(geom, indexData, 6);
-
-	kuhl_errorcheck();
-}
 
 int main(int argc, char** argv)
 {
@@ -238,30 +199,22 @@ int main(int argc, char** argv)
 
 	/* Compile and link a GLSL program composed of a vertex shader and
 	 * a fragment shader. */
-	program = kuhl_create_program("triangle-shade.vert", "triangle-shade.frag");
+	program = kuhl_create_program("assimp.vert", "assimp.frag");
+	modelgeom = kuhl_load_model("models/dabrovic-sponza/sponza.obj", NULL, program, NULL);
+	if(modelgeom == 0)
+	{
+		msg(FATAL, "Dabrovic sponza scene is required for this example. If needed, modify the filename of the model in main().");
+		msg(FATAL, "http://graphics.cs.williams.edu/data/meshes.xml");
+		exit(EXIT_FAILURE);
+	}
 
-	/* Use the GLSL program so subsequent calls to glUniform*() send the variable to
-	   the correct program. */
-	glUseProgram(program);
-	kuhl_errorcheck();
-	/* Set the uniform variable in the shader that is named "red" to the value 1. */
-	glUniform1i(kuhl_get_uniform("red"), 1);
-	kuhl_errorcheck();
+
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);
 
-	/* Create kuhl_geometry structs for the objects that we want to
-	 * draw. */
-	init_geometryTriangle(&triangle, program);
-	init_geometryQuad(&quad, program);
-
 	dgr_init();     /* Initialize DGR based on environment variables. */
-	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
-
-	float initCamPos[3]  = {0,0,10}; // location of camera
-	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
-	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
-	viewmat_init(initCamPos, initCamLook, initCamUp);
+	//projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
+	//viewmat_init(camPos, camLook, camUp);
 	
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */

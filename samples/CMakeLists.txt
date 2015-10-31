@@ -11,11 +11,16 @@ cmake_minimum_required(VERSION 2.6)
 # name that contains a main() function.
 ####################################
 # Programs that need ASSIMP
-set(NEED_ASSIMP viewer slerp explode flock ik)
+set(NEED_ASSIMP viewer slerp explode flock ik frustum)
 # Programs that don't rely on ASSIMP
 set(NEED_NOTHING text triangle triangle-color triangle-shade prerend picker teartest texture panorama ogl2-triangle ogl2-slideshow ogl2-texture pong glinfo)
 
 
+# IMPORTANT: If ASSIMP is installed, NEED_NOTHING will link against
+# assimp. This is required because the kuhl_geometry struct changes
+# sizes depending on if assimp is present---and the library and the
+# sample programs must be compiled using the same definition of that
+# struct!
 
 
 # Construct a list of programs that we want to compile based on which libraries are available.
@@ -57,6 +62,9 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 		target_link_libraries(${arg} ${ImageMagick_LIBRARIES})
 	endif()
 	if(ASSIMP_FOUND)
+		# Link to assimp if we found it, even if it isn't needed for
+		# this program. We need to do this because the library will
+		# require assimp even if the program doesn't.
 		target_link_libraries(${arg} ${ASSIMP_LIBRARIES})
 	endif()
 	if(FREETYPE_FOUND)

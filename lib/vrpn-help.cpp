@@ -90,13 +90,23 @@ static void VRPN_CALLBACK handle_tracker(void *name, vrpn_TRACKERCB t)
 
 extern "C" {
 
+/** Returns 1 if we are connecting to the Vicon tracker in the IVS lab.
+ */
+int vrpn_is_vicon(const char *hostname)
+{
+	/* The hostname may or may not have tcp:// in front of it. */
+	if(strstr(hostname, "141.219.") == NULL) // TODO: Find a better way...
+		return 0;
+	return 1;
+}
+	
 /** Returns the default hostname based on the contents of
     "~/.vrpn-server". Returns NULL on failure.
 
     @return NULL on failure or a string which should eventually be
     free()'d.
  */
-char* vrpn_default_host()
+char* vrpn_default_host(void)
 {
 	/* Try reading VRPN server information from ~/.vrpn-server
 	   
@@ -128,7 +138,6 @@ char* vrpn_default_host()
 
 	// msg(DEBUG, "Found in %s: '%s'\n", path, vrpnString);
 	return vrpnString;
-	
 }
 
 
@@ -165,7 +174,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 	vec3f_set(pos, 10000,10000,10000);
 	mat4f_identity(orient);
 #ifdef MISSING_VRPN
-	printf("You are missing VRPN support.\n");
+	msg(ERROR, "You are missing VRPN support.\n");
 	return 0;
 #else
 	if(object == NULL || strlen(object) == 0)
@@ -189,7 +198,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 			hostnamecpp = hostnameInFile;
 		else
 		{
-			msg(ERROR, "Failed to find hostname of VRPN server.\n");
+			msg(FATAL, "Failed to find hostname of VRPN server.\n");
 			exit(EXIT_FAILURE);
 		}
 		
@@ -239,13 +248,13 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 			 * By default, OpenGL assumes that:
 			 * X = points to the right (while facing screen in the IVS lab)
 			 * Y = up
-			 * Z = points OUT of the screen (i.e., -Z points into the screen in te IVS lab)
+			 * Z = points OUT of the screen (i.e., -Z points into the screen in the IVS lab)
 			 * (right-handed coordinate system)
 			 *
 			 * Below, we convert the position and orientation
 			 * information into the OpenGL convention.
 			 */
-			if(strlen(hostnamecpp.c_str()) > 14 && strncmp(hostnamecpp.c_str(), "tcp://141.219.", 14) == 0) // MTU vicon tracker
+			if(vrpn_is_vicon(hostnamecpp.c_str())) // MTU vicon tracker
 			{
 				float viconTransform[16] = { 1,0,0,0,  // column major order!
 				                             0,0,-1,0,
@@ -287,7 +296,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 		}
 		vrpn_Tracker_Remote *tkr = new vrpn_Tracker_Remote(fullname.c_str(), connection);
 		nameToTracker[fullname] = tkr;
-		tkr->register_change_handler((void*) fullname.c_str(), handle_tracker);
+		tkr->register_change_handler((void*) strdup(fullname.c_str()), handle_tracker);
 		kuhl_getfps_init(&fps_state);
 		kalman_initialize(&kalman, 0.1, 0.1);
 	}

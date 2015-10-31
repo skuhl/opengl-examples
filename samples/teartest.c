@@ -124,7 +124,7 @@ void display()
 			glClearColor(.2,.2,.2,0); // set clear color to grey
 		else
 			glClearColor(.3,.4,.4,0); // set clear color to grey
-		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT);
 		glDisable(GL_SCISSOR_TEST);
 		glEnable(GL_DEPTH_TEST); // turn on depth testing
 
@@ -142,80 +142,12 @@ void display()
 	glutPostRedisplay();
 }
 
-void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
-{
-	kuhl_geometry_new(geom, prog, 3, // num vertices
-	                  GL_TRIANGLES); // primitive type
-
-	/* The data that we want to draw */
-	GLfloat vertexPositions[] = {0, 0, 0,
-	                             1, 0, 0,
-	                             1, 1, 0};
-	kuhl_geometry_attrib(geom, vertexPositions, // data
-	                     3, // number of components (x,y,z)
-	                     "in_Position", // GLSL variable
-	                     KG_WARN); // warn if attribute is missing in GLSL program?
-
-}
-
-
-/* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
-void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
-{
-	kuhl_geometry_new(geom, prog,
-	                  4, // number of vertices
-	                  GL_TRIANGLES); // type of thing to draw
-
-	/* The data that we want to draw */
-	GLfloat vertexPositions[] = {0, -10, 0,
-	                             1.5, -10, 0,
-	                             1.5,  10, 0,
-	                             0,  10, 0 };
-	kuhl_geometry_attrib(geom, vertexPositions,
-	                     3, // number of components x,y,z
-	                     "in_Position", // GLSL variable
-	                     KG_WARN); // warn if attribute is missing in GLSL program?
-
-	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
-	                       0, 2, 3 }; // indices of second triangle.
-	kuhl_geometry_indices(geom, indexData, 6);
-
-	kuhl_errorcheck();
-}
 
 int main(int argc, char** argv)
 {
-	/* set up our GLUT window */
-	glutInit(&argc, argv);
-	glutInitWindowSize(512, 512);
-	/* Ask GLUT to for a double buffered, full color window that
-	 * includes a depth buffer */
-#ifdef FREEGLUT
-	glutSetOption(GLUT_MULTISAMPLE, 4); // set msaa samples; default to 4
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
-	glutInitContextVersion(3,2);
-	glutInitContextProfile(GLUT_CORE_PROFILE);
-#else
-	glutInitDisplayMode(GLUT_3_2_CORE_PROFILE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
-#endif
-	glutCreateWindow(argv[0]); // set window title to executable name
-	glEnable(GL_MULTISAMPLE);
-
-	/* Initialize GLEW */
-	glewExperimental = GL_TRUE;
-	GLenum glewError = glewInit();
-	if(glewError != GLEW_OK)
-	{
-		fprintf(stderr, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
-		exit(EXIT_FAILURE);
-	}
-	/* When experimental features are turned on in GLEW, the first
-	 * call to glGetError() or kuhl_errorcheck() may incorrectly
-	 * report an error. So, we call glGetError() to ensure that a
-	 * later call to glGetError() will only see correct errors. For
-	 * details, see:
-	 * http://www.opengl.org/wiki/OpenGL_Loading_Library */
-	glGetError();
+	/* Initialize GLUT and GLEW */
+	kuhl_ogl_init(&argc, argv, 512, 512, 32,
+	              GLUT_DOUBLE | GLUT_RGB, 0);
 
 	// setup callbacks
 	glutDisplayFunc(display);
@@ -232,10 +164,6 @@ int main(int argc, char** argv)
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);
 
-	/* Create kuhl_geometry structs for the objects that we want to
-	 * draw. */
-	init_geometryTriangle(&triangle, program);
-	init_geometryQuad(&quad, program);
 
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */

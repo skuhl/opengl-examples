@@ -218,7 +218,6 @@ endif()
 # Set the preprocessor flags.
 set(PREPROC_DEFINE "MOUSEMOVE_GLUT;${FREETYPE_FOUND_DEFINITION};${ASSIMP_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION};${IMAGEMAGICK_FOUND_DEFINITION};${FREEGLUT_FOUND_DEFINITION}")
 
-
 # Look in lib folder for libraries and header files
 include_directories("lib")
 

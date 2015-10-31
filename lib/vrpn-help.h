@@ -24,8 +24,9 @@ extern "C" {
 #endif
 
 int vrpn_get(const char *object, const char *hostname, float pos[3], float orient[16]);
-char* vrpn_default_host();
-	
+char* vrpn_default_host(void);
+int vrpn_is_vicon(const char *hostname);
+
 #ifdef __cplusplus
 } // end extern "C"
 #endif
