@@ -12,16 +12,46 @@ uniform int HasTex;    // Is there a texture in tex?
 uniform sampler2D tex; // Diffuse texture
 uniform int renderStyle;
 
+/** Calculate diffuse shading. Normal and light direction do not need
+ * to be normalized. */
+float diffuseScalar(vec3 normal, vec3 lightDir, bool frontBackSame)
+{
+	/* Basic equation for diffuse shading */
+	float diffuse = dot(normalize(lightDir), normalize(out_Normal.xyz));
+
+	/* The diffuse value will be negative if the normal is pointing in
+	 * the opposite direction of the light. Set diffuse to 0 in this
+	 * case. Alternatively, we could take the absolute value to light
+	 * the front and back the same way. Either way, diffuse should now
+	 * be a value from 0 to 1. */
+	if(frontBackSame)
+		diffuse = abs(diffuse);
+	else
+		diffuse = clamp(diffuse, 0, 1);
+
+	/* Keep diffuse value in range from .5 to 1 to prevent any object
+	 * from appearing too dark. Note technically part of diffuse
+	 * shading---however, you may like the appearance of this. */
+	diffuse = diffuse/2 + .5;
+
+	return diffuse;
+}
+
 
 void main() 
 {
-	/* Head-lamp style diffuse shading. The camera is at 0,0,0 in
-	 * eye coordinates, so a vector that points at the camera from
-	 * the fragment is (0,0,0)-out_CamCoord = out_CamCoord */
-	vec3 camLook = normalize(-out_CamCoord.xyz);
-	// Generate a diffuse value, clamp it to between 0 and 1,
-	// divide+add to get it to range from .5 to 1.
-	float diffuse = clamp(dot(camLook, normalize(out_Normal.xyz)), 0,1) / 2+.5;
+	/* Get position of light in camera coordinates. When we do
+	 * headlight style rendering, the light will be at the position of
+	 * the camera! */
+	vec3 lightPos = vec3(0,0,0);
+
+	/* Calculate a vector pointing from our current position (in
+	 * camera coordinates) to the light position. */
+	vec3 lightDir = lightPos - out_CamCoord.xyz;
+
+	/* Calculate diffuse shading */
+	float diffuse = diffuseScalar(out_Normal, lightDir, true);
+
 	
 	if(renderStyle == 0)
 	{
