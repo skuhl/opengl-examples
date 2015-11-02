@@ -44,7 +44,7 @@ endif()
 
 # Compile the list of programs.
 foreach(arg ${PROGRAMS_TO_MAKE})
-	if(EXISTS ${arg}.cpp)   # Figure out if the program is a c or cpp file
+	if(EXISTS samples/${arg}.cpp)   # Figure out if the program is a c or cpp file
 		set(SOURCE_FILE ${arg}.cpp)
 	else()
 		set(SOURCE_FILE ${arg}.c)
