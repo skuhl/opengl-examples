@@ -114,7 +114,7 @@ set(GLEW_LIBRARIES ${GLEW_LIBRARY})
 if(GLEW_INCLUDE_DIR AND EXISTS "${GLEW_INCLUDE_DIR}/GL/glew.h")
     file(STRINGS "${GLEW_INCLUDE_DIR}/GL/glew.h" GLEW_VER REGEX "^VERSION .*$")
     if(GLEW_VER)
-       string(REGEX REPLACE "VERSION (.*)$" "\\1" GLEW_VERSION ${GLEW_VER})
+       string(REGEX REPLACE "VERSION (.*)$" "\\1" GLEW_VERSION_STRING ${GLEW_VER})
     endif()
 endif()
 
