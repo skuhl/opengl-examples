@@ -30,6 +30,10 @@
 #ifndef MISSING_VRPN
 
 
+/** A mapping of "tracker" hostname or IP address strings to
+ * vrpn_Connection objects */
+std::map<std::string, vrpn_Connection*> hostToConnection;
+
 /** A mapping of object\@tracker strings to vrpn_Tracker_Remote objects
  * so we can quickly find the appropriate object given an
  * object\@tracker string. */
@@ -276,23 +280,34 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 	}
 	else
 	{
-		/* If this is our first time, create a tracker for the object@hostname string, register the callback handler. */
-		msg(INFO, "Connecting to VRPN server: %s\n", hostnamecpp.c_str());
-		// If we are making a TCP connection and the server isn't up, the following function call may hang for a long time
-		vrpn_Connection *connection = vrpn_get_connection_by_name(hostnamecpp.c_str());
-
-		/* Wait for a bit to see if we can connect. Sometimes we don't immediately connect! */
-		for(int i=0; i<1000 && !connection->connected(); i++)
+		vrpn_Connection *connection = NULL;
+		if(hostToConnection.count(hostnamecpp))
 		{
-		    usleep(1000); // 1000 microseconds * 1000 = up to 1 second of waiting.
-		    connection->mainloop();
+			/* Re-use existing connection */
+			msg(INFO, "Reusing existing connection to VRPN server to track '%s'\n", fullname.c_str());
+			connection = hostToConnection[hostnamecpp];
 		}
-		/* If connection failed, exit. */
-		if(!connection->connected())
+		else
 		{
-		    delete connection;
-		    msg(ERROR, "Failed to connect to tracker: %s\n", fullname.c_str());
-		    return 0;
+			/* If this is our first time, create a tracker for the object@hostname string, register the callback handler. */
+			msg(INFO, "Connecting to VRPN server to track '%s'\n", fullname.c_str());
+			// If we are making a TCP connection and the server isn't up, the following function call may hang for a long time
+			connection = vrpn_get_connection_by_name(hostnamecpp.c_str());
+			
+			/* Wait for a bit to see if we can connect. Sometimes we don't immediately connect! */
+			for(int i=0; i<1000 && !connection->connected(); i++)
+			{
+				usleep(1000); // 1000 microseconds * 1000 = up to 1 second of waiting.
+				connection->mainloop();
+			}
+			/* If connection failed, exit. */
+			if(!connection->connected())
+			{
+				delete connection;
+				msg(ERROR, "Failed to connect to tracker: %s\n", fullname.c_str());
+				return 0;
+			}
+			hostToConnection[hostnamecpp] = connection;
 		}
 		vrpn_Tracker_Remote *tkr = new vrpn_Tracker_Remote(fullname.c_str(), connection);
 		nameToTracker[fullname] = tkr;
