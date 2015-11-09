@@ -7,7 +7,7 @@ parameterCheck "$0" $#
 PATH=.:$PATH
 findExecutable "$1"
 
-
+# export VIEWMAT_VRPN_OBJECT="Tracker0"
 export VIEWMAT_DISPLAY_MODE="hmd"
 "${@}"
 
