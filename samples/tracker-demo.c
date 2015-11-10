@@ -35,6 +35,10 @@ static kuhl_fps_state fps_state;
 GLuint program = 0; // id value for the GLSL program
 kuhl_geometry *modelgeom  = NULL;
 
+kuhl_geometry quad;
+GLuint *label = NULL;
+float *labelAspectRatio = NULL;
+
 /** Initial position of the camera. 1.55 is a good approximate
  * eyeheight in meters.*/
 const float initCamPos[3]  = {0,1.55,5};
@@ -76,9 +80,10 @@ void keyboard(unsigned char key, int x, int y)
 }
 
 /** Draw a object at the location and orientation of the tracked vrpn object */
-void drawCube(const char *vrpnObject, float viewMat[16])
+void drawObject(const int objectIndex, float viewMat[16])
 {
-	float scaleFactor = .5;
+	const char *vrpnObject = global_argv[objectIndex];
+	const float scaleFactor = .5;
 	
 	float pos[4], orient[16];
 	vrpn_get(vrpnObject, NULL, pos, orient);
@@ -96,15 +101,63 @@ void drawCube(const char *vrpnObject, float viewMat[16])
 	                   0, // transpose
 	                   modelview); // value
 
+	glUniform1i(kuhl_get_uniform("renderStyle"), 2);
+
 	kuhl_errorcheck();
 	kuhl_geometry_draw(modelgeom); /* Draw the model */
 	kuhl_errorcheck();
+
+	/* Transparency of labels may not appear right because we aren't
+	 * sorting them by depth. */
+	float labelScale[16];
+	mat4f_scale_new(labelScale, 1, 1/labelAspectRatio[objectIndex-1], 1);
+	mat4f_mult_mat4f_new(modelview, modelview, labelScale);
+	glUniformMatrix4fv(kuhl_get_uniform("ModelView"), 1, 0, modelview);
+	glUniform1i(kuhl_get_uniform("renderStyle"), 1);
+	kuhl_geometry_texture(&quad, label[objectIndex-1], "tex", 1);
+	kuhl_geometry_draw(&quad);
 
 #if 0
 	printf("%s is at\n", vrpnObject);
 	vec3f_print(pos);
 	mat4f_print(orient);
 #endif
+}
+
+
+void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
+{
+	kuhl_geometry_new(geom, prog,
+	                  4, // number of vertices
+	                  GL_TRIANGLES); // type of thing to draw
+
+	/* The data that we want to draw */
+	GLfloat vertexPositions[] = {0, 0, 0,
+	                             1, 0, 0,
+	                             1, 1, 0,
+	                             0, 1, 0 };
+	kuhl_geometry_attrib(geom, vertexPositions,
+	                     3, // number of components x,y,z
+	                     "in_Position", // GLSL variable
+	                     KG_WARN); // warn if attribute is missing in GLSL program?
+
+	GLfloat texcoord[] = {0, 0,
+	                      1, 0,
+	                      1, 1,
+	                      0, 1};
+	kuhl_geometry_attrib(geom, texcoord,
+	                     2, // number of components x,y,z
+	                     "in_TexCoord", // GLSL variable
+	                     KG_WARN); // warn if attribute is missing in GLSL program?
+
+
+	
+
+	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
+	                       0, 2, 3 }; // indices of second triangle.
+	kuhl_geometry_indices(geom, indexData, 6);
+
+	kuhl_errorcheck();
 }
 
 
@@ -177,10 +230,10 @@ void display()
 		                   0, // transpose
 		                   perspective); // value
 
-		glUniform1i(kuhl_get_uniform("renderStyle"), 2);
+
 
 		for(int i=1; i<global_argc; i++)
-			drawCube(global_argv[i], viewMat);
+			drawObject(i, viewMat);
 
 		glUseProgram(0); // stop using a GLSL program.
 
@@ -242,6 +295,19 @@ int main(int argc, char** argv)
 	// Load the model from the file
 	//modelgeom = kuhl_load_model("../models/cube/cube.obj", NULL, program, NULL);
 	modelgeom = kuhl_load_model("../models/origin/origin.obj", NULL, program, NULL);
+
+	init_geometryQuad(&quad, program);
+	label            = malloc(sizeof(GLuint)*argc-1);
+	labelAspectRatio = malloc(sizeof(float)*argc-1);
+	float labelColor[3] = { 1,1,1 };
+	float labelBg[4] = { 0,0,0,.3 };
+	for(int i=1; i<argc; i++)
+	{
+		labelAspectRatio[i-1] = kuhl_make_label(argv[i],
+		                                        &(label[i-1]),
+		                                        labelColor, labelBg, 24);
+	}
+	
 
 	kuhl_getfps_init(&fps_state);
 	
