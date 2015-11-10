@@ -30,20 +30,23 @@
 #ifndef MISSING_VRPN
 
 
-/** A mapping of "tracker" hostname or IP address strings to
- * vrpn_Connection objects */
-std::map<std::string, vrpn_Connection*> hostToConnection;
+/** A struct which we will create for every single tracked
+ * object. These will be in a map so that we can easily find the
+ * struct that corresponds with an object using the "object\@tracker"
+ * notation. */
+typedef struct {
+	vrpn_Tracker_Remote *tracker; /**< The VRPN tracker for this object */
+	vrpn_TRACKERCB data; /**< Data we receive from VRPN (we receive it in the callback */
+	int hasData; /**< Has data been written to? */
+	kuhl_fps_state fps_state; /**< Track how many records per second this object has sent us */
+	kalman_state kalman[7]; /**< Kalman filter state for this object */
+} TrackedObject;
 
 /** A mapping of object\@tracker strings to vrpn_Tracker_Remote objects
  * so we can quickly find the appropriate object given an
  * object\@tracker string. */
-std::map<std::string, vrpn_Tracker_Remote*> nameToTracker;
-/** A mapping of object\@tracker strings to the data that the callback
- * functions store the data into. */
-std::map<std::string, vrpn_TRACKERCB> nameToCallbackData;
+std::map<std::string, TrackedObject*> nameToTracker;
 
-static kuhl_fps_state fps_state;
-static kalman_state kalman;
 
 static void smooth(vrpn_TRACKERCB &t)
 {
@@ -62,9 +65,12 @@ static void smooth(vrpn_TRACKERCB &t)
  * since the last call to the VRPN mainloop() function. */
 static void VRPN_CALLBACK handle_tracker(void *name, vrpn_TRACKERCB t)
 {
-	float fps = kuhl_getfps(&fps_state);
-	if(fps_state.frame == 0)
-		msg(INFO, "VRPN records per second: %.1f\n", fps);
+	std::string s = (char*)name;
+	TrackedObject *tracked = nameToTracker[s];
+		
+	float fps = kuhl_getfps(&(tracked->fps_state));
+	if(tracked->fps_state.frame == 0)
+		msg(INFO, "VRPN records per second: %.1f (%s)\n", fps, s.c_str());
 
 	/* Some tracking systems return large values when a point gets
 	 * lost. If the tracked point seems to be lost, ignore this
@@ -84,10 +90,9 @@ static void VRPN_CALLBACK handle_tracker(void *name, vrpn_TRACKERCB t)
 	if(vec3f_norm(pos) > 100)
 		return;
 	
-	// Store the data in our map so that someone can use it later.
-	std::string s = (char*)name;
-	nameToCallbackData[s] = t;
-	smooth(nameToCallbackData[s]);
+	// Store the data so we can use it later.
+	tracked->data = t;
+	smooth(tracked->data);
 }
 
 #endif
@@ -216,16 +221,18 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 	/* Check if we have a tracker object for that string in our map. */
 	if(nameToTracker.count(fullname))
 	{
+		TrackedObject *to = nameToTracker[fullname];
+		
 		/* If we already have a tracker object, ask it to run the main
 		 * loop (and therefore call our handle_tracker() function if
 		 * there is new data). */
-		nameToTracker[fullname]->mainloop();
+		to->tracker->mainloop();
 
 		/* If our callback has been called, get the callback object
 		 * and get the data out of it. */
-		if(nameToCallbackData.count(fullname))
+		if(to->hasData)
 		{
-			vrpn_TRACKERCB t = nameToCallbackData[fullname];
+			vrpn_TRACKERCB t = to->data;
 			float pos4[4];
 			for(int i=0; i<3; i++)
 				pos4[i] = t.pos[i];
@@ -280,45 +287,43 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 	}
 	else
 	{
-		vrpn_Connection *connection = NULL;
-		if(hostToConnection.count(hostnamecpp))
+		msg(INFO, "Connecting to VRPN server to track '%s'\n", fullname.c_str());
+
+		/* If we are making a TCP connection and the server isn't up,
+		 * the following function call may hang for a long time. Also,
+		 * the documentation indicates that if we call this function
+		 * multiple times with the same hostname, the same connection
+		 * will be returned (and new connections won't be made. */
+		vrpn_Connection *connection = vrpn_get_connection_by_name(hostnamecpp.c_str());
+		/* Wait for a bit to see if we can connect. Sometimes we don't immediately connect! */
+		for(int i=0; i<1000 && !connection->connected(); i++)
 		{
-			/* Re-use existing connection */
-			msg(INFO, "Reusing existing connection to VRPN server to track '%s'\n", fullname.c_str());
-			connection = hostToConnection[hostnamecpp];
+			usleep(1000); // 1000 microseconds * 1000 = up to 1 second of waiting.
+			connection->mainloop();
 		}
-		else
+		/* If connection failed, exit. */
+		if(!connection->connected())
 		{
-			/* If this is our first time, create a tracker for the object@hostname string, register the callback handler. */
-			msg(INFO, "Connecting to VRPN server to track '%s'\n", fullname.c_str());
-			// If we are making a TCP connection and the server isn't up, the following function call may hang for a long time
-			connection = vrpn_get_connection_by_name(hostnamecpp.c_str());
-			
-			/* Wait for a bit to see if we can connect. Sometimes we don't immediately connect! */
-			for(int i=0; i<1000 && !connection->connected(); i++)
-			{
-				usleep(1000); // 1000 microseconds * 1000 = up to 1 second of waiting.
-				connection->mainloop();
-			}
-			/* If connection failed, exit. */
-			if(!connection->connected())
-			{
-				delete connection;
-				msg(ERROR, "Failed to connect to tracker: %s\n", fullname.c_str());
-				return 0;
-			}
-			hostToConnection[hostnamecpp] = connection;
+			delete connection;
+			msg(ERROR, "Failed to connect to tracker: %s\n", fullname.c_str());
+			return 0;
 		}
+
+		/* Create a vrpn_Tracker_Remove object, register the callback function. */
 		vrpn_Tracker_Remote *tkr = new vrpn_Tracker_Remote(fullname.c_str(), connection);
-		nameToTracker[fullname] = tkr;
 		tkr->register_change_handler((void*) strdup(fullname.c_str()), handle_tracker);
-		kuhl_getfps_init(&fps_state);
-		kalman_initialize(&kalman, 0.1, 0.1);
+
+		/* Store all of the information we will need later about this tracked object */
+		TrackedObject *to = (TrackedObject*) malloc(sizeof(TrackedObject));
+		to->tracker = tkr;
+		to->hasData = 0;
+		kuhl_getfps_init(&(to->fps_state));
+		kalman_initialize(&(to->kalman[0]), 0.1, 0.1);
+
+		nameToTracker[fullname] = to;
 	}
 	return 0;
 #endif
 }
 
-
-	
 } // extern C
