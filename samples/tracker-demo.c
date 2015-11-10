@@ -26,7 +26,11 @@
 #include "viewmat.h"
 #include "vrpn-help.h"
 
-char *objectsToDraw[] = { "Tracker0", "Tracker1", "Wand", "HandL", "HandR", "SRVI_Mouse", "SRVI_Keyboard", NULL};
+/** A list of objects to display. NOTE: If you put objects in this
+ * list that are not actually known to the tracker, you will get
+ * warning/error messages---but all of the objects that are known by
+ * the tracker will work fine. */
+char *objectsToDraw[] = { "Tracker0", "Tracker1", "Wand", "HandL", "HandR", "SRVI_Mouse", "SRVI_Keyboard", "DK2", "DSight", "Head", NULL};
 
 
 
