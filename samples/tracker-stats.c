@@ -36,65 +36,86 @@ float variance(float *data, int count)
 	return squared/count;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
 #ifdef MISSING_VRPN
 	printf("This program requires VRPN.");
 	exit(EXIT_FAILURE);
 #else
 
-	printf("Collecting %d samples from tracker...please wait...\n", COUNT);
-	float *data = vrpn_get_raw(VRPN_OBJECT, NULL, COUNT);
+	if(argc != 3)
+	{
+		printf("Usage: %s vrpnObjectName numRecords\n", argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	int numRecords = 0;
+	if(sscanf(argv[2], "%d", &numRecords) != 1)
+	{
+		msg(FATAL, "Error parsing numRecords parameter.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	const char *vrpnObject = argv[1];
+
+	
+	msg(BLUE, "Collecting %d samples from tracker...please wait...\n", numRecords);
+	float *data = vrpn_get_raw(vrpnObject, NULL, numRecords);
+	if(data == NULL)
+	{
+		msg(FATAL, "Failed to collect data.");
+		exit(EXIT_FAILURE);
+	}
 
 	printf("First record (x,y,z, quat): \n");
 	for(int i=0; i<7; i++)
 		printf("%f\n", data[i]);
 
-	float x[COUNT], y[COUNT], z[COUNT];
+	float x[numRecords], y[numRecords], z[numRecords];
 
-	filter(data, COUNT, 0, x);
-	filter(data, COUNT, 1, y);
-	filter(data, COUNT, 2, z);
-	printf("\n--- XYZ ---\n");
+	filter(data, numRecords, 0, x);
+	filter(data, numRecords, 1, y);
+	filter(data, numRecords, 2, z);
+	msg(BLUE, "--- XYZ ---\n");
 	
-	printf("Means: %f %f %f\n",
-	       mean(x, COUNT),
-	       mean(y, COUNT),
-	       mean(z, COUNT));
-	printf("Variance: %20.20f %20.20f %20.20f\n",
-	       variance(x, COUNT),
-	       variance(y, COUNT),
-	       variance(z, COUNT));
+	msg(INFO, "Means: %f %f %f\n",
+	       mean(x, numRecords),
+	       mean(y, numRecords),
+	       mean(z, numRecords));
+	msg(INFO, "Variance: %20.20f %20.20f %20.20f\n",
+	       variance(x, numRecords),
+	       variance(y, numRecords),
+	       variance(z, numRecords));
 
-	printf("  Stddev: %20.20f %20.20f %20.20f\n",
-	       sqrt(variance(x, COUNT)),
-	       sqrt(variance(y, COUNT)),
-	       sqrt(variance(z, COUNT)));
+	msg(INFO, "  Stddev: %20.20f %20.20f %20.20f\n",
+	       sqrt(variance(x, numRecords)),
+	       sqrt(variance(y, numRecords)),
+	       sqrt(variance(z, numRecords)));
 
-	float q1[COUNT], q2[COUNT], q3[COUNT], q4[COUNT];
-	filter(data, COUNT, 3, q1);
-	filter(data, COUNT, 4, q2);
-	filter(data, COUNT, 5, q3);
-	filter(data, COUNT, 6, q4);
+	float q1[numRecords], q2[numRecords], q3[numRecords], q4[numRecords];
+	filter(data, numRecords, 3, q1);
+	filter(data, numRecords, 4, q2);
+	filter(data, numRecords, 5, q3);
+	filter(data, numRecords, 6, q4);
 
-	printf("\n--- Quat ---\n");
+	msg(BLUE, "--- Quat ---\n");
 	
-	printf("Means: %f %f %f %f\n",
-	       mean(q1, COUNT),
-	       mean(q2, COUNT),
-	       mean(q3, COUNT),
-	       mean(q4, COUNT));
+	msg(INFO, "Means: %f %f %f %f\n",
+	       mean(q1, numRecords),
+	       mean(q2, numRecords),
+	       mean(q3, numRecords),
+	       mean(q4, numRecords));
 	
-	printf("Variance: %20.20f %20.20f %20.20f %20.20f\n",
-	       variance(q1, COUNT),
-	       variance(q2, COUNT),
-	       variance(q3, COUNT),
-	       variance(q4, COUNT));
-	printf("   Stddev: %20.20f %20.20f %20.20f %20.20f\n",
-	       sqrt(variance(q1, COUNT)),
-	       sqrt(variance(q2, COUNT)),
-	       sqrt(variance(q3, COUNT)),
-	       sqrt(variance(q4, COUNT)));
+	msg(INFO, "Variance: %20.20f %20.20f %20.20f %20.20f\n",
+	       variance(q1, numRecords),
+	       variance(q2, numRecords),
+	       variance(q3, numRecords),
+	       variance(q4, numRecords));
+	msg(INFO, "   Stddev: %20.20f %20.20f %20.20f %20.20f\n",
+	       sqrt(variance(q1, numRecords)),
+	       sqrt(variance(q2, numRecords)),
+	       sqrt(variance(q3, numRecords)),
+	       sqrt(variance(q4, numRecords)));
 
 	return 0;
 #endif

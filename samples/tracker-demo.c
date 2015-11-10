@@ -26,13 +26,9 @@
 #include "viewmat.h"
 #include "vrpn-help.h"
 
-/** A list of objects to display. NOTE: If you put objects in this
- * list that are not actually known to the tracker, you will get
- * warning/error messages---but all of the objects that are known by
- * the tracker will work fine. */
-char *objectsToDraw[] = { "Tracker0", "Tracker1", "Wand", "HandL", "HandR", "SRVI_Mouse", "SRVI_Keyboard", "DK2", "DSight", "Head", NULL};
 
-
+int global_argc = 0;
+char **global_argv;
 
 static kuhl_fps_state fps_state;
 
@@ -183,12 +179,8 @@ void display()
 
 		glUniform1i(kuhl_get_uniform("renderStyle"), 2);
 
-		int i=0;
-		while(objectsToDraw[i] != NULL)
-		{
-			drawCube(objectsToDraw[i], viewMat);
-			i++;
-		}
+		for(int i=1; i<global_argc; i++)
+			drawCube(global_argv[i], viewMat);
 
 		glUseProgram(0); // stop using a GLSL program.
 
@@ -220,7 +212,16 @@ int main(int argc, char** argv)
 	/* Initialize GLUT and GLEW */
 	kuhl_ogl_init(&argc, argv, 512, 512, 32,
 	              GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE, 4);
-	              
+
+	if(argc == 1)
+	{
+		msg(FATAL, "You didn't provide the name of the object(s) that you want to track.");
+		msg(FATAL, "Usage: %s vrpnObjectName1 vrpnObjectName2 ...");
+		exit(EXIT_FAILURE);
+	}
+	global_argc = argc;
+	global_argv = argv;
+	
 	// setup callbacks
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
