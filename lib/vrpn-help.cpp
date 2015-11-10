@@ -93,6 +93,7 @@ static void VRPN_CALLBACK handle_tracker(void *name, vrpn_TRACKERCB t)
 	// Store the data so we can use it later.
 	tracked->data = t;
 	smooth(tracked->data);
+	tracked->hasData = 1;
 }
 
 #endif
