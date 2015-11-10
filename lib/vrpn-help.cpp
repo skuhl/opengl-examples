@@ -132,11 +132,16 @@ int vrpn_is_vicon(const char *hostname)
 /** Returns the default hostname based on the contents of
     "~/.vrpn-server". Returns NULL on failure.
 
-    @return NULL on failure or a string which should eventually be
-    free()'d.
+    @return NULL on failure or a string. The returned string should
+    NOT be free()'d because the same string will be returned each time
+    we call this function.
  */
 char* vrpn_default_host(void)
 {
+	static char *cachedHostname = NULL;
+	if(cachedHostname != NULL)
+		return cachedHostname;
+
 	/* Try reading VRPN server information from ~/.vrpn-server
 	   
 	   This file should contain a single line that says something like:
@@ -166,9 +171,9 @@ char* vrpn_default_host(void)
 	fclose(f);
 
 	// msg(DEBUG, "Found in %s: '%s'\n", path, vrpnString);
+	cachedHostname = vrpnString;
 	return vrpnString;
 }
-
 
 
 
