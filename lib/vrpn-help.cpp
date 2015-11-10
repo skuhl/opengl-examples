@@ -38,6 +38,7 @@ typedef struct {
 	vrpn_Tracker_Remote *tracker; /**< The VRPN tracker for this object */
 	vrpn_TRACKERCB data; /**< Data we receive from VRPN (we receive it in the callback */
 	int hasData; /**< Has data been written to? */
+	int failCount; /**< Number of times vrpn_get() has been called with hasData == 0 */
 	kuhl_fps_state fps_state; /**< Track how many records per second this object has sent us */
 	kalman_state kalman[7]; /**< Kalman filter state for this object */
 } TrackedObject;
@@ -48,13 +49,27 @@ typedef struct {
 std::map<std::string, TrackedObject*> nameToTracker;
 
 
-static void smooth(vrpn_TRACKERCB &t)
+static void smooth(TrackedObject *tracked)
 {
-#if 0
-	// TODO: We need to use the times returned by VRPN, not our own time.
-	double smoothed = kalman_estimate(&kalman, t.pos[0]);
+#if 1
+	long microseconds = (tracked->data.msg_time.tv_sec* 1000000L) + tracked->data.msg_time.tv_usec;
+	/* Smooth position */
+	for(int i=0; i<3; i++)
+	{
+		tracked->data.pos[i] = kalman_estimate(&(tracked->kalman[i]),
+											   tracked->data.pos[i],
+											   microseconds);
+	}
+
+	/* Smooth orientation */
+	for(int i=0; i<4; i++)
+	{
+		tracked->data.quat[i] = kalman_estimate(&(tracked->kalman[3+i]),
+												tracked->data.quat[i],
+												microseconds);
+	}
+	
 	// printf("%ld, %lf, %lf\n", kuhl_milliseconds(), t.pos[0], smoothed);
-	t.pos[0] = smoothed;
 #endif
 }
 
@@ -75,8 +90,10 @@ static void VRPN_CALLBACK handle_tracker(void *name, vrpn_TRACKERCB t)
 	/* Some tracking systems return large values when a point gets
 	 * lost. If the tracked point seems to be lost, ignore this
 	 * update. */
-	float pos[3];
+	float pos[3], quat[4];
 	vec3f_set(pos, t.pos[0], t.pos[1], t.pos[2]);
+	vec4f_set(quat, t.quat[0], t.quat[1], t.quat[2], t.quat[3]);
+
 	
 	long microseconds = (t.msg_time.tv_sec* 1000000L) + t.msg_time.tv_usec;
 
@@ -85,6 +102,8 @@ static void VRPN_CALLBACK handle_tracker(void *name, vrpn_TRACKERCB t)
 		printf("Current time %ld; VRPN record time: %ld\n", kuhl_microseconds(), microseconds);
 		printf("Received position from vrpn: ");
 		vec3f_print(pos);
+		printf("Received quat from vrpn: ");
+		vec4f_print(quat);
 	}
 	
 	if(vec3f_norm(pos) > 100)
@@ -92,7 +111,7 @@ static void VRPN_CALLBACK handle_tracker(void *name, vrpn_TRACKERCB t)
 	
 	// Store the data so we can use it later.
 	tracked->data = t;
-	smooth(tracked->data);
+	smooth(tracked);
 	tracked->hasData = 1;
 }
 
@@ -211,7 +230,6 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 			msg(FATAL, "Failed to find hostname of VRPN server.\n");
 			exit(EXIT_FAILURE);
 		}
-		
 	}
 	else
 		hostnamecpp = hostname;
@@ -229,61 +247,82 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 		 * there is new data). */
 		to->tracker->mainloop();
 
-		/* If our callback has been called, get the callback object
-		 * and get the data out of it. */
-		if(to->hasData)
+		if(to->hasData == 0)
 		{
-			vrpn_TRACKERCB t = to->data;
-			float pos4[4];
-			for(int i=0; i<3; i++)
-				pos4[i] = t.pos[i];
-			pos4[3]=1;
+			const static int maxmessages = 4;  /** How many times should error messages be displayed */
+			const static int messagemod = 500; /** How many times does vrpn_get() get called before message is printed */
 
-			double orientd[16];
-			// Convert quaternion into orientation matrix.
-			q_to_ogl_matrix(orientd, t.quat);
-			for(int i=0; i<16; i++)
-				orient[i] = (float) orientd[i];
+			if(to->failCount >= maxmessages*messagemod)
+				return 0;
+			
+			to->failCount++;
+			if(to->failCount % messagemod == 0)
+			{
+				msg(WARNING, "VRPN has not received any data for %s", fullname.c_str());
+				msg(WARNING, "As a result, you may see VRPN messages about receiving no response from server.");
+				if(to->failCount == messagemod*maxmessages)
+					msg(WARNING, "This is your last message about %s", fullname.c_str());
+			}
 
-			/* VICON in the MTU IVS lab is typically calibrated so that:
-			 * X = points to the right (while facing screen)
-			 * Y = points into the screen
-			 * Z = up
-			 * (left-handed coordinate system)
-			 *
-			 * PPT is typically calibrated so that:
-			 * X = the points to the wall that has two closets at both corners
-			 * Y = up
-			 * Z = points to the door
-			 * (right-handed coordinate system)
-			 *
-			 * By default, OpenGL assumes that:
-			 * X = points to the right (while facing screen in the IVS lab)
-			 * Y = up
-			 * Z = points OUT of the screen (i.e., -Z points into the screen in the IVS lab)
-			 * (right-handed coordinate system)
-			 *
-			 * Below, we convert the position and orientation
-			 * information into the OpenGL convention.
-			 */
-			if(vrpn_is_vicon(hostnamecpp.c_str())) // MTU vicon tracker
-			{
-				float viconTransform[16] = { 1,0,0,0,  // column major order!
-				                             0,0,-1,0,
-				                             0,1,0,0,
-				                             0,0,0,1 };
-				mat4f_mult_mat4f_new(orient, viconTransform, orient);
-				mat4f_mult_vec4f_new(pos4, viconTransform, pos4);
-				vec3f_copy(pos,pos4);
-				return 1; // we successfully collected some data
-			}
-			else // Non-Vicon tracker
-			{
-				/* Don't transform other tracking systems */
-				// orient is already filled in
-				vec3f_copy(pos, pos4);
-				return 1; // we successfully collected some data
-			}
+			if(to->failCount < 500)
+				return 1; /* Pretend things are OK for a bit... */
+			return 0;
+		}
+
+		/* If we get to here, to->hasData indicates that the VRPN callback
+		 * has been called at least once and we have therefore received some data. */
+		to->failCount = 0;
+		
+		vrpn_TRACKERCB t = to->data;
+		float pos4[4];
+		for(int i=0; i<3; i++)
+			pos4[i] = t.pos[i];
+		pos4[3]=1;
+
+		double orientd[16];
+		// Convert quaternion into orientation matrix.
+		q_to_ogl_matrix(orientd, t.quat);
+		for(int i=0; i<16; i++)
+			orient[i] = (float) orientd[i];
+
+		/* VICON in the MTU IVS lab is typically calibrated so that:
+		 * X = points to the right (while facing screen)
+		 * Y = points into the screen
+		 * Z = up
+		 * (left-handed coordinate system)
+		 *
+		 * PPT is typically calibrated so that:
+		 * X = the points to the wall that has two closets at both corners
+		 * Y = up
+		 * Z = points to the door
+		 * (right-handed coordinate system)
+		 *
+		 * By default, OpenGL assumes that:
+		 * X = points to the right (while facing screen in the IVS lab)
+		 * Y = up
+		 * Z = points OUT of the screen (i.e., -Z points into the screen in the IVS lab)
+		 * (right-handed coordinate system)
+		 *
+		 * Below, we convert the position and orientation
+		 * information into the OpenGL convention.
+		 */
+		if(vrpn_is_vicon(hostnamecpp.c_str())) // MTU vicon tracker
+		{
+			float viconTransform[16] = { 1,0,0,0,  // column major order!
+										 0,0,-1,0,
+										 0,1,0,0,
+										 0,0,0,1 };
+			mat4f_mult_mat4f_new(orient, viconTransform, orient);
+			mat4f_mult_vec4f_new(pos4, viconTransform, pos4);
+			vec3f_copy(pos,pos4);
+			return 1; // we successfully collected some data
+		}
+		else // Non-Vicon tracker
+		{
+			/* Don't transform other tracking systems */
+			// orient is already filled in
+			vec3f_copy(pos, pos4);
+			return 1; // we successfully collected some data
 		}
 	}
 	else
@@ -318,13 +357,78 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 		TrackedObject *to = (TrackedObject*) malloc(sizeof(TrackedObject));
 		to->tracker = tkr;
 		to->hasData = 0;
+		to->failCount = 0;
 		kuhl_getfps_init(&(to->fps_state));
-		kalman_initialize(&(to->kalman[0]), 0.1, 0.1);
 
+		/* Initialize kalman filter */
+		for(int i=0; i<3; i++) /* position */
+			kalman_initialize(&(to->kalman[i]), 0.00004, 0.01);
+		for(int i=3; i<7; i++) /* orientation */
+			kalman_initialize(&(to->kalman[i]), 0.0001, 0.01);
+		
 		nameToTracker[fullname] = to;
 	}
 	return 0;
+
 #endif
 }
+
+float* vrpn_get_raw(const char *object, const char *hostname, int count)
+{
+#ifdef MISSING_VRPN
+	msg(ERROR, "You are missing VRPN support.\n");
+	return 0;
+#else
+
+	/* Make sure we are connected */
+	float pos[4], orient[16];
+	vrpn_get(object, hostname, pos, orient);
+
+	/* Construct an object@hostname string. */
+	std::string hostnamecpp;
+	std::string objectcpp;
+	if(hostname == NULL)
+	{
+		char *hostnameInFile = vrpn_default_host();
+		if(hostnameInFile)
+			hostnamecpp = hostnameInFile;
+		else
+		{
+			msg(FATAL, "Failed to find hostname of VRPN server.\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+	else
+		hostnamecpp = hostname;
+
+	objectcpp = object;
+	std::string fullname = objectcpp + "@" + hostnamecpp;
+	TrackedObject *tracked = nameToTracker[fullname.c_str()];
+
+	/* Disable kalman filtering */
+	for(int i = 0; i<7; i++)
+		tracked->kalman[i].isEnabled = 0;
+	
+	float *data = (float*) malloc(sizeof(float)*7*count);
+
+	for(int i=0; i<count; i++)
+	{
+		while(tracked->hasData == 0)
+			tracked->tracker->mainloop();
+		tracked->hasData = 0;
+
+		data[i*7+0] = tracked->data.pos[0];
+		data[i*7+1] = tracked->data.pos[1];
+		data[i*7+2] = tracked->data.pos[2];
+		data[i*7+3] = tracked->data.quat[0];
+		data[i*7+4] = tracked->data.quat[1];
+		data[i*7+5] = tracked->data.quat[2];
+		data[i*7+6] = tracked->data.quat[3];
+	}
+	return data;
+#endif
+}
+	
+
 
 } // extern C
