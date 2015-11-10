@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "vrpn-help.h"
 #include "msg.h"
 #include "kuhl-util.h"
@@ -39,7 +40,7 @@ int main(void)
 {
 #ifdef MISSING_VRPN
 	printf("This program requires VRPN.");
-	exit(EXIT_FAILURE)
+	exit(EXIT_FAILURE);
 #else
 
 	printf("Collecting %d samples from tracker...please wait...\n", COUNT);
