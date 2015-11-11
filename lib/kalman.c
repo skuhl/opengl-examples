@@ -169,14 +169,16 @@ void kalman_initialize(kalman_state * state, float sigma_meas, float qScale)
 	   where we are handling position, velocity, and
 	   acceleration. However, we can scale this matrix to indicate how
 	   confident we are in our model. Setting it to 0 indicates a
-	   belief that our model is perfect. Making this value will cause
-	   the filter to better track large jumps in data.
+	   belief that our model is perfect. Making this value large will
+	   cause the filter be willing to accept and follow large jumps in
+	   the data.
 	
-	   In the case of a tracking, the user's movements is noise because they
-	   will be moving in complex and unpredictable ways which will not fit our
-	   model.  If we are assuming position is changing due to velocity and
-	   velocity is changing due to acceleration, and acceleration is fixed,
-	   errors in acceleration will occur.
+	   In the case of a tracking, the user's movements is noise
+	   because they will be moving in complex and unpredictable ways
+	   which will not fit our model.  If we are assuming position is
+	   changing due to velocity and velocity is changing due to
+	   acceleration, and acceleration is fixed, errors in acceleration
+	   will occur.
 	*/
 	state->qScale = qScale;
 	

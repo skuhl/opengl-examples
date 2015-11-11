@@ -79,18 +79,18 @@ int main(int argc, char *argv[])
 	msg(BLUE, "--- XYZ ---\n");
 	
 	msg(INFO, "Means: %f %f %f\n",
-	       mean(x, numRecords),
-	       mean(y, numRecords),
-	       mean(z, numRecords));
+	    mean(x, numRecords),
+	    mean(y, numRecords),
+	    mean(z, numRecords));
 	msg(INFO, "Variance: %20.20f %20.20f %20.20f\n",
-	       variance(x, numRecords),
-	       variance(y, numRecords),
-	       variance(z, numRecords));
+	    variance(x, numRecords),
+	    variance(y, numRecords),
+	    variance(z, numRecords));
 
 	msg(INFO, "  Stddev: %20.20f %20.20f %20.20f\n",
-	       sqrt(variance(x, numRecords)),
-	       sqrt(variance(y, numRecords)),
-	       sqrt(variance(z, numRecords)));
+	    sqrt(variance(x, numRecords)),
+	    sqrt(variance(y, numRecords)),
+	    sqrt(variance(z, numRecords)));
 
 	float q1[numRecords], q2[numRecords], q3[numRecords], q4[numRecords];
 	filter(data, numRecords, 3, q1);
@@ -101,22 +101,24 @@ int main(int argc, char *argv[])
 	msg(BLUE, "--- Quat ---\n");
 	
 	msg(INFO, "Means: %f %f %f %f\n",
-	       mean(q1, numRecords),
-	       mean(q2, numRecords),
-	       mean(q3, numRecords),
-	       mean(q4, numRecords));
+	    mean(q1, numRecords),
+	    mean(q2, numRecords),
+	    mean(q3, numRecords),
+	    mean(q4, numRecords));
 	
 	msg(INFO, "Variance: %20.20f %20.20f %20.20f %20.20f\n",
-	       variance(q1, numRecords),
-	       variance(q2, numRecords),
-	       variance(q3, numRecords),
-	       variance(q4, numRecords));
+	    variance(q1, numRecords),
+	    variance(q2, numRecords),
+	    variance(q3, numRecords),
+	    variance(q4, numRecords));
 	msg(INFO, "   Stddev: %20.20f %20.20f %20.20f %20.20f\n",
-	       sqrt(variance(q1, numRecords)),
-	       sqrt(variance(q2, numRecords)),
-	       sqrt(variance(q3, numRecords)),
-	       sqrt(variance(q4, numRecords)));
+	    sqrt(variance(q1, numRecords)),
+	    sqrt(variance(q2, numRecords)),
+	    sqrt(variance(q3, numRecords)),
+	    sqrt(variance(q4, numRecords)));
 
+	free(data);
+	
 	return 0;
 #endif
 }
