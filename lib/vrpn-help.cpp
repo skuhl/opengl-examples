@@ -157,7 +157,7 @@ static int vrpn_connect(const char *fullname)
 	if(!connection->connected())
 	{
 		delete connection;
-		msg(ERROR, "Failed to connect to tracker: %s\n", fullname);
+		msg(MSG_ERROR, "Failed to connect to tracker: %s\n", fullname);
 		return 0;
 	}
 
@@ -425,7 +425,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 	vec3f_set(pos, 10000,10000,10000);
 	mat4f_identity(orient);
 #ifdef MISSING_VRPN
-	msg(ERROR, "You are missing VRPN support.\n");
+	msg(MSG_ERROR, "You are missing VRPN support.\n");
 	return 0;
 #else
 
@@ -462,7 +462,7 @@ int vrpn_get(const char *object, const char *hostname, float pos[3], float orien
 float* vrpn_get_raw(const char *object, const char *hostname, int count)
 {
 #ifdef MISSING_VRPN
-	msg(ERROR, "You are missing VRPN support.\n");
+	msg(MSG_ERROR, "You are missing VRPN support.\n");
 	return 0;
 #else
 

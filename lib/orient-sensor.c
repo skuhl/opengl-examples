@@ -178,7 +178,7 @@ static void orient_sensor_get_bno055(OrientSensorState *state, float quaternion[
 		{
 			/* If we didn't find the bytes, something more serious may
 			 * have went wrong. */
-			msg(ERROR, "Failed to resynchronize to orientation sensor. Trying to reconnect.");
+			msg(MSG_ERROR, "Failed to resynchronize to orientation sensor. Trying to reconnect.");
 			serial_close(state->fd);
 			*state = orient_sensor_init(state->deviceFile, state->type);
 			serial_read(state->fd, temp, RECORD_SIZE, SERIAL_CONSUME);
@@ -206,7 +206,7 @@ static void orient_sensor_get_bno055(OrientSensorState *state, float quaternion[
 		calibrationMessage = 1000;
 		
 		if(sys == 0)
-			msg(ERROR, "Sensor is uncalibrated.");
+			msg(MSG_ERROR, "Sensor is uncalibrated.");
 		else if (sys == 1)
 			msg(WARNING, "Sensor calibration is poor.");
 

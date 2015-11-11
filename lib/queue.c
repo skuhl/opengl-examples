@@ -107,7 +107,7 @@ queue* queue_new(int capacity, int itemSize)
 	{
 		if(l != NULL) free(l);
 		if(q != NULL) free(q);
-		msg(ERROR, "Failed to allocate queue");
+		msg(MSG_ERROR, "Failed to allocate queue");
 		return NULL;
 	}
 	q->l = l;
@@ -140,19 +140,19 @@ int queue_reset(queue *q, int capacity, int itemSize)
 
 	if(q == NULL)
 	{
-		msg(ERROR, "Failed to reset a queue because it is NULL");
+		msg(MSG_ERROR, "Failed to reset a queue because it is NULL");
 		return 0;
 	}
 
 	if(q->l == NULL)
 	{
-		msg(ERROR, "The queue does not have a valid list.");
+		msg(MSG_ERROR, "The queue does not have a valid list.");
 		return 0;
 	}
 
 	if(list_reset(q->l, capacity, itemSize, NULL) == 0)
 	{
-		msg(ERROR, "Failed to set up a list for the queue.");
+		msg(MSG_ERROR, "Failed to set up a list for the queue.");
 		return 0;
 	}
 	q->read = -1;
@@ -196,7 +196,7 @@ int queue_add(queue *q, void *item)
 
 	if(item == NULL)
 	{
-		msg(ERROR, "The pointer to the item to add to the queue was NULL.");
+		msg(MSG_ERROR, "The pointer to the item to add to the queue was NULL.");
 		return 0;
 	}
 
@@ -214,7 +214,7 @@ int queue_add(queue *q, void *item)
 	/* Try adding item into the appropriate index */
 	if(list_set(q->l, q->write, item) == 0)
 	{
-		msg(ERROR, "Failed to add item into he queue.");
+		msg(MSG_ERROR, "Failed to add item into he queue.");
 		return 0;
 	}
 
@@ -249,7 +249,7 @@ int queue_remove(queue *q, void *result)
 
 	if(queue_peek(q, result) == 0)
 	{
-		msg(ERROR, "Failed to remove an item from the queue because we couldn't read an item from it.");
+		msg(MSG_ERROR, "Failed to remove an item from the queue because we couldn't read an item from it.");
 		return 0;
 	}
 

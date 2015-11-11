@@ -70,7 +70,7 @@ int kuhl_errorcheckFileLine(const char *file, int line, const char *func)
 	GLenum errCode = glGetError();
 	if(errCode != GL_NO_ERROR)
 	{
-		msg_details(ERROR, file, line, func,
+		msg_details(MSG_ERROR, file, line, func,
 		            "OpenGL error '%s' occurred before %s:%d",  gluErrorString(errCode), file, line);
 		return 1;
 	}
@@ -323,7 +323,7 @@ GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename)
 {
 	if(vertexFilename == NULL || fragFilename == NULL)
 	{
-		msg(ERROR, "One or more of the parameters were NULL\n");
+		msg(MSG_ERROR, "One or more of the parameters were NULL\n");
 		return 0;
 	}
 
@@ -405,7 +405,7 @@ GLint kuhl_get_uniform(const char *uniformName)
 	kuhl_errorcheck();
 	if(uniformName == NULL || strlen(uniformName) == 0)
 	{
-		msg(ERROR, "You asked for the location of an uniform name, but your name was an empty string or a NULL pointer.\n");
+		msg(MSG_ERROR, "You asked for the location of an uniform name, but your name was an empty string or a NULL pointer.\n");
 		return -1;
 	}
 
@@ -413,13 +413,13 @@ GLint kuhl_get_uniform(const char *uniformName)
 	glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
 	if(currentProgram == 0)
 	{
-		msg(ERROR, "Can't get the uniform location of %s because no GLSL program is currently being used.\n", uniformName);
+		msg(MSG_ERROR, "Can't get the uniform location of %s because no GLSL program is currently being used.\n", uniformName);
 		return -1;
 	}
 	
 	if(!glIsProgram(currentProgram))
 	{
-		msg(ERROR, "The current active program (%d) is not a valid GLSL program.\n", currentProgram);
+		msg(MSG_ERROR, "The current active program (%d) is not a valid GLSL program.\n", currentProgram);
 		return -1;
 	}
 
@@ -428,12 +428,12 @@ GLint kuhl_get_uniform(const char *uniformName)
 	kuhl_errorcheck();
 	if(loc == -1 && missingUniformCount < 50)
 	{
-		msg(ERROR, "Uniform variable '%s' is missing or inactive in your GLSL program.\n", uniformName);
+		msg(MSG_ERROR, "Uniform variable '%s' is missing or inactive in your GLSL program.\n", uniformName);
 		missingUniformCount++;
 		if(missingUniformCount == 50)
 		{
-			msg(ERROR, "Hiding any additional error messages related to missing/inactive uniform variables.\n");
-			msg(ERROR, "Remember that the GLSL variables that do not affect the appearance of your program will be set to inactive by the GLSL compiler.\n");
+			msg(MSG_ERROR, "Hiding any additional error messages related to missing/inactive uniform variables.\n");
+			msg(MSG_ERROR, "Remember that the GLSL variables that do not affect the appearance of your program will be set to inactive by the GLSL compiler.\n");
 		}
 	}
 	return loc;
@@ -456,7 +456,7 @@ GLint kuhl_get_attribute(GLuint program, const char *attributeName)
 {
 	if(attributeName == NULL || strlen(attributeName) == 0)
 	{
-		msg(ERROR, "You asked for the location of an attribute name in program %d, but your name was an empty string or a NULL pointer.\n", program);
+		msg(MSG_ERROR, "You asked for the location of an attribute name in program %d, but your name was an empty string or a NULL pointer.\n", program);
 	}
 
 	if(!glIsProgram(program))
@@ -469,14 +469,14 @@ GLint kuhl_get_attribute(GLuint program, const char *attributeName)
 	glGetProgramiv(program, GL_LINK_STATUS, &linkStatus);
 	if(linkStatus == GL_FALSE)
 	{
-		msg(ERROR, "Cannot get attribute '%s' from program %d because the program is not linked.\n", attributeName, program);
+		msg(MSG_ERROR, "Cannot get attribute '%s' from program %d because the program is not linked.\n", attributeName, program);
 	}
 	
 	GLint loc = glGetAttribLocation(program, attributeName);
 	kuhl_errorcheck();
 	if(loc == -1)
 	{
-		msg(ERROR, "Cannot get attribute '%s' from program %d because it is missing or inactive.\n", attributeName, program);
+		msg(MSG_ERROR, "Cannot get attribute '%s' from program %d because it is missing or inactive.\n", attributeName, program);
 	}
 	return loc;
 }
@@ -514,7 +514,7 @@ static void kuhl_geometry_sanity_check_attribute(GLuint bufferobject, const char
 		 * bufferobject for the attribute. */
 		if(glIsBuffer(bufferobject))
 		{
-			msg(ERROR, "We created a buffer object for attribute %s even though it isn't in the GLSL program %d\n", attributeName, program);
+			msg(MSG_ERROR, "We created a buffer object for attribute %s even though it isn't in the GLSL program %d\n", attributeName, program);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -575,7 +575,7 @@ static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
 	     geom->primitive_type == GL_TRIANGLE_FAN ||
 	     geom->primitive_type == GL_TRIANGLES))
 	{
-		msg(ERROR, "primitive_type must be set to GL_POINTS, GL_LINE_STRIP, GL_LINE_LOOP, GL_LINES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, or GL_TRIANGLES.\n");
+		msg(MSG_ERROR, "primitive_type must be set to GL_POINTS, GL_LINE_STRIP, GL_LINE_LOOP, GL_LINES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, or GL_TRIANGLES.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -1181,7 +1181,7 @@ void kuhl_geometry_indices(kuhl_geometry *geom, GLuint *indices, GLuint indexCou
 	for(GLuint i=0; i<geom->indices_len; i++)
 	{
 		if(indices[i] >= geom->vertex_count)
-			msg(ERROR, "kuhl_geometry has %d vertices but indices[%d] is asking for vertex at index %d to be drawn.\n",
+			msg(MSG_ERROR, "kuhl_geometry has %d vertices but indices[%d] is asking for vertex at index %d to be drawn.\n",
 			    geom->vertex_count, i, indices[i]);
 	}
 
@@ -1266,13 +1266,13 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	/* Check that there is a valid program and VAO object for us to use. */
 	if(glIsProgram(geom->program) == 0)
 	{
-		msg(ERROR, "Program (%d) is invalid.\n", geom->program);
+		msg(MSG_ERROR, "Program (%d) is invalid.\n", geom->program);
 		kuhl_errorcheck();
 		return;
 	}
 	else if (glIsVertexArray(geom->vao) == 0)
 	{
-		msg(ERROR, "Vertex array object (%d) is invalid.\n", geom->vao);
+		msg(MSG_ERROR, "Vertex array object (%d) is invalid.\n", geom->vao);
 		kuhl_errorcheck();
 		return;
 	}
@@ -1543,10 +1543,10 @@ GLuint kuhl_read_texture_rgba_array_wrap(const unsigned char* array, int width, 
 	glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &tmp);
 	if(tmp == 0)
 	{
-		msg(ERROR, "Unable to load %dx%d texture (possibily because it is too large)\n", width, height);
+		msg(MSG_ERROR, "Unable to load %dx%d texture (possibily because it is too large)\n", width, height);
 		GLint maxTextureSize = 0;
 		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
-		msg(ERROR, "Your card's rough estimate for the maximum texture size that it supports: %dx%d\n", maxTextureSize, maxTextureSize);
+		msg(MSG_ERROR, "Your card's rough estimate for the maximum texture size that it supports: %dx%d\n", maxTextureSize, maxTextureSize);
 		msg(WARNING, "Common max texture sizes for graphics cards can be found at: http://feedback.wildfiregames.com/report/opengl/feature/GL_MAX_TEXTURE_SIZE");
 
 		// According to the website above, as of July 2014, 85% of
@@ -1704,7 +1704,7 @@ static float kuhl_read_texture_file_im(const char *filename, GLuint *texName, GL
 	free(newFilename);
 	if(image == NULL)
 	{
-		msg(ERROR, "Unable to read '%s'.\n", filename);
+		msg(MSG_ERROR, "Unable to read '%s'.\n", filename);
 		return -1;
 	}
 
@@ -1723,7 +1723,7 @@ static float kuhl_read_texture_file_im(const char *filename, GLuint *texName, GL
 	
 	if(*texName == 0)
 	{
-		msg(ERROR, "Failed to create OpenGL texture from %s\n", filename);
+		msg(MSG_ERROR, "Failed to create OpenGL texture from %s\n", filename);
 		return -1;
 	}
 
@@ -1757,7 +1757,7 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName, G
 	free(newFilename);
 	if(image == NULL)
 	{
-		msg(ERROR, "Unable to read '%s'.\n", filename);
+		msg(MSG_ERROR, "Unable to read '%s'.\n", filename);
 		return -1;
 	}
 
@@ -1771,7 +1771,7 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName, G
 	
 	if(*texName == 0)
 	{
-		msg(ERROR, "Failed to create OpenGL texture from %s\n", filename);
+		msg(MSG_ERROR, "Failed to create OpenGL texture from %s\n", filename);
 		return -1;
 	}
 
@@ -2710,13 +2710,13 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		/* Confirm that the mesh has only one primitive type. */
 		if(mesh->mPrimitiveTypes == 0)
 		{
-			msg(ERROR, "Primitive type not set by ASSIMP in mesh.\n");
+			msg(MSG_ERROR, "Primitive type not set by ASSIMP in mesh.\n");
 			continue;
 		}
 		// Check if more than one bit (i.e., primitive type) is in this mesh.
 		if((mesh->mPrimitiveTypes & (mesh->mPrimitiveTypes-1)) != 0) 
 		{
-			msg(ERROR, "This mesh has more than one primitive "
+			msg(MSG_ERROR, "This mesh has more than one primitive "
 			    "type in it. The model should be loaded with the "
 			    "aiProcess_SortByPType flag set.\n");
 			continue;
@@ -2754,7 +2754,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		}
 		else
 		{
-			msg(ERROR, "Unknown primitive type in mesh.\n");
+			msg(MSG_ERROR, "Unknown primitive type in mesh.\n");
 			continue;
 		}
 		
@@ -3128,7 +3128,7 @@ kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDir
 	const struct aiScene *scene = kuhl_private_assimp_load(newModelFilename, textureDirname);
 	if(scene == NULL)
 	{
-		msg(ERROR, "ASSIMP was unable to import the model '%s'.\n", modelFilename);
+		msg(MSG_ERROR, "ASSIMP was unable to import the model '%s'.\n", modelFilename);
 		return NULL;
 	}
 
@@ -3399,7 +3399,7 @@ GLint kuhl_gen_framebuffer_msaa(int width, int height, GLuint *texture, GLuint *
 	glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
 	if(samples > GL_MAX_SAMPLES || samples < 1)
 	{
-		msg(ERROR, "Requested %d samples but maximum allowed is %d\n", samples,
+		msg(MSG_ERROR, "Requested %d samples but maximum allowed is %d\n", samples,
 		            maxSamples);
 		exit(EXIT_FAILURE);
 	}
@@ -3408,7 +3408,7 @@ GLint kuhl_gen_framebuffer_msaa(int width, int height, GLuint *texture, GLuint *
 	if(width < 0 || width > maxTextureSize ||
 	   height< 0 || height> maxTextureSize)
 	{
-		msg(ERROR, "Requested %d x %d texture but maximum allowed is %d\n",
+		msg(MSG_ERROR, "Requested %d x %d texture but maximum allowed is %d\n",
 		            width, height, maxTextureSize);
 		exit(EXIT_FAILURE);
 	}
@@ -3540,6 +3540,6 @@ void kuhl_play_sound(const char *filename)
 	}
 
 #else
-	msg(ERROR, "This sound function only works on Linux.\n");
+	msg(MSG_ERROR, "This sound function only works on Linux.\n");
 #endif
 }

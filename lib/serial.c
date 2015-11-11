@@ -195,7 +195,7 @@ static void serial_settings(int fd, int speed, int parity, int vmin, int vtime)
 	struct termios toptions;
 	memset(&toptions, 0, sizeof(struct termios));
 	if(tcgetattr(fd, &toptions) == -1)
-		msg(ERROR, "tcgetattr error: %s\n", strerror(errno));
+		msg(MSG_ERROR, "tcgetattr error: %s\n", strerror(errno));
 
 	int baud = 0;
 	switch(speed)
@@ -240,7 +240,7 @@ static void serial_settings(int fd, int speed, int parity, int vmin, int vtime)
 	if(cfsetispeed(&toptions, baud) == -1 ||
 	   cfsetospeed(&toptions, baud) == -1)
 	{
-		msg(ERROR, "Unable to set baud rate to %d\n", speed);
+		msg(MSG_ERROR, "Unable to set baud rate to %d\n", speed);
 	}
 
 	// Input flags
@@ -284,7 +284,7 @@ static void serial_settings(int fd, int speed, int parity, int vmin, int vtime)
 	
 	// Apply our new settings, discard data in buffer
 	if(tcsetattr(fd, TCSANOW, &toptions) == -1)
-		msg(ERROR, "tcgetattr error: %s\n", strerror(errno));
+		msg(MSG_ERROR, "tcgetattr error: %s\n", strerror(errno));
 	serial_discard(fd);
 }
 
@@ -339,7 +339,7 @@ void serial_discard(int fd)
 void serial_close(int fd)
 {
 	if(close(fd) == -1)
-		msg(ERROR, "close: %s\n", strerror(errno));
+		msg(MSG_ERROR, "close: %s\n", strerror(errno));
 }
 
 /** Open a serial connection and applies settings to the connection.
@@ -361,7 +361,7 @@ int serial_open(const char *deviceFile, int speed, int parity, int vmin, int vti
 	{
 		if(i > 0 && fd == -1)
 		{
-			msg(ERROR, "Could not open serial connection to '%s', retrying...\n", deviceFile);
+			msg(MSG_ERROR, "Could not open serial connection to '%s', retrying...\n", deviceFile);
 			sleep(1); // Give user time to plug in cable.
 		}
 
@@ -373,7 +373,7 @@ int serial_open(const char *deviceFile, int speed, int parity, int vmin, int vti
 	}
 	if(fd == -1)
 	{
-		msg(ERROR, "Failed to connect to '%s', giving up.\n", deviceFile);
+		msg(MSG_ERROR, "Failed to connect to '%s', giving up.\n", deviceFile);
 		exit(EXIT_FAILURE);
 	}
 	

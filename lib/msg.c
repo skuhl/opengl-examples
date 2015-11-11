@@ -86,7 +86,7 @@ static void msg_type_string(msg_type type, char *buf, int len)
 		case WARNING:
 			snprintf(buf, len, "[WARN ]");
 			break;
-		case ERROR:
+		case MSG_ERROR:
 			snprintf(buf, len, "[ERROR]");
 			break;
 		case FATAL:
@@ -121,7 +121,7 @@ static int msg_show_type(msg_type type)
 		case DEBUG:   return 0;
 		case INFO:    return 1;
 		case WARNING: return 1;
-		case ERROR:   return 1;
+		case MSG_ERROR:   return 1;
 		case FATAL:   return 1;
 		default:      return 1;
 	}
@@ -150,7 +150,7 @@ static void msg_start_color(msg_type type, FILE *stream)
 		case WARNING:
 			fprintf(stream, "\x1B[33m"); // yellow text
 			break;
-		case ERROR:
+		case MSG_ERROR:
 			fprintf(stream, "\x1B[31m"); // red text
 			break;
 		case FATAL:
@@ -305,7 +305,7 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 	/* Determine the stream that we are going to print out to: stdout,
 	 * stderr, or don't print to console */
 	FILE *stream = stdout;
-	if(type == ERROR || type == FATAL)
+	if(type == MSG_ERROR || type == FATAL)
 		stream = stderr;
 	if(msg_show_type(type) == 0)
 		stream = NULL;
@@ -331,7 +331,7 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 		msg_start_color(type, stream);
 		fprintf(stream, "%s %s%s\n", typestr, prepend, msgbuf);
 		/* Print additional details to console for significant errors */
-		if(type == FATAL || type == ERROR)
+		if(type == FATAL || type == MSG_ERROR)
 		{
 			fprintf(stream, "%s %sOccurred at %s:%d in the function %s()\n",
 			        typestr, prepend, shortFileName, lineNum, funcName);
