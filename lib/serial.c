@@ -16,12 +16,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef _WIN32
 #include <unistd.h>
+#include <sys/ioctl.h>
+#include <termios.h>
+#endif
 #include <errno.h>
 #include <string.h>
-#include <sys/ioctl.h>
 #include <fcntl.h>
-#include <termios.h>
+
 
 #include "msg.h"
 #include "serial.h"
@@ -37,6 +40,9 @@
  */
 void serial_write(const int fd, const char* buf, size_t numBytes)
 {
+#ifdef _WIN32
+	msg(MSG_ERROR, "This function is not defined on Windows.");
+#else
 	while (numBytes > 0)
 	{
 		ssize_t result = write(fd, buf, numBytes);
@@ -49,6 +55,7 @@ void serial_write(const int fd, const char* buf, size_t numBytes)
 		buf += result;
 		numBytes -= (size_t)result;
 	}
+#endif
 }
 
 /**
@@ -69,6 +76,9 @@ void serial_write(const int fd, const char* buf, size_t numBytes)
  */
 int serial_read(int fd, char* buf, size_t numBytes, int options)
 {
+#ifdef _WIN32
+	msg(MSG_ERROR, "This function is not defined on Windows.");
+#else
 	char *ptr = buf;
 
 
@@ -175,6 +185,7 @@ int serial_read(int fd, char* buf, size_t numBytes, int options)
 
 	/* If we didn't read the full numBytes, we would have exited. */
 	return numBytes;
+#endif
 }
 
 
@@ -191,6 +202,9 @@ int serial_read(int fd, char* buf, size_t numBytes, int options)
 */
 static void serial_settings(int fd, int speed, int parity, int vmin, int vtime)
 {
+#ifdef _WIN32
+	msg(MSG_ERROR, "This function is not defined on Windows.");
+#else
 	/* get current serial port settings */
 	struct termios toptions;
 	memset(&toptions, 0, sizeof(struct termios));
@@ -286,6 +300,7 @@ static void serial_settings(int fd, int speed, int parity, int vmin, int vtime)
 	if(tcsetattr(fd, TCSANOW, &toptions) == -1)
 		msg(MSG_ERROR, "tcgetattr error: %s\n", strerror(errno));
 	serial_discard(fd);
+#endif
 }
 
 /** Reads bytes until a specific byte pattern is found in the
@@ -299,6 +314,10 @@ static void serial_settings(int fd, int speed, int parity, int vmin, int vtime)
  */
 int serial_find(int fd, char *bytes, int len, int maxbytes)
 {
+#ifdef _WIN32
+	msg(MSG_ERROR, "This function is not defined on Windows.");
+#else
+
 	int readbytes = 0;
 
 	int matchIndex = 0;
@@ -319,6 +338,7 @@ int serial_find(int fd, char *bytes, int len, int maxbytes)
 			matchIndex = 0;
 	}
 	return 0;
+#endif
 }
 
 
@@ -326,10 +346,14 @@ int serial_find(int fd, char *bytes, int len, int maxbytes)
     not transmitted. */
 void serial_discard(int fd)
 {
+#ifdef _WIN32
+	msg(MSG_ERROR, "This function is not defined on Windows.");
+#else
 	if(SERIAL_DEBUG)
 		msg(DEBUG, "serial_discard()\n");
 
 	tcflush(fd, TCIOFLUSH);
+#endif
 }
 
 /** Close a serial connection.
@@ -338,8 +362,12 @@ void serial_discard(int fd)
 */
 void serial_close(int fd)
 {
+#ifdef _WIN32
+	msg(MSG_ERROR, "This function is not defined on Windows.");
+#else
 	if(close(fd) == -1)
 		msg(MSG_ERROR, "close: %s\n", strerror(errno));
+#endif
 }
 
 /** Open a serial connection and applies settings to the connection.
@@ -354,6 +382,9 @@ void serial_close(int fd)
 */
 int serial_open(const char *deviceFile, int speed, int parity, int vmin, int vtime)
 {
+#ifdef _WIN32
+	msg(MSG_ERROR, "This function is not defined on Windows.");
+#else
 	msg(DEBUG, "Opening serial connection to %s at %d baud\n", deviceFile, speed);
 	int fd = 0;
 
@@ -389,4 +420,5 @@ int serial_open(const char *deviceFile, int speed, int parity, int vmin, int vti
 
 	msg(DEBUG, "Serial connection to '%s' is open on fd=%d.\n", deviceFile, fd);
 	return fd;
+#endif
 }

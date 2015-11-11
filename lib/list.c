@@ -11,11 +11,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h> /* int32_t */
 
 /* For random number generation: */
 #include <time.h>      // time()
+#ifndef _WIN32
 #include <unistd.h>    // getpid()
+#endif
 #include <sys/types.h> // getpid()
+
 
 #include "list.h"
 #include "msg.h"

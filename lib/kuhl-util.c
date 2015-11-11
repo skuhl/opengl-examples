@@ -22,9 +22,10 @@
 #include <float.h> // for FLT_MAX
 #ifndef _WIN32
 #include <libgen.h> // for dirname()
-#endif
 #include <sys/time.h> // gettimeofday()
 #include <unistd.h> // usleep()
+#endif
+
 #include <time.h> // time()
 #ifdef __linux__
 #include <sys/prctl.h> // kill a forked child when parent exits
@@ -1899,9 +1900,6 @@ void kuhl_screenshot(const char *outputImageFilename)
 #endif
 }
 
-static int kuhl_video_record_frame = 0; // frame that we have recorded.
-static time_t kuhl_video_record_prev_sec = 0; // time of previous frame (seconds)
-static suseconds_t kuhl_video_record_prev_usec = 0; // time of previous frame usecs
 
 /** Records individual frames to image files that can later be
   combined into a single video file. Call this function every frame
@@ -1921,6 +1919,11 @@ static suseconds_t kuhl_video_record_prev_usec = 0; // time of previous frame us
  */
 void kuhl_video_record(const char *fileLabel, int fps)
 {
+#ifndef _WIN32
+	static int kuhl_video_record_frame = 0; // frame that we have recorded.
+	static time_t kuhl_video_record_prev_sec = 0; // time of previous frame (seconds)
+	static suseconds_t kuhl_video_record_prev_usec = 0; // time of previous frame usecs
+
 #ifdef KUHL_UTIL_USE_IMAGEMAGICK
 	char *exten = "tif";
 #else
@@ -1965,7 +1968,7 @@ void kuhl_video_record(const char *fileLabel, int fps)
 		kuhl_screenshot(filename); // TODO: Should we check if the screenshot writes?
 		kuhl_video_record_frame++;
 	}
-
+#endif // end ifndef _WIN32
 }
 
 #ifdef KUHL_UTIL_USE_ASSIMP

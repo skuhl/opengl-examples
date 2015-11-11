@@ -16,16 +16,20 @@
 #include <string.h>
 #include <time.h>
 #include <sys/types.h>
+#ifdef _WIN32
+#include <Windows.h>
+#else
 #include <sys/time.h>
-#include <ctype.h> // isspace()
 #include <unistd.h>
 #include <libgen.h> // dirname()
+#endif
+#include <ctype.h> // isspace()
 
 #include "kuhl-nodep.h"
 
 
 // When compiling on windows, add suseconds_t and the rand48 functions.
-#ifdef __MINGW32__
+#if defined __MINGW32__ || defined _WIN32
 #define RAND48_SEED_0   (0x330e)
 #define RAND48_SEED_1 (0xabcd)
 #define RAND48_SEED_2 (0x1234)
@@ -331,8 +335,6 @@ char* kuhl_text_read(const char *filename)
 
 
 
-/** The time at which kuhl_limitfps() was last called. */
-static struct timeval limitfps_last = { .tv_sec = 0, .tv_usec = 0 };
 /** When called per frame, sleeps for a short period of time to limit
  * the frames per second. There are two potential uses for this: (1)
  * When FPS are far higher than the monitor refresh rate and CPU load
@@ -354,6 +356,11 @@ static struct timeval limitfps_last = { .tv_sec = 0, .tv_usec = 0 };
  */
 void kuhl_limitfps(int fps)
 {
+#ifndef _WIN32   // TODO, implement for windows!
+
+	/** The time at which kuhl_limitfps() was last called. */
+	static struct timeval limitfps_last = { .tv_sec = 0,.tv_usec = 0 };
+
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 
@@ -378,15 +385,24 @@ void kuhl_limitfps(int fps)
 	}
 
 	gettimeofday(&limitfps_last, NULL);
+#endif
 }
 
 /** Returns the current time in microseconds. 1 second = 1,000,000 microseconds. 1 millisecond = 1000 microseconds */
 long kuhl_microseconds()
 {
+#if _WIN32
+	// TODO: check/fix me
+	LARGE_INTEGER freq, start;
+	QueryPerformanceFrequency(&freq);
+	QueryPerformanceCounter(&start);
+	return start.QuadPart / freq.QuadPart;
+#else
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	long us = (tv.tv_sec * 1000000L) + tv.tv_usec;
 	return us;
+#endif
 }
 
 static long kuhl_microseconds_start_time = -1;

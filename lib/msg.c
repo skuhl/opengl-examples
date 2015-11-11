@@ -27,11 +27,11 @@
 #include <stdlib.h>
 #ifndef _WIN32
 #include <libgen.h> /* basename() */
-#endif
 #include <sys/time.h> // gettimeofday()
+#include <unistd.h> // isatty()
+#endif
 #include <time.h> // localtime()
 #include <string.h>
-#include <unistd.h> // isatty()
 #include <errno.h>
 
 #include "msg.h"
@@ -46,6 +46,10 @@ static char *logfile = NULL;
 */
 static void msg_timestamp(char *buf, int len)
 {
+#if _WIN32
+	snprintf(buf, len, "TODO");
+	return;
+#else
 	struct timeval tv;
 	if(gettimeofday(&tv, NULL) < 0)
 	{
@@ -66,6 +70,7 @@ static void msg_timestamp(char *buf, int len)
 	if(firstTime < 0)
 		firstTime = time;
 	snprintf(buf, len, "%11.6f", time-firstTime);
+#endif
 #endif
 }
 

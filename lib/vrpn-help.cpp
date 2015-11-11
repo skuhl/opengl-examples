@@ -8,7 +8,9 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <map>
 #include <string>
 
@@ -18,9 +20,9 @@
 #endif
 
 #ifdef __APPLE__
-#include <OpenGL/gl.h>
+//#include <OpenGL/gl.h>
 #else
-#include <GL/gl.h>
+//#include <GL/gl.h>
 #endif
 
 #include "kuhl-util.h"
