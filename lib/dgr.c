@@ -16,11 +16,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <unistd.h>
 #include <sys/types.h>
 
 // TODO: Add WinSock support
-#ifndef __MINGW32__
+#if !defined __MINGW32__ && !defined _WIN32
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -74,7 +74,7 @@ static void dgr_free(void)
 /** Initializes a master DGR process that will send packets out on the network. */
 static void dgr_init_master()
 {
-#ifndef __MINGW32__
+#if !defined __MINGW32__ && !defined _WIN32
 	const char *ipAddr = getenv("DGR_MASTER_DEST_IP");
 	const char *port = getenv("DGR_MASTER_DEST_PORT");
 	if(ipAddr == NULL || strcmp(ipAddr, "0.0.0.0") == 0)
@@ -127,7 +127,7 @@ static void dgr_init_master()
 /** Initializes a DGR slave process which will receive packets from a master process. */
 static void dgr_init_slave()
 {
-#ifndef __MINGW32__
+#if !defined __MINGW32__ && !defined _WIN32
 	const char* port = getenv("DGR_SLAVE_LISTEN_PORT");
 	if(port == NULL)
 	{
@@ -459,7 +459,7 @@ void dgr_print_list(void)
 /** Serializes and sends DGR data out across a network. */
 static void dgr_send(void)
 {
-#ifndef __MINGW32__
+#if !defined __MINGW32__ && !defined _WIN32
 	if(dgr_disabled)
 		return;
 
@@ -501,7 +501,7 @@ static void dgr_send(void)
  * received information successfully in the past). */
 static void dgr_receive(int timeout)
 {
-#ifndef __MINGW32__
+#if !defined __MINGW32__ && !defined _WIN32
 	if(dgr_disabled)
 		return;
 	
