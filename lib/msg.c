@@ -142,6 +142,9 @@ static int msg_show_type(msg_type type)
  */
 static void msg_start_color(msg_type type, FILE *stream)
 {
+#ifdef _WIN32
+	return;
+#else
 	/* Don't do anything if the stream is invalid or if the stream is
 	 * not associated with a tty (i.e., we only use colors if writing
 	 * to stdout or stderr, not when writing to a file. */
@@ -183,16 +186,20 @@ static void msg_start_color(msg_type type, FILE *stream)
 		default:
 			break;
 	}
-
+#endif
 }
 
 /** Writes bytes to a stream to reset the colors back to he default. */
 static void msg_end_color(msg_type type, FILE *stream)
 {
+#ifdef _WIN32
+	return;
+#else
 	if(stream == NULL || isatty(fileno(stream)) == 0)
 		return;
 
 	fprintf(stream, "\x1B[0m");
+#endif
 }
 
 
@@ -320,8 +327,11 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 	char timestamp[1024];
 	msg_timestamp(timestamp, 1024);
 	char *fileNameCopy = strdup(fileName);
-	char *shortFileName = basename(fileNameCopy);
-	
+	char *shortFileName = fileNameCopy;
+#ifndef _WIN32
+	shortFileName = basename(fileNameCopy);
+#endif
+
 	/* Print the message to stderr or stdout */
 	if(stream)
 	{
