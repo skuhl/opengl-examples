@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 	/* Ask GLUT to for a double buffered, full color window that
 	 * includes a depth buffer */
 #ifdef FREEGLUT
-	glutInitDisplayMode(GLUT_RGB);
+	glutInitDisplayMode(GLUT_RGB|GLUT_DOUBLE); // Windows NVIDIA seems to require GLUT_DOUBLE
 	// Don't specify a specific context.
 	// If we did, it can affect the information that gets printed out.
 	//glutInitContextVersion(3,2);
