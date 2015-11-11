@@ -2268,8 +2268,15 @@ static char* kuhl_private_assimp_fullpath(const char *textureFile, const char *m
 			exit(EXIT_FAILURE);
 		}
 		char *editable = strdup(modelFile);
+#ifdef _WIN32
+		char drive[32];
+		char dir[1024];
+		_splitpath_s(editable, drive, 32, dir, 1024, NULL, 0, NULL, 0);
+		snprintf(fullpath, 1024, "%s%s\%s", drive, dir, textureFile);
+#else
 		char *dname = dirname(editable);
 		snprintf(fullpath, 1024, "%s/%s", dname, textureFile);
+#endif
 		free(editable);
 	}
 	else
@@ -2402,7 +2409,6 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 				free(fullpath);
 				continue; // skip to next material.
 			}
-
 			if(kuhl_read_texture_file(fullpath, &texIndex) < 0)
 			{
 				msg(WARNING, "%s refers to texture %s which we could not find at %s\n", modelFilename, path.data, fullpath);

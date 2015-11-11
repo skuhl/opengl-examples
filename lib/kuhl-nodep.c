@@ -222,7 +222,11 @@ char* kuhl_find_file(const char *filename)
 
 	char commonDirs[32][256];
 	int commonDirsLen = 0;
+#ifdef _WIN32
+	strncpy(commonDirs[commonDirsLen++], "../../samples", 255); // On windows, binaries get put into extra subdirectory
+#else
 	strncpy(commonDirs[commonDirsLen++], "../samples", 255); // Find fragment programs in samples directory
+#endif
 	strncpy(commonDirs[commonDirsLen++], "/home/kuhl/public-ogl/data", 255); // CCSR
 	strncpy(commonDirs[commonDirsLen++], "/home/campus11/kuhl/public-ogl/data", 255); // Rekhi
 	strncpy(commonDirs[commonDirsLen++], "/research/kuhl/public-ogl/data", 255); // IVS
@@ -396,7 +400,7 @@ long kuhl_microseconds()
 	LARGE_INTEGER freq, start;
 	QueryPerformanceFrequency(&freq);
 	QueryPerformanceCounter(&start);
-	return start.QuadPart / freq.QuadPart;
+	return (start.QuadPart / freq.QuadPart)*1000000;
 #else
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
@@ -418,10 +422,18 @@ long kuhl_microseconds_start()
  * milliseconds */
 long kuhl_milliseconds()
 {
+#ifdef _WIN32
+	// TODO: check/fix me
+	LARGE_INTEGER freq, start;
+	QueryPerformanceFrequency(&freq);
+	QueryPerformanceCounter(&start);
+	return (start.QuadPart / freq.QuadPart) * 1000;
+#else
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	long ms = (tv.tv_sec * 1000L) + tv.tv_usec / 1000L;
 	return ms;
+#endif
 }
 
 /** Returns the number of milliseconds since the first time this

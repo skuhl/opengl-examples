@@ -189,7 +189,7 @@ static void msg_start_color(msg_type type, FILE *stream)
 #endif
 }
 
-/** Writes bytes to a stream to reset the colors back to he default. */
+/** Writes bytes to a stream to reset the colors back to the default. */
 static void msg_end_color(msg_type type, FILE *stream)
 {
 #ifdef _WIN32
