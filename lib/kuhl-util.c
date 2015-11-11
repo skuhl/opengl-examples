@@ -20,7 +20,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <float.h> // for FLT_MAX
+#ifndef _WIN32
 #include <libgen.h> // for dirname()
+#endif
 #include <sys/time.h> // gettimeofday()
 #include <unistd.h> // usleep()
 #include <time.h> // time()
