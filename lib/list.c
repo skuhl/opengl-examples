@@ -77,7 +77,7 @@ list* list_new(int capacity, int itemSize, int (*compar)(const void *, const voi
 	list *l = malloc(sizeof(list));
 	if(l == NULL)
 	{
-		msg(ERROR, "Failed to allocate space for a list which can hold %d %d byte items.", capacity, itemSize);
+		msg(MSG_ERROR, "Failed to allocate space for a list which can hold %d %d byte items.", capacity, itemSize);
 		return NULL;
 	}
 	l->data = NULL;
@@ -99,7 +99,7 @@ list* list_new_import(int numItems, int itemSize, int (*compar)(const void *, co
 	list *l = malloc(sizeof(list));
 	if(l == NULL)
 	{
-		msg(ERROR, "Failed to allocate space for a list which can hold %d %d byte items.", numItems, itemSize);
+		msg(MSG_ERROR, "Failed to allocate space for a list which can hold %d %d byte items.", numItems, itemSize);
 		return NULL;
 	}
 	l->data = NULL;
@@ -168,7 +168,7 @@ int list_reset(list *l, int capacity, int itemSize, int (*compar)(const void *, 
 {
 	if(l == NULL)
 	{
-		msg(ERROR, "Failed to reset a list because it is NULL");
+		msg(MSG_ERROR, "Failed to reset a list because it is NULL");
 		return 0;
 	}
 
@@ -206,7 +206,7 @@ int list_reset(list *l, int capacity, int itemSize, int (*compar)(const void *, 
 
 	if(l->data == NULL)
 	{
-		msg(ERROR, "Unable to allocate space for list.");
+		msg(MSG_ERROR, "Unable to allocate space for list.");
 		return 0;
 	}
 
@@ -274,7 +274,7 @@ int list_append(list *l, void *item)
 
 	if(item == NULL)
 	{
-		msg(ERROR, "The pointer to the item to append to the list was NULL.");
+		msg(MSG_ERROR, "The pointer to the item to append to the list was NULL.");
 		return 0;
 	}
 
@@ -328,7 +328,7 @@ int list_remove(list *l, int index, void *result)
 	
 	if(index < 0 || index >= l->length)
 	{
-		msg(ERROR, "Can't remove index %d when list is of length %d",
+		msg(MSG_ERROR, "Can't remove index %d when list is of length %d",
 		    index, l->length);
 		return 0;
 	}
@@ -629,7 +629,7 @@ int list_set_capacity(list *l, int capacity)
 
 	if(newData == NULL)
 	{
-		msg(ERROR, "Unable to increase list capacity from %d items to %d items", l->capacity, capacity);
+		msg(MSG_ERROR, "Unable to increase list capacity from %d items to %d items", l->capacity, capacity);
 		return 0;
 	}
 
@@ -755,14 +755,14 @@ int list_swap(list *l, int a, int b)
 	void *bPtr = list_getptr(l, b);
 	if(aPtr == NULL || bPtr == NULL)
 	{
-		msg(ERROR, "Can't swap indices %d and %d in a list of length %d\n", a, b, l->length);
+		msg(MSG_ERROR, "Can't swap indices %d and %d in a list of length %d\n", a, b, l->length);
 		return 0;
 	}
 
 	void *tmp = malloc(l->itemSize);
 	if(tmp == NULL)
 	{
-		msg(ERROR, "Failed to allocate space to swap indices %d and %d\n", a, b);
+		msg(MSG_ERROR, "Failed to allocate space to swap indices %d and %d\n", a, b);
 		return 0;
 	}
 	memcpy(tmp,  aPtr, l->itemSize);
@@ -793,7 +793,7 @@ int list_reverse(list *l)
 		int otherEnd = l->length-i-1;
 		if(list_swap(l, i, otherEnd) == 0)
 		{
-			msg(ERROR, "Failed to reverse the list.");
+			msg(MSG_ERROR, "Failed to reverse the list.");
 			return 0;
 		}
 	}

@@ -109,7 +109,7 @@ static void dgr_init_master()
 	for(p = servinfo; p != NULL; p = p->ai_next) {
 		if ((dgr_socket = socket(p->ai_family, p->ai_socktype,
 		                         p->ai_protocol)) == -1) {
-			msg(ERROR, "DGR: Master: socket(): %s", strerror(errno));
+			msg(MSG_ERROR, "DGR: Master: socket(): %s", strerror(errno));
 			continue;
 		}
 		break;
@@ -159,7 +159,7 @@ static void dgr_init_slave()
 		}
 		if (bind(dgr_socket, p->ai_addr, p->ai_addrlen) == -1) {
 			close(dgr_socket);
-			msg(ERROR, "DGR Slave: bind: %s", strerror(errno));
+			msg(MSG_ERROR, "DGR Slave: bind: %s", strerror(errno));
 			continue;
 		}
 
@@ -220,7 +220,7 @@ void dgr_init(void)
 		}
 		else
 		{
-			msg(ERROR, "DGR_MODE must be 'slave' or 'master' but you set it to '%s'", mode);
+			msg(MSG_ERROR, "DGR_MODE must be 'slave' or 'master' but you set it to '%s'", mode);
 		}
 	}
 	
@@ -357,9 +357,9 @@ void dgr_setget(const char *name, void* buffer, int bufferSize)
 	{
 		int ret = dgr_get(name, buffer, bufferSize);
 		if(ret == -1)
-			msg(ERROR, "DGR Slave: Tried to get '%s' from DGR, but DGR didn't have it!\n", name);
+			msg(MSG_ERROR, "DGR Slave: Tried to get '%s' from DGR, but DGR didn't have it!\n", name);
 		else if(ret == -2)
-			msg(ERROR, "DGR Slave: Tried to get '%s' from DGR, but you didn't provide a large enough buffer.\n", name);
+			msg(MSG_ERROR, "DGR Slave: Tried to get '%s' from DGR, but you didn't provide a large enough buffer.\n", name);
 
 		else if(ret != bufferSize)
 			msg(WARNING, "DGR Slave: Successfully retrieved '%s' from DGR but you provided a buffer that didn't match the size of the data you are retrieving. Your buffer is %d bytes but the '%s' record is %d bytes.\n", name, bufferSize, name, ret);

@@ -78,7 +78,7 @@ void projmat_init()
 		if(sscanf(frustumString, "%f %f %f %f %f %f",
 		          &(projmat_frustum[0]), &(projmat_frustum[1]), &(projmat_frustum[2]),
 		          &(projmat_frustum[3]), &(projmat_frustum[4]), &(projmat_frustum[5])) != 6)
-			msg(ERROR, "Unable to parse PROJMAT_FRUSTUM environment variable.\n");
+			msg(MSG_ERROR, "Unable to parse PROJMAT_FRUSTUM environment variable.\n");
 		else
 			foundFrustum = 1;
 	}
@@ -90,7 +90,7 @@ void projmat_init()
 		if(sscanf(masterFrustumString, "%f %f %f %f %f %f",
 		          &(projmat_master_frustum[0]), &(projmat_master_frustum[1]), &(projmat_master_frustum[2]),
 		          &(projmat_master_frustum[3]), &(projmat_master_frustum[4]), &(projmat_master_frustum[5])) != 6)
-			msg(ERROR, "Unable to parse PROJMAT_MASTER_FRUSTUM environment variable.\n");
+			msg(MSG_ERROR, "Unable to parse PROJMAT_MASTER_FRUSTUM environment variable.\n");
 		else
 			foundMasterFrustum = 1;
 	}
@@ -100,7 +100,7 @@ void projmat_init()
 	if(vfovString != NULL)
 	{
 		if(sscanf(vfovString, "%f", &projmat_vfov) != 1)
-			msg(ERROR, "Unable to parse PROJMAT_VFOV environment variable.\n");
+			msg(MSG_ERROR, "Unable to parse PROJMAT_VFOV environment variable.\n");
 		else
 			foundFov = 1;
 	}

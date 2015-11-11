@@ -104,7 +104,7 @@ void viewmat_window_size(int *width, int *height)
 {
 	if(width == NULL || height == NULL)
 	{
-		msg(ERROR, "width and/or height pointers were null.");
+		msg(MSG_ERROR, "width and/or height pointers were null.");
 		exit(EXIT_FAILURE);
 	}
 	
@@ -409,7 +409,7 @@ static void viewmat_refresh_viewports(void)
 			viewmat_anaglyph_viewports();
 			break;
 		default:
-			msg(ERROR, "Unknown viewmat mode: %d\n", viewmat_display_mode);
+			msg(MSG_ERROR, "Unknown viewmat mode: %d\n", viewmat_display_mode);
 			exit(EXIT_FAILURE);
 	}
 }
@@ -495,7 +495,7 @@ static void viewmat_init_hmd_oculus(const float pos[3])
 		char c; 
 		if(fscanf(stdin, "%c", &c) < 0)
 		{
-			msg(ERROR, "fscanf error.\n");
+			msg(MSG_ERROR, "fscanf error.\n");
 			exit(EXIT_FAILURE);
 		}
 
@@ -503,7 +503,7 @@ static void viewmat_init_hmd_oculus(const float pos[3])
 		useDebugMode = 1;
 		if(!hmd)
 		{
-			msg(ERROR, "Oculus: Failed to create virtual debugging HMD\n");
+			msg(MSG_ERROR, "Oculus: Failed to create virtual debugging HMD\n");
 			exit(EXIT_FAILURE);
 		}
 	}

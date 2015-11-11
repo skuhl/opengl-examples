@@ -22,7 +22,7 @@ typedef enum {
 	DEBUG,   /*< Messages that are occasionally useful when troubleshooting (written to logfile) */
 	INFO,    /*< Messages are useful and/or short (written to stdout + logfile) */
 	WARNING, /*< Messages related to things the user should consider fixing (yellow, written to stdout + logfile) */
-	ERROR,   /*< Messages that a user will probably want to fix (red; written to stderr + logfile) */
+	MSG_ERROR,   /*< Messages that a user will probably want to fix (red; written to stderr + logfile) */
 	FATAL,   /*< Complete failure, message prior to exit (bold, red; written to stderr + logfile)*/
 
 	/* Other types of messages intended for developers to use however they want: */

@@ -868,7 +868,7 @@ static inline void vec4d_sub_new(double result[4], const double a[4], const doub
 static inline void matNf_getColumn(float  result[ ], const float  m[  ], const int col, const int n)
 {
 	if(col >= n)
-		msg(ERROR, "Column %d must be less than %d\n", col, n);
+		msg(MSG_ERROR, "Column %d must be less than %d\n", col, n);
 	for(int i=0; i<n; i++)
 		result[i] = m[i+col*n];
 }
@@ -881,7 +881,7 @@ static inline void matNf_getColumn(float  result[ ], const float  m[  ], const i
 static inline void matNd_getColumn(double result[ ], const double m[  ], const int col, const int n)
 {
 	if(col >= n)
-		msg(ERROR, "Column %d must be less than %d\n", col, n);
+		msg(MSG_ERROR, "Column %d must be less than %d\n", col, n);
 	for(int i=0; i<n; i++)
 		result[i] = m[i+col*n];
 }
@@ -924,7 +924,7 @@ static inline void mat3d_getColumn(double result[3], const double m[ 9], const i
 static inline void matNf_getRow(float  result[ ], const float  m[  ], const int row, const int n)
 {
 	if(row >= n)
-		msg(ERROR, "Row %d must be less than %d\n", row, n);
+		msg(MSG_ERROR, "Row %d must be less than %d\n", row, n);
 	for(int i=0; i<n; i++)
 		result[i] = m[row+i*n];
 }
@@ -937,7 +937,7 @@ static inline void matNf_getRow(float  result[ ], const float  m[  ], const int 
 static inline void matNd_getRow(double result[ ], const double m[  ], const int row, const int n)
 {
 	if(row >= n)
-		msg(ERROR, "Row %d must be less than %d\n", row, n);
+		msg(MSG_ERROR, "Row %d must be less than %d\n", row, n);
 	for(int i=0; i<n; i++)
 		result[i] = m[row+i*n];
 }
@@ -980,7 +980,7 @@ static inline void mat3d_getRow(double result[3], const double m[ 9], const int 
 static inline void matNf_setColumn(float  matrix[  ], const float  v[ ], const int col, const int n)
 {
 	if(col >= n)
-		msg(ERROR, "Column %d must be less than %d\n", col, n);
+		msg(MSG_ERROR, "Column %d must be less than %d\n", col, n);
 	for(int row=0; row<n; row++)
 		matrix[matN_getIndex(row, col, n)] = v[row];
 }
@@ -993,7 +993,7 @@ static inline void matNf_setColumn(float  matrix[  ], const float  v[ ], const i
 static inline void matNd_setColumn(double matrix[  ], const double v[ ], const int col, const int n)
 {
 	if(col >= n)
-		msg(ERROR, "Column %d must be less than %d\n", col, n);
+		msg(MSG_ERROR, "Column %d must be less than %d\n", col, n);
 	for(int row=0; row<n; row++)
 		matrix[matN_getIndex(row, col, n)] = v[row];
 }
@@ -1035,7 +1035,7 @@ static inline void mat4d_setColumn(double matrix[16], const double v[4], const i
 static inline void matNf_setRow(float  matrix[  ], const float  v[ ], const int row, const int n)
 {
 	if(row >= n)
-		msg(ERROR, "Row %d must be less than %d\n", row, n);
+		msg(MSG_ERROR, "Row %d must be less than %d\n", row, n);
 	for(int col=0; col<n; col++)
 		matrix[matN_getIndex(row, col, n)] = v[col];
 }
@@ -1048,7 +1048,7 @@ static inline void matNf_setRow(float  matrix[  ], const float  v[ ], const int 
 static inline void matNd_setRow(double matrix[  ], const double v[ ], const int row, const int n)
 {
 	if(row >= n)
-		msg(ERROR, "Row %d must be less than %d\n", row, n);
+		msg(MSG_ERROR, "Row %d must be less than %d\n", row, n);
 	for(int col=0; col<n; col++)
 		matrix[matN_getIndex(row, col, n)] = v[col];
 }
