@@ -248,7 +248,7 @@ void projmat_get_frustum(float result[6], int viewportWidth, int viewportHeight,
 		// vertical, 54 degrees total
 		float vertical = 54;
 
-		float far = 200;
+		float farX = 200;
 		
 		float scale = .1; // calculate assuming near = 1, then scale all numbers
 		if(viewmat_viewport_to_eye(viewportID) == VIEWMAT_EYE_LEFT)
@@ -264,7 +264,7 @@ void projmat_get_frustum(float result[6], int viewportWidth, int viewportHeight,
 		result[2] = -tanf(vertical/2 * M_PI/180) * scale; // bottom
 		result[3] = tanf(vertical/2  * M_PI/180) * scale; // top
 		result[4] = scale; // near
-		result[5] = far;   // far
+		result[5] = farX;   // far
 
 	}
 }
