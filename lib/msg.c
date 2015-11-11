@@ -25,7 +25,9 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <libgen.h>
+#ifndef _WIN32
+#include <libgen.h> /* basename() */
+#endif
 #include <sys/time.h> // gettimeofday()
 #include <time.h> // localtime()
 #include <string.h>
