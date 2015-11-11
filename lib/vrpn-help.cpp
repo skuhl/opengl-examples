@@ -26,6 +26,7 @@
 #include "kuhl-util.h"
 #include "vecmat.h"
 #include "kalman.h"
+#include "vrpn-help.h"
 
 #ifndef MISSING_VRPN
 
@@ -128,66 +129,6 @@ static void VRPN_CALLBACK handle_tracker(void *name, vrpn_TRACKERCB t)
 	tracked->hasData = 1;
 }
 
-#endif
-
-extern "C" {
-
-/** Returns 1 if we are connecting to the Vicon tracker in the IVS lab.
- */
-int vrpn_is_vicon(const char *hostname)
-{
-	/* The hostname may or may not have tcp:// in front of it. */
-	if(strstr(hostname, "141.219.") == NULL) // TODO: Find a better way...
-		return 0;
-	return 1;
-}
-
-/** Returns the default hostname based on the contents of
-    "~/.vrpn-server". Returns NULL on failure.
-
-    @return NULL on failure or a string. The returned string should
-    NOT be free()'d because the same string will be returned each time
-    we call this function.
- */
-char* vrpn_default_host(void)
-{
-	static char *cachedHostname = NULL;
-	if(cachedHostname != NULL)
-		return cachedHostname;
-
-	/* Try reading VRPN server information from ~/.vrpn-server
-	   
-	   This file should contain a single line that says something like:
-	   tcp://VRPN.SERVER.IP.ADDR
-	*/
-	const char *homedir = getenv("HOME");
-	char path[1024];
-	snprintf(path, 1024, "%s/.vrpn-server", homedir);
-	FILE *f = fopen(path, "r");
-	if(f == NULL)
-	{
-		msg(WARNING, "Can't open file %s to get VRPN server information.\n", path);
-		return NULL;
-	}
-	char *vrpnString = (char*)malloc(1024);
-	*vrpnString='\0';
-
-	do
-	{
-		if(fgets(vrpnString, 1024, f) == NULL)
-		{
-			msg(WARNING, "Can't read %s to get VRPN server information.\n", path);
-			return NULL;
-		}
-		kuhl_trim_whitespace(vrpnString);
-	} while(*vrpnString == '#' || strlen(vrpnString) == 0);  // allow for comments and blank lines in vrpn-server file.
-	fclose(f);
-
-	// msg(DEBUG, "Found in %s: '%s'\n", path, vrpnString);
-	cachedHostname = vrpnString;
-	return vrpnString;
-}
-
 /** Establish a VRPN connection to a specified host.
 
     @param fullname A string containing either the hostname or
@@ -255,6 +196,11 @@ static int vrpn_connect(const char *fullname)
 static int vrpn_update(const char *fullname, float pos[3], float orient[16])
 {
 	TrackedObject *to = nameToTracker[fullname];
+	if(to == NULL)
+	{
+		msg(FATAL, "vrpn_update() was called before vrpn_connect() was called for object '%s'", fullname);
+		return 0;
+	}
 		
 	/* If we already have a tracker object, ask it to run the main
 	 * loop (and therefore call our handle_tracker() function if
@@ -340,6 +286,69 @@ static int vrpn_update(const char *fullname, float pos[3], float orient[16])
 		return 1; // we successfully collected some data
 	}
 }
+
+
+
+#endif // ifndef MISSING_VRPN
+
+extern "C" {
+
+/** Returns 1 if we are connecting to the Vicon tracker in the IVS lab.
+ */
+int vrpn_is_vicon(const char *hostname)
+{
+	/* The hostname may or may not have tcp:// in front of it. */
+	if(strstr(hostname, "141.219.") == NULL) // TODO: Find a better way...
+		return 0;
+	return 1;
+}
+
+/** Returns the default hostname based on the contents of
+    "~/.vrpn-server". Returns NULL on failure.
+
+    @return NULL on failure or a string. The returned string should
+    NOT be free()'d because the same string will be returned each time
+    we call this function.
+ */
+char* vrpn_default_host(void)
+{
+	static char *cachedHostname = NULL;
+	if(cachedHostname != NULL)
+		return cachedHostname;
+
+	/* Try reading VRPN server information from ~/.vrpn-server
+	   
+	   This file should contain a single line that says something like:
+	   tcp://VRPN.SERVER.IP.ADDR
+	*/
+	const char *homedir = getenv("HOME");
+	char path[1024];
+	snprintf(path, 1024, "%s/.vrpn-server", homedir);
+	FILE *f = fopen(path, "r");
+	if(f == NULL)
+	{
+		msg(WARNING, "Can't open file %s to get VRPN server information.\n", path);
+		return NULL;
+	}
+	char *vrpnString = (char*)malloc(1024);
+	*vrpnString='\0';
+
+	do
+	{
+		if(fgets(vrpnString, 1024, f) == NULL)
+		{
+			msg(WARNING, "Can't read %s to get VRPN server information.\n", path);
+			return NULL;
+		}
+		kuhl_trim_whitespace(vrpnString);
+	} while(*vrpnString == '#' || strlen(vrpnString) == 0);  // allow for comments and blank lines in vrpn-server file.
+	fclose(f);
+
+	// msg(DEBUG, "Found in %s: '%s'\n", path, vrpnString);
+	cachedHostname = vrpnString;
+	return vrpnString;
+}
+
 
 
 /** Given an VRPN object name and a (possibily NULL) hostname,
