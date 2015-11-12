@@ -298,9 +298,12 @@ extern "C" {
 int vrpn_is_vicon(const char *hostname)
 {
 	/* The hostname may or may not have tcp:// in front of it. */
-	if(strstr(hostname, "141.219.") == NULL) // TODO: Find a better way...
-		return 0;
-	return 1;
+	// TODO: Find a better way...
+	if(strstr(hostname, "192.168.11.1") != NULL) // Hard-wired vicon IP address
+		return 1;
+	if(strstr(hostname, "141.219.") != NULL)
+		return 1;
+	return 0;
 }
 
 /** Returns the default hostname based on the contents of
