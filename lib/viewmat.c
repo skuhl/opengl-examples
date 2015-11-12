@@ -821,10 +821,6 @@ static void viewmat_fix_rotation(float orient[16])
 			mat4f_mult_mat4f_many(orient, orient, offsetVicon1, offsetVicon2, NULL);
 		}
 	}
-	if(hostname)
-		free(hostname);
-
-
 }
 
 
