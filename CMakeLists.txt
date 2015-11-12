@@ -8,7 +8,7 @@ set(CMAKE_CXX_COMPILER "g++")
 
 project("opengl-examples" C CXX)  # This project uses C and C++
 
-if(NOT ${WIN32})
+if(NOT WIN32)
 # Add "-pg" to to both the C_FLAGS and the CXX_FLAGS to enable profiling
 # -O2 or -O3 is necessary to get the compiler to inline the inlined functions used by vecmat.c and vecmat.h
 # -march=native will cause the compiler to use features that are available on the current CPU (SSE, etc)---but will make the resulting executable less portable.
