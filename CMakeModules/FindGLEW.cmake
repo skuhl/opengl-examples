@@ -10,6 +10,9 @@ set(CMAKE_INCLUDE_PATH "/research/kuhl/public-ogl/glew/include" ${CMAKE_INCLUDE_
 set(CMAKE_LIBRARY_PATH "/home/campus11/kuhl/public-ogl/glew/lib" ${CMAKE_LIBRARY_PATH})
 set(CMAKE_INCLUDE_PATH "/home/campus11/kuhl/public-ogl/glew/include" ${CMAKE_INCLUDE_PATH})
 
+# Search paths for newell.cs
+set(CMAKE_LIBRARY_PATH "/home/kuhl/public-ogl/glew/lib" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "/home/kuhl/public-ogl/glew/include" ${CMAKE_INCLUDE_PATH})
 
 
 #.rst:
@@ -108,8 +111,16 @@ find_library(GLEW_LIBRARY NAMES GLEW glew32 glew glew32s PATH_SUFFIXES lib lib64
 set(GLEW_INCLUDE_DIRS ${GLEW_INCLUDE_DIR})
 set(GLEW_LIBRARIES ${GLEW_LIBRARY})
 
+if(GLEW_INCLUDE_DIR AND EXISTS "${GLEW_INCLUDE_DIR}/GL/glew.h")
+    file(STRINGS "${GLEW_INCLUDE_DIR}/GL/glew.h" GLEW_VER REGEX "^VERSION .*$")
+    if(GLEW_VER)
+       string(REGEX REPLACE "VERSION (.*)$" "\\1" GLEW_VERSION_STRING ${GLEW_VER})
+    endif()
+endif()
+
 find_package_handle_standard_args(GLEW
-                                  REQUIRED_VARS GLEW_LIBRARY GLEW_INCLUDE_DIR)
+                                  REQUIRED_VARS GLEW_LIBRARY GLEW_INCLUDE_DIR
+                                  VERSION_VAR GLEW_VERSION_STRING )
 
 if(GLEW_FOUND AND NOT TARGET GLEW::GLEW)
   add_library(GLEW::GLEW UNKNOWN IMPORTED)

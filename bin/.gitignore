@@ -24,6 +24,8 @@
 /pong
 /glinfo
 /frustum
+/tracker-demo
+/tracker-stats
 
 # Binaries created in vrpn folder
 /fake-server

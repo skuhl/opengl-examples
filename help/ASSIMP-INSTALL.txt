@@ -1,4 +1,4 @@
-ASSIMP 3.0 is available in the Ubuntu 14.04 package manager as well as
+ASSIMP 3.0 is available in the Ubuntu package manager as well as
 homebrew for OSX. It is sufficient for most purposes. If you are
 trying to use ASSIMP for the first time, I recommend that you try this
 easy option before trying to download and compile the latest
@@ -6,9 +6,9 @@ version. On many systems, you will need to install both the library
 and the associated headers (for example libassimp3 and libassimp-dev).
 
 If you are encountering problems are loading lots of 3D models,
-getting the latest version (3.1.1, at the current time of writing) may
-be useful. The most noticeable change in ASSIMP 3.1.1 is that it
-improves how models are scaled when they are loaded.
+getting the latest version (3.2, at the current time of writing) may
+be useful. In ASSIMP 3.0, some models were loaded as the wrong
+size. ASSIMP 3.1.1 and newer resolves this problem.
 
 To compile it yourself, download a copy:
 http://assimp.sourceforge.net/
@@ -21,5 +21,4 @@ To make sure that cmake finds your copy of the library, run
 "./cleanup.sh" to clean up all of the binaries and CMake cache files
 from your opengl-examples directory. Then run "cmake ." and "make" to
 compile with ASSIMP. If CMake doesn't find your copy of the ASSIMP
-library, you may need to edit CMakeLists.txt in the opengl-examples
-directory.
+library, you may need to edit CMakeModules/FindASSIMP.cmake.
