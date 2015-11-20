@@ -28,16 +28,23 @@
  *
  * @param measured The newest, unfiltered measurement.
  *
+ * @param measured_time The time that 'measured' was recorded in
+ * microseconds. If -1, we will use the current time in the time
+ * variable.
+ *
  * @return The filtered data.
  *
  */
-float kalman_estimate(kalman_state * state, float measured)
+float kalman_estimate(kalman_state * state, float measured, long measured_time)
 {
 	if(state->isEnabled == 0)
 		return measured;
 
-	long now = kuhl_milliseconds();
-	double dt = (now - state->time_prev)/1000.0;
+	if(measured_time == -1)
+		measured_time = kuhl_microseconds();
+	if(state->time_prev == -1)
+		state->time_prev = measured_time-1;
+	double dt = (measured_time - state->time_prev)/1000000.0;
 	
 	/* A is the transition matrix which will move our state ahead by
 	 * one timestep. */
@@ -134,7 +141,7 @@ float kalman_estimate(kalman_state * state, float measured)
 		state->p[i] = p_minus[i] - subtrahend[i]; // P = P-(K*H)*P
 
 	// vec3d_print(xk); // Print current estimate of pos, velocity, accel
-	state->time_prev = now;
+	state->time_prev = measured_time;
 	vec3d_copy(state->xk_prev, xk);
 	return xk[0];
 }
@@ -143,7 +150,7 @@ float kalman_estimate(kalman_state * state, float measured)
 
    @param state A pointer to a kalman_state struct which should be initialized.
    
-   @param stddev Standard deviation of the measurement noise.
+   @param sigma_meas Standard deviation of the measurement noise.
 
    @param qScale A value near 0 indicates high confidence in our
    model. A larger value will cause the filter to better track large
@@ -154,7 +161,7 @@ void kalman_initialize(kalman_state * state, float sigma_meas, float qScale)
 	memset(state, 0, sizeof(kalman_state));
 
 	state->isEnabled = 1;
-	state->time_prev = kuhl_milliseconds();
+	state->time_prev = -1;
 
 	float sigma_model = 100; // confidence in current state (smaller=more confident)
 
@@ -162,14 +169,16 @@ void kalman_initialize(kalman_state * state, float sigma_meas, float qScale)
 	   where we are handling position, velocity, and
 	   acceleration. However, we can scale this matrix to indicate how
 	   confident we are in our model. Setting it to 0 indicates a
-	   belief that our model is perfect. Making this value will cause
-	   the filter to better track large jumps in data.
+	   belief that our model is perfect. Making this value large will
+	   cause the filter be willing to accept and follow large jumps in
+	   the data.
 	
-	   In the case of a tracking, the user's movements is noise because they
-	   will be moving in complex and unpredictable ways which will not fit our
-	   model.  If we are assuming position is changing due to velocity and
-	   velocity is changing due to acceleration, and acceleration is fixed,
-	   errors in acceleration will occur.
+	   In the case of a tracking, the user's movements is noise
+	   because they will be moving in complex and unpredictable ways
+	   which will not fit our model.  If we are assuming position is
+	   changing due to velocity and velocity is changing due to
+	   acceleration, and acceleration is fixed, errors in acceleration
+	   will occur.
 	*/
 	state->qScale = qScale;
 	

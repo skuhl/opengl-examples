@@ -28,7 +28,7 @@ typedef struct {
 } kalman_state;
 
 void kalman_initialize(kalman_state * state, float sigma_meas, float qScale);
-float kalman_estimate(kalman_state * state, float measured);
+float kalman_estimate(kalman_state * state, float measured, long measured_time);
 
 #ifdef __cplusplus
 } // end extern "C"

@@ -17,7 +17,7 @@ uniform int renderStyle;
 float diffuseScalar(vec3 normal, vec3 lightDir, bool frontBackSame)
 {
 	/* Basic equation for diffuse shading */
-	float diffuse = dot(normalize(lightDir), normalize(out_Normal.xyz));
+	float diffuse = dot(normalize(lightDir), normalize(normal.xyz));
 
 	/* The diffuse value will be negative if the normal is pointing in
 	 * the opposite direction of the light. Set diffuse to 0 in this
