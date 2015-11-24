@@ -118,7 +118,7 @@ void kuhl_ogl_init(int *argcp, char **argv, int width, int height,
 		glutInitContextProfile(GLUT_CORE_PROFILE);
 	}
 #else // Typically we get here if we are on a Mac.
-	if(mode == 32)
+	if(oglProfile == 32)
 		mode |= GLUT_3_2_CORE_PROFILE;
 	// TODO: Add more modes and verify they work on a Mac.
 
