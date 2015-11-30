@@ -2990,8 +2990,8 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		       mesh->mNumVertices,
 		       mesh->mNumFaces*meshPrimitiveType,
 		       meshPrimitiveType,
-		       mesh->mNormals       == NULL ? "n" : "y",
-		       mesh->mColors[0]==NULL ? "n" : "y", // mColors is an array of pointers
+		       mesh->mNormals          == NULL ? "n" : "y",
+		       mesh->mColors[0]        == NULL ? "n" : "y", // mColors is an array of pointers
 		       mesh->mTextureCoords[0] == NULL ? "n" : "y",   // mTextureCoords is an array of pointers
 		       mesh->mNumBones,
 		       geom->texture_count == 0 ? "(null)" : texPath.data);
