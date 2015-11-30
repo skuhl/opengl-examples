@@ -2747,7 +2747,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 			    "support drawing triangle, line, or point meshes. "
 			    "This mesh contained polygons, and we are skipping it. "
 			    "To resolve this problem, ensure that the file is loaded "
-			    "with aiProcess_Triangulage to force ASSIMP to triangulate "
+			    "with aiProcess_Triangulate to force ASSIMP to triangulate "
 			    "the model.\n",
 			    nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
 			continue;
