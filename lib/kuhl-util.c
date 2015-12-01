@@ -3305,7 +3305,7 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 	// set up texture
 	if(texture != NULL)
 	{
-		if(glIsTexture(*texture) == GL_TRUE) // if texture is 0, always returns GL_FALSE
+		if(glIsTexture(*texture) == GL_TRUE) // if texture is 0, returns GL_FALSE
 		{
 			msg(WARNING, "When generating a framebuffer, the 'texture' variable should be either NULL or zero. Remember that you only need to call kuhl_gen_framebuffer() once to create a framebuffer that is connected to a texture. Calling it repeatedly when only a single framebuffer is needed will result in a memory leak.");
 		}
@@ -3320,7 +3320,7 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 	}
 	if(depthTexture != NULL)
 	{
-		if(glIsTexture(*texture) == GL_TRUE) // if texture is 0, always returns GL_FALSE
+		if(glIsTexture(*depthTexture) == GL_TRUE) // if texture is 0, returns GL_FALSE
 		{
 			msg(WARNING, "When generating a framebuffer, the 'depthTexture' variable should be either NULL or zero. Remember that you only need to call kuhl_gen_framebuffer() once to create a framebuffer that is connected to a texture. Calling it repeatedly when only a single framebuffer is needed will result in a memory leak.");
 		}
