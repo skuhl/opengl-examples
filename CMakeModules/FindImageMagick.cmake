@@ -1,76 +1,93 @@
 
 # IVS - installed version is too old.
-set(CMAKE_LIBRARY_PATH "/research/kuhl/public-ogl/ImageMagick-6.8.9-5/magick/.libs/" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "/research/kuhl/public-ogl/ImageMagick-6.8.9-5/" ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH "/research/kuhl/public-ogl/ImageMagick/magick/.libs/" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "/research/kuhl/public-ogl/ImageMagick/" ${CMAKE_INCLUDE_PATH})
 # CCSR - installed version is too old.
-set(CMAKE_LIBRARY_PATH "/home/kuhl/public-ogl/ImageMagick-6.8.9-6/magick/.libs/" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "/home/kuhl/public-ogl/ImageMagick-6.8.9-6/" ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH "/home/kuhl/public-ogl/ImageMagick/magick/.libs/" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "/home/kuhl/public-ogl/ImageMagick/" ${CMAKE_INCLUDE_PATH})
 
 
 
-# This file is here because the FindImageMagick.cmake file that comes
-# with older versions of cmake does not work as well as this
-# one. Specifically, older versions of this file do not correctly
-# detect libraries with suffixes 6Q16 (in libMagickCore-6.Q16.so).
+# FindImageMagick.cmake is typically installed on any machines with cmake on them. However, we need this specific version of this file because this version works on the IVS machines (while still working on other machines too!)
 #
 # This file is based on the file that is packed with CMake and
 # therefore is licensed under the license used by CMake.
 #
-# - Find the ImageMagick binary suite.
-# This module will search for a set of ImageMagick tools specified
-# as components in the FIND_PACKAGE call. Typical components include,
-# but are not limited to (future versions of ImageMagick might have
+# This module will search for a set of ImageMagick tools specified as
+# components in the FIND_PACKAGE call.  Typical components include, but
+# are not limited to (future versions of ImageMagick might have
 # additional components not listed here):
 #
-#  animate
-#  compare
-#  composite
-#  conjure
-#  convert
-#  display
-#  identify
-#  import
-#  mogrify
-#  montage
-#  stream
+# ::
+#
+#   animate
+#   compare
+#   composite
+#   conjure
+#   convert
+#   display
+#   identify
+#   import
+#   mogrify
+#   montage
+#   stream
+#
+#
 #
 # If no component is specified in the FIND_PACKAGE call, then it only
-# searches for the ImageMagick executable directory. This code defines
+# searches for the ImageMagick executable directory.  This code defines
 # the following variables:
 #
-#  ImageMagick_FOUND                  - TRUE if all components are found.
-#  ImageMagick_EXECUTABLE_DIR         - Full path to executables directory.
-#  ImageMagick_<component>_FOUND      - TRUE if <component> is found.
-#  ImageMagick_<component>_EXECUTABLE - Full path to <component> executable.
-#  ImageMagick_VERSION_STRING         - the version of ImageMagick found
-#                                       (since CMake 2.8.8)
+# ::
+#
+#   ImageMagick_FOUND                  - TRUE if all components are found.
+#   ImageMagick_EXECUTABLE_DIR         - Full path to executables directory.
+#   ImageMagick_<component>_FOUND      - TRUE if <component> is found.
+#   ImageMagick_<component>_EXECUTABLE - Full path to <component> executable.
+#   ImageMagick_VERSION_STRING         - the version of ImageMagick found
+#                                        (since CMake 2.8.8)
+#
+#
 #
 # ImageMagick_VERSION_STRING will not work for old versions like 5.2.3.
 #
 # There are also components for the following ImageMagick APIs:
 #
-#  Magick++
-#  MagickWand
-#  MagickCore
+# ::
+#
+#   Magick++
+#   MagickWand
+#   MagickCore
+#
+#
 #
 # For these components the following variables are set:
 #
-#  ImageMagick_FOUND                    - TRUE if all components are found.
-#  ImageMagick_INCLUDE_DIRS             - Full paths to all include dirs.
-#  ImageMagick_LIBRARIES                - Full paths to all libraries.
-#  ImageMagick_<component>_FOUND        - TRUE if <component> is found.
-#  ImageMagick_<component>_INCLUDE_DIRS - Full path to <component> include dirs.
-#  ImageMagick_<component>_LIBRARIES    - Full path to <component> libraries.
+# ::
+#
+#   ImageMagick_FOUND                    - TRUE if all components are found.
+#   ImageMagick_INCLUDE_DIRS             - Full paths to all include dirs.
+#   ImageMagick_LIBRARIES                - Full paths to all libraries.
+#   ImageMagick_<component>_FOUND        - TRUE if <component> is found.
+#   ImageMagick_<component>_INCLUDE_DIRS - Full path to <component> include dirs.
+#   ImageMagick_<component>_LIBRARIES    - Full path to <component> libraries.
+#
+#
 #
 # Example Usages:
-#  find_package(ImageMagick)
-#  find_package(ImageMagick COMPONENTS convert)
-#  find_package(ImageMagick COMPONENTS convert mogrify display)
-#  find_package(ImageMagick COMPONENTS Magick++)
-#  find_package(ImageMagick COMPONENTS Magick++ convert)
 #
-# Note that the standard FIND_PACKAGE features are supported
-# (i.e., QUIET, REQUIRED, etc.).
+# ::
+#
+#   find_package(ImageMagick)
+#   find_package(ImageMagick COMPONENTS convert)
+#   find_package(ImageMagick COMPONENTS convert mogrify display)
+#   find_package(ImageMagick COMPONENTS Magick++)
+#   find_package(ImageMagick COMPONENTS Magick++ convert)
+#
+#
+#
+# Note that the standard FIND_PACKAGE features are supported (i.e.,
+# QUIET, REQUIRED, etc.).
 
 #=============================================================================
 # CMake - Cross Platform Makefile Generator
@@ -134,6 +151,7 @@ set(CMAKE_INCLUDE_PATH "/home/kuhl/public-ogl/ImageMagick-6.8.9-6/" ${CMAKE_INCL
 #  * Kitware, Inc.
 #=============================================================================
 
+find_package(PkgConfig QUIET)
 
 #---------------------------------------------------------------------
 # Helper functions
@@ -141,8 +159,13 @@ set(CMAKE_INCLUDE_PATH "/home/kuhl/public-ogl/ImageMagick-6.8.9-6/" ${CMAKE_INCL
 function(FIND_IMAGEMAGICK_API component header)
   set(ImageMagick_${component}_FOUND FALSE PARENT_SCOPE)
 
+  pkg_check_modules(PC_${component} QUIET ${component})
+
   find_path(ImageMagick_${component}_INCLUDE_DIR
     NAMES ${header}
+    HINTS
+      ${PC_${component}_INCLUDEDIR}
+      ${PC_${component}_INCLUDE_DIRS}
     PATHS
       ${ImageMagick_INCLUDE_DIRS}
       "[HKEY_LOCAL_MACHINE\\SOFTWARE\\ImageMagick\\Current;BinPath]/include"
@@ -164,6 +187,9 @@ function(FIND_IMAGEMAGICK_API component header)
     )
   find_library(ImageMagick_${component}_LIBRARY
     NAMES ${ARGN}
+    HINTS
+      ${PC_${component}_LIBDIR}
+      ${PC_${component}_LIB_DIRS}
     PATHS
       "[HKEY_LOCAL_MACHINE\\SOFTWARE\\ImageMagick\\Current;BinPath]/lib"
     DOC "Path to the ImageMagick Magick++ library."
@@ -229,9 +255,8 @@ find_path(ImageMagick_EXECUTABLE_DIR
 # Find each component. Search for all tools in same dir
 # <ImageMagick_EXECUTABLE_DIR>; otherwise they should be found
 # independently and not in a cohesive module such as this one.
-#unset(ImageMagick_REQUIRED_VARS)
-#unset(ImageMagick_DEFAULT_EXECUTABLES)
-set(ImageMagick_FOUND TRUE)
+unset(ImageMagick_REQUIRED_VARS)
+unset(ImageMagick_DEFAULT_EXECUTABLES)
 foreach(component ${ImageMagick_FIND_COMPONENTS}
     # DEPRECATED: forced components for backward compatibility
     convert mogrify import montage composite
@@ -248,32 +273,57 @@ foreach(component ${ImageMagick_FIND_COMPONENTS}
     list(APPEND ImageMagick_REQUIRED_VARS ImageMagick_MagickWand_LIBRARY)
   elseif(component STREQUAL "MagickCore")
     FIND_IMAGEMAGICK_API(MagickCore magick/MagickCore.h
-      CORE_RL_magick_ MagickCore-6.Q16 MagickCore-Q16 MagickCore-6.Q8 MagickCore-Q8 MagickCore-6.Q16HDRI MagickCore-Q16HDRI MagickCore-6.Q8HDRI MagickCore-Q8HDRI MagickCore Magick
+      Magick MagickCore CORE_RL_magick_ MagickCore-6.Q16 MagickCore-Q16 MagickCore-6.Q8 MagickCore-Q8 MagickCore-6.Q16HDRI MagickCore-Q16HDRI MagickCore-6.Q8HDRI MagickCore-Q8HDRI
       )
     list(APPEND ImageMagick_REQUIRED_VARS ImageMagick_MagickCore_LIBRARY)
   else()
     if(ImageMagick_EXECUTABLE_DIR)
       FIND_IMAGEMAGICK_EXE(${component})
     endif()
-ENDIF(component STREQUAL "Magick++")
-  
-  IF(NOT ImageMagick_${component}_FOUND)
-    LIST(FIND ImageMagick_FIND_COMPONENTS ${component} is_requested)
-    IF(is_requested GREATER -1)
-      SET(ImageMagick_FOUND FALSE)
-    ENDIF(is_requested GREATER -1)
-  ENDIF(NOT ImageMagick_${component}_FOUND)
-ENDFOREACH(component)
 
-SET(ImageMagick_INCLUDE_DIRS ${ImageMagick_INCLUDE_DIRS})
-SET(ImageMagick_LIBRARIES ${ImageMagick_LIBRARIES})
+    if(ImageMagick_FIND_COMPONENTS)
+      list(FIND ImageMagick_FIND_COMPONENTS ${component} is_requested)
+      if(is_requested GREATER -1)
+        list(APPEND ImageMagick_REQUIRED_VARS ImageMagick_${component}_EXECUTABLE)
+      endif()
+    elseif(ImageMagick_${component}_EXECUTABLE)
+      # if no components were requested explicitly put all (default) executables
+      # in the list
+      list(APPEND ImageMagick_DEFAULT_EXECUTABLES ImageMagick_${component}_EXECUTABLE)
+    endif()
+  endif()
+endforeach()
+
+if(NOT ImageMagick_FIND_COMPONENTS AND NOT ImageMagick_DEFAULT_EXECUTABLES)
+  # No components were requested, and none of the default components were
+  # found. Just insert mogrify into the list of the default components to
+  # find so FPHSA below has something to check
+  list(APPEND ImageMagick_REQUIRED_VARS ImageMagick_mogrify_EXECUTABLE)
+elseif(ImageMagick_DEFAULT_EXECUTABLES)
+  list(APPEND ImageMagick_REQUIRED_VARS ${ImageMagick_DEFAULT_EXECUTABLES})
+endif()
+
+set(ImageMagick_INCLUDE_DIRS ${ImageMagick_INCLUDE_DIRS})
+set(ImageMagick_LIBRARIES ${ImageMagick_LIBRARIES})
+
+if(ImageMagick_mogrify_EXECUTABLE)
+  execute_process(COMMAND ${ImageMagick_mogrify_EXECUTABLE} -version
+                  OUTPUT_VARIABLE imagemagick_version
+                  ERROR_QUIET
+                  OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(imagemagick_version MATCHES "^Version: ImageMagick ([-0-9\\.]+)")
+    set(ImageMagick_VERSION_STRING "${CMAKE_MATCH_1}")
+  endif()
+  unset(imagemagick_version)
+endif()
 
 #---------------------------------------------------------------------
 # Standard Package Output
 #---------------------------------------------------------------------
 INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(
-  ImageMagick DEFAULT_MSG ImageMagick_LIBRARIES
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(ImageMagick
+                                  REQUIRED_VARS ${ImageMagick_REQUIRED_VARS}
+                                  VERSION_VAR ImageMagick_VERSION_STRING
   )
 # Maintain consistency with all other variables.
 set(ImageMagick_FOUND ${IMAGEMAGICK_FOUND})
