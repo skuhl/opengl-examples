@@ -139,15 +139,16 @@ void get_model_matrix(float result[16])
 	float percentComplete = (glutGet(GLUT_ELAPSED_TIME)%4000)/4000.0;
 	//printf("percent complete %f\n", percentComplete);
 	
-	float startEuler[3] = { 0, 90, 0 };
-	float endEuler[3] = { 90, 00, 90 };
+	float startEuler[3] = { 0, 0, 0 };
+	float endEuler[3] = { 0, -150, 0 };
 	float startMatrix[16], endMatrix[16];
 	mat4f_rotateEuler_new(startMatrix, startEuler[0], startEuler[1], startEuler[2], "XYZ");
 	mat4f_rotateEuler_new(endMatrix, endEuler[0], endEuler[1], endEuler[2], "XYZ");
 
-	if(rotateStyle == 0) // Interpolate eulers
+	if(rotateStyle == 0) // Interpolate eulers.
 	{
-
+		// When we interpolate Euler angles, the object might appear
+		// to "wobble" some between orientations.
 		float interpolate[3] = { 0,0,0 };
 		vec3f_scalarMult(startEuler, 1-percentComplete);
 		vec3f_scalarMult(endEuler, percentComplete);
@@ -156,6 +157,8 @@ void get_model_matrix(float result[16])
 	}
 	else if(rotateStyle == 1) // Interpolate matrices
 	{
+		// When we interpolate matrices, the scaling of the object may
+		// change in unexpected ways between orientations.
 		for(int i=0; i<16; i++)
 		{
 			rotateAnimate[i] = startMatrix[i] * (1-percentComplete) +
@@ -164,20 +167,37 @@ void get_model_matrix(float result[16])
 	}
 	else if(rotateStyle == 2) // interpolate quaternions - linear
 	{
+		// When we interpolate quaternions, the rotation looks
+		// good---but it may speed up or slow down slightly during the
+		// rotation.
 		float startQuat[4], endQuat[4];
 		float interpQuat[4];
 		quatf_from_mat4f(startQuat, startMatrix);
 		quatf_from_mat4f(endQuat, endMatrix);
+		
+		/* If the rotation would be more than 180 degrees, rotate the
+		 * other way instead. */
+		float dotProd = 0;
+		for(int i=0; i<4; i++)
+			dotProd += startQuat[i]*endQuat[i];
+		if(dotProd < 0)
+			vec4f_scalarMult(endQuat, -1);
+		
+		/* Do the linear interpolation */
 		for(int i=0; i<4; i++)
 		{
 			interpQuat[i] = startQuat[i]*(1-percentComplete) +
-				endQuat[i] * percentComplete;
+			                endQuat[i]  *percentComplete;
 		}
+		
 		quatf_normalize(interpQuat);
 		mat4f_rotateQuatVec_new(rotateAnimate, interpQuat);
 	}
 	else if(rotateStyle == 3) // quaternion slerp
 	{
+		// The best way to interpolate rotations is to use spherical
+		// linear interpolation of quaternions. This will look almost
+		// the same as linearly interpolating quaternions.
 		float startQuat[4], endQuat[4];
 		float interpQuat[4];
 		quatf_from_mat4f(startQuat, startMatrix);
