@@ -2747,7 +2747,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 			    "support drawing triangle, line, or point meshes. "
 			    "This mesh contained polygons, and we are skipping it. "
 			    "To resolve this problem, ensure that the file is loaded "
-			    "with aiProcess_Triangulage to force ASSIMP to triangulate "
+			    "with aiProcess_Triangulate to force ASSIMP to triangulate "
 			    "the model.\n",
 			    nd->mMeshes[n], n+1, nd->mNumMeshes, nd->mName.data);
 			continue;
@@ -2990,8 +2990,8 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		       mesh->mNumVertices,
 		       mesh->mNumFaces*meshPrimitiveType,
 		       meshPrimitiveType,
-		       mesh->mNormals       == NULL ? "n" : "y",
-		       mesh->mColors[0]==NULL ? "n" : "y", // mColors is an array of pointers
+		       mesh->mNormals          == NULL ? "n" : "y",
+		       mesh->mColors[0]        == NULL ? "n" : "y", // mColors is an array of pointers
 		       mesh->mTextureCoords[0] == NULL ? "n" : "y",   // mTextureCoords is an array of pointers
 		       mesh->mNumBones,
 		       geom->texture_count == 0 ? "(null)" : texPath.data);
@@ -3270,13 +3270,17 @@ static void kuhl_framebuffer_errormsg(GLenum fbStatus)
  *
  * @param height The height of the framebuffer to create
  *
- * @param texture To be filled with a texture ID which the color 
- * buffer of the framebuffer will be connected to. Use NULL if you
- * you do not want the colorbuffer connected to a texture.
+ * @param texture To be filled with a texture ID which the color
+ * buffer of the framebuffer will be connected to. Use NULL if you you
+ * do not want the colorbuffer connected to a texture. The integer
+ * that 'texture' points at should be initialized to zero (i.e., no
+ * texture).
  *
- * @param depthTexture To be filled with a texture ID which the
- * depth buffer values of the framebuffer will be connected to. Use
- * NULL if you do not want the depthbuffer connected to a texture.
+ * @param depthTexture To be filled with a texture ID which the depth
+ * buffer values of the framebuffer will be connected to. Use NULL if
+ * you do not want the depthbuffer connected to a texture. The integer
+ * that 'texture' points at should be initialized to zero (i.e., no
+ * texture).
  *
  * @return Returns a framebuffer id that can be enabled with
  * glBindFramebuffer().
@@ -3301,6 +3305,10 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 	// set up texture
 	if(texture != NULL)
 	{
+		if(glIsTexture(*texture) == GL_TRUE) // if texture is 0, returns GL_FALSE
+		{
+			msg(WARNING, "When generating a framebuffer, the 'texture' variable should be either NULL or zero. Remember that you only need to call kuhl_gen_framebuffer() once to create a framebuffer that is connected to a texture. Calling it repeatedly when only a single framebuffer is needed will result in a memory leak.");
+		}
 		glGenTextures(1, texture);
 		glBindTexture(GL_TEXTURE_2D, *texture);
 		glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, width, height, 0, GL_RGB,
@@ -3312,6 +3320,10 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 	}
 	if(depthTexture != NULL)
 	{
+		if(glIsTexture(*depthTexture) == GL_TRUE) // if texture is 0, returns GL_FALSE
+		{
+			msg(WARNING, "When generating a framebuffer, the 'depthTexture' variable should be either NULL or zero. Remember that you only need to call kuhl_gen_framebuffer() once to create a framebuffer that is connected to a texture. Calling it repeatedly when only a single framebuffer is needed will result in a memory leak.");
+		}
 		glGenTextures(1, depthTexture);
 		glBindTexture(GL_TEXTURE_2D, *depthTexture);
 		glTexImage2D(GL_TEXTURE_2D, 0,GL_DEPTH24_STENCIL8, width, height, 0,
