@@ -40,17 +40,22 @@ include(${CMAKE_SOURCE_DIR}/CMakeModules/colorMessage.cmake)
 # available. Fail if a high enough version of OpenGL is not supported.
 find_file(GLXINFO glxinfo)
 find_file(GLEWINFO glewinfo)
-if(UNIX AND NOT APPLE AND (GLXINFO OR GLEWINFO))
+if(UNIX AND (GLXINFO OR GLEWINFO))
 	# Print out graphics card information
 	execute_process(COMMAND ${GLXINFO} COMMAND grep "OpenGL renderer string" COMMAND cut -d ":" -f 2 OUTPUT_VARIABLE openglrenderingstring OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+
+	# Specifying core profile 3.2 is necessary to get glewinfo to print correct information on OSX.
+	if(NOT openglrenderingstring)
+		execute_process(COMMAND ${GLEWINFO} -version 3.2 -profile core COMMAND grep "Running on a " COMMAND cut -d " " -f 4- OUTPUT_VARIABLE openglrenderingstring OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+	endif()	       
 	if(openglrenderingstring)
-		message("OpenGL renderer -${openglrenderingstring}")
+		message("OpenGL renderer - ${openglrenderingstring}")
 	endif()
 
 	# Check if the supported OpenGL version is sufficient using either glxinfo or glewinfo commands
 	execute_process(COMMAND ${GLXINFO} COMMAND grep "OpenGL core profile version string" COMMAND cut -d " " -f 6 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 	if(NOT openglversion AND GLEWINFO)
-		execute_process(COMMAND ${GLEWINFO} COMMAND grep "OpenGL version " COMMAND cut -d " " -f 3 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+		execute_process(COMMAND ${GLEWINFO} -version 3.2 -profile core COMMAND grep "OpenGL version " COMMAND cut -d " " -f 3 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 	endif()
 
 	if(openglversion)
