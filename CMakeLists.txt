@@ -150,14 +150,6 @@ endif()
 find_package(GLEW REQUIRED)
 include_directories(${GLEW_INCLUDE_DIRS})
 
-# Check for a newer extension that we use for glGetProgram(). If GLEW
-# is too old, it might not know about the extension and we could get
-# compile errors.
-include(CheckSymbolExists)
-CHECK_SYMBOL_EXISTS(GL_ARB_get_program_binary "${GLEW_INCLUDE_DIRS}/GL/glew.h" GLEW_NEW_ENOUGH)
-if(NOT GLEW_NEW_ENOUGH)
-	message(FATAL_ERROR "glew version 1.5.6 or higher is required.")
-endif()
 
 # --- ImageMagick (recommended, optional) ---
 # ImageMagick 6.7.5-5 is recommended for colorspaces to be handled correctly.
