@@ -133,6 +133,8 @@ include(CheckSymbolExists)
 	else()
 		set(FREEGLUT_FOUND_DEFINITION "")
 endif()
+set(FREEGLUT_FOUND_DEFINITION "FREEGLUT")
+
 
 # --- GLEW ---
 find_package(GLEW REQUIRED)
