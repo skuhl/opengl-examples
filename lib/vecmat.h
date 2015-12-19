@@ -269,7 +269,8 @@ static inline float vec3f_dot(const float A[3], const float B[3])
  */
 static inline double vec3d_dot(const double A[3], const double B[3])
 { return A[0]*B[0] + A[1]*B[1] + A[2]*B[2]; }
-/** Calculates the dot product of two 4-component float vectors.
+/** Calculates the dot product of two 4-component double
+ * vectors. Ignores the 4th component.
  *
  * @param A One of the vectors to take the dot product of.
  * @param B The other vector to take the dot product of.
@@ -277,7 +278,8 @@ static inline double vec3d_dot(const double A[3], const double B[3])
  */
 static inline float vec4f_dot(const float A[4], const float B[4])
 { return A[0]*B[0] + A[1]*B[1] + A[2]*B[2] + A[3]*B[3]; }
-/** Calculates the dot product of two 4-component double vectors.
+/** Calculates the dot product of two 4-component double
+ * vectors. Ignores the 4th component.
  *
  * @param A One of the vectors to take the dot product of.
  * @param B The other vector to take the dot product of.

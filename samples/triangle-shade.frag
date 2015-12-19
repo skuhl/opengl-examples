@@ -35,7 +35,7 @@ float diffuseScalar(vec3 normal, vec3 lightDir, bool frontBackSame)
 		diffuse = clamp(diffuse, 0, 1);
 
 	/* Keep diffuse value in range from .5 to 1 to prevent any object
-	 * from appearing too dark. Note technically part of diffuse
+	 * from appearing too dark. Not technically part of diffuse
 	 * shading---however, you may like the appearance of this. */
 	diffuse = diffuse/2 + .5;
 
