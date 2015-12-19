@@ -10,6 +10,11 @@ set(CMAKE_INCLUDE_PATH "/home/campus11/kuhl/public-ogl/glew/include" ${CMAKE_INC
 set(CMAKE_LIBRARY_PATH "/home/kuhl/public-ogl/glew/lib" ${CMAKE_LIBRARY_PATH})
 set(CMAKE_INCLUDE_PATH "/home/kuhl/public-ogl/glew/include" ${CMAKE_INCLUDE_PATH})
 
+if(OTHER_LIBRARIES_DIR)
+# Windows
+set(CMAKE_LIBRARY_PATH ${OTHER_LIBRARIES_DIR}/glew-1.13.0/lib/Release/Win32)
+set(CMAKE_INCLUDE_PATH ${OTHER_LIBRARIES_DIR}/glew-1.13.0/include)
+endif()
 
 #.rst:
 # FindGLEW

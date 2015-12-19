@@ -8,6 +8,11 @@ set(CMAKE_CXX_COMPILER "g++")
 
 project("opengl-examples" C CXX)  # This project uses C and C++
 
+if(WIN32)
+	set(OTHER_LIBRARIES_DIR "C:/Users/kuhl/Desktop/opengl-libs")
+endif()
+
+
 if(NOT WIN32)
 # Add "-pg" to to both the C_FLAGS and the CXX_FLAGS to enable profiling
 # -O2 or -O3 is necessary to get the compiler to inline the inlined functions used by vecmat.c and vecmat.h
@@ -141,12 +146,14 @@ include_directories(${GLUT_INCLUDE_DIR})
 
 # Since we also try to work with traditional GLUT, detect which one we are using by looking for the FREEGLUT symbol inside of the header file.
 include(CheckSymbolExists)
-	CHECK_SYMBOL_EXISTS(FREEGLUT "${GLUT_INCLUDE_DIR}/GL/freeglut.h;${GLUT_INCLUDE_DIR}/GL/glut.h" USING_FREEGLUT)
-	if(USING_FREEGLUT)
-		set(FREEGLUT_FOUND_DEFINITION "FREEGLUT")
-	else()
-		set(FREEGLUT_FOUND_DEFINITION "")
+if(EXISTS "${GLUT_INCLUDE_DIR}/GL/freeglut.h")
+	set(FREEGLUT_FOUND_DEFINITION "FREEGLUT")
+	message("Using freeglut instead of glut")
+elseif(EXISTS "${GLUT_INCLUDE_DIR}/GLUT/glut.h")
+	set(FREEGLUT_FOUND_DEFINITION "")
+	message("Using traditional GLUT instead of freeglut")
 endif()
+
 
 # --- GLEW ---
 find_package(GLEW REQUIRED)
