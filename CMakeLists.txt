@@ -141,13 +141,13 @@ include_directories(${GLUT_INCLUDE_DIR})
 
 # Since we also try to work with traditional GLUT, detect which one we are using by looking for the FREEGLUT symbol inside of the header file.
 include(CheckSymbolExists)
-	CHECK_SYMBOL_EXISTS(FREEGLUT "${GLUT_INCLUDE_DIR}/GL/freeglut.h;${GLUT_INCLUDE_DIR}/GL/glut.h" USING_FREEGLUT)
-	if(USING_FREEGLUT)
-		set(FREEGLUT_FOUND_DEFINITION "FREEGLUT")
-	else()
-		set(FREEGLUT_FOUND_DEFINITION "")
+if(EXISTS "${GLUT_INCLUDE_DIR}/GL/freeglut.h")
+	set(FREEGLUT_FOUND_DEFINITION "FREEGLUT")
+	message("Using freeglut instead of glut")
+elseif(EXISTS "${GLUT_INCLUDE_DIR}/GLUT/glut.h")
+	set(FREEGLUT_FOUND_DEFINITION "")
+	message("Using traditional GLUT instead of freeglut")
 endif()
-set(FREEGLUT_FOUND_DEFINITION "FREEGLUT")
 
 
 # --- GLEW ---
