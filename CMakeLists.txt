@@ -40,22 +40,31 @@ include(${CMAKE_SOURCE_DIR}/CMakeModules/colorMessage.cmake)
 # available. Fail if a high enough version of OpenGL is not supported.
 find_file(GLXINFO glxinfo)
 find_file(GLEWINFO glewinfo)
-if(UNIX AND (GLXINFO OR GLEWINFO))
+if(UNIX AND GLXINFO)
 	# Print out graphics card information
 	execute_process(COMMAND ${GLXINFO} COMMAND grep "OpenGL renderer string" COMMAND cut -d ":" -f 2 OUTPUT_VARIABLE openglrenderingstring OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+	execute_process(COMMAND ${GLXINFO} COMMAND grep "OpenGL core profile version string" COMMAND cut -d " " -f 6 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 
-	# Specifying core profile 3.2 is necessary to get glewinfo to print correct information on OSX.
-	if(NOT openglrenderingstring)
-		execute_process(COMMAND ${GLEWINFO} -version 3.2 -profile core COMMAND grep "Running on a " COMMAND cut -d " " -f 4- OUTPUT_VARIABLE openglrenderingstring OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-	endif()	       
+
 	if(openglrenderingstring)
 		message("OpenGL renderer - ${openglrenderingstring}")
 	endif()
 
-	# Check if the supported OpenGL version is sufficient using either glxinfo or glewinfo commands
-	execute_process(COMMAND ${GLXINFO} COMMAND grep "OpenGL core profile version string" COMMAND cut -d " " -f 6 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-	if(NOT openglversion AND GLEWINFO)
-		execute_process(COMMAND ${GLEWINFO} -version 3.2 -profile core COMMAND grep "OpenGL version " COMMAND cut -d " " -f 3 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+	if(openglversion)
+		message("OpenGL core profile version - ${openglversion}")
+		if(openglversion VERSION_LESS "3.2")
+			message(WARNING "This software expect OpenGL version 3.2 or higher; some or all programs may fail to run correctly.")
+		endif()
+	endif()
+endif()
+
+if(APPLE AND GLEWINFO)
+	# Specifying core profile 3.2 is necessary to get glewinfo to print correct information on OSX. The version of GLEW on Ubuntu 15.10 isn't new enough to support this new flag however.
+	execute_process(COMMAND ${GLEWINFO} -version 3.2 -profile core COMMAND grep "OpenGL version " COMMAND cut -d " " -f 3 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+	execute_process(COMMAND ${GLEWINFO} -version 3.2 -profile core COMMAND grep "Running on a " COMMAND cut -d " " -f 4- OUTPUT_VARIABLE openglrenderingstring OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+
+	if(openglrenderingstring)
+		message("OpenGL renderer - ${openglrenderingstring}")
 	endif()
 
 	if(openglversion)
