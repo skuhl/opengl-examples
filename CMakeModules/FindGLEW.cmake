@@ -1,7 +1,3 @@
-# Search paths for CCSR machine
-set(CMAKE_LIBRARY_PATH "/usr/local/glew/1.9.0/lib" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "/usr/local/glew/1.9.0/include" ${CMAKE_INCLUDE_PATH})
-
 # Search paths for IVS machine - NOTE: The copy of GLEW in /opt/viz is too old---haven't investigated exactly which version is needed.
 set(CMAKE_LIBRARY_PATH "/research/kuhl/public-ogl/glew/lib" ${CMAKE_LIBRARY_PATH})
 set(CMAKE_INCLUDE_PATH "/research/kuhl/public-ogl/glew/include" ${CMAKE_INCLUDE_PATH})
@@ -10,7 +6,7 @@ set(CMAKE_INCLUDE_PATH "/research/kuhl/public-ogl/glew/include" ${CMAKE_INCLUDE_
 set(CMAKE_LIBRARY_PATH "/home/campus11/kuhl/public-ogl/glew/lib" ${CMAKE_LIBRARY_PATH})
 set(CMAKE_INCLUDE_PATH "/home/campus11/kuhl/public-ogl/glew/include" ${CMAKE_INCLUDE_PATH})
 
-# Search paths for newell.cs
+# Search paths for newell.cs and CCSR
 set(CMAKE_LIBRARY_PATH "/home/kuhl/public-ogl/glew/lib" ${CMAKE_LIBRARY_PATH})
 set(CMAKE_INCLUDE_PATH "/home/kuhl/public-ogl/glew/include" ${CMAKE_INCLUDE_PATH})
 

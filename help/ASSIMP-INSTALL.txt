@@ -1,24 +1,59 @@
-ASSIMP 3.0 is available in the Ubuntu package manager as well as
-homebrew for OSX. It is sufficient for most purposes. If you are
-trying to use ASSIMP for the first time, I recommend that you try this
-easy option before trying to download and compile the latest
-version. On many systems, you will need to install both the library
-and the associated headers (for example libassimp3 and libassimp-dev).
+--- LOCATION ---
 
-If you are encountering problems are loading lots of 3D models,
-getting the latest version (3.2, at the current time of writing) may
-be useful. In ASSIMP 3.0, some models were loaded as the wrong
-size. ASSIMP 3.1.1 and newer resolves this problem.
+You can find ASSIMP at: https://github.com/assimp/assimp/releases
 
-To compile it yourself, download a copy:
-http://assimp.sourceforge.net/
+--- SELECTING AN ASSIMP VERSION ---
 
-Run "cmake ."
-Run "make"
-Run "make install" to install files into /usr/local
+If you want to use ASSIMP you should use the following versions: 
+   
+   - 3.0 or higher should work (but it has a problem where some models
+     are scaled incorrectly when loaded)
+
+   - 3.1.1 or 3.2 is recommended
+
+
+--- USING ASSIMP WITH THIS CODE ---
 
 To make sure that cmake finds your copy of the library, run
 "./cleanup.sh" to clean up all of the binaries and CMake cache files
 from your opengl-examples directory. Then run "cmake ." and "make" to
 compile with ASSIMP. If CMake doesn't find your copy of the ASSIMP
 library, you may need to edit CMakeModules/FindASSIMP.cmake.
+
+
+--- LINUX INSTRUCTIONS ---
+
+First try installing ASSIMP via your distributions package manager. On
+many systems, you will need to install both the library and the
+associated headers (for example libassimp3 and libassimp-dev).
+
+If you decide to compile it yourself:
+Download it from the website listed above
+Extract files
+cmake .
+make
+make install     # will install files into /usr/local
+
+
+--- OSX INSTRUCTIONS ---
+
+Install homebrew and run "brew install assimp"
+
+
+--- WINDOWS INSTRUCTIONS ---
+
+Download ASSIMP source code. Ensure that you have CMake and Visual Studio installed.
+
+Run cmake-gui
+
+Set the root directory of the ASSIMP source code to be "where is the source code:" and "where to build the binaries:".
+
+Click "Configure". Select Visual Studio and native compilers.
+
+Click "Generate".
+
+Open "Assimp.sln" with Visual Studio.
+
+Right click on the ALL_BUILD solution and select "Build"
+
+

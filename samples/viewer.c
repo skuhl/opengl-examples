@@ -145,6 +145,27 @@ void keyboard(unsigned char key, int x, int y)
 			kuhl_errorcheck();
 			break;
 		}
+		case 'd': // toggle depth clamping
+		{
+			if(glIsEnabled(GL_DEPTH_CLAMP))
+			{
+				printf("Depth clamping disabled\n");
+				glDisable(GL_DEPTH_CLAMP); // default
+				glDepthFunc(GL_LESS);      // default
+			}
+			else
+			{
+				/* With depth clamping, vertices beyond the near and
+				   far planes are clamped to the near and far
+				   planes. Since multiple layers of vertices will be
+				   clamped to the same depth value, depth testing
+				   beyond the near and far planes won't work. */
+				printf("Depth clamping enabled\n");
+				glEnable(GL_DEPTH_CLAMP);
+				glDepthFunc(GL_LEQUAL); // makes far clamping work.
+			}
+			break;
+		}
 		case '+': // increase size of points and width of lines
 		{
 			GLfloat currentPtSize;

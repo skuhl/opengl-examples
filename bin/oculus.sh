@@ -36,13 +36,19 @@ elif [[ `hostname` == "humility" && ${USER} == "kuhl" ]]; then
 fi
 
 
+# Do distortion correction for the Oculus
 export VIEWMAT_DISPLAY_MODE="oculus"
 
-# Different control options
-export VIEWMAT_CONTROL_MODE="oculus"  # oculus orientation sensor
-# export VIEWMAT_CONTROL_MODE="mouse" # mouse
+# Use Oculus orientation sensor OR VRPN if both the control mode is
+# set to oculus and VIEWMAT_VRPN_OBJECT is set to the object to track.
+export VIEWMAT_CONTROL_MODE="oculus" 
+# export VIEWMAT_VRPN_OBJECT="DK2"
 
-#export VIEWMAT_CONTROL_MODE="orient"  # other orientation sensor
+# Use the mouse to move instead of Oculus sensor (or VRPN)
+#export VIEWMAT_CONTROL_MODE="mouse"
+
+# Use home-made orientation sensor
+#export VIEWMAT_CONTROL_MODE="orient"
 #export ORIENT_SENSOR_TTY="/dev/ttyUSB0"
 #export ORIENT_SENSOR_TYPE="bno055"
 

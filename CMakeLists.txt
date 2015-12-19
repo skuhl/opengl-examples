@@ -42,17 +42,31 @@ include(${CMAKE_SOURCE_DIR}/CMakeModules/colorMessage.cmake)
 # available. Fail if a high enough version of OpenGL is not supported.
 find_file(GLXINFO glxinfo)
 find_file(GLEWINFO glewinfo)
-if(UNIX AND NOT APPLE AND (GLXINFO OR GLEWINFO))
+if(UNIX AND GLXINFO)
 	# Print out graphics card information
 	execute_process(COMMAND ${GLXINFO} COMMAND grep "OpenGL renderer string" COMMAND cut -d ":" -f 2 OUTPUT_VARIABLE openglrenderingstring OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+	execute_process(COMMAND ${GLXINFO} COMMAND grep "OpenGL core profile version string" COMMAND cut -d " " -f 6 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+
+
 	if(openglrenderingstring)
-		message("OpenGL renderer -${openglrenderingstring}")
+		message("OpenGL renderer - ${openglrenderingstring}")
 	endif()
 
-	# Check if the supported OpenGL version is sufficient using either glxinfo or glewinfo commands
-	execute_process(COMMAND ${GLXINFO} COMMAND grep "OpenGL core profile version string" COMMAND cut -d " " -f 6 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-	if(NOT openglversion AND GLEWINFO)
-		execute_process(COMMAND ${GLEWINFO} COMMAND grep "OpenGL version " COMMAND cut -d " " -f 3 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+	if(openglversion)
+		message("OpenGL core profile version - ${openglversion}")
+		if(openglversion VERSION_LESS "3.2")
+			message(WARNING "This software expect OpenGL version 3.2 or higher; some or all programs may fail to run correctly.")
+		endif()
+	endif()
+endif()
+
+if(APPLE AND GLEWINFO)
+	# Specifying core profile 3.2 is necessary to get glewinfo to print correct information on OSX. The version of GLEW on Ubuntu 15.10 isn't new enough to support this new flag however.
+	execute_process(COMMAND ${GLEWINFO} -version 3.2 -profile core COMMAND grep "OpenGL version " COMMAND cut -d " " -f 3 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+	execute_process(COMMAND ${GLEWINFO} -version 3.2 -profile core COMMAND grep "Running on a " COMMAND cut -d " " -f 4- OUTPUT_VARIABLE openglrenderingstring OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+
+	if(openglrenderingstring)
+		message("OpenGL renderer - ${openglrenderingstring}")
 	endif()
 
 	if(openglversion)
@@ -140,14 +154,6 @@ set(FREEGLUT_FOUND_DEFINITION "FREEGLUT")
 find_package(GLEW REQUIRED)
 include_directories(${GLEW_INCLUDE_DIRS})
 
-# Check for a newer extension that we use for glGetProgram(). If GLEW
-# is too old, it might not know about the extension and we could get
-# compile errors.
-include(CheckSymbolExists)
-CHECK_SYMBOL_EXISTS(GL_ARB_get_program_binary "${GLEW_INCLUDE_DIRS}/GL/glew.h" GLEW_NEW_ENOUGH)
-if(NOT GLEW_NEW_ENOUGH)
-	message(FATAL_ERROR "glew version 1.5.6 or higher is required.")
-endif()
 
 # --- ImageMagick (recommended, optional) ---
 # ImageMagick 6.7.5-5 is recommended for colorspaces to be handled correctly.
