@@ -8,3 +8,17 @@ log.txt
 
 /doxygen-docs
 
+
+# Visual Studio
+/bin/Debug/
+/lib/Debug/
+/samples/*.dir/
+/dgr/dgr-relay.dir/
+/lib/kuhl.dir/
+/.vs
+/Win32
+*.sdf
+*.sln
+*.opensdf
+*.vcxproj*
+
