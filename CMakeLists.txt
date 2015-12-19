@@ -8,6 +8,11 @@ set(CMAKE_CXX_COMPILER "g++")
 
 project("opengl-examples" C CXX)  # This project uses C and C++
 
+if(WIN32)
+	set(OTHER_LIBRARIES_DIR "C:/Users/kuhl/Desktop/opengl-libs")
+endif()
+
+
 if(NOT WIN32)
 # Add "-pg" to to both the C_FLAGS and the CXX_FLAGS to enable profiling
 # -O2 or -O3 is necessary to get the compiler to inline the inlined functions used by vecmat.c and vecmat.h

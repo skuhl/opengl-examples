@@ -4,6 +4,11 @@ set(CMAKE_INCLUDE_PATH /research/kuhl/public-ogl/glut/include/ ${CMAKE_INCLUDE_P
 # freeglut version 3 on newell.cs.  Note that the library is in a different subfolder starting with freeglut 3.0.0
 set(CMAKE_LIBRARY_PATH /home/kuhl/public-ogl/glut/lib ${CMAKE_LIBRARY_PATH})
 
+if(OTHER_LIBRARIES_DIR)
+# Windows
+set(CMAKE_LIBRARY_PATH ${OTHER_LIBRARIES_DIR}/freeglut-3.0.0/lib/Debug)
+set(CMAKE_INCLUDE_PATH ${OTHER_LIBRARIES_DIR}/freeglut-3.0.0/include)
+endif()
 
 # - try to find glut library and include files
 #  GLUT_INCLUDE_DIR, where to find GL/glut.h, etc.
@@ -30,7 +35,7 @@ set(CMAKE_LIBRARY_PATH /home/kuhl/public-ogl/glut/lib ${CMAKE_LIBRARY_PATH})
 if (WIN32)
   find_path( GLUT_INCLUDE_DIR NAMES GL/glut.h
     PATHS  ${GLUT_ROOT_PATH}/include )
-  find_library( GLUT_glut_LIBRARY NAMES glut glut32 freeglut
+  find_library( GLUT_glut_LIBRARY NAMES glut glut32 freeglut freeglutd
     PATHS
     ${OPENGL_LIBRARY_DIR}
     ${GLUT_ROOT_PATH}/Release
