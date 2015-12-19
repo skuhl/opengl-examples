@@ -1,3 +1,21 @@
+--- SELECTING A FREEGLUT VERSION ---
+
+This code works with most recent versions of freeglut including 3.0.0
+and recent 2.x.x releases.
+
+
+--- USING FREEGLUT WITH THIS CODE ---
+
+To make sure that cmake finds your copy of the library, run
+"./cleanup.sh" to clean up all of the binaries and CMake cache files
+from your opengl-examples directory. Then run "cmake ." and "make" to
+compile with Freeglut. If CMake doesn't find your copy of the Freeglut
+library, you may need to edit CMakeModules/FindGLUT.cmake.
+
+
+
+--- LINUX INSTRUCTIONS ---
+
 Freeglut is available in package managers for many Linux
 distributions. Even if you have freeglut installed, cmake may require
 that you also have some X development libraries installed too.
@@ -6,8 +24,6 @@ For example, on Ubuntu 14.04, you may need to install these packages:
 libxmu-dev
 libxi-dev
 freeglut3-dev
-
-On OSX, the glut included with XCode should be sufficient.
 
 
 To compile freeglut from scratch, download the latest version from:
@@ -19,3 +35,27 @@ make
 
 If you also want to install the program onto your system:
 make install
+
+
+--- OSX INSTRUCTIONS ---
+
+On OSX, the glut included with XCode should be sufficient.
+
+
+--- WINDOWS INSTRUCTIONS ---
+
+Download Freeglut source code (we've tested with Freeglut 3.0.0). Ensure that you have CMake and Visual Studio installed.
+
+Run cmake-gui
+
+Set the root directory of the Freeglut source code to be "where is the source code:" and "where to build the binaries:".
+
+Click "Configure". Select Visual Studio and native compilers.
+
+Click "Generate".
+
+Open "freeglut.sln" with Visual Studio.
+
+Right click on the ALL_BUILD solution and select "Build"
+
+Refer back to WINDOWS-VisualStudio.txt to get opengl-examples to work with your library.
