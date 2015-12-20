@@ -1,5 +1,10 @@
 --- GETTING STARTED ---
 
+STEP 0: Install Visual Studio (we have verified that it works with
+Visual Studio Community 2015). You will also need to install cmake for
+Windows. Finally, you may also want to install git to interact with
+the opengl-examples git repository.
+
 STEP 1: You will first need to download several libraries that opengl-examples
 depends on. We recommend that you place the source code and the
 libraries that you compile into a single folder (for example, an
@@ -32,9 +37,13 @@ them. Once everything is properly configured, press "Generate".
 
 STEP 6: Open opengl-examples.sln in Visual Studio. Try building the
 "triangle" program (a simple program that doesn't depend on ASSIMP)
-and the "viewer" program (a program that does depend on assimp). The
-resulting executables should be inside of opengl-examples/bin/ or a
-subdirectory.
+and the "viewer" program (a program that does depend on assimp).
+
+STEP 7: Look for the programs you built in
+opengl-examples/bin/Debug. But, before you try to run them, you will
+need to copy freeglutd.dll and assimp-vc130-mtd.dll into the bin/Debug
+folder too! You can find the dll files in the bin folders inside of
+the source code for the corresponding libraries.
 
 
 
