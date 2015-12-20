@@ -357,6 +357,11 @@ int main(int argc, char** argv)
 
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
+	if (modelgeom == NULL)
+	{
+		msg(FATAL, "Unable to load the requested model: %s", modelFilename);
+		exit(EXIT_FAILURE);
+	}
 	
 	/* Tell GLUT to start running the main loop and to call display(),
 	 * keyboard(), etc callback methods as needed. */
