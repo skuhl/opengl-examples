@@ -90,7 +90,7 @@ float readfile(char *filename, GLuint *texName, GLuint *numTiles)
 
 	if(image == NULL)
 	{
-		msg(FATAL, "Unable to read image: %s\n", filename);
+		msg(MSG_FATAL, "Unable to read image: %s\n", filename);
 		return -1;
 	}
 
@@ -100,7 +100,7 @@ float readfile(char *filename, GLuint *texName, GLuint *numTiles)
 	 * for the lowest left pixel in the texture. */
 	float original_aspectRatio = (float)width/height;
 	if(verbose)
-		msg(INFO, "Finished reading %s (%dx%d)\n", filename, width, height);
+		msg(MSG_INFO, "Finished reading %s (%dx%d)\n", filename, width, height);
 
 	/* OpenGL only supports textures if they are small enough. If
 	 * the texture is too large, we need to split it into smaller
@@ -115,7 +115,7 @@ float readfile(char *filename, GLuint *texName, GLuint *numTiles)
 	 * image isn't too tall. */
 	if(height > 4096*2)
 	{
-		msg(FATAL, "Source image must <= 8192 pixels tall.");
+		msg(MSG_FATAL, "Source image must <= 8192 pixels tall.");
 		exit(EXIT_FAILURE);
 	}
 
@@ -135,7 +135,7 @@ float readfile(char *filename, GLuint *texName, GLuint *numTiles)
 
 	if(*numTiles > MAX_TILES/2.0)
 	{
-		msg(FATAL, "Too many tiles");
+		msg(MSG_FATAL, "Too many tiles");
 		exit(EXIT_FAILURE);
 	}
 
@@ -146,7 +146,7 @@ float readfile(char *filename, GLuint *texName, GLuint *numTiles)
 
 	if(tmp == 0)
 	{
-		msg(FATAL, "%s: File is too large (%d x %d). I can't load it!\n", filename, subimgW, subimgH);
+		msg(MSG_FATAL, "%s: File is too large (%d x %d). I can't load it!\n", filename, subimgW, subimgH);
 		free(image);
 		exit(EXIT_FAILURE);
 	}
@@ -328,7 +328,7 @@ void display(void)
 //		printf("time since last advance %d\n", glutGet(GLUT_ELAPSED_TIME)-lastAdvance);
 		if(glutGet(GLUT_ELAPSED_TIME)-lastAdvance > SLIDESHOW_WAIT*1000) // time to show new image:
 		{
-			msg(INFO, "Automatically advancing to next image, please wait.\n");
+			msg(MSG_INFO, "Automatically advancing to next image, please wait.\n");
 			currentTexture = getNextTexture();
 		}
 	}
@@ -397,7 +397,7 @@ void keyboard(unsigned char key, int x, int y)
 	
 	if (key == 'n' || key == ' ')
 	{
-		msg(INFO, "Advancing to next image, please wait.\n");
+		msg(MSG_INFO, "Advancing to next image, please wait.\n");
 		
 		// if auto-advance, just force next picture by adjusting time the
 		// picture was first displayed!
@@ -412,7 +412,7 @@ void keyboard(unsigned char key, int x, int y)
 
 	if (key == 'b' || key == 'p' || key == 73) // back or previous - 73=pageup
 	{
-		msg(INFO, "Advancing to previous image...please wait...\n");
+		msg(MSG_INFO, "Advancing to previous image...please wait...\n");
 
 		// if auto-advance, just force next picture by adjusting time the
 		// picture was first displayed!
@@ -434,12 +434,12 @@ void keyboard(unsigned char key, int x, int y)
 	{
 		if(autoAdvance == 1)
 		{
-			msg(INFO, "stopping auto-advance.\n");
+			msg(MSG_INFO, "stopping auto-advance.\n");
 			autoAdvance = 0;
 		}
 		else
 		{
-			msg(INFO, "starting auto-advance.\n");
+			msg(MSG_INFO, "starting auto-advance.\n");
 			autoAdvance = 1;
 		}
 	}
@@ -529,7 +529,7 @@ int main(int argc, char** argv)
 		totalTextures = argc-1;
 		if(totalTextures == 0)
 		{
-			msg(FATAL, "Provide textures to use.\n");
+			msg(MSG_FATAL, "Provide textures to use.\n");
 			exit(EXIT_FAILURE);
 		}
 		globalargv = &(argv[1]);
@@ -548,7 +548,7 @@ int main(int argc, char** argv)
 	GLenum glewError = glewInit();
 	if(glewError != GLEW_OK)
 	{
-		msg(FATAL, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
+		msg(MSG_FATAL, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
 		exit(EXIT_FAILURE);
 	}
 	kuhl_errorcheck();

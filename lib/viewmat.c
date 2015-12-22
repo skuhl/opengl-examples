@@ -126,7 +126,7 @@ void viewmat_window_size(int *width, int *height)
 		savedWidth  = glutGet(GLUT_WINDOW_WIDTH);
 		savedHeight = glutGet(GLUT_WINDOW_HEIGHT);
 		savedTime = kuhl_milliseconds();
-		// msg(INFO, "Updated window size\n");
+		// msg(MSG_INFO, "Updated window size\n");
 	}
 
 	*width = savedWidth;
@@ -141,7 +141,7 @@ static void viewmat_validate_viewportId(int viewportID)
 {
 	if(viewportID < 0 && viewportID >= viewports_size)
 	{
-		msg(FATAL, "Viewport %d does not exist. Number of viewports: %d\n",
+		msg(MSG_FATAL, "Viewport %d does not exist. Number of viewports: %d\n",
 		    viewportID, viewports_size);
 		exit(EXIT_FAILURE);
 	}
@@ -268,7 +268,7 @@ void viewmat_begin_eye(int viewportID)
 			glBindFramebuffer(GL_FRAMEBUFFER, rightFramebufferAA);
 		else
 		{
-			msg(FATAL, "Unknown viewport ID: %d\n",viewportID);
+			msg(MSG_FATAL, "Unknown viewport ID: %d\n",viewportID);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -282,7 +282,7 @@ void viewmat_begin_eye(int viewportID)
 			glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_FALSE);
 		else
 		{
-			msg(FATAL, "Unknown viewport ID: %d\n",viewportID);
+			msg(MSG_FATAL, "Unknown viewport ID: %d\n",viewportID);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -427,7 +427,7 @@ static int viewmat_init_vrpn(void)
 	if(vrpnObjString != NULL && strlen(vrpnObjString) > 0)
 	{
 		viewmat_vrpn_obj = vrpnObjString;
-		msg(INFO, "View is following tracker object: %s\n", viewmat_vrpn_obj);
+		msg(MSG_INFO, "View is following tracker object: %s\n", viewmat_vrpn_obj);
 		
 		/* Try to connect to VRPN server */
 		float vrpnPos[3];
@@ -449,11 +449,11 @@ static int viewmat_init_orient_sensor(void)
 	if(getenv("ORIENT_SENSOR_TTY") != NULL &&
 	   getenv("ORIENT_SENSOR_TYPE") != NULL)
 	{
-		msg(INFO, "Found an orientation sensor specified in an environment variable...connecting.");
+		msg(MSG_INFO, "Found an orientation sensor specified in an environment variable...connecting.");
 		viewmat_orientsense = orient_sensor_init(NULL, ORIENT_SENSOR_NONE);
 		return 1;
 	}
-	msg(INFO, "No orientation sensor found");
+	msg(MSG_INFO, "No orientation sensor found");
 	
 	return 0;
 }
@@ -481,7 +481,7 @@ static void viewmat_init_mouse(const float pos[3], const float look[3], const fl
 static void viewmat_init_hmd_oculus(const float pos[3])
 {
 #ifdef MISSING_OVR
-	msg(FATAL, "Oculus support is missing: You have not compiled this code against the LibOVR library.\n");
+	msg(MSG_FATAL, "Oculus support is missing: You have not compiled this code against the LibOVR library.\n");
 	exit(EXIT_FAILURE);
 #else
 	ovr_Initialize(NULL);
@@ -490,8 +490,8 @@ static void viewmat_init_hmd_oculus(const float pos[3])
 	hmd = ovrHmd_Create(0);
 	if(!hmd)
 	{
-		msg(WARNING, "Failed to open Oculus HMD. Is ovrd running? Is libOVRRT*.so.* in /usr/lib, /usr/local/lib, or the current directory?\n");
-		msg(WARNING, "Press any key to proceed with Oculus debugging window.\n");
+		msg(MSG_WARNING, "Failed to open Oculus HMD. Is ovrd running? Is libOVRRT*.so.* in /usr/lib, /usr/local/lib, or the current directory?\n");
+		msg(MSG_WARNING, "Press any key to proceed with Oculus debugging window.\n");
 		char c; 
 		if(fscanf(stdin, "%c", &c) < 0)
 		{
@@ -508,7 +508,7 @@ static void viewmat_init_hmd_oculus(const float pos[3])
 		}
 	}
 	
-	msg(INFO, "Initialized HMD: %s - %s\n", hmd->Manufacturer, hmd->ProductName);
+	msg(MSG_INFO, "Initialized HMD: %s - %s\n", hmd->Manufacturer, hmd->ProductName);
 
 #if 0
 	printf("default fov tangents left eye:\n");
@@ -613,7 +613,7 @@ static void viewmat_init_hmd_oculus(const float pos[3])
 	//distort_caps |= ovrDistortionCap_TimeWarp; 
 	
 	if(!ovrHmd_ConfigureRendering(hmd, &glcfg.Config, distort_caps, hmd->DefaultEyeFov, eye_rdesc)) {
-		msg(FATAL, "Failed to configure distortion renderer.\n");
+		msg(MSG_FATAL, "Failed to configure distortion renderer.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -649,12 +649,12 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 		if(getenv("ORIENT_SENSOR_TTY") != NULL &&
 		   getenv("ORIENT_SENSOR_TYPE") != NULL)
 		{
-			msg(INFO, "viewmat control Mode: Unspecified, but using orientation sensor.");
+			msg(MSG_INFO, "viewmat control Mode: Unspecified, but using orientation sensor.");
 			controlModeString = "orient";
 		}
 		else if(getenv("VIEWMAT_VRPN_OBJECT") != NULL)
 		{
-			msg(INFO, "viewmat control Mode: Unspecified, but using VRPN.");
+			msg(MSG_INFO, "viewmat control Mode: Unspecified, but using VRPN.");
 			controlModeString = "vrpn";
 		}
 		else
@@ -664,13 +664,13 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 	/* Initialize control mode */
 	if(strcasecmp(controlModeString, "mouse") == 0)
 	{
-		msg(INFO, "viewmat control mode: Mouse movement");
+		msg(MSG_INFO, "viewmat control mode: Mouse movement");
 		viewmat_control_mode = VIEWMAT_CONTROL_MOUSE;
 		viewmat_init_mouse(pos, look, up);
 	}
 	else if(strcasecmp(controlModeString, "none") == 0)
 	{
-		msg(INFO, "viewmat control mode: None (fixed view)");
+		msg(MSG_INFO, "viewmat control mode: None (fixed view)");
 		viewmat_control_mode = VIEWMAT_CONTROL_NONE;
 		// Set our initial position, but don't handle mouse movement.
 		mousemove_set(pos[0],pos[1],pos[2],
@@ -679,24 +679,24 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 	}
 	else if(strcasecmp(controlModeString, "orient") == 0)
 	{
-		msg(INFO, "viewmat control mode: Orientation sensor");
+		msg(MSG_INFO, "viewmat control mode: Orientation sensor");
 		viewmat_control_mode = VIEWMAT_CONTROL_ORIENT;
 		viewmat_init_orient_sensor();
 	}
 	else if(strcasecmp(controlModeString, "vrpn") == 0)
 	{
-		msg(INFO, "viewmat control mode: VRPN");
+		msg(MSG_INFO, "viewmat control mode: VRPN");
 		viewmat_control_mode = VIEWMAT_CONTROL_VRPN;
 		viewmat_init_vrpn();
 	}
 	else if(strcasecmp(controlModeString, "oculus") == 0)
 	{
-		msg(INFO, "viewmat control mode: Oculus");
+		msg(MSG_INFO, "viewmat control mode: Oculus");
 		viewmat_control_mode = VIEWMAT_CONTROL_OCULUS;
 	}
 	else
 	{
-		msg(FATAL, "viewmat control mode: unhandled mode '%s'.", controlModeString);
+		msg(MSG_FATAL, "viewmat control mode: unhandled mode '%s'.", controlModeString);
 		exit(EXIT_FAILURE);
 	}
 
@@ -708,33 +708,33 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 	if(strcasecmp(modeString, "ivs") == 0)
 	{
 		viewmat_display_mode = VIEWMAT_IVS;
-		msg(INFO, "viewmat display mode: IVS");
+		msg(MSG_INFO, "viewmat display mode: IVS");
 	}
 	else if(strcasecmp(modeString, "oculus") == 0)
 	{
 		viewmat_display_mode = VIEWMAT_OCULUS;
-		msg(INFO, "viewmat display mode: Using Oculus HMD.\n");
+		msg(MSG_INFO, "viewmat display mode: Using Oculus HMD.\n");
 		viewmat_init_hmd_oculus(pos);
 	}
 	else if(strcasecmp(modeString, "hmd") == 0)
 	{
 		viewmat_display_mode = VIEWMAT_HMD;
-		msg(INFO, "viewmat display mode: Side-by-side left/right view.\n");
+		msg(MSG_INFO, "viewmat display mode: Side-by-side left/right view.\n");
 	}
 	else if(strcasecmp(modeString, "none") == 0)
 	{
 		viewmat_display_mode = VIEWMAT_DESKTOP;
-		msg(INFO, "viewmat display mode: Single window desktop mode.\n");
+		msg(MSG_INFO, "viewmat display mode: Single window desktop mode.\n");
 	}
 	else if(strcasecmp(modeString, "anaglyph") == 0)
 	{
 		viewmat_display_mode = VIEWMAT_ANAGLYPH;
-		msg(INFO, "viewmat display mode: Anaglyph image rendering. Use the red filter on the left eye and the cyan filter on the right eye.\n");
+		msg(MSG_INFO, "viewmat display mode: Anaglyph image rendering. Use the red filter on the left eye and the cyan filter on the right eye.\n");
 		viewmat_init_mouse(pos, look, up);
 	}
 	else
 	{
-		msg(FATAL, "viewmat display mode: unhandled mode '%s'.", modeString);
+		msg(MSG_FATAL, "viewmat display mode: unhandled mode '%s'.", modeString);
 		exit(EXIT_FAILURE);
 	}
 
@@ -744,7 +744,7 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 	if(viewmat_control_mode == VIEWMAT_CONTROL_OCULUS &&
 	   viewmat_display_mode != VIEWMAT_OCULUS)
 	{
-		msg(FATAL, "viewmat: Oculus can only be used as a control mode if it is also used as a display mode.");
+		msg(MSG_FATAL, "viewmat: Oculus can only be used as a control mode if it is also used as a display mode.");
 		exit(EXIT_FAILURE);
 	}
 	
@@ -1136,7 +1136,7 @@ static void viewmat_validate_fps(int viewportID)
 
 	/* If it took too long to render the frame, print a message. */
 	long delay = kuhl_microseconds() - lastTime;
-	// msg(INFO, "Time to render frame %d\n", delay);
+	// msg(MSG_INFO, "Time to render frame %d\n", delay);
 	if(delay > timeBudget)
 	{
 		warnMsgCount++;
@@ -1145,9 +1145,9 @@ static void viewmat_validate_fps(int viewportID)
 		 * long to render. Also, eventually stop printing the
 		 * message. */
 		if(warnMsgCount > 5 && warnMsgCount <= 100)
-			msg(WARNING, "It took %ld microseconds to render a frame. Time budget for %d fps is %d microseconds.\n", delay, targetFps, timeBudget);
+			msg(MSG_WARNING, "It took %ld microseconds to render a frame. Time budget for %d fps is %d microseconds.\n", delay, targetFps, timeBudget);
 		if(warnMsgCount == 100)
-			msg(WARNING, "That was your last warning about the time budget per frame.\n");
+			msg(MSG_WARNING, "That was your last warning about the time budget per frame.\n");
 	}
 
 	lastTime = kuhl_microseconds();
@@ -1200,9 +1200,9 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
 		long delay = kuhl_microseconds() - viewmatrix0time;
 		if(ipd > .07 || ipd < .05)
 		{
-			msg(WARNING, "IPD=%.4f meters, delay=%ld us (IPD validation failed; occasional messages are OK!)\n", ipd, delay);
+			msg(MSG_WARNING, "IPD=%.4f meters, delay=%ld us (IPD validation failed; occasional messages are OK!)\n", ipd, delay);
 		}
-		// msg(INFO, "IPD=%.4f meters, delay=%ld us\n", ipd, delay);
+		// msg(MSG_INFO, "IPD=%.4f meters, delay=%ld us\n", ipd, delay);
 
 	}
 }
@@ -1282,7 +1282,7 @@ viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewport
 				break;
 
 			default:
-				msg(FATAL, "Unknown viewmat control mode: %d\n", viewmat_control_mode);
+				msg(MSG_FATAL, "Unknown viewmat control mode: %d\n", viewmat_control_mode);
 				exit(EXIT_FAILURE);
 		}
 	}

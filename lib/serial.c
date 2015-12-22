@@ -48,7 +48,7 @@ void serial_write(const int fd, const char* buf, size_t numBytes)
 		ssize_t result = write(fd, buf, numBytes);
 		if(result < 0)
 		{
-			msg(FATAL, "write error %s", strerror(errno));
+			msg(MSG_FATAL, "write error %s", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 		// write() wrote none, some, or all of the bytes we wanted to write.
@@ -86,7 +86,7 @@ int serial_read(int fd, char* buf, size_t numBytes, int options)
 	size_t bytesAvailable = 0;
 	ioctl(fd, FIONREAD, &bytesAvailable);
 	if(SERIAL_DEBUG)
-		msg(DEBUG, "serial_read(): Avail to read: %d\n", (int)bytesAvailable);
+		msg(MSG_DEBUG, "serial_read(): Avail to read: %d\n", (int)bytesAvailable);
 
 	/* If SERIAL_NONBLOCK is set, and if there are not enough bytes
 	 * available to read, return 0 so the caller can instead return a
@@ -95,7 +95,7 @@ int serial_read(int fd, char* buf, size_t numBytes, int options)
 	   options & SERIAL_NONBLOCK)
 	{
 		if(SERIAL_DEBUG)
-			msg(DEBUG, "serial_read(): Timeout\n");
+			msg(MSG_DEBUG, "serial_read(): Timeout\n");
 		return 0;
 	}
 	
@@ -113,13 +113,13 @@ int serial_read(int fd, char* buf, size_t numBytes, int options)
 				// We can get here if the USB cord is disconnected
 				// from the computer. Treat it as a read error.
 				if(SERIAL_DEBUG)
-					msg(DEBUG, "serial_read(): Did serial cable get disconnected?\n");
+					msg(MSG_DEBUG, "serial_read(): Did serial cable get disconnected?\n");
 				return -1;
 			}
 			else if(r < 0)
 			{
 				if(SERIAL_DEBUG)
-					msg(DEBUG, "serial_read(): read error %s\n",  strerror(errno));
+					msg(MSG_DEBUG, "serial_read(): read error %s\n",  strerror(errno));
 				return -1;
 			}
 			else
@@ -128,18 +128,18 @@ int serial_read(int fd, char* buf, size_t numBytes, int options)
 			if(SERIAL_DEBUG)
 			{
 				// Print the bytes we consumed
-				msg(DEBUG, "serial_read(): consumed a total of %4d bytes: ", (int)r);
+				msg(MSG_DEBUG, "serial_read(): consumed a total of %4d bytes: ", (int)r);
 				char *str = malloc(r * 8);
 				int index = 0;
 				for(ssize_t i=0; i<r; i++)
 					index += snprintf(str+index, r*8-index, "%02x ", (unsigned char) ptr[i]);
-				msg(DEBUG, "%s", str);
+				msg(MSG_DEBUG, "%s", str);
 				free(str);
 			}
 		} // end consume bytes loop
 
 		if(SERIAL_DEBUG)
-			msg(DEBUG, "serial_read(): Avail to read after consumption: %d\n", (int)bytesAvailable);
+			msg(MSG_DEBUG, "serial_read(): Avail to read after consumption: %d\n", (int)bytesAvailable);
 	} // end if consume bytes
 
 	/* Actually read the data */
@@ -155,13 +155,13 @@ int serial_read(int fd, char* buf, size_t numBytes, int options)
 		{
 			/* This can happen if the USB cable gets disconnected from the computer. */
 			if(SERIAL_DEBUG)
-				msg(DEBUG, "serial_read(): Did serial cable get disconnected?\n");
+				msg(MSG_DEBUG, "serial_read(): Did serial cable get disconnected?\n");
 			return -1;
 		}
 		else if(bytesRead < 0)
 		{
 			if(SERIAL_DEBUG)
-				msg(DEBUG, "serial_read(): read error %s\n",  strerror(errno));
+				msg(MSG_DEBUG, "serial_read(): read error %s\n",  strerror(errno));
 			return -1;
 		}
 		else
@@ -174,12 +174,12 @@ int serial_read(int fd, char* buf, size_t numBytes, int options)
 
 	if(SERIAL_DEBUG)
 	{
-		msg(DEBUG, "serial_read(): Read a total of %4d bytes: ", (int)totalBytesRead);
+		msg(MSG_DEBUG, "serial_read(): Read a total of %4d bytes: ", (int)totalBytesRead);
 		char *str = malloc(totalBytesRead * 8);
 		int index = 0;
 		for(size_t i=0; i<totalBytesRead; i++)
 			index += snprintf(str+index, totalBytesRead*8-index, "i-%02x ", (unsigned char) buf[i]);
-		msg(DEBUG, "%s", str);
+		msg(MSG_DEBUG, "%s", str);
 		free(str);
 	}
 
@@ -234,7 +234,7 @@ static void serial_settings(int fd, int speed, int parity, int vmin, int vtime)
 		//case 460800: baud = B460800; break; // not on OSX
 		//case 921600: baud = B921600; break; // not on OSX
 		default:
-			msg(FATAL, "Invalid baud rate specified: %d\n", speed);
+			msg(MSG_FATAL, "Invalid baud rate specified: %d\n", speed);
 			exit(EXIT_FAILURE);
 	}
 
@@ -350,7 +350,7 @@ void serial_discard(int fd)
 	msg(MSG_ERROR, "This function is not defined on Windows.");
 #else
 	if(SERIAL_DEBUG)
-		msg(DEBUG, "serial_discard()\n");
+		msg(MSG_DEBUG, "serial_discard()\n");
 
 	tcflush(fd, TCIOFLUSH);
 #endif
@@ -385,7 +385,7 @@ int serial_open(const char *deviceFile, int speed, int parity, int vmin, int vti
 #ifdef _WIN32
 	msg(MSG_ERROR, "This function is not defined on Windows.");
 #else
-	msg(DEBUG, "Opening serial connection to %s at %d baud\n", deviceFile, speed);
+	msg(MSG_DEBUG, "Opening serial connection to %s at %d baud\n", deviceFile, speed);
 	int fd = 0;
 
 	for(int i=0; i<10; i++)
@@ -410,7 +410,7 @@ int serial_open(const char *deviceFile, int speed, int parity, int vmin, int vti
 	
 	if(!isatty(fd))
 	{
-		msg(FATAL, "'%s' is not a tty.\n");
+		msg(MSG_FATAL, "'%s' is not a tty.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -418,7 +418,7 @@ int serial_open(const char *deviceFile, int speed, int parity, int vmin, int vti
 	serial_settings(fd, speed, parity, vmin, vtime);
 #endif
 
-	msg(DEBUG, "Serial connection to '%s' is open on fd=%d.\n", deviceFile, fd);
+	msg(MSG_DEBUG, "Serial connection to '%s' is open on fd=%d.\n", deviceFile, fd);
 	return fd;
 #endif
 }

@@ -78,7 +78,7 @@ static void vrpn_sanity_check(const struct timeval lastTime,
 	long budget        = 1000000/55; // 55 records per second
 	if(elapsed > 1000000/55)
 	{
-		msg(WARNING, "It took %d microseconds between two records for VRPN object %s; time budget for 55 records per second is %d\n", elapsed, name, budget);
+		msg(MSG_WARNING, "It took %d microseconds between two records for VRPN object %s; time budget for 55 records per second is %d\n", elapsed, name, budget);
 	}
 }
 
@@ -94,7 +94,7 @@ static void VRPN_CALLBACK handle_tracker(void *name, vrpn_TRACKERCB t)
 		
 	float fps = kuhl_getfps(&(tracked->fps_state));
 	if(tracked->fps_state.frame == 0)
-		msg(INFO, "VRPN records per second: %.1f (%s)\n", fps, s.c_str());
+		msg(MSG_INFO, "VRPN records per second: %.1f (%s)\n", fps, s.c_str());
 
 	/* Some tracking systems return large values when a point gets
 	 * lost. If the tracked point seems to be lost, ignore this
@@ -134,7 +134,7 @@ static void VRPN_CALLBACK handle_tracker(void *name, vrpn_TRACKERCB t)
  */
 static int vrpn_connect(const char *fullname)
 {
-	msg(INFO, "Connecting to VRPN server to track '%s'\n", fullname);
+	msg(MSG_INFO, "Connecting to VRPN server to track '%s'\n", fullname);
 
 	/* If we are making a TCP connection and the server isn't up, the
 	 * following function call may hang for a long time. Also, the
@@ -194,7 +194,7 @@ static int vrpn_update(const char *fullname, float pos[3], float orient[16])
 	TrackedObject *to = nameToTracker[fullname];
 	if(to == NULL)
 	{
-		msg(FATAL, "vrpn_update() was called before vrpn_connect() was called for object '%s'", fullname);
+		msg(MSG_FATAL, "vrpn_update() was called before vrpn_connect() was called for object '%s'", fullname);
 		return 0;
 	}
 		
@@ -217,10 +217,10 @@ static int vrpn_update(const char *fullname, float pos[3], float orient[16])
 		to->failCount++;
 		if(to->failCount % messagemod == 0)
 		{
-			msg(WARNING, "VRPN has not received any data for %s", fullname);
-			msg(WARNING, "As a result, you may see VRPN messages about receiving no response from server.");
+			msg(MSG_WARNING, "VRPN has not received any data for %s", fullname);
+			msg(MSG_WARNING, "As a result, you may see VRPN messages about receiving no response from server.");
 			if(to->failCount == messagemod*maxmessages)
-				msg(WARNING, "This is your last message about %s", fullname);
+				msg(MSG_WARNING, "This is your last message about %s", fullname);
 		}
 
 		return 0;
@@ -326,7 +326,7 @@ char* vrpn_default_host(void)
 	FILE *f = fopen(path, "r");
 	if(f == NULL)
 	{
-		msg(WARNING, "Can't open file %s to get VRPN server information.\n", path);
+		msg(MSG_WARNING, "Can't open file %s to get VRPN server information.\n", path);
 		return NULL;
 	}
 	char *vrpnString = (char*)malloc(1024);
@@ -336,14 +336,14 @@ char* vrpn_default_host(void)
 	{
 		if(fgets(vrpnString, 1024, f) == NULL)
 		{
-			msg(WARNING, "Can't read %s to get VRPN server information.\n", path);
+			msg(MSG_WARNING, "Can't read %s to get VRPN server information.\n", path);
 			return NULL;
 		}
 		kuhl_trim_whitespace(vrpnString);
 	} while(*vrpnString == '#' || strlen(vrpnString) == 0);  // allow for comments and blank lines in vrpn-server file.
 	fclose(f);
 
-	// msg(DEBUG, "Found in %s: '%s'\n", path, vrpnString);
+	// msg(MSG_DEBUG, "Found in %s: '%s'\n", path, vrpnString);
 	cachedHostname = vrpnString;
 	return vrpnString;
 }
@@ -362,12 +362,12 @@ void vrpn_fullname(const char* object, const char* hostname, char result[256])
 {
 	if(object == NULL || strlen(object) == 0)
 	{
-		msg(FATAL, "Empty or NULL object name was passed into this function.\n");
+		msg(MSG_FATAL, "Empty or NULL object name was passed into this function.\n");
 		exit(EXIT_FAILURE);
 	}
 	if(hostname != NULL && strlen(hostname) == 0)
 	{
-		msg(FATAL, "Hostname is an empty string.\n");
+		msg(MSG_FATAL, "Hostname is an empty string.\n");
 		exit(EXIT_FAILURE);
 	}
 	
@@ -377,7 +377,7 @@ void vrpn_fullname(const char* object, const char* hostname, char result[256])
 		char *hostnameInFile = vrpn_default_host();
 		if(hostnameInFile == NULL)
 		{
-			msg(FATAL, "Failed to find hostname of VRPN server.\n");
+			msg(MSG_FATAL, "Failed to find hostname of VRPN server.\n");
 			exit(EXIT_FAILURE);
 		}
 		   

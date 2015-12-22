@@ -359,7 +359,7 @@ int main(int argc, char** argv)
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
 	if (modelgeom == NULL)
 	{
-		msg(FATAL, "Unable to load the requested model: %s", modelFilename);
+		msg(MSG_FATAL, "Unable to load the requested model: %s", modelFilename);
 		exit(EXIT_FAILURE);
 	}
 	

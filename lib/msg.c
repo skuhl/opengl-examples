@@ -53,7 +53,7 @@ static void msg_timestamp(char *buf, int len)
 	struct timeval tv;
 	if(gettimeofday(&tv, NULL) < 0)
 	{
-		msg(FATAL, "gettimeofday: %s", strerror(errno));
+		msg(MSG_FATAL, "gettimeofday: %s", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -84,19 +84,19 @@ static void msg_type_string(msg_type type, char *buf, int len)
 {
 	switch(type)
 	{
-		case DEBUG:
+		case MSG_DEBUG:
 			snprintf(buf, len, "[DEBUG]");
 			break;
-		case INFO:
+		case MSG_INFO:
 			snprintf(buf, len, "[INFO ]");
 			break;
-		case WARNING:
+		case MSG_WARNING:
 			snprintf(buf, len, "[WARN ]");
 			break;
 		case MSG_ERROR:
 			snprintf(buf, len, "[ERROR]");
 			break;
-		case FATAL:
+		case MSG_FATAL:
 			snprintf(buf, len, "[FATAL]");
 			break;
 		case BOLD:
@@ -125,12 +125,12 @@ static int msg_show_type(msg_type type)
 {
 	switch(type)
 	{
-		case DEBUG:   return 0;
-		case INFO:    return 1;
-		case WARNING: return 1;
+		case MSG_DEBUG:   return 0;
+		case MSG_INFO:    return 1;
+		case MSG_WARNING: return 1;
 		case MSG_ERROR:   return 1;
-		case FATAL:   return 1;
-		default:      return 1;
+		case MSG_FATAL:   return 1;
+		default:          return 1;
 	}
 }
 
@@ -153,17 +153,17 @@ static void msg_start_color(msg_type type, FILE *stream)
 
 	switch(type)
 	{
-		case DEBUG:
+		case MSG_DEBUG:
 			break;
-		case INFO:
+		case MSG_INFO:
 			break;
-		case WARNING:
+		case MSG_WARNING:
 			fprintf(stream, "\x1B[33m"); // yellow text
 			break;
 		case MSG_ERROR:
 			fprintf(stream, "\x1B[31m"); // red text
 			break;
-		case FATAL:
+		case MSG_FATAL:
 			fprintf(stream, "\x1B[31m"); // red text
 			fprintf(stream, "\x1B[1m");  // bold
 			break;
@@ -280,9 +280,9 @@ static void msg_init(void)
 
 	// Write message so user knows the log file is being created.
 	if(append)
-		msg(INFO, "Messages are being appended to '%s'\n", logfile);
+		msg(MSG_INFO, "Messages are being appended to '%s'\n", logfile);
 	else
-		msg(INFO, "Messages are being written to '%s'\n", logfile);
+		msg(MSG_INFO, "Messages are being written to '%s'\n", logfile);
 
 }
 
@@ -319,7 +319,7 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 	/* Determine the stream that we are going to print out to: stdout,
 	 * stderr, or don't print to console */
 	FILE *stream = stdout;
-	if(type == MSG_ERROR || type == FATAL)
+	if(type == MSG_ERROR || type == MSG_FATAL)
 		stream = stderr;
 	if(msg_show_type(type) == 0)
 		stream = NULL;
@@ -348,7 +348,7 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 		msg_start_color(type, stream);
 		fprintf(stream, "%s %s%s\n", typestr, prepend, msgbuf);
 		/* Print additional details to console for significant errors */
-		if(type == FATAL || type == MSG_ERROR)
+		if(type == MSG_FATAL || type == MSG_ERROR)
 		{
 			fprintf(stream, "%s %sOccurred at %s:%d in the function %s()\n",
 			        typestr, prepend, shortFileName, lineNum, funcName);
@@ -374,6 +374,6 @@ void msg_details(msg_type type, const char *fileName, int lineNum, const char *f
 */
 void msg_assimp_callback(const char* msg, char *usr)
 {
-	msg_details(DEBUG, "ASSIMP", 0, "", "%s", msg);
+	msg_details(MSG_DEBUG, "ASSIMP", 0, "", "%s", msg);
 }
 

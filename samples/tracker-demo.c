@@ -181,7 +181,7 @@ void display()
 
 		// Check if FPS value was just updated by kuhl_getfps()
 		if(fps_state.frame == 0)
-			msg(INFO, "FPS: %0.1f", fps);
+			msg(MSG_INFO, "FPS: %0.1f", fps);
 	}
 	
 	/* Render the scene once for each viewport. Frequently one
@@ -268,8 +268,8 @@ int main(int argc, char** argv)
 
 	if(argc == 1)
 	{
-		msg(FATAL, "You didn't provide the name of the object(s) that you want to track.");
-		msg(FATAL, "Usage: %s vrpnObjectName1 vrpnObjectName2 ...");
+		msg(MSG_FATAL, "You didn't provide the name of the object(s) that you want to track.");
+		msg(MSG_FATAL, "Usage: %s vrpnObjectName1 vrpnObjectName2 ...");
 		exit(EXIT_FAILURE);
 	}
 	global_argc = argc;
