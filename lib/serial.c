@@ -356,6 +356,7 @@ int serial_open(const char *deviceFile, int speed, int parity, int vmin, int vti
 {
 #ifdef _WIN32
 	msg(MSG_ERROR, "This function is not defined on Windows.");
+	return -1;
 #else
 	msg(MSG_DEBUG, "Opening serial connection to %s at %d baud\n", deviceFile, speed);
 	int fd = 0;
@@ -392,4 +393,5 @@ int serial_open(const char *deviceFile, int speed, int parity, int vmin, int vti
 
 	msg(MSG_DEBUG, "Serial connection to '%s' is open on fd=%d.\n", deviceFile, fd);
 	return fd;
+#endif
 }
