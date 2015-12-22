@@ -331,7 +331,7 @@ void game()
 			
 			if(paddleA.width < 0.001 || paddleB.width < 0.001)//Check if some one lost the game
 			{
-				msg(WARNING, "%s Player wins!\n", (paddleAScored ? "Red" : "Blue"));
+				msg(MSG_WARNING, "%s Player wins!\n", (paddleAScored ? "Red" : "Blue"));
 				
 				//Reset the paddles for the next game
 				paddleA.width = paddleB.width = (frustum[1]-frustum[0])/10.0;
@@ -555,10 +555,10 @@ int main( int argc, char* argv[] )
 	paddleB.increment = paddleA.increment;
 	paddleB.thickness = -paddleA.thickness;
 	
-	msg(INFO, "Initial ball position %f %f\n", ball.xpos, ball.ypos);
-	msg(INFO, "Initial Ball speed: %f\n", frustum[3]-frustum[2], ball.speed);
-	msg(INFO, "Initial paddle A position %f %f\n", paddleA.xpos, paddleA.ypos);
-	msg(INFO, "Initial paddle B position %f %f\n", paddleB.xpos, paddleB.ypos);
+	msg(MSG_INFO, "Initial ball position %f %f\n", ball.xpos, ball.ypos);
+	msg(MSG_INFO, "Initial Ball speed: %f\n", frustum[3]-frustum[2], ball.speed);
+	msg(MSG_INFO, "Initial paddle A position %f %f\n", paddleA.xpos, paddleA.ypos);
+	msg(MSG_INFO, "Initial paddle B position %f %f\n", paddleB.xpos, paddleB.ypos);
 
 	ball.radius = (frustum[1]-frustum[0])/50.0;
 	

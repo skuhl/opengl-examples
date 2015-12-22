@@ -34,7 +34,7 @@ OrientSensorState orient_sensor_init(const char* deviceFileIn, int sensorType)
 
 	if(deviceFile == NULL)
 	{
-		msg(FATAL, "Can't connect to orientation sensor because device file is NULL.");
+		msg(MSG_FATAL, "Can't connect to orientation sensor because device file is NULL.");
 		exit(EXIT_FAILURE);
 	}
 
@@ -49,7 +49,7 @@ OrientSensorState orient_sensor_init(const char* deviceFileIn, int sensorType)
 
 	if(sensorType == ORIENT_SENSOR_NONE)
 	{
-		msg(FATAL, "Can't connect to orientation sensor because sensor type is not set.");
+		msg(MSG_FATAL, "Can't connect to orientation sensor because sensor type is not set.");
 		exit(EXIT_FAILURE);
 	}
 
@@ -61,7 +61,7 @@ OrientSensorState orient_sensor_init(const char* deviceFileIn, int sensorType)
 		default:                   typeString = "ERROR?!"; break;
 	}
 		
-	msg(INFO, "Connecting to sensor '%s' at '%s'\n", typeString, deviceFile);
+	msg(MSG_INFO, "Connecting to sensor '%s' at '%s'\n", typeString, deviceFile);
 
 	/* Initialize state struct */
 	OrientSensorState state;
@@ -133,13 +133,13 @@ static void orient_sensor_get_bno055(OrientSensorState *state, float quaternion[
 		 * been using the same cached data for too long. */
 		if(time(NULL) - state->lastDataTime >= 2)
 		{
-			msg(WARNING, "We haven't received a new record from the orientation sensor in the past couple seconds. Is sensor still connected? Trying to reconnect.");
+			msg(MSG_WARNING, "We haven't received a new record from the orientation sensor in the past couple seconds. Is sensor still connected? Trying to reconnect.");
 		}
 		else
 		{
 			for(int i=0; i<4; i++)
 				quaternion[i] = state->lastData[i];
-			// msg(INFO, "Using cached data for orientation sensor.\n");
+			// msg(MSG_INFO, "Using cached data for orientation sensor.\n");
 			return;
 		}
 	}
@@ -157,8 +157,8 @@ static void orient_sensor_get_bno055(OrientSensorState *state, float quaternion[
 		{
 			uint32_t received;
 			memcpy(&received, temp, 4);
-			msg(WARNING, "Synchronizing to orientation sensor stream (may block if we can't read from sensor)...");
-			msg(DEBUG,   "Synchronizing because we expected 0x%08x but  received 0x%08x", v, received);
+			msg(MSG_WARNING, "Synchronizing to orientation sensor stream (may block if we can't read from sensor)...");
+			msg(MSG_DEBUG,   "Synchronizing because we expected 0x%08x but  received 0x%08x", v, received);
 		}
 		state->isWorking = 0;
 		serial_discard(state->fd); // clear input buffer in case it
@@ -178,7 +178,7 @@ static void orient_sensor_get_bno055(OrientSensorState *state, float quaternion[
 		{
 			/* If we didn't find the bytes, something more serious may
 			 * have went wrong. */
-			msg(ERROR, "Failed to resynchronize to orientation sensor. Trying to reconnect.");
+			msg(MSG_ERROR, "Failed to resynchronize to orientation sensor. Trying to reconnect.");
 			serial_close(state->fd);
 			*state = orient_sensor_init(state->deviceFile, state->type);
 			serial_read(state->fd, temp, RECORD_SIZE, SERIAL_CONSUME);
@@ -189,11 +189,11 @@ static void orient_sensor_get_bno055(OrientSensorState *state, float quaternion[
 	// If we get here, we successfully synchronized...
 	if(state->isWorking == 0)
 	{
-		msg(INFO, "Successfully synchronized to orientation sensor.\n");
+		msg(MSG_INFO, "Successfully synchronized to orientation sensor.\n");
 		state->isWorking = 1;
 	}
 	state->lastDataTime = time(NULL);
-	// msg(GREEN, "Record OK");
+	// msg(MSG_GREEN, "Record OK");
 
 	uint8_t sys, gyro, accel, mag;
 	sys    = temp[4*5+0];
@@ -206,29 +206,29 @@ static void orient_sensor_get_bno055(OrientSensorState *state, float quaternion[
 		calibrationMessage = 1000;
 		
 		if(sys == 0)
-			msg(ERROR, "Sensor is uncalibrated.");
+			msg(MSG_ERROR, "Sensor is uncalibrated.");
 		else if (sys == 1)
-			msg(WARNING, "Sensor calibration is poor.");
+			msg(MSG_WARNING, "Sensor calibration is poor.");
 
 		if(gyro == 0)
-			msg(WARNING, "Gyro is uncalibrated. Let sensor sit still.");
+			msg(MSG_WARNING, "Gyro is uncalibrated. Let sensor sit still.");
 		else if(gyro == 1)
-			msg(WARNING, "Gyro calibration is poor. Let sensor sit still.");
+			msg(MSG_WARNING, "Gyro calibration is poor. Let sensor sit still.");
 
 		if(accel == 0)
-			msg(WARNING, "Accelerometer is uncalibrated. Place sensor on 6 sides of block.");
+			msg(MSG_WARNING, "Accelerometer is uncalibrated. Place sensor on 6 sides of block.");
 		else if(accel == 1)
-			msg(WARNING, "Accelerometer calibration is poor. Place sensor on 6 sides of block.");
+			msg(MSG_WARNING, "Accelerometer calibration is poor. Place sensor on 6 sides of block.");
 		
 		if(mag == 0)
-			msg(WARNING, "Magnetometer is uncalibrated. Use figure 8 motion.");
+			msg(MSG_WARNING, "Magnetometer is uncalibrated. Use figure 8 motion.");
 		else if(mag == 1)
-			msg(WARNING, "Magnetometer calibration is poor. Use figure 8 motion.");
+			msg(MSG_WARNING, "Magnetometer calibration is poor. Use figure 8 motion.");
 
 		if(sys < 2 || gyro < 2 || accel < 2 || mag < 2)
 			msg(BLUE, "Raw orientation sensor calib data: sys=%d gyro=%d accel=%d mag=%d", sys, gyro, accel, mag);
 	}
-	// msg(INFO, "sys=%d gyro=%d accel=%d mag=%d", sys, gyro, accel, mag);
+	// msg(MSG_INFO, "sys=%d gyro=%d accel=%d mag=%d", sys, gyro, accel, mag);
 
 	/* Copy data from our buffer into quaternion buffer and into the lastData buffer */
 	memcpy(quaternion, temp+4, sizeof(float)*4);

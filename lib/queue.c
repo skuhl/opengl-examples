@@ -26,7 +26,7 @@ void queue_sanity_check(const queue *q)
 {
 	if(q == NULL)
 	{
-		msg(FATAL, "q was NULL");
+		msg(MSG_FATAL, "q was NULL");
 		exit(EXIT_FAILURE);
 	}
 
@@ -38,47 +38,47 @@ void queue_sanity_check(const queue *q)
 
 	if(q->read == -1 && q->length > 0)
 	{
-		msg(FATAL, "Read pointer is at -1, but the queue apparently contains items.");
+		msg(MSG_FATAL, "Read pointer is at -1, but the queue apparently contains items.");
 		exit(EXIT_FAILURE);
 	}
 	if(q->read > -1 && q->length == 0)
 	{
-		msg(FATAL, "Read pointer is at an index but the queue doesn't seem to contain any items.");
+		msg(MSG_FATAL, "Read pointer is at an index but the queue doesn't seem to contain any items.");
 		exit(EXIT_FAILURE);
 	}
 	if(q->read >= q->l->length)
 	{
-		msg(FATAL, "Read pointer points at a location past the end of the list.");
+		msg(MSG_FATAL, "Read pointer points at a location past the end of the list.");
 		exit(EXIT_FAILURE);
 	}
 	if(q->write >= q->l->length)
 	{
-		msg(FATAL, "q->write=%d points at a location past the end of the list (length %d).", q->write, q->l->length);
+		msg(MSG_FATAL, "q->write=%d points at a location past the end of the list (length %d).", q->write, q->l->length);
 		exit(EXIT_FAILURE);
 	}
 	if(q->read < -1 || q->write < 0)
 	{
-		msg(FATAL, "q->read or q->write are too small.");
+		msg(MSG_FATAL, "q->read or q->write are too small.");
 		exit(EXIT_FAILURE);
 	}
 	if(q->read < -1 || q->read >= q->l->length)
 	{
-		msg(FATAL, "Queue read index is invalid.");
+		msg(MSG_FATAL, "Queue read index is invalid.");
 		exit(EXIT_FAILURE);
 	}
 	if(q->write < -1 || q->read >= q->l->length)
 	{
-		msg(FATAL, "Queue read index is invalid.");
+		msg(MSG_FATAL, "Queue read index is invalid.");
 		exit(EXIT_FAILURE);
 	}
 	if(q->l->capacity != q->l->length)
 	{
-		msg(FATAL, "List capacity and length differ");
+		msg(MSG_FATAL, "List capacity and length differ");
 		exit(EXIT_FAILURE);
 	}
 	if(q->length > 0 && queue_index_wrap(q, q->read + q->length) != q->write)
 	{
-		msg(FATAL, "The positions of the read and write pointer don't match the length of the queue. expectWrite=%d", queue_index_wrap(q, q->read + q->length));
+		msg(MSG_FATAL, "The positions of the read and write pointer don't match the length of the queue. expectWrite=%d", queue_index_wrap(q, q->read + q->length));
 		// queue_print_stats(q);
 		exit(EXIT_FAILURE);
 	}
@@ -107,7 +107,7 @@ queue* queue_new(int capacity, int itemSize)
 	{
 		if(l != NULL) free(l);
 		if(q != NULL) free(q);
-		msg(ERROR, "Failed to allocate queue");
+		msg(MSG_ERROR, "Failed to allocate queue");
 		return NULL;
 	}
 	q->l = l;
@@ -140,19 +140,19 @@ int queue_reset(queue *q, int capacity, int itemSize)
 
 	if(q == NULL)
 	{
-		msg(ERROR, "Failed to reset a queue because it is NULL");
+		msg(MSG_ERROR, "Failed to reset a queue because it is NULL");
 		return 0;
 	}
 
 	if(q->l == NULL)
 	{
-		msg(ERROR, "The queue does not have a valid list.");
+		msg(MSG_ERROR, "The queue does not have a valid list.");
 		return 0;
 	}
 
 	if(list_reset(q->l, capacity, itemSize, NULL) == 0)
 	{
-		msg(ERROR, "Failed to set up a list for the queue.");
+		msg(MSG_ERROR, "Failed to set up a list for the queue.");
 		return 0;
 	}
 	q->read = -1;
@@ -196,7 +196,7 @@ int queue_add(queue *q, void *item)
 
 	if(item == NULL)
 	{
-		msg(ERROR, "The pointer to the item to add to the queue was NULL.");
+		msg(MSG_ERROR, "The pointer to the item to add to the queue was NULL.");
 		return 0;
 	}
 
@@ -214,7 +214,7 @@ int queue_add(queue *q, void *item)
 	/* Try adding item into the appropriate index */
 	if(list_set(q->l, q->write, item) == 0)
 	{
-		msg(ERROR, "Failed to add item into he queue.");
+		msg(MSG_ERROR, "Failed to add item into he queue.");
 		return 0;
 	}
 
@@ -249,7 +249,7 @@ int queue_remove(queue *q, void *result)
 
 	if(queue_peek(q, result) == 0)
 	{
-		msg(ERROR, "Failed to remove an item from the queue because we couldn't read an item from it.");
+		msg(MSG_ERROR, "Failed to remove an item from the queue because we couldn't read an item from it.");
 		return 0;
 	}
 
@@ -408,7 +408,7 @@ int queue_set_capacity(queue *q, int capacity)
 
 		if(queue_capacity(q) != capacity)
 		{
-			msg(FATAL, "internal queue error: capacity wasn't set correctly\n");
+			msg(MSG_FATAL, "internal queue error: capacity wasn't set correctly\n");
 			exit(EXIT_FAILURE);
 		}
 		queue_sanity_check(q);
@@ -440,7 +440,7 @@ int queue_set_capacity(queue *q, int capacity)
 		}
 		if(queue_capacity(q) != capacity)
 		{
-			msg(FATAL, "internal queue error: capacity wasn't set correctly\n");
+			msg(MSG_FATAL, "internal queue error: capacity wasn't set correctly\n");
 			exit(EXIT_FAILURE);
 		}
 		queue_sanity_check(q);
@@ -475,13 +475,13 @@ int queue_set_capacity(queue *q, int capacity)
 		
 		if(queue_capacity(q) != capacity)
 		{
-			msg(FATAL, "internal queue error: capacity wasn't set correctly\n");
+			msg(MSG_FATAL, "internal queue error: capacity wasn't set correctly\n");
 			exit(EXIT_FAILURE);
 		}
 		queue_sanity_check(q);
 		return 1;
 	}
 
-	msg(FATAL, "Internal error: We should not reach this point\n");
+	msg(MSG_FATAL, "Internal error: We should not reach this point\n");
 	exit(EXIT_FAILURE);
 }

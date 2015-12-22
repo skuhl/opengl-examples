@@ -329,7 +329,7 @@ int main(int argc, char** argv)
 	modelgeom = kuhl_load_model("../models/duck/duck.dae", NULL, program, bbox);
 	if(modelgeom == NULL)
 	{
-		msg(FATAL, "Unable to load duck model.");
+		msg(MSG_FATAL, "Unable to load duck model.");
 		exit(EXIT_FAILURE);
 	}
 	kuhl_bbox_fit(fitMatrix, bbox, 1);

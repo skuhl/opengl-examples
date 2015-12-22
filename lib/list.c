@@ -29,7 +29,7 @@ void list_sanity_check(const list *l)
 {
 	if(l == NULL)
 	{
-		msg(FATAL, "l was NULL");
+		msg(MSG_FATAL, "l was NULL");
 		exit(EXIT_FAILURE);
 	}
 
@@ -39,23 +39,23 @@ void list_sanity_check(const list *l)
 	   all of the variables set to appropriate values. */
 	if(l->capacity < LIST_MIN_CAPACITY)
 	{
-		msg(FATAL, "l->capacity=%d is smaller than the smallest allowed capacity (%d)",
+		msg(MSG_FATAL, "l->capacity=%d is smaller than the smallest allowed capacity (%d)",
 		    l->capacity, LIST_MIN_CAPACITY);
 		exit(EXIT_FAILURE);
 	}
 	if(l->length < 0)
 	{
-		msg(FATAL, "l->length=%d was negative", l->length);
+		msg(MSG_FATAL, "l->length=%d was negative", l->length);
 		exit(EXIT_FAILURE);
 	}
 	if(l->itemSize <= 0)
 	{
-		msg(FATAL, "l->itemSize=%d was zero or negative", l->length);
+		msg(MSG_FATAL, "l->itemSize=%d was zero or negative", l->length);
 		exit(EXIT_FAILURE);
 	}
 	if(l->capacity < l->length)
 	{
-		msg(FATAL, "l->capacity=%d was less than l->length=%d", l->capacity, l->length);
+		msg(MSG_FATAL, "l->capacity=%d was less than l->length=%d", l->capacity, l->length);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -77,7 +77,7 @@ list* list_new(int capacity, int itemSize, int (*compar)(const void *, const voi
 	list *l = malloc(sizeof(list));
 	if(l == NULL)
 	{
-		msg(ERROR, "Failed to allocate space for a list which can hold %d %d byte items.", capacity, itemSize);
+		msg(MSG_ERROR, "Failed to allocate space for a list which can hold %d %d byte items.", capacity, itemSize);
 		return NULL;
 	}
 	l->data = NULL;
@@ -99,7 +99,7 @@ list* list_new_import(int numItems, int itemSize, int (*compar)(const void *, co
 	list *l = malloc(sizeof(list));
 	if(l == NULL)
 	{
-		msg(ERROR, "Failed to allocate space for a list which can hold %d %d byte items.", numItems, itemSize);
+		msg(MSG_ERROR, "Failed to allocate space for a list which can hold %d %d byte items.", numItems, itemSize);
 		return NULL;
 	}
 	l->data = NULL;
@@ -168,7 +168,7 @@ int list_reset(list *l, int capacity, int itemSize, int (*compar)(const void *, 
 {
 	if(l == NULL)
 	{
-		msg(ERROR, "Failed to reset a list because it is NULL");
+		msg(MSG_ERROR, "Failed to reset a list because it is NULL");
 		return 0;
 	}
 
@@ -177,7 +177,7 @@ int list_reset(list *l, int capacity, int itemSize, int (*compar)(const void *, 
 
 	if(itemSize < 1)
 	{
-		msg(FATAL, "itemSize was 0 or negative\n");
+		msg(MSG_FATAL, "itemSize was 0 or negative\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -206,7 +206,7 @@ int list_reset(list *l, int capacity, int itemSize, int (*compar)(const void *, 
 
 	if(l->data == NULL)
 	{
-		msg(ERROR, "Unable to allocate space for list.");
+		msg(MSG_ERROR, "Unable to allocate space for list.");
 		return 0;
 	}
 
@@ -274,7 +274,7 @@ int list_append(list *l, void *item)
 
 	if(item == NULL)
 	{
-		msg(ERROR, "The pointer to the item to append to the list was NULL.");
+		msg(MSG_ERROR, "The pointer to the item to append to the list was NULL.");
 		return 0;
 	}
 
@@ -328,7 +328,7 @@ int list_remove(list *l, int index, void *result)
 	
 	if(index < 0 || index >= l->length)
 	{
-		msg(ERROR, "Can't remove index %d when list is of length %d",
+		msg(MSG_ERROR, "Can't remove index %d when list is of length %d",
 		    index, l->length);
 		return 0;
 	}
@@ -457,7 +457,7 @@ int list_move(list *l, int src, int dst, int count)
 	void *dstPtr = list_getptr(l, dst);
 	if(srcPtr == NULL || dstPtr == NULL)
 	{
-		msg(FATAL, "srcPtr or dstPtr were NULL, this shouldn't happen because %d and %d should be in bounds in an list of length %d", src, dst, l->length);
+		msg(MSG_FATAL, "srcPtr or dstPtr were NULL, this shouldn't happen because %d and %d should be in bounds in an list of length %d", src, dst, l->length);
 		exit(EXIT_FAILURE);
 	}
 
@@ -531,7 +531,7 @@ int list_get(const list *l, int index, void *result)
 	}
 	else
 	{
-		msg(FATAL, "Failed to get item from index %d. The list has length %d\n", index, l->length);
+		msg(MSG_FATAL, "Failed to get item from index %d. The list has length %d\n", index, l->length);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -629,7 +629,7 @@ int list_set_capacity(list *l, int capacity)
 
 	if(newData == NULL)
 	{
-		msg(ERROR, "Unable to increase list capacity from %d items to %d items", l->capacity, capacity);
+		msg(MSG_ERROR, "Unable to increase list capacity from %d items to %d items", l->capacity, capacity);
 		return 0;
 	}
 
@@ -755,14 +755,14 @@ int list_swap(list *l, int a, int b)
 	void *bPtr = list_getptr(l, b);
 	if(aPtr == NULL || bPtr == NULL)
 	{
-		msg(ERROR, "Can't swap indices %d and %d in a list of length %d\n", a, b, l->length);
+		msg(MSG_ERROR, "Can't swap indices %d and %d in a list of length %d\n", a, b, l->length);
 		return 0;
 	}
 
 	void *tmp = malloc(l->itemSize);
 	if(tmp == NULL)
 	{
-		msg(ERROR, "Failed to allocate space to swap indices %d and %d\n", a, b);
+		msg(MSG_ERROR, "Failed to allocate space to swap indices %d and %d\n", a, b);
 		return 0;
 	}
 	memcpy(tmp,  aPtr, l->itemSize);
@@ -793,7 +793,7 @@ int list_reverse(list *l)
 		int otherEnd = l->length-i-1;
 		if(list_swap(l, i, otherEnd) == 0)
 		{
-			msg(ERROR, "Failed to reverse the list.");
+			msg(MSG_ERROR, "Failed to reverse the list.");
 			return 0;
 		}
 	}
@@ -988,7 +988,7 @@ int32_t list_rand_interval(int32_t min, int32_t max)
 	const int32_t range   = 1 + (max - min);
 	if(range < 1)
 	{
-		msg(FATAL, "Invalid range for random number generator (too large?). min=%d max=%d\n", min, max);
+		msg(MSG_FATAL, "Invalid range for random number generator (too large?). min=%d max=%d\n", min, max);
 		exit(EXIT_FAILURE);
 	}
 	const int32_t buckets = 2147483647 / range;
@@ -1015,7 +1015,7 @@ void list_shuffle(list *l)
 		int j = list_rand_interval(0, i); // index to swap
 		if(list_swap(l, i, j) == 0)
 		{
-			msg(FATAL, "Internal list error while shuffling\n");
+			msg(MSG_FATAL, "Internal list error while shuffling\n");
 			exit(EXIT_FAILURE);
 		}
 	}

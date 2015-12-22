@@ -126,7 +126,7 @@ void get_model_matrix(float result[16])
 	}
 	else  // if NOT fitting to view.
 	{
-		msg(ERROR, "Fit to view must be used for this program to work.");
+		msg(MSG_ERROR, "Fit to view must be used for this program to work.");
 		if(INCHES_TO_METERS)
 		{
 			float inchesToMeters=1/39.3701;
@@ -359,7 +359,7 @@ int main(int argc, char** argv)
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
 	if (modelgeom == NULL)
 	{
-		msg(FATAL, "Unable to load the requested model: %s", modelFilename);
+		msg(MSG_FATAL, "Unable to load the requested model: %s", modelFilename);
 		exit(EXIT_FAILURE);
 	}
 	

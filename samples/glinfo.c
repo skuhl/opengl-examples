@@ -49,14 +49,14 @@ int main(int argc, char** argv)
 	
 	GLint numExten = 0;
 	glGetIntegerv(GL_NUM_EXTENSIONS, &numExten);
-	msg(INFO, "%d extensions supported\n", numExten);
+	msg(MSG_INFO, "%d extensions supported\n", numExten);
 	for(GLuint i=0; i<(GLuint)numExten; i++)
-		msg(INFO, "%4d: %s", i, glGetStringi(GL_EXTENSIONS, i));
+		msg(MSG_INFO, "%4d: %s", i, glGetStringi(GL_EXTENSIONS, i));
 
-	msg(INFO, "OpenGL version: %s", glGetString(GL_VERSION));
-	msg(INFO, "  GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
-	msg(INFO, "       Version: %s", glGetString(GL_VENDOR));
-	msg(INFO, "      Renderer: %s", glGetString(GL_RENDERER));
+	msg(MSG_INFO, "OpenGL version: %s", glGetString(GL_VERSION));
+	msg(MSG_INFO, "  GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+	msg(MSG_INFO, "       Version: %s", glGetString(GL_VENDOR));
+	msg(MSG_INFO, "      Renderer: %s", glGetString(GL_RENDERER));
 	
 	exit(EXIT_SUCCESS);
 }
