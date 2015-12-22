@@ -220,7 +220,7 @@ void display()
 	}
 	float fps = kuhl_getfps(&fps_state);
 	if(fps_state.frame == 0)
-		msg(INFO, "fps: %6.1f\n", fps);
+		msg(MSG_INFO, "fps: %6.1f\n", fps);
 }
 
 
@@ -456,15 +456,15 @@ int main(int argc, char** argv)
 
 	if(argc == 2)
 	{
-		msg(INFO, "Cylinder mono image: %s\n", argv[1]);
+		msg(MSG_INFO, "Cylinder mono image: %s\n", argv[1]);
 		kuhl_read_texture_file(argv[1], &texIdLeft);
 		texIdRight = texIdLeft;
 	}
 	if(argc == 3)
 	{
-		msg(INFO, "Cylinder left  image: %s\n", argv[1]);
+		msg(MSG_INFO, "Cylinder left  image: %s\n", argv[1]);
 		kuhl_read_texture_file(argv[1], &texIdLeft);
-		msg(INFO, "Cylinder right image: %s\n", argv[2]);
+		msg(MSG_INFO, "Cylinder right image: %s\n", argv[2]);
 		kuhl_read_texture_file(argv[2], &texIdRight);
 	}
 
@@ -473,7 +473,7 @@ int main(int argc, char** argv)
 	{
 		for(int i=0; i<6; i++)
 		{
-			msg(INFO, "Cubemap image (%-5s): %s\n", cubemapNames[i], argv[i+1]);
+			msg(MSG_INFO, "Cubemap image (%-5s): %s\n", cubemapNames[i], argv[i+1]);
 			kuhl_read_texture_file(argv[i+1], &(cubemapLeftTex[i]));
 			cubemapRightTex[i]= cubemapLeftTex[i];
 			texIdLeft =0;
@@ -484,9 +484,9 @@ int main(int argc, char** argv)
 	{
 		for(int i=0; i<6; i++)
 		{
-			msg(INFO, "Cubemap image (left,  %-5s): %s\n", cubemapNames[i], argv[i+6+1]);
+			msg(MSG_INFO, "Cubemap image (left,  %-5s): %s\n", cubemapNames[i], argv[i+6+1]);
 			kuhl_read_texture_file(argv[i+6+1], &(cubemapLeftTex[i]));
-			msg(INFO, "Cubemap image (right, %-5s)\n", cubemapNames[i], argv[i+6+1]);
+			msg(MSG_INFO, "Cubemap image (right, %-5s)\n", cubemapNames[i], argv[i+6+1]);
 			cubemapRightTex[i]= cubemapLeftTex[i];
 			texIdLeft =0;
 			texIdRight=0;

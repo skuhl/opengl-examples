@@ -29,7 +29,7 @@ void list_sanity_check(const list *l)
 {
 	if(l == NULL)
 	{
-		msg(FATAL, "l was NULL");
+		msg(MSG_FATAL, "l was NULL");
 		exit(EXIT_FAILURE);
 	}
 
@@ -39,23 +39,23 @@ void list_sanity_check(const list *l)
 	   all of the variables set to appropriate values. */
 	if(l->capacity < LIST_MIN_CAPACITY)
 	{
-		msg(FATAL, "l->capacity=%d is smaller than the smallest allowed capacity (%d)",
+		msg(MSG_FATAL, "l->capacity=%d is smaller than the smallest allowed capacity (%d)",
 		    l->capacity, LIST_MIN_CAPACITY);
 		exit(EXIT_FAILURE);
 	}
 	if(l->length < 0)
 	{
-		msg(FATAL, "l->length=%d was negative", l->length);
+		msg(MSG_FATAL, "l->length=%d was negative", l->length);
 		exit(EXIT_FAILURE);
 	}
 	if(l->itemSize <= 0)
 	{
-		msg(FATAL, "l->itemSize=%d was zero or negative", l->length);
+		msg(MSG_FATAL, "l->itemSize=%d was zero or negative", l->length);
 		exit(EXIT_FAILURE);
 	}
 	if(l->capacity < l->length)
 	{
-		msg(FATAL, "l->capacity=%d was less than l->length=%d", l->capacity, l->length);
+		msg(MSG_FATAL, "l->capacity=%d was less than l->length=%d", l->capacity, l->length);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -177,7 +177,7 @@ int list_reset(list *l, int capacity, int itemSize, int (*compar)(const void *, 
 
 	if(itemSize < 1)
 	{
-		msg(FATAL, "itemSize was 0 or negative\n");
+		msg(MSG_FATAL, "itemSize was 0 or negative\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -457,7 +457,7 @@ int list_move(list *l, int src, int dst, int count)
 	void *dstPtr = list_getptr(l, dst);
 	if(srcPtr == NULL || dstPtr == NULL)
 	{
-		msg(FATAL, "srcPtr or dstPtr were NULL, this shouldn't happen because %d and %d should be in bounds in an list of length %d", src, dst, l->length);
+		msg(MSG_FATAL, "srcPtr or dstPtr were NULL, this shouldn't happen because %d and %d should be in bounds in an list of length %d", src, dst, l->length);
 		exit(EXIT_FAILURE);
 	}
 
@@ -531,7 +531,7 @@ int list_get(const list *l, int index, void *result)
 	}
 	else
 	{
-		msg(FATAL, "Failed to get item from index %d. The list has length %d\n", index, l->length);
+		msg(MSG_FATAL, "Failed to get item from index %d. The list has length %d\n", index, l->length);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -988,7 +988,7 @@ int32_t list_rand_interval(int32_t min, int32_t max)
 	const int32_t range   = 1 + (max - min);
 	if(range < 1)
 	{
-		msg(FATAL, "Invalid range for random number generator (too large?). min=%d max=%d\n", min, max);
+		msg(MSG_FATAL, "Invalid range for random number generator (too large?). min=%d max=%d\n", min, max);
 		exit(EXIT_FAILURE);
 	}
 	const int32_t buckets = 2147483647 / range;
@@ -1015,7 +1015,7 @@ void list_shuffle(list *l)
 		int j = list_rand_interval(0, i); // index to swap
 		if(list_swap(l, i, j) == 0)
 		{
-			msg(FATAL, "Internal list error while shuffling\n");
+			msg(MSG_FATAL, "Internal list error while shuffling\n");
 			exit(EXIT_FAILURE);
 		}
 	}

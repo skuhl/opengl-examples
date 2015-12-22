@@ -203,8 +203,8 @@ int main(int argc, char** argv)
 	modelgeom = kuhl_load_model("models/dabrovic-sponza/sponza.obj", NULL, program, NULL);
 	if(modelgeom == 0)
 	{
-		msg(FATAL, "Dabrovic sponza scene is required for this example. If needed, modify the filename of the model in main().");
-		msg(FATAL, "http://graphics.cs.williams.edu/data/meshes.xml");
+		msg(MSG_FATAL, "Dabrovic sponza scene is required for this example. If needed, modify the filename of the model in main().");
+		msg(MSG_FATAL, "http://graphics.cs.williams.edu/data/meshes.xml");
 		exit(EXIT_FAILURE);
 	}
 

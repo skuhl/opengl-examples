@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 	int numRecords = 0;
 	if(sscanf(argv[2], "%d", &numRecords) != 1)
 	{
-		msg(FATAL, "Error parsing numRecords parameter.\n");
+		msg(MSG_FATAL, "Error parsing numRecords parameter.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 	float *data = vrpn_get_raw(vrpnObject, NULL, numRecords);
 	if(data == NULL)
 	{
-		msg(FATAL, "Failed to collect data.");
+		msg(MSG_FATAL, "Failed to collect data.");
 		exit(EXIT_FAILURE);
 	}
 
@@ -78,16 +78,16 @@ int main(int argc, char *argv[])
 	filter(data, numRecords, 2, z);
 	msg(BLUE, "--- XYZ ---\n");
 	
-	msg(INFO, "Means: %f %f %f\n",
+	msg(MSG_INFO, "Means: %f %f %f\n",
 	    mean(x, numRecords),
 	    mean(y, numRecords),
 	    mean(z, numRecords));
-	msg(INFO, "Variance: %20.20f %20.20f %20.20f\n",
+	msg(MSG_INFO, "Variance: %20.20f %20.20f %20.20f\n",
 	    variance(x, numRecords),
 	    variance(y, numRecords),
 	    variance(z, numRecords));
 
-	msg(INFO, "  Stddev: %20.20f %20.20f %20.20f\n",
+	msg(MSG_INFO, "  Stddev: %20.20f %20.20f %20.20f\n",
 	    sqrt(variance(x, numRecords)),
 	    sqrt(variance(y, numRecords)),
 	    sqrt(variance(z, numRecords)));
@@ -100,18 +100,18 @@ int main(int argc, char *argv[])
 
 	msg(BLUE, "--- Quat ---\n");
 	
-	msg(INFO, "Means: %f %f %f %f\n",
+	msg(MSG_INFO, "Means: %f %f %f %f\n",
 	    mean(q1, numRecords),
 	    mean(q2, numRecords),
 	    mean(q3, numRecords),
 	    mean(q4, numRecords));
 	
-	msg(INFO, "Variance: %20.20f %20.20f %20.20f %20.20f\n",
+	msg(MSG_INFO, "Variance: %20.20f %20.20f %20.20f %20.20f\n",
 	    variance(q1, numRecords),
 	    variance(q2, numRecords),
 	    variance(q3, numRecords),
 	    variance(q4, numRecords));
-	msg(INFO, "   Stddev: %20.20f %20.20f %20.20f %20.20f\n",
+	msg(MSG_INFO, "   Stddev: %20.20f %20.20f %20.20f %20.20f\n",
 	    sqrt(variance(q1, numRecords)),
 	    sqrt(variance(q2, numRecords)),
 	    sqrt(variance(q3, numRecords)),

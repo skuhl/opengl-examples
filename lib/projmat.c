@@ -40,7 +40,7 @@ static void projmat_init_window()
 	if(windowSizeString != NULL &&
 	   sscanf(windowSizeString, "%d %d", &(windowSize[0]), &(windowSize[1])) == 2)
 	{
-		msg(INFO, "Setting window size %d %d\n", windowSize[0], windowSize[1]);
+		msg(MSG_INFO, "Setting window size %d %d\n", windowSize[0], windowSize[1]);
 		glutReshapeWindow(windowSize[0], windowSize[1]);
 	}
 
@@ -50,7 +50,7 @@ static void projmat_init_window()
 	if(windowPosString != NULL &&
 	   sscanf(windowPosString, "%d %d", &(windowPos[0]), &(windowPos[1])) == 2)
 	{
-		msg(INFO, "Setting window position %d %d\n", windowPos[0], windowPos[1]);
+		msg(MSG_INFO, "Setting window position %d %d\n", windowPos[0], windowPos[1]);
 		glutPositionWindow(windowPos[0], windowPos[1]);
 	}
 
@@ -58,7 +58,7 @@ static void projmat_init_window()
 	const char* fullscreenString = getenv("PROJMAT_FULLSCREEN");
 	if(fullscreenString && strlen(fullscreenString) > 0)
 	{
-		msg(INFO, "Requesting fullscreen\n");
+		msg(MSG_INFO, "Requesting fullscreen\n");
 		glutFullScreen();
 	}
 }
@@ -116,17 +116,17 @@ void projmat_init()
 	if(foundDsight == 1)
 	{
 		projmat_mode = 2;
-		msg(INFO, "Using dsight frustums.");
+		msg(MSG_INFO, "Using dsight frustums.");
 	}
 	else if(foundFov == 1)
 	{
 		projmat_mode = 0;
-		msg(INFO, "Using a simple perspective projection (vfov=%f degrees).\n", projmat_vfov);
+		msg(MSG_INFO, "Using a simple perspective projection (vfov=%f degrees).\n", projmat_vfov);
 	}
 	else if(foundMasterFrustum == 1 && foundFrustum == 1)
 	{
 		projmat_mode = 1;
-		msg(INFO, "Using custom view frustum.\n");
+		msg(MSG_INFO, "Using custom view frustum.\n");
 	}
 	else if(foundMasterFrustum == 0 && foundFrustum == 1)
 	{
@@ -134,8 +134,8 @@ void projmat_init()
 		// If running on a multi-computer cluster, environment
 		// variables must specify the overall frustum and the
 		// individual screen frustum.
-		msg(WARNING, "PROJMAT_FRUSTUM was defined but PROJMAT_MASTER_FRUSTUM was not.");
-		msg(WARNING, "Assuming that the two frustums are the same (should work if running on a single machine).");
+		msg(MSG_WARNING, "PROJMAT_FRUSTUM was defined but PROJMAT_MASTER_FRUSTUM was not.");
+		msg(MSG_WARNING, "Assuming that the two frustums are the same (should work if running on a single machine).");
 		for(int i=0; i<6; i++)
 			projmat_master_frustum[i] = projmat_frustum[i];
 	}
@@ -145,15 +145,15 @@ void projmat_init()
 		// If running on a multi-computer cluster, environment
 		// variables must specify the overall frustum and the
 		// individual screen frustum.
-		msg(WARNING, "PROJMAT_MASTER_FRUSTUM was defined but PROJMAT_FRUSTUM was not.");
-		msg(WARNING, "Assuming that the two frustums are the same (should work if running on a single machine).");
+		msg(MSG_WARNING, "PROJMAT_MASTER_FRUSTUM was defined but PROJMAT_FRUSTUM was not.");
+		msg(MSG_WARNING, "Assuming that the two frustums are the same (should work if running on a single machine).");
 		for(int i=0; i<6; i++)
 			projmat_frustum[i] = projmat_master_frustum[i];
 	}
 	else
 	{
 		projmat_mode = -1;
-		msg(INFO, "Using default perspective projection.\n");
+		msg(MSG_INFO, "Using default perspective projection.\n");
 	}
 
 	// If the frustum was defined via environment variables, print it
@@ -162,11 +162,11 @@ void projmat_init()
 	// frustum values here.
 	if(projmat_mode == 1)
 	{
-		msg(INFO, "View frustum: left=%f right=%f bot=%f top=%f near=%f far=%f\n",
+		msg(MSG_INFO, "View frustum: left=%f right=%f bot=%f top=%f near=%f far=%f\n",
 		    projmat_frustum[0], projmat_frustum[1], projmat_frustum[2],
 		    projmat_frustum[3], projmat_frustum[4], projmat_frustum[5]);
 		if(projmat_frustum[4] < 0 || projmat_frustum[5] < 0)
-			msg(WARNING, "The near and far values in the frustum should be positive (i.e., this matches the behavior of the old OpenGL glFrustum() function call.)");
+			msg(MSG_WARNING, "The near and far values in the frustum should be positive (i.e., this matches the behavior of the old OpenGL glFrustum() function call.)");
 	}
 
 }

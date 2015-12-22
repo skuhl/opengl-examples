@@ -134,7 +134,7 @@ void kuhl_ogl_init(int *argcp, char **argv, int width, int height,
 	GLenum glewError = glewInit();
 	if(glewError != GLEW_OK)
 	{
-		msg(FATAL, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
+		msg(MSG_FATAL, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
 		exit(EXIT_FAILURE);
 	}
 	/* When experimental features are turned on in GLEW, the first
@@ -164,7 +164,7 @@ GLuint kuhl_create_shader(const char *filename, GLuint shader_type)
 	    shader_type != GL_VERTEX_SHADER ) ||
 	   filename == NULL)
 	{
-		msg(FATAL, "You passed inappropriate information into this function.\n");
+		msg(MSG_FATAL, "You passed inappropriate information into this function.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -173,12 +173,12 @@ GLuint kuhl_create_shader(const char *filename, GLuint shader_type)
 	 * OpenGL to be guaranteed that the functions exist. */
 	if(shader_type == GL_FRAGMENT_SHADER && !glewIsSupported("GL_ARB_fragment_shader") && !glewIsSupported("GL_VERSION_2_0"))
 	{
-		msg(FATAL, "glew said fragment shaders are not supported on this machine.\n");
+		msg(MSG_FATAL, "glew said fragment shaders are not supported on this machine.\n");
 		exit(EXIT_FAILURE);
 	}
 	if(shader_type == GL_VERTEX_SHADER && !glewIsSupported("GL_ARB_vertex_shader") && !glewIsSupported("GL_VERSION_2_0"))
 	{
-		msg(FATAL, "glew said vertex shaders are not supported on this machine.\n");
+		msg(MSG_FATAL, "glew said vertex shaders are not supported on this machine.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -199,7 +199,7 @@ GLuint kuhl_create_shader(const char *filename, GLuint shader_type)
 	GLsizei actualLen = 0;
 	glGetShaderInfoLog(shader, 1024, &actualLen, logString);
 	if(actualLen > 0)
-		msg(WARNING, "%s Shader log for %s:\n%s\n", shader_type == GL_VERTEX_SHADER ? "Vertex" : "Fragment", filename, kuhl_trim_whitespace(logString));
+		msg(MSG_WARNING, "%s Shader log for %s:\n%s\n", shader_type == GL_VERTEX_SHADER ? "Vertex" : "Fragment", filename, kuhl_trim_whitespace(logString));
 	kuhl_errorcheck();
 
 	/* If shader compilation wasn't successful, exit. */
@@ -207,7 +207,7 @@ GLuint kuhl_create_shader(const char *filename, GLuint shader_type)
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &shaderCompileStatus);
 	if(shaderCompileStatus == GL_FALSE)
 	{
-		msg(FATAL, "Failed to compile '%s'\n", filename);
+		msg(MSG_FATAL, "Failed to compile '%s'\n", filename);
 		exit(EXIT_FAILURE);
 	}
 
@@ -243,7 +243,7 @@ void kuhl_print_program_info(GLuint program)
 	if(numVarsInProg == 0)
 		buflen += snprintf(buf+buflen, 1024-buflen, "[none!]");
 
-	msg(INFO, "%s", buf);
+	msg(MSG_INFO, "%s", buf);
 	
 	kuhl_errorcheck();
 	
@@ -265,7 +265,7 @@ void kuhl_print_program_info(GLuint program)
 	if(numVarsInProg == 0)
 		buflen += snprintf(buf+buflen, 1024-buflen, "[none!]");
 
-	msg(INFO, "%s", buf);
+	msg(MSG_INFO, "%s", buf);
 	
 	kuhl_errorcheck();
 	
@@ -275,7 +275,7 @@ void kuhl_print_program_info(GLuint program)
 	glGetProgramiv(program, GL_ATTACHED_SHADERS, &attachedShaderCount);
 	glGetProgramiv(program, GL_PROGRAM_BINARY_LENGTH, &binarySize);
 	glGetProgramiv(program, GL_DELETE_STATUS, &deleteStatus);
-	msg(INFO, "GLSL prog %d: AttachedShaderCount=%d Size=%d %s\n",
+	msg(MSG_INFO, "GLSL prog %d: AttachedShaderCount=%d Size=%d %s\n",
 	       program,
 	       attachedShaderCount, binarySize,
 	       deleteStatus   == GL_TRUE ? "DELETED!" : "");
@@ -292,7 +292,7 @@ void kuhl_delete_program(GLuint program)
 {
 	if(!glIsProgram(program))
 	{
-		msg(WARNING, "Tried to delete a program (%d) that does not exist.", program);
+		msg(MSG_WARNING, "Tried to delete a program (%d) that does not exist.", program);
 		return;
 	}
 
@@ -331,10 +331,10 @@ GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename)
 	GLuint program = glCreateProgram();
 	if(program == 0)
 	{
-		msg(FATAL, "Failed to create program.\n");
+		msg(MSG_FATAL, "Failed to create program.\n");
 		exit(EXIT_FAILURE);
 	}
-	msg(INFO, "GLSL prog %d: Creating vertex (%s) & fragment (%s) shaders\n",
+	msg(MSG_INFO, "GLSL prog %d: Creating vertex (%s) & fragment (%s) shaders\n",
 	    program, vertexFilename, fragFilename);
 	
 	/* Create the shaders */
@@ -359,7 +359,7 @@ GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename)
 	if(linked == GL_FALSE)
 	{
 		kuhl_print_program_log(program);
-		msg(FATAL, "Failed to link GLSL program.\n");
+		msg(MSG_FATAL, "Failed to link GLSL program.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -382,7 +382,7 @@ void kuhl_print_program_log(GLuint program)
 	GLsizei actualLen = 0;
 	glGetProgramInfoLog(program, 1024, &actualLen, logString);
 	if(actualLen > 0)
-		msg(WARNING, "GLSL program log:\n%s\n", logString);
+		msg(MSG_WARNING, "GLSL program log:\n%s\n", logString);
 }
 
 
@@ -461,7 +461,7 @@ GLint kuhl_get_attribute(GLuint program, const char *attributeName)
 
 	if(!glIsProgram(program))
 	{
-		msg(FATAL, "Cannot get attribute '%s' from program %d because the program is not a valid GLSL program.\n", attributeName, program);
+		msg(MSG_FATAL, "Cannot get attribute '%s' from program %d because the program is not a valid GLSL program.\n", attributeName, program);
 		exit(EXIT_FAILURE);
 	}
 
@@ -499,7 +499,7 @@ static void kuhl_geometry_sanity_check_attribute(GLuint bufferobject, const char
 			/* All parts of this attribute should be set */
 			if(attributeName == NULL || bufferobject == 0)
 			{
-				msg(FATAL, "Only part of the attribute was set:"
+				msg(MSG_FATAL, "Only part of the attribute was set:"
 				    "Name=%s bufferobject=%d\n",
 				    attributeName, bufferobject);
 				exit(EXIT_FAILURE);
@@ -535,14 +535,14 @@ static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
 {
 	if(geom->program == 0)
 	{
-		msg(FATAL, "The program element was not set in your kuhl_geometry struct. You must specify which GLSL program will be used with this geometry.\n");
+		msg(MSG_FATAL, "The program element was not set in your kuhl_geometry struct. You must specify which GLSL program will be used with this geometry.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	/* Check if the program is valid (we don't need to enable it here). */
 	if(!glIsProgram(geom->program))
 	{
-		msg(FATAL, "The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", geom->program);
+		msg(MSG_FATAL, "The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", geom->program);
 		exit(EXIT_FAILURE);
 	}
 
@@ -556,14 +556,14 @@ static void kuhl_geometry_sanity_check(kuhl_geometry *geom)
 	if(validated == GL_FALSE)
 	{
 		kuhl_print_program_log(geom->program);
-		msg(FATAL, "Failed to validate GLSL program %d.\n", geom->program);
+		msg(MSG_FATAL, "Failed to validate GLSL program %d.\n", geom->program);
 		exit(EXIT_FAILURE);
 	}
 
 	
 	if(geom->vertex_count < 1)
 	{
-		msg(FATAL, "vertex_count must be greater than 0.\n");
+		msg(MSG_FATAL, "vertex_count must be greater than 0.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -700,22 +700,22 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 {
 	if(name == NULL || strlen(name) == 0)
 	{
-		msg(WARNING, "GLSL variable name was NULL or the empty string.\n");
+		msg(MSG_WARNING, "GLSL variable name was NULL or the empty string.\n");
 		return;
 	}
 	if(geom == NULL)
 	{
-		msg(WARNING, "Geometry struct is null while trying to set texture '%s'.\n", name);
+		msg(MSG_WARNING, "Geometry struct is null while trying to set texture '%s'.\n", name);
 		return;
 	}
 	if(texture == 0)
 	{
-		msg(WARNING, "Texture was set to 0 while trying to set texture '%s'\n", name);
+		msg(MSG_WARNING, "Texture was set to 0 while trying to set texture '%s'\n", name);
 		return;
 	}
 	if(!glIsTexture(texture))
 	{
-		msg(WARNING, "You tried to set the texture to an invalid texture %d (detected while trying to set texture '%s')\n", texture, name);
+		msg(MSG_WARNING, "You tried to set the texture to an invalid texture %d (detected while trying to set texture '%s')\n", texture, name);
 		return;
 	}
 
@@ -724,7 +724,7 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 	
 	if(!glIsVertexArray(geom->vao))
 	{
-		msg(WARNING, "This geometry object has an invalid vertex array object %d (detected while setting texture '%s')\n", geom->vao, name);
+		msg(MSG_WARNING, "This geometry object has an invalid vertex array object %d (detected while setting texture '%s')\n", geom->vao, name);
 		return;
 	}
 	
@@ -733,7 +733,7 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 	if(samplerLocation == -1)
 	{
 		if(kg_options & KG_WARN)
-			msg(WARNING, "Texture sampler '%s' was missing in GLSL program %d.\n", name, geom->program);
+			msg(MSG_WARNING, "Texture sampler '%s' was missing in GLSL program %d.\n", name, geom->program);
 		return;
 	}
 
@@ -759,7 +759,7 @@ void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name
 	/* If we are writing past the end of the array. */
 	if(destIndex == MAX_TEXTURES)
 	{
-		msg(FATAL, "You tried to add more than %d textures to a kuhl_geometry object\n", MAX_TEXTURES);
+		msg(MSG_FATAL, "You tried to add more than %d textures to a kuhl_geometry object\n", MAX_TEXTURES);
 		exit(EXIT_FAILURE);
 	}
 
@@ -887,7 +887,7 @@ void kuhl_geometry_program(kuhl_geometry *geom, GLuint program, int kg_options)
 
 	if(!glIsProgram(program))
 	{
-		msg(WARNING, "GLSL program %d is not a valid program.\n",program);
+		msg(MSG_WARNING, "GLSL program %d is not a valid program.\n",program);
 	}
 	
 	geom->program = program;
@@ -953,29 +953,29 @@ void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint compo
 {
 	if(name == NULL || strlen(name) == 0)
 	{
-		msg(WARNING, "Unable to add an attribute that is NULL or an empty string.\n");
+		msg(MSG_WARNING, "Unable to add an attribute that is NULL or an empty string.\n");
 		return;
 	}
 	if(geom == NULL)
 	{
-		msg(WARNING, "Unable to add attribute '%s' to the geometry object because you passed in a geometry object that was set to NULL.\n",name);
+		msg(MSG_WARNING, "Unable to add attribute '%s' to the geometry object because you passed in a geometry object that was set to NULL.\n",name);
 		return;
 	}
 	if(data == NULL)
 	{
-		msg(WARNING, "Unable to add attribute '%s' to the geometry object because you passed in an array set to NULL.\n",
+		msg(MSG_WARNING, "Unable to add attribute '%s' to the geometry object because you passed in an array set to NULL.\n",
 		             name);
 		return;
 	}
 	if(components == 0)
 	{
-		msg(WARNING, "Unable to add attribute '%s' to the geometry object because this attribute has 0 components.\n",
+		msg(MSG_WARNING, "Unable to add attribute '%s' to the geometry object because this attribute has 0 components.\n",
 		             name);
 		return;
 	}
 	if(!glIsVertexArray(geom->vao))
 	{
-		msg(WARNING, "Unable to add attribute '%s' to the geometry object because the geometry has an invalid vertex array object %d\n", geom->vao, name);
+		msg(MSG_WARNING, "Unable to add attribute '%s' to the geometry object because the geometry has an invalid vertex array object %d\n", geom->vao, name);
 		return;
 	}
 
@@ -989,7 +989,7 @@ void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint compo
 	if(attribLocation == -1)
 	{
 		if(warnIfAttribMissing)
-			msg(WARNING, "Unable to add attribute '%s' to the geometry object because it was missing or inactive in program %d\n",
+			msg(MSG_WARNING, "Unable to add attribute '%s' to the geometry object because it was missing or inactive in program %d\n",
 			    name, geom->program);
 		return;
 	}
@@ -1011,12 +1011,12 @@ void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint compo
 		if(glIsBuffer(geom->attribs[destIndex].bufferobject))
 			glDeleteBuffers(1, &(geom->attribs[destIndex].bufferobject));
 	}
-	msg(DEBUG, "Storing attribute %s at index %d in kuhl_geometry; connected to location %d in program %d", name, destIndex, attribLocation, geom->program);
+	msg(MSG_DEBUG, "Storing attribute %s at index %d in kuhl_geometry; connected to location %d in program %d", name, destIndex, attribLocation, geom->program);
 	
 	/* If we are writing past the end of the array. */
 	if(destIndex == MAX_ATTRIBUTES)
 	{
-		msg(FATAL, "You tried to add more than %d attributes to a kuhl_geometry object\n", MAX_ATTRIBUTES);
+		msg(MSG_FATAL, "You tried to add more than %d attributes to a kuhl_geometry object\n", MAX_ATTRIBUTES);
 		exit(EXIT_FAILURE);
 	}
 
@@ -1112,13 +1112,13 @@ void kuhl_geometry_new(kuhl_geometry *geom, GLuint program, unsigned int vertexC
 	/* Check if the program is valid (we don't need to enable it here). */
 	if(!glIsProgram(program))
 	{
-		msg(FATAL, "The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", geom->program);
+		msg(MSG_FATAL, "The program you specified in your kuhl_geometry struct (%d) is not a valid GLSL program.\n", geom->program);
 		exit(EXIT_FAILURE);
 	}
 
 	if(vertexCount == 0)
 	{
-		msg(WARNING, "You are creating a geometry object with a vertexCount of 0.\n");
+		msg(MSG_WARNING, "You are creating a geometry object with a vertexCount of 0.\n");
 	}
 
 	geom->program = program;
@@ -1158,18 +1158,18 @@ void kuhl_geometry_indices(kuhl_geometry *geom, GLuint *indices, GLuint indexCou
 {
 	if(indexCount == 0 || indices == NULL)
 	{
-		msg(WARNING, "indexCount was zero or indices array was NULL\n");
+		msg(MSG_WARNING, "indexCount was zero or indices array was NULL\n");
 		return;
 	}
 
 	if(geom->primitive_type == GL_TRIANGLES && indexCount % 3 != 0)
 	{
-		msg(FATAL, "indexCount=%u was not a multiple of 3 even though this geometry has triangles in it.", indexCount);
+		msg(MSG_FATAL, "indexCount=%u was not a multiple of 3 even though this geometry has triangles in it.", indexCount);
 		exit(EXIT_FAILURE);
 	}
 	else if(geom->primitive_type == GL_LINES && indexCount % 2 != 0)
 	{
-		msg(FATAL, "indexCount=%u was not a multiple of 2 even though this geometry has lines in it.", indexCount);
+		msg(MSG_FATAL, "indexCount=%u was not a multiple of 2 even though this geometry has lines in it.", indexCount);
 		exit(EXIT_FAILURE);
 	}
 	
@@ -1527,7 +1527,7 @@ GLuint kuhl_read_texture_rgba_array_wrap(const unsigned char* array, int width, 
 		float maxAniso;
 		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAniso);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAniso);
-		msg(DEBUG, "Anisotropic filtering: Available, set to maximum value (%0.1f)\n",
+		msg(MSG_DEBUG, "Anisotropic filtering: Available, set to maximum value (%0.1f)\n",
 		       maxAniso);
 	}
 
@@ -1547,7 +1547,7 @@ GLuint kuhl_read_texture_rgba_array_wrap(const unsigned char* array, int width, 
 		GLint maxTextureSize = 0;
 		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
 		msg(MSG_ERROR, "Your card's rough estimate for the maximum texture size that it supports: %dx%d\n", maxTextureSize, maxTextureSize);
-		msg(WARNING, "Common max texture sizes for graphics cards can be found at: http://feedback.wildfiregames.com/report/opengl/feature/GL_MAX_TEXTURE_SIZE");
+		msg(MSG_WARNING, "Common max texture sizes for graphics cards can be found at: http://feedback.wildfiregames.com/report/opengl/feature/GL_MAX_TEXTURE_SIZE");
 
 		// According to the website above, as of July 2014, 85% of
 		// computers support 8k or larger. Most computers on MTU's
@@ -1715,7 +1715,7 @@ static float kuhl_read_texture_file_im(const char *filename, GLuint *texName, GL
 	int width  = (int)iioinfo.width;
 	int height = (int)iioinfo.height;
 	*texName = kuhl_read_texture_rgba_array_wrap(image, width, height, wrapS, wrapT);
-	msg(DEBUG, "Finished reading '%s' (%dx%d, texName=%d) with ImageMagick\n", filename, width, height, *texName);
+	msg(MSG_DEBUG, "Finished reading '%s' (%dx%d, texName=%d) with ImageMagick\n", filename, width, height, *texName);
 
 	if(iioinfo.comment)
 		free(iioinfo.comment);
@@ -1766,7 +1766,7 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName, G
 	 * is in row major order. The first 4 bytes are the color information
 	 * for the lowest left pixel in the texture. */
 	*texName = kuhl_read_texture_rgba_array_wrap(image, width, height, wrapS, wrapT);
-	msg(DEBUG, "Finished reading '%s' (%dx%d, texName=%d) with STB\n", filename, width, height, *texName);
+	msg(MSG_DEBUG, "Finished reading '%s' (%dx%d, texName=%d) with STB\n", filename, width, height, *texName);
 	stbi_image_free(image);
 	
 	if(*texName == 0)
@@ -1877,7 +1877,7 @@ static void kuhl_screenshot_stb(const char *outputImageFilename)
 	
 	if (!ok)
 	{
-		msg(FATAL, "Failed write screenshot to %s (note: STB can only write png, tga, and bmp files.)\n", outputImageFilename);
+		msg(MSG_FATAL, "Failed write screenshot to %s (note: STB can only write png, tga, and bmp files.)\n", outputImageFilename);
 		exit(EXIT_FAILURE);
 	}
 
@@ -1933,12 +1933,12 @@ void kuhl_video_record(const char *fileLabel, int fps)
 	{
 		kuhl_video_record_prev_sec  = tv.tv_sec;
 		kuhl_video_record_prev_usec = tv.tv_usec;
-		msg(INFO, "Recording %d frames per second\n", fps);
-		msg(INFO, "Use either of the following commands to assemble Ogg video (Ogg video files are widely supported and not encumbered by patent restrictions):\n");
-		msg(INFO, "ffmpeg -r %d -f image2 -i %s-%%08d.%s -qscale:v 7 %s.ogv\n", fps, fileLabel, exten, fileLabel);
-		msg(INFO, " - or -\n");
-		msg(INFO, "avconv -r %d -f image2 -i %s-%%08d.%s -qscale:v 7 %s.ogv\n", fps, fileLabel, exten, fileLabel);
-		msg(INFO, "In either program, the -qscale:v parameter sets the quality: 0 (lowest) to 10 (highest)\n");
+		msg(MSG_INFO, "Recording %d frames per second\n", fps);
+		msg(MSG_INFO, "Use either of the following commands to assemble Ogg video (Ogg video files are widely supported and not encumbered by patent restrictions):\n");
+		msg(MSG_INFO, "ffmpeg -r %d -f image2 -i %s-%%08d.%s -qscale:v 7 %s.ogv\n", fps, fileLabel, exten, fileLabel);
+		msg(MSG_INFO, " - or -\n");
+		msg(MSG_INFO, "avconv -r %d -f image2 -i %s-%%08d.%s -qscale:v 7 %s.ogv\n", fps, fileLabel, exten, fileLabel);
+		msg(MSG_INFO, "In either program, the -qscale:v parameter sets the quality: 0 (lowest) to 10 (highest)\n");
 	}
 
 	time_t sec       = tv.tv_sec;
@@ -2249,7 +2249,7 @@ static char* kuhl_private_assimp_fullpath(const char *textureFile, const char *m
 {
 	if(textureFile == NULL || strlen(textureFile) == 0)
 	{
-		msg(FATAL, "textureFile was NULL or a zero character string.");
+		msg(MSG_FATAL, "textureFile was NULL or a zero character string.");
 		exit(EXIT_FAILURE);
 	}
 	
@@ -2259,7 +2259,7 @@ static char* kuhl_private_assimp_fullpath(const char *textureFile, const char *m
 	{
 		if(modelFile == NULL)
 		{
-			msg(FATAL, "modelFile was NULL");
+			msg(MSG_FATAL, "modelFile was NULL");
 			exit(EXIT_FAILURE);
 		}
 		char *editable = strdup(modelFile);
@@ -2291,7 +2291,7 @@ static char* kuhl_private_assimp_fullpath(const char *textureFile, const char *m
 static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename, const char *textureDirname)
 {
 	/* If we get here, we need to add the file to the sceneMap. */
-	msg(INFO, "Loading model: %s\n", modelFilename);
+	msg(MSG_INFO, "Loading model: %s\n", modelFilename);
 
 	/* Write assimp messages to msg log */
 	struct aiLogStream stream;
@@ -2350,13 +2350,13 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 	/* Print warning messages if the model uses features that our code
 	 * doesn't support (even though ASSIMP might support them. */
 	if(scene->mNumCameras > 0)
-		msg(DEBUG, "%s: This model has %u camera(s) embedded in it that we are ignoring.\n",
+		msg(MSG_DEBUG, "%s: This model has %u camera(s) embedded in it that we are ignoring.\n",
 		       modelFilename, scene->mNumCameras);
 	if(scene->mNumLights > 0)
-		msg(DEBUG, "%s: This model has %u light(s) embedded in it that we are ignoring.\n",
+		msg(MSG_DEBUG, "%s: This model has %u light(s) embedded in it that we are ignoring.\n",
 		       modelFilename, scene->mNumLights);
 	if(scene->mNumTextures > 0)
-		msg(DEBUG, "%s: This model has %u texture(s) embedded in it. This program currently ignores embedded textures.\n",
+		msg(MSG_DEBUG, "%s: This model has %u texture(s) embedded in it. This program currently ignores embedded textures.\n",
 		       modelFilename, scene->mNumTextures);
 
 	// Uncomment this line to print additional information about the model:
@@ -2400,7 +2400,7 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 
 			if(kuhl_read_texture_file(fullpath, &texIndex) < 0)
 			{
-				msg(WARNING, "%s refers to texture %s which we could not find at %s\n", modelFilename, path.data, fullpath);
+				msg(MSG_WARNING, "%s refers to texture %s which we could not find at %s\n", modelFilename, path.data, fullpath);
 			}
 
 			/* Store the texture information in our list structure so
@@ -2408,7 +2408,7 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 			 * render the scene. */
 			if(textureIdMapSize >= textureIdMapMaxSize)
 			{
-				msg(FATAL, "You have loaded more textures than the hardcoded limit. Exiting.\n");
+				msg(MSG_FATAL, "You have loaded more textures than the hardcoded limit. Exiting.\n");
 				exit(EXIT_FAILURE);
 			}
 			textureIdMap[textureIdMapSize].textureFileName = strdup(fullpath);
@@ -2449,10 +2449,10 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 				if(count > 0)
 					buflen += snprintf(buf+buflen, 1024-buflen, "%s=%d ", texTypeListStr[i], count);
 			}
-			msg(DEBUG, "%s", buf);
+			msg(MSG_DEBUG, "%s", buf);
 
 			if(aiGetMaterialTextureCount(scene->mMaterials[m], texTypeList[0]) > 1)
-				msg(DEBUG, "The material also has more than one diffuse texture.\n");
+				msg(MSG_DEBUG, "The material also has more than one diffuse texture.\n");
 		}
 	}
 
@@ -2743,7 +2743,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		}
 		else if(mesh->mPrimitiveTypes & aiPrimitiveType_POLYGON)
 		{
-			msg(WARNING, "Mesh %u (%u/%u meshes in node \"%s\"): We only "
+			msg(MSG_WARNING, "Mesh %u (%u/%u meshes in node \"%s\"): We only "
 			    "support drawing triangle, line, or point meshes. "
 			    "This mesh contained polygons, and we are skipping it. "
 			    "To resolve this problem, ensure that the file is loaded "
@@ -2864,7 +2864,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 		{
 			if(mesh->mNumBones > MAX_BONES)
 			{
-				msg(FATAL, "This mesh has %d bones but we only support %d",
+				msg(MSG_FATAL, "This mesh has %d bones but we only support %d",
 				    mesh->mNumBones, MAX_BONES);
 				exit(EXIT_FAILURE);
 			}
@@ -2910,7 +2910,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 			{
 				if(weights[i*4+0] == 0)
 				{
-					msg(FATAL, "Every vertex should have at least one weight but vertex %ud has no weights!", i);
+					msg(MSG_FATAL, "Every vertex should have at least one weight but vertex %ud has no weights!", i);
 					exit(EXIT_FAILURE);
 				}
 			}
@@ -2938,7 +2938,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 			}
 			if(texture == 0)
 			{
-				msg(WARNING, "Mesh %u uses texture '%s'."
+				msg(MSG_WARNING, "Mesh %u uses texture '%s'."
 				    "This texture should have been loaded earlier, but we can't find it now.",
 				    nd->mMeshes[n], texPath.data);
 			}
@@ -2985,7 +2985,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 			geom->bones = bones;
 		}
 
-		msg(DEBUG, "Mesh #%03u in node \"%s\" (node has %d meshes): verts=%d indices=%d primType=%d normals=%s colors=%s texCoords=%s bones=%d tex=%s",
+		msg(MSG_DEBUG, "Mesh #%03u in node \"%s\" (node has %d meshes): verts=%d indices=%d primType=%d normals=%s colors=%s texCoords=%s bones=%d tex=%s",
 		       nd->mMeshes[n], nd->mName.data, nd->mNumMeshes,
 		       mesh->mNumVertices,
 		       mesh->mNumFaces*meshPrimitiveType,
@@ -3070,7 +3070,7 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
 			const struct aiNode *node = kuhl_assimp_find_node(g->bones->boneList[b]->mName.data, scene->mRootNode);
 			if(node == NULL)
 			{
-				msg(FATAL, "Failed to find node that corresponded to bone: %s\n", g->bones->boneList[b]->mName.data);
+				msg(MSG_FATAL, "Failed to find node that corresponded to bone: %s\n", g->bones->boneList[b]->mName.data);
 				exit(EXIT_FAILURE);
 			}
 			const struct aiBone *bone = g->bones->boneList[b];
@@ -3152,11 +3152,11 @@ kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDir
 	vec3f_add_new(ctr, min, max);
 	vec3f_scalarDiv(ctr, 2);
 
-	msg(DEBUG, "%s: Model loaded with assimp version %d.%d", modelFilename, aiGetVersionMajor(), aiGetVersionMinor());
+	msg(MSG_DEBUG, "%s: Model loaded with assimp version %d.%d", modelFilename, aiGetVersionMajor(), aiGetVersionMinor());
 	/* Print bounding box information to stout */
-	msg(DEBUG, "%s: bbox min: %10.3f %10.3f %10.3f", modelFilename, min[0], min[1], min[2]);
-	msg(DEBUG, "%s: bbox max: %10.3f %10.3f %10.3f", modelFilename, max[0], max[1], max[2]);
-	msg(DEBUG, "%s: bbox ctr: %10.3f %10.3f %10.3f", modelFilename, ctr[0], ctr[1], ctr[2]);
+	msg(MSG_DEBUG, "%s: bbox min: %10.3f %10.3f %10.3f", modelFilename, min[0], min[1], min[2]);
+	msg(MSG_DEBUG, "%s: bbox max: %10.3f %10.3f %10.3f", modelFilename, max[0], max[1], max[2]);
+	msg(MSG_DEBUG, "%s: bbox ctr: %10.3f %10.3f %10.3f", modelFilename, ctr[0], ctr[1], ctr[2]);
 
 	/* If the user requested bounding box information, give it to
 	 * them. */
@@ -3225,35 +3225,35 @@ static void kuhl_framebuffer_errormsg(GLenum fbStatus)
 {
 	if(fbStatus != GL_FRAMEBUFFER_COMPLETE)
 	{
-		msg(FATAL, "glCheckFramebufferStatus() indicated a the following problem with the framebuffer:");
+		msg(MSG_FATAL, "glCheckFramebufferStatus() indicated a the following problem with the framebuffer:");
 		switch(fbStatus)
 		{
 			case GL_FRAMEBUFFER_UNDEFINED:
-				msg(FATAL, "GL_FRAMEBUFFER_UNDEFINED");
+				msg(MSG_FATAL, "GL_FRAMEBUFFER_UNDEFINED");
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-				msg(FATAL, "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
+				msg(MSG_FATAL, "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-				msg(FATAL, "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
+				msg(MSG_FATAL, "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
-				msg(FATAL, "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER");
+				msg(MSG_FATAL, "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER");
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
-				msg(FATAL, "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER");
+				msg(MSG_FATAL, "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER");
 				break;
 			case GL_FRAMEBUFFER_UNSUPPORTED:
-				msg(FATAL, "GL_FRAMEBUFFER_UNSUPPORTED");
+				msg(MSG_FATAL, "GL_FRAMEBUFFER_UNSUPPORTED");
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
-				msg(FATAL, "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE");
+				msg(MSG_FATAL, "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE");
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
-				msg(FATAL, "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS");
+				msg(MSG_FATAL, "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS");
 				break;
 			default:
-				msg(FATAL, "Unknown error.");
+				msg(MSG_FATAL, "Unknown error.");
 				break;
 		}
 		exit(EXIT_FAILURE);
@@ -3297,7 +3297,7 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 	if(width < 0 || width > maxTextureSize ||
 	   height< 0 || height> maxTextureSize)
 	{
-		msg(FATAL, "Requested %d x %d texture but maximum allowed is %d\n",
+		msg(MSG_FATAL, "Requested %d x %d texture but maximum allowed is %d\n",
 		    width, height, maxTextureSize);
 		exit(EXIT_FAILURE);
 	}
@@ -3307,7 +3307,7 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 	{
 		if(glIsTexture(*texture) == GL_TRUE) // if texture is 0, returns GL_FALSE
 		{
-			msg(WARNING, "When generating a framebuffer, the 'texture' variable should be either NULL or zero. Remember that you only need to call kuhl_gen_framebuffer() once to create a framebuffer that is connected to a texture. Calling it repeatedly when only a single framebuffer is needed will result in a memory leak.");
+			msg(MSG_WARNING, "When generating a framebuffer, the 'texture' variable should be either NULL or zero. Remember that you only need to call kuhl_gen_framebuffer() once to create a framebuffer that is connected to a texture. Calling it repeatedly when only a single framebuffer is needed will result in a memory leak.");
 		}
 		glGenTextures(1, texture);
 		glBindTexture(GL_TEXTURE_2D, *texture);
@@ -3322,7 +3322,7 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 	{
 		if(glIsTexture(*depthTexture) == GL_TRUE) // if texture is 0, returns GL_FALSE
 		{
-			msg(WARNING, "When generating a framebuffer, the 'depthTexture' variable should be either NULL or zero. Remember that you only need to call kuhl_gen_framebuffer() once to create a framebuffer that is connected to a texture. Calling it repeatedly when only a single framebuffer is needed will result in a memory leak.");
+			msg(MSG_WARNING, "When generating a framebuffer, the 'depthTexture' variable should be either NULL or zero. Remember that you only need to call kuhl_gen_framebuffer() once to create a framebuffer that is connected to a texture. Calling it repeatedly when only a single framebuffer is needed will result in a memory leak.");
 		}
 		glGenTextures(1, depthTexture);
 		glBindTexture(GL_TEXTURE_2D, *depthTexture);

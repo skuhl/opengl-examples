@@ -1654,15 +1654,15 @@ void mat4f_frustum_new(float result[16], float left, float right, float bottom, 
 	}
 	if(near == 0)
 	{
-		msg(WARNING, "Near plane should be a value greater than 0.");
-		msg(WARNING, "Frustum values were: l=%f r=%f b=%f t=%f n=%f f=%f",
+		msg(MSG_WARNING, "Near plane should be a value greater than 0.");
+		msg(MSG_WARNING, "Frustum values were: l=%f r=%f b=%f t=%f n=%f f=%f",
 		    left, right, bottom, top, near, far);
 		
 	}
 	if(left > right || bottom > top || near > far)
 	{
-		msg(WARNING, "Frustum values seemed to be swapped (e.g., left should be less than right).");
-		msg(WARNING, "Frustum values were: l=%f r=%f b=%f t=%f n=%f f=%f",
+		msg(MSG_WARNING, "Frustum values seemed to be swapped (e.g., left should be less than right).");
+		msg(MSG_WARNING, "Frustum values were: l=%f r=%f b=%f t=%f n=%f f=%f",
 		    left, right, bottom, top, near, far);
 	}
 	result[0]  =  2.0f * near    / (right - left);
@@ -1704,15 +1704,15 @@ void mat4d_frustum_new(double result[16], double left, double right, double bott
 	}
 	if(near == 0)
 	{
-		msg(WARNING, "Near plane should be a value greater than 0.");
-		msg(WARNING, "Frustum values were: l=%f r=%f b=%f t=%f n=%f f=%f",
+		msg(MSG_WARNING, "Near plane should be a value greater than 0.");
+		msg(MSG_WARNING, "Frustum values were: l=%f r=%f b=%f t=%f n=%f f=%f",
 		    left, right, bottom, top, near, far);
 		
 	}
 	if(left > right || bottom > top || near > far)
 	{
-		msg(WARNING, "Frustum values seemed to be swapped (e.g., left should be less than right).");
-		msg(WARNING, "Frustum values were: l=%f r=%f b=%f t=%f n=%f f=%f",
+		msg(MSG_WARNING, "Frustum values seemed to be swapped (e.g., left should be less than right).");
+		msg(MSG_WARNING, "Frustum values were: l=%f r=%f b=%f t=%f n=%f f=%f",
 		    left, right, bottom, top, near, far);
 	}
 	result[0]  =  2.0f * near    / (right - left);
@@ -1910,10 +1910,10 @@ void mat4f_lookatVec_new(float result[16],
 	if(vec3f_normSq(side) < .001)
 	{
 		msg(MSG_ERROR, "Your camera is facing the same direction as your up vector.");
-		msg(INFO, "CamPos:         %5.2f %5.2f %5.2f\n", eye[0], eye[1], eye[2]);
-		msg(INFO, "CamLookAtPoint: %5.2f %5.2f %5.2f\n", center[0], center[1], center[2]);
-		msg(INFO, "CamLookVec:     %5.2f %5.2f %5.2f (calculated from camera position and lookat point)\n", look[0], look[1], look[2]);
-		msg(INFO, "CamUp:          %5.2f %5.2f %5.2f\n", upCopy[0], upCopy[1], upCopy[2]);
+		msg(MSG_INFO, "CamPos:         %5.2f %5.2f %5.2f\n", eye[0], eye[1], eye[2]);
+		msg(MSG_INFO, "CamLookAtPoint: %5.2f %5.2f %5.2f\n", center[0], center[1], center[2]);
+		msg(MSG_INFO, "CamLookVec:     %5.2f %5.2f %5.2f (calculated from camera position and lookat point)\n", look[0], look[1], look[2]);
+		msg(MSG_INFO, "CamUp:          %5.2f %5.2f %5.2f\n", upCopy[0], upCopy[1], upCopy[2]);
 		mat4f_identity(result);
 		return;
 	}
@@ -1973,10 +1973,10 @@ void mat4d_lookatVec_new(double result[16], const double eye[3], const double ce
 	if(vec3d_normSq(side) < .001)
 	{
 		msg(MSG_ERROR, "Your camera is facing the same direction as your up vector.");
-		msg(INFO, "CamPos:         %5.2f %5.2f %5.2f\n", eye[0], eye[1], eye[2]);
-		msg(INFO, "CamLookAtPoint: %5.2f %5.2f %5.2f\n", center[0], center[1], center[2]);
-		msg(INFO, "CamLookVec:     %5.2f %5.2f %5.2f (calculated from camera position and lookat point)\n", look[0], look[1], look[2]);
-		msg(INFO, "CamUp:          %5.2f %5.2f %5.2f\n", upCopy[0], upCopy[1], upCopy[2]);
+		msg(MSG_INFO, "CamPos:         %5.2f %5.2f %5.2f\n", eye[0], eye[1], eye[2]);
+		msg(MSG_INFO, "CamLookAtPoint: %5.2f %5.2f %5.2f\n", center[0], center[1], center[2]);
+		msg(MSG_INFO, "CamLookVec:     %5.2f %5.2f %5.2f (calculated from camera position and lookat point)\n", look[0], look[1], look[2]);
+		msg(MSG_INFO, "CamUp:          %5.2f %5.2f %5.2f\n", upCopy[0], upCopy[1], upCopy[2]);
 		mat4d_identity(result);
 		return;
 	}
@@ -2063,7 +2063,7 @@ void mat4f_stack_push(list *l)
 
 		if(list_push(l, peek) == 0)
 		{
-			msg(FATAL, "Failed to push a matrix onto the stack");
+			msg(MSG_FATAL, "Failed to push a matrix onto the stack");
 			exit(EXIT_FAILURE);
 		}
 	}

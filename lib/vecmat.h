@@ -469,10 +469,10 @@ static inline void vecNf_scalarDiv_new(float result[], const float v[], const fl
 		result[i] = v[i]/scalar;
 	if(!isfinite(result[0]))
 	{
-		msg(WARNING, "Divided the following vector by 0:\n");
+		msg(MSG_WARNING, "Divided the following vector by 0:\n");
 		char str[128];
 		vecNf_print_to_string(str, 128, vOrig, n);
-		msg(WARNING, "%s", str);
+		msg(MSG_WARNING, "%s", str);
 	}
 }
 /** Divide each element in a double vector by a scalar.
@@ -490,10 +490,10 @@ static inline void vecNd_scalarDiv_new(double result[], const double v[], const 
 		result[i] = v[i]/scalar;
 	if(!isfinite(result[0]))
 	{
-		msg(WARNING, "Divided the following by 0:\n");
+		msg(MSG_WARNING, "Divided the following by 0:\n");
 		char str[128];
 		vecNd_print_to_string(str, 128, vOrig, n);
-		msg(WARNING, "%s", str);
+		msg(MSG_WARNING, "%s", str);
 	}
 }
 /** Divide each element in a 3-component float vector by a scalar.
@@ -1580,9 +1580,10 @@ static inline void mat3d_from_mat4d(double dest[ 9], const double src[16])
 static inline void mat4f_scale_new(float  result[16], float x, float y, float z)
 {
 	mat4f_identity(result);
-	if(x == 0.0f) msg(WARNING, "You created a scale matrix with x=0; did you mean to set it to 1?");
-	if(y == 0.0f) msg(WARNING, "You created a scale matrix with y=0; did you mean to set it to 1?");
-	if(z == 0.0f) msg(WARNING, "You created a scale matrix with z=0; did you mean to set it to 1?");
+	const char *message = "You created a scale matrix with %c=0; did you mean to set it to 1?";
+	if(x == 0.0f) msg(MSG_WARNING, message, 'x');
+	if(y == 0.0f) msg(MSG_WARNING, message, 'y');
+	if(z == 0.0f) msg(MSG_WARNING, message, 'z');
 	result[mat4_getIndex(0,0)] = x;
 	result[mat4_getIndex(1,1)] = y;
 	result[mat4_getIndex(2,2)] = z;
@@ -1596,9 +1597,10 @@ static inline void mat4f_scale_new(float  result[16], float x, float y, float z)
 static inline void mat4d_scale_new(double result[16], double x, double y, double z)
 {
 	mat4d_identity(result);
-	if(x == 0.0) msg(WARNING, "You created a scale matrix with x=0; did you mean to set it to 1?");
-	if(y == 0.0) msg(WARNING, "You created a scale matrix with y=0; did you mean to set it to 1?");
-	if(z == 0.0) msg(WARNING, "You created a scale matrix with z=0; did you mean to set it to 1?");
+	const char *message = "You created a scale matrix with %c=0; did you mean to set it to 1?";
+	if(x == 0.0f) msg(MSG_WARNING, message, 'x');
+	if(y == 0.0f) msg(MSG_WARNING, message, 'y');
+	if(z == 0.0f) msg(MSG_WARNING, message, 'z');
 	result[mat4_getIndex(0,0)] = x;
 	result[mat4_getIndex(1,1)] = y;
 	result[mat4_getIndex(2,2)] = z;
