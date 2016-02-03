@@ -298,6 +298,14 @@ char* image_label(const char *label, int* width, int* height, float color[3], fl
 	GetTypeMetrics(image, draw_info, &metric);
 	*width = metric.width;
 	*height = metric.height;
+
+	/* If user passed in an empty string as the label, then width and
+	 * height might get set to 0 which could later lead to a
+	 * crash. Create a 1x1 pixel image in this case instead. */
+	if(*width == 0)
+		*width = 1;
+	if(*height == 0)
+		*height = 1;
 	// printf("Texture dimensions: %d %d\n", *width, *height);
 
 // Figure out how to wrap text:
