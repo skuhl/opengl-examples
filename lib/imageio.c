@@ -82,6 +82,18 @@ int imageout(const imageio_info *iio_info, void* array)
 	   a CMYK file. */
 	image->colorspace = iio_info->colorspace;
 
+	/* If sRGB colorspace is used, and if the image actually just
+	   contains grayscale pixels, ImageMagick may then just output a
+	   GrayScale image instead of a true RGB image for some types of
+	   file formats (example: tif). The code below forces the output
+	   image to always be RGB and not grayscale.
+
+	   This fix is useful because if you use this feature to make many
+	   tif screenshots which will later be reconstructed into a video
+	   via ffmpeg, ffmpeg seems to only read RGB images. */
+	if(image->colorspace == sRGBColorspace)
+		image_info->type = TrueColorType;
+	
 	MagickError(exception.severity, exception.reason, exception.description);
 	image = imageio_flip(image);
 
