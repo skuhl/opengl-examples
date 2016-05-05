@@ -126,7 +126,6 @@ void viewmat_window_size(int *width, int *height)
 		savedWidth  = glutGet(GLUT_WINDOW_WIDTH);
 		savedHeight = glutGet(GLUT_WINDOW_HEIGHT);
 		savedTime = kuhl_milliseconds();
-		// msg(INFO, "Updated window size\n");
 	}
 
 	*width = savedWidth;
@@ -146,6 +145,56 @@ static void viewmat_validate_viewportId(int viewportID)
 		exit(EXIT_FAILURE);
 	}
 }
+
+/** Performs a sanity check on how long it took us to render a
+ * frame. At 60fps, we have approximately 16 milliseconds or 16000
+ * microseconds per frame. If the time between two subsequent
+ * renderings of viewportID 0 is too large, a warning message is
+ * printed.
+ *
+ * Even though the average FPS over a period of time may be above 60,
+ * the rendering might not appear smooth if an occasional frame misses
+ * the time budget.
+ */
+static void viewmat_validate_fps(void)
+{
+	/* Set the time budget. If vblank syncing is turned on, we'd
+	 * expect to always get a FPS close to the monitor. Setting this
+	 * to 55 (instead of 60) will prevent messages from getting
+	 * printed out constantly on such machines. */
+#define targetFps 55 // older compilers won't let us use a static const variable to calculate another static const variable.
+	static const int timeBudget = 1000000.0f / targetFps;
+	
+	/* Initialize our warning message counter and the time that the
+	 * last frame was rendered. */
+	static int warnMsgCount = 0;
+	static long lastTime = -1;
+	if(lastTime < 0) // if our first time called, initialize time and return.
+	{
+		lastTime = kuhl_microseconds();
+		return;
+	}
+
+	/* If it took too long to render the frame, print a message. */
+	long delay = kuhl_microseconds() - lastTime;
+	// msg(INFO, "Time to render frame %d\n", delay);
+	if(delay > timeBudget)
+	{
+		warnMsgCount++;
+
+		/* Don't print the message if the first few frames took too
+		 * long to render. Also, eventually stop printing the
+		 * message. */
+		if(warnMsgCount > 5 && warnMsgCount <= 100)
+			msg(WARNING, "It took %ld microseconds to render a frame. Time budget for %d fps is %d microseconds.\n", delay, targetFps, timeBudget);
+		if(warnMsgCount == 100)
+			msg(WARNING, "That was your last warning about the time budget per frame.\n");
+	}
+
+	lastTime = kuhl_microseconds();
+}
+
+
 
 /** Should be called prior to rendering a frame. */
 void viewmat_begin_frame(void)
@@ -202,6 +251,8 @@ void viewmat_end_frame(void)
 	 * Oculus. (Oculus draws to the screen directly). */
 	if(viewmat_display_mode != VIEWMAT_OCULUS)
 		glutSwapBuffers();
+
+	viewmat_validate_fps();
 }
 
 
@@ -1102,57 +1153,6 @@ static void viewmat_get_ivs(float viewmatrix[16], float frustum[6])
 	mat4f_lookatVec_new(viewmatrix, pos, lookat, up);
 }
 
-/** Performs a sanity check on how long it took us to render a
- * frame. At 60fps, we have approximately 16 milliseconds or 16000
- * microseconds per frame. If the time between two subsequent
- * renderings of viewportID 0 is too large, a warning message is
- * printed.
- *
- * Even though the average FPS over a period of time may be above 60,
- * the rendering might not appear smooth if an occasional frame misses
- * the time budget.
- */
-static void viewmat_validate_fps(int viewportID)
-{
-	/* Set the time budget. If vblank syncing is turned on, we'd
-	 * expect to always get a FPS close to the monitor. Setting this
-	 * to 55 (instead of 60) will prevent messages from getting
-	 * printed out constantly on such machines. */
-#define targetFps 55 // older compilers won't let us use a static const variable to calculate another static const variable.
-	static const int timeBudget = 1000000.0f / targetFps;
-	
-	if(viewportID > 0)
-		return;
-
-	/* Initialize our warning message counter and the time that the
-	 * last frame was rendered. */
-	static int warnMsgCount = 0;
-	static long lastTime = -1;
-	if(lastTime < 0) // if our first time called, initialize time and return.
-	{
-		lastTime = kuhl_microseconds();
-		return;
-	}
-
-	/* If it took too long to render the frame, print a message. */
-	long delay = kuhl_microseconds() - lastTime;
-	// msg(INFO, "Time to render frame %d\n", delay);
-	if(delay > timeBudget)
-	{
-		warnMsgCount++;
-
-		/* Don't print the message if the first few frames took too
-		 * long to render. Also, eventually stop printing the
-		 * message. */
-		if(warnMsgCount > 5 && warnMsgCount <= 100)
-			msg(WARNING, "It took %ld microseconds to render a frame. Time budget for %d fps is %d microseconds.\n", delay, targetFps, timeBudget);
-		if(warnMsgCount == 100)
-			msg(WARNING, "That was your last warning about the time budget per frame.\n");
-	}
-
-	lastTime = kuhl_microseconds();
-}
-
 
 /** Performs a sanity check on the IPD to ensure that it is not too small, big, or reversed.
 
@@ -1297,7 +1297,6 @@ viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewport
 
 	/* Sanity checks */
 	viewmat_validate_ipd(viewmatrix, viewportID);
-	viewmat_validate_fps(viewportID);
 	return eye;
 }
 
