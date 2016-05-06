@@ -82,6 +82,18 @@ int imageout(const imageio_info *iio_info, void* array)
 	   a CMYK file. */
 	image->colorspace = iio_info->colorspace;
 
+	/* If sRGB colorspace is used, and if the image actually just
+	   contains grayscale pixels, ImageMagick may then just output a
+	   GrayScale image instead of a true RGB image for some types of
+	   file formats (example: tif). The code below forces the output
+	   image to always be RGB and not grayscale.
+
+	   This fix is useful because if you use this feature to make many
+	   tif screenshots which will later be reconstructed into a video
+	   via ffmpeg, ffmpeg seems to only read RGB images. */
+	if(image->colorspace == sRGBColorspace)
+		image_info->type = TrueColorType;
+	
 	MagickError(exception.severity, exception.reason, exception.description);
 	image = imageio_flip(image);
 
@@ -298,6 +310,14 @@ char* image_label(const char *label, int* width, int* height, float color[3], fl
 	GetTypeMetrics(image, draw_info, &metric);
 	*width = metric.width;
 	*height = metric.height;
+
+	/* If user passed in an empty string as the label, then width and
+	 * height might get set to 0 which could later lead to a
+	 * crash. Create a 1x1 pixel image in this case instead. */
+	if(*width == 0)
+		*width = 1;
+	if(*height == 0)
+		*height = 1;
 	// printf("Texture dimensions: %d %d\n", *width, *height);
 
 // Figure out how to wrap text:

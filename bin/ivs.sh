@@ -65,7 +65,7 @@ if [[ ! -r ./.temp-dgr-ssh-socket ]]; then
 	echo "We failed to establish an SSH control socket."
 	echo "You can typically resolve this problem by:"
 	echo " (1) Creating an ssh key with no password and the default options (run 'ssh-keygen')"
-	echo " (2) Copy the contents of ~/.ssh/id_rsa.pub from your computer and paste it into a file named ~/.ssh/authorized_keys on the IVS machine (if the authorized_keys file exists, paste it at the bottom of the file)."
+	echo " (2) Copy the contents of ~/.ssh/id_rsa.pub from your computer and paste it into a file named ~/.ssh/authorized_keys on ${IVS_HOSTNAME} (if the authorized_keys file exists, paste it at the bottom of the file)."
 
 	# If we don't exit in this situation, this script would prompt for
 	# the password for every SSH call below.
