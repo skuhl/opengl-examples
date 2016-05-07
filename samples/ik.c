@@ -300,7 +300,7 @@ float* get_jacobian(float delta)
 {
 	float *jacobian = malloc(sizeof(float)*3*anglesCount);
 
-	float origLoc[3];
+	float origLoc[4];
 	end_effector_loc(origLoc, angles);
 	
 	for(int i=0; i<anglesCount; i++)
@@ -320,10 +320,10 @@ float* get_jacobian(float delta)
 	for(int i=0; i<anglesCount; i++)
 	{
 		for(int j=0; j<3; j++)
-			printf("%8.4f ", jacobian[j*anglesCount+i]);
+			printf("%8.4f ", jacobian[i*3+j]);
 		printf("\n");
 	}
-	
+
 	return jacobian;
 }
 
@@ -403,7 +403,7 @@ void effector_target(float target[4])
 		   http://www.math.ucsd.edu/~sbuss/ResearchWeb/ikmethods/iksurvey.pdf
 		*/
 		float alpha = vec3f_dot(expectedChangeInEffector, deltaTarget) /
-			vec3f_dot(expectedChangeInEffector, expectedChangeInEffector);
+		              vec3f_dot(expectedChangeInEffector, expectedChangeInEffector);
 		printf("alpha: %f\n", alpha);
 
 		/* Apply our angle changes (multiplied by alpha) to the robots angles */
