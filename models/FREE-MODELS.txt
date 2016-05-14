@@ -1,7 +1,7 @@
 === 
 If you have a Michigan Tech login, you can access a collection of 3D models and images at the following locations. If you pass a file to kuhl_find_file() using a path relative to one of the location below, it will automatically find the file. Each copy of the data should contain the same set of files. Do not redistribute the data found in these folders unless you have confirmed that you have permission to do so.
 
-Rekhi Linux labs: /home/campus11/kuhl/public-ogl/data
+Rekhi Linux labs: /local/kuhl-public-share/opengl/data
 CCSR: /home/kuhl/public-ogl/data
 IVS: /research/kuhl/public-ogl/data
 

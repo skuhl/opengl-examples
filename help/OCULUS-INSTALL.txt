@@ -6,7 +6,7 @@ IMPORTANT: These instructions are based on the Oculus SDK version
 completely correct!
 
 === Installation ===
-1. Find a copy of the Linux Oculus SDK version 0.5.0.1. If you can't find a copy of it, look in /home/campus11/kuhl/public-ogl on the Michigan Tech filesystem.
+1. Find a copy of the Linux Oculus SDK version 0.5.0.1. If you can't find a copy of it, try /local/kuhl-public-share/opengl/ovr_sdk_linux_0.5.0.1.tar.xz on the Michigan Tech filesystem.
 2. Extract the contents using "tar -xf ovr_sdk_linux*.tar.xz"
 3. If you are on a Debian or Ubuntu machine, run "sudo ./ConfigureDebian.sh"
 

@@ -7,8 +7,8 @@ set(CMAKE_INCLUDE_PATH /home/kuhl/public-ogl/assimp/include ${CMAKE_INCLUDE_PATH
 set(CMAKE_LIBRARY_PATH /research/kuhl/public-ogl/assimp/lib ${CMAKE_LIBRARY_PATH})
 set(CMAKE_INCLUDE_PATH /research/kuhl/public-ogl/assimp/include ${CMAKE_INCLUDE_PATH})
 # Search path for Rekhi lab
-set(CMAKE_LIBRARY_PATH /home/campus11/kuhl/public-ogl/assimp/lib ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH /home/campus11/kuhl/public-ogl/assimp/include ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH /local/kuhl-public-share/opengl/assimp/lib ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH /local/kuhl-public-share/opengl/assimp/include ${CMAKE_INCLUDE_PATH})
 
 
 # The assimp library is linked to zlib

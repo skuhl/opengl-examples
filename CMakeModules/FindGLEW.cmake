@@ -3,8 +3,8 @@ set(CMAKE_LIBRARY_PATH "/research/kuhl/public-ogl/glew/lib" ${CMAKE_LIBRARY_PATH
 set(CMAKE_INCLUDE_PATH "/research/kuhl/public-ogl/glew/include" ${CMAKE_INCLUDE_PATH})
 
 # Search paths for Rekhi Lab machines
-set(CMAKE_LIBRARY_PATH "/home/campus11/kuhl/public-ogl/glew/lib" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "/home/campus11/kuhl/public-ogl/glew/include" ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH "/local/kuhl-public-share/opengl/glew/lib" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH "/local/kuhl-public-share/opengl/glew/include" ${CMAKE_INCLUDE_PATH})
 
 # Search paths for newell.cs and CCSR
 set(CMAKE_LIBRARY_PATH "/home/kuhl/public-ogl/glew/lib" ${CMAKE_LIBRARY_PATH})
