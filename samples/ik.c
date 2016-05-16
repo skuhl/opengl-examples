@@ -330,6 +330,8 @@ float* get_jacobian(float delta)
 
 void effector_target(float target[4])
 {
+	int timesThroughLoop = 0;
+	
 	while(1)
 	{
 		/* Get current location of end effector */
@@ -340,8 +342,12 @@ void effector_target(float target[4])
 		vec3f_sub_new(deltaTarget, target, currentLoc);
 		float distance = vec3f_norm(deltaTarget);
 
-		if(distance < .001)
+		timesThroughLoop++;
+		if(distance < .001 || timesThroughLoop >= 1000)
+		{
+			printf("Times through loop: %d\n", timesThroughLoop);
 			break;
+		}
 
 		printf("pre: location, target, delta:\n");
 		vec3f_print(currentLoc);
