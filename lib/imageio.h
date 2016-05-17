@@ -27,8 +27,7 @@ http://www.imagemagick.org/script/license.php
 */
 
 
-#ifndef __IMAGEIO_H__
-#define __IMAGEIO_H__
+#pragma once
 
 /* These variables resolve compile-time warning messages recent
  * versions of ImageMagick */
@@ -137,4 +136,3 @@ char* image_label(const char *label, int *width, int *height, float color[3], fl
 #ifdef __cplusplus
 } // end extern "C"
 #endif
-#endif // end __IMAGEIO_H__

@@ -7,8 +7,7 @@
 * @author Evan Hauck
 */
 
-#ifndef __ORIENT_SENSOR_H__
-#define __ORIENT_SENSOR_H__
+#pragma once
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,4 +38,3 @@ void orient_sensor_get(OrientSensorState *state, float quaternion[4]);
 #ifdef __cplusplus
 } // end extern "C"
 #endif
-#endif // __ORIENT_SENSOR_H__

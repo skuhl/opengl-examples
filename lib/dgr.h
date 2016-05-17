@@ -11,8 +11,7 @@
     @author Scott Kuhl
  */
 
-#ifndef __DGR_H__
-#define __DGR_H__
+#pragma once
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,4 +27,3 @@ void dgr_exit(void);
 #ifdef __cplusplus
 } // end extern "C"
 #endif
-#endif // end __DGR_H__

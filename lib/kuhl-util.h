@@ -22,8 +22,7 @@
  * For more information about ASSIMP, see: http://assimp.sourceforge.net/
  */
 
-#ifndef __KUHL_UTIL_H__
-#define __KUHL_UTIL_H__
+#pragma once
 
 #include <math.h>
 #include <stdio.h>
@@ -210,4 +209,3 @@ void kuhl_play_sound(const char *filename);
 #ifdef __cplusplus
 } // end extern "C"
 #endif
-#endif // __KUHL_UTIL_H__

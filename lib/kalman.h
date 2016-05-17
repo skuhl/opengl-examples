@@ -6,8 +6,7 @@
 /** @file
  * @author Scott Kuhl
  */
-#ifndef __kalman_h
-#define __kalman_h
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,4 +32,3 @@ float kalman_estimate(kalman_state * state, float measured, long measured_time);
 #ifdef __cplusplus
 } // end extern "C"
 #endif
-#endif // __KALMAN_H__
