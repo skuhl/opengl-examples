@@ -3535,7 +3535,7 @@ void kuhl_play_sound(const char *filename)
 		/* Since exec will never return, we can only get here if exec
 		 * failed. */
 		perror("execvp");
-		msg(FATAL, "Error playing file %s (do you have the aplay, ogg123 and play commands installed on your machine?)\n", filename);
+		msg(MSG_FATAL, "Error playing file %s (do you have the aplay, ogg123 and play commands installed on your machine?)\n", filename);
 		exit(EXIT_FAILURE);
 	}
 
