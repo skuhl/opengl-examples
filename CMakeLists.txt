@@ -34,12 +34,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${C_CXX_FLAGS} -Wno-variadic-macros")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/CMakeModules)
 
 
-if(APPLE)
-# Hide the warnings that OSX prints about GLUT functions being deprecated
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-deprecated-declarations")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
-endif()
-
 # Write programs out to "bin" directory.
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 
@@ -153,20 +147,8 @@ include_directories(${OPENGL_INCLUDE_DIRS})
 find_package(PkgConfig REQUIRED)
 pkg_search_module(GLFW REQUIRED glfw3)
 include_directories(${GLFW_INCLUDE_DIRS})
+link_directories(${GLFW_LIBRARY_DIRS}) # os x
 
-
-# --- Freeglut (need version 2.6(?) or higher) ---
-find_package(GLUT REQUIRED)
-include_directories(${GLUT_INCLUDE_DIR})
-
-# Since we also try to work with traditional GLUT, detect which one we are using by looking for the FREEGLUT symbol inside of the header file.
-include(CheckSymbolExists)
-	CHECK_SYMBOL_EXISTS(FREEGLUT "${GLUT_INCLUDE_DIR}/GL/freeglut.h;${GLUT_INCLUDE_DIR}/GL/glut.h" USING_FREEGLUT)
-	if(USING_FREEGLUT)
-		set(FREEGLUT_FOUND_DEFINITION "FREEGLUT")
-	else()
-		set(FREEGLUT_FOUND_DEFINITION "")
-endif()
 
 # --- GLEW ---
 find_package(GLEW REQUIRED)
@@ -244,7 +226,7 @@ else()
 endif()
 
 # Set the preprocessor flags.
-set(PREPROC_DEFINE "MOUSEMOVE_GLUT;${FREETYPE_FOUND_DEFINITION};${ASSIMP_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION};${IMAGEMAGICK_FOUND_DEFINITION};${FREEGLUT_FOUND_DEFINITION}")
+set(PREPROC_DEFINE "MOUSEMOVE_GLFW;${FREETYPE_FOUND_DEFINITION};${ASSIMP_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION};${IMAGEMAGICK_FOUND_DEFINITION}")
 
 # Look in lib folder for libraries and header files
 include_directories("lib")

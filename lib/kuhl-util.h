@@ -28,6 +28,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <GLFW/glfw3.h>
 
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
@@ -151,8 +152,9 @@ int kuhl_errorcheckFileLine(const char *file, int line, const char *func);
 // kuhl_malloc() calls this C function:
 void* kuhl_mallocFileLine(size_t size, const char *file, int line);
 
-void kuhl_ogl_init(int *argcp, char **argv, int width, int height,
-                   int oglProfile, unsigned int mode, int msaaSamples);
+GLFWwindow* kuhl_get_window();
+void kuhl_ogl_init(int *argcp, char **argv, int width, int height, int oglProfile, int msaaSamples);
+
 GLuint kuhl_create_shader(const char *filename, GLuint shader_type);
 GLuint kuhl_create_program(const char *vertexFilename, const char *fragFilename);
 void kuhl_delete_program(GLuint program);

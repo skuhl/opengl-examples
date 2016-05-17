@@ -9,11 +9,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#ifdef FREEGLUT
-#include <GL/freeglut.h>
-#else
-#include <GLUT/glut.h>
-#endif
 #include "kuhl-util.h"
 #include "viewmat.h"
 
@@ -41,7 +36,8 @@ static void projmat_init_window()
 	   sscanf(windowSizeString, "%d %d", &(windowSize[0]), &(windowSize[1])) == 2)
 	{
 		msg(MSG_INFO, "Setting window size %d %d\n", windowSize[0], windowSize[1]);
-		glutReshapeWindow(windowSize[0], windowSize[1]);
+		// glutReshapeWindow(windowSize[0], windowSize[1]);
+		glfwSetWindowSize(kuhl_get_window(), windowSize[0], windowSize[1]);
 	}
 
 	/* Change position of window if we were asked to. */
@@ -51,7 +47,8 @@ static void projmat_init_window()
 	   sscanf(windowPosString, "%d %d", &(windowPos[0]), &(windowPos[1])) == 2)
 	{
 		msg(MSG_INFO, "Setting window position %d %d\n", windowPos[0], windowPos[1]);
-		glutPositionWindow(windowPos[0], windowPos[1]);
+		//glutPositionWindow(windowPos[0], windowPos[1]);
+		glfwSetWindowPos(kuhl_get_window(), windowPos[0], windowPos[1]);
 	}
 
 	/* Change to fullscreen mode if we were asked to. */
@@ -59,7 +56,8 @@ static void projmat_init_window()
 	if(fullscreenString && strlen(fullscreenString) > 0)
 	{
 		msg(MSG_INFO, "Requesting fullscreen\n");
-		glutFullScreen();
+		// glutFullScreen();
+		// TODO: Implement GLFW version....
 	}
 }
 

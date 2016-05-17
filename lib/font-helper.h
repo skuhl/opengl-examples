@@ -2,11 +2,6 @@
 #define __FONT_HELPER_H__
 
 #include <GL/glew.h>
-#ifdef FREEGLUT
-#include <GL/freeglut.h>
-#else
-#include <GLUT/glut.h>
-#endif
 
 
 

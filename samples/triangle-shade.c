@@ -12,11 +12,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <GL/glew.h>
-#ifdef FREEGLUT
-#include <GL/freeglut.h>
-#else
-#include <GLUT/glut.h>
-#endif
+#include <GLFW/glfw3.h>
 
 #include "kuhl-util.h"
 #include "vecmat.h"
@@ -29,22 +25,20 @@ kuhl_geometry triangle;
 kuhl_geometry quad;
 
 
-/** Called by GLUT whenever a key is pressed. */
-void keyboard(unsigned char key, int x, int y)
+/* Called by GLFW whenever a key is pressed. */
+void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	if(action != GLFW_PRESS)
+		return;
+	
 	switch(key)
 	{
 		case 'q':
 		case 'Q':
-		case 27: // ASCII code for Escape key
-			dgr_exit();
-			exit(EXIT_SUCCESS);
+		case GLFW_KEY_ESCAPE:
+			glfwSetWindowShouldClose(window, GL_TRUE);
 			break;
 	}
-
-	/* Whenever any key is pressed, request that display() get
-	 * called. */ 
-	glutPostRedisplay();
 }
 
 /* Called by GLUT whenever the window needs to be redrawn. This
@@ -89,11 +83,10 @@ void display()
 		float viewMat[16], perspective[16];
 		viewmat_get(viewMat, perspective, viewportID);
 
-		/* Calculate an angle to rotate the
-		 * object. glutGet(GLUT_ELAPSED_TIME) is the number of
-		 * milliseconds since glutInit() was called. */
-		int count = glutGet(GLUT_ELAPSED_TIME) % 10000; // get a counter that repeats every 10 seconds
-		float angle = count / 10000.0 * 360; // rotate 360 degrees every 10 seconds
+		/* Calculate an angle to rotate the object. glfwGetTime() gets
+		 * the time in seconds since GLFW was initialized. Rotates 45 degrees every second. */
+		float angle = fmod(glfwGetTime()*45, 360);
+
 		/* Make sure all computers/processes use the same angle */
 		dgr_setget("angle", &angle, sizeof(GLfloat));
 
@@ -159,11 +152,6 @@ void display()
 	 * calls to kuhl_errorcheck() in your code. */
 	kuhl_errorcheck();
 
-	/* Ask GLUT to call display() again. We shouldn't call display()
-	 * ourselves recursively because it will not leave time for GLUT
-	 * to call other callback functions for when a key is pressed, the
-	 * window is resized, etc. */
-	glutPostRedisplay();
 }
 
 void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
@@ -229,12 +217,11 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 int main(int argc, char** argv)
 {
 	/* Initialize GLUT and GLEW */
-	kuhl_ogl_init(&argc, argv, 512, 512, 32,
-	              GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE, 4);
+	kuhl_ogl_init(&argc, argv, 512, 512, 32, 4);
 
-	// setup callbacks
-	glutDisplayFunc(display);
-	glutKeyboardFunc(keyboard);
+	/* Specify function to call when keys are pressed. */
+	glfwSetKeyCallback(kuhl_get_window(), keyboard);
+	// glfwSetFramebufferSizeCallback(window, reshape);
 
 	/* Compile and link a GLSL program composed of a vertex shader and
 	 * a fragment shader. */
@@ -263,13 +250,14 @@ int main(int argc, char** argv)
 	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
 	viewmat_init(initCamPos, initCamLook, initCamUp);
 	
-	/* Tell GLUT to start running the main loop and to call display(),
-	 * keyboard(), etc callback methods as needed. */
-	glutMainLoop();
-    /* // An alternative approach:
-    while(1)
-       glutMainLoopEvent();
-    */
+	while(!glfwWindowShouldClose(kuhl_get_window()))
+	{
+		display();
+		kuhl_errorcheck();
+
+		/* process events (keyboard, mouse, etc) */
+		glfwPollEvents();
+	}
 
 	exit(EXIT_SUCCESS);
 }

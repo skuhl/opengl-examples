@@ -9,11 +9,8 @@
 
 #include <stdlib.h>
 #include <GL/glew.h>
-#ifdef FREEGLUT
-#include <GL/freeglut.h>
-#else
-#include <GLUT/glut.h>
-#endif
+#include <GLFW/glfw3.h>
+
 #include "kuhl-util.h"
 #include "vecmat.h"
 #include "mousemove.h"
@@ -86,7 +83,9 @@ static OrientSensorState viewmat_orientsense;
 
 
 
-/** Sometimes calls to glutGet(GLUT_WINDOW_*) take several milliseconds
+/** TODO: Update for switch to GLFW:
+
+ * Sometimes calls to glutGet(GLUT_WINDOW_*) take several milliseconds
  * to complete. To maintain a 60fps frame rate, we have a budget of
  * about 16 milliseconds per frame. These functions might get called
  * multiple times in multiple places per frame. viewmat_window_size()
@@ -123,8 +122,9 @@ void viewmat_window_size(int *width, int *height)
 
 	if(needToUpdate)
 	{
-		savedWidth  = glutGet(GLUT_WINDOW_WIDTH);
-		savedHeight = glutGet(GLUT_WINDOW_HEIGHT);
+		glfwGetFramebufferSize(kuhl_get_window(), &savedWidth, &savedHeight);
+		//savedWidth  = glutGet(GLUT_WINDOW_WIDTH);
+		//savedHeight = glutGet(GLUT_WINDOW_HEIGHT);
 		savedTime = kuhl_milliseconds();
 		// msg(MSG_INFO, "Updated window size\n");
 	}
@@ -251,7 +251,9 @@ void viewmat_end_frame(void)
 	/* Need to swap front and back buffers here unless we are using
 	 * Oculus. (Oculus draws to the screen directly). */
 	if(viewmat_display_mode != VIEWMAT_OCULUS)
-		glutSwapBuffers();
+			//glutSwapBuffers();
+		glfwSwapBuffers(kuhl_get_window());
+
 
 	viewmat_validate_fps();
 }
@@ -516,8 +518,13 @@ static int viewmat_init_orient_sensor(void)
  * are supposed to be tracking, get ready to use that instead. */
 static void viewmat_init_mouse(const float pos[3], const float look[3], const float up[3])
 {
-	glutMotionFunc(mousemove_glutMotionFunc);
-	glutMouseFunc(mousemove_glutMouseFunc);
+	GLFWwindow *window = kuhl_get_window();
+	glfwSetMouseButtonCallback(window, mousemove_glfwMouseButtonCallback);
+	glfwSetCursorPosCallback(window, mousemove_glfwCursorPosCallback);
+	glfwSetScrollCallback(window, mousemove_glfwScrollCallback);
+
+	//glutMotionFunc(mousemove_glutMotionFunc);
+	//glutMouseFunc(mousemove_glutMouseFunc);
 	mousemove_set(pos[0],pos[1],pos[2],
 	              look[0],look[1],look[2],
 	              up[0],up[1],up[2]);
@@ -807,7 +814,9 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 	// doing stereoscopic rendering. Displaying the mouse cursor can
 	// interfere with stereo images, so we disable the cursor here.
 	if(viewports_size == 2)
-		glutSetCursor(GLUT_CURSOR_NONE);
+		//glutSetCursor(GLUT_CURSOR_NONE);
+		// TODO: Switch to GLFW_CURSOR_DISABLED?
+		glfwSetInputMode(kuhl_get_window(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 }
 
 /** Some VRPN orientation sensors may be rotated differently than what we

@@ -10,11 +10,6 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#ifdef FREEGLUT
-#include <GL/freeglut.h>
-#else
-#include <GLUT/glut.h>
-#endif
 
 
 #include <stdio.h>
@@ -51,6 +46,8 @@
 #include "stb_image_write.h"
 #endif
 
+static GLFWwindow *the_window = NULL;
+
 
 #ifdef KUHL_UTIL_USE_ASSIMP
 /** Create a 4x4 float matrix from an ASSIMP 4x4 matrix structure.
@@ -85,7 +82,29 @@ void kuhl_glfw_error(int error, const char* description)
 }
 
 
-GLFWwindow* kuhl_ogl_init_new(int *argcp, char **argv, int width, int height, int oglProfile)
+GLFWwindow* kuhl_get_window()
+{
+	return the_window;
+}
+
+
+/** Initialize GLFW and GLEW using reasonable settings.
+
+    @param argcp A pointer to argc.
+
+    @param argv The argv parameter from the program. Used to look for GLUT-related arguments.
+
+    @param width The initial width of the window.
+
+    @param height The initial height of the window.
+
+    @param oglProfile Set to 32 to use the OpenGL 3.2 core
+    profile. Use 0 to not specify a core profile.
+
+    @param msaaSamples Number of samples to use for multisampling
+    antialiasing. Set to 0 for no antialiasing.
+ */
+void kuhl_ogl_init(int *argcp, char **argv, int width, int height, int oglProfile, int msaaSamples)
 {
 	// call glfwError() when any GLFW errors occur
 	glfwSetErrorCallback(kuhl_glfw_error);
@@ -95,13 +114,46 @@ GLFWwindow* kuhl_ogl_init_new(int *argcp, char **argv, int width, int height, in
 		msg(MSG_FATAL, "Failed to initialize GLFW.\n");
 		exit(EXIT_FAILURE);
 	}
-	
+
+	/* Print information about the available monitors. */
+	int numMonitors = 0;
+	GLFWmonitor** monitorList = glfwGetMonitors(&numMonitors);
+	GLFWmonitor *primaryMonitor = glfwGetPrimaryMonitor();
+	for(int i=0; i<numMonitors; i++)
+	{
+		GLFWmonitor *monitor = monitorList[i];
+		int monitorPos[2], monitorDimen[2];
+		glfwGetMonitorPos(monitor, &monitorPos[0], &monitorPos[1]);
+		glfwGetMonitorPos(monitor, &monitorDimen[0], &monitorDimen[1]);
+		msg(MSG_DEBUG, "Monitor %d: \"%s\" isPrimary=%d pos=%d,%d dimen=%dmmx%dmm", i, glfwGetMonitorName(monitor), monitor==primaryMonitor, monitorPos[0], monitorPos[1], monitorDimen[0], monitorDimen[1]);
+
+		int numModes = 0;
+		const GLFWvidmode *modes = glfwGetVideoModes(monitor, &numModes);
+		const GLFWvidmode *currentMode = glfwGetVideoMode(monitor);
+		msg(MSG_DEBUG, "Monitor %d CURRENT mode: resolution=%dx%d@%dHz RGBbits=%d %d %d\n",
+			    i, currentMode->width, currentMode->height, currentMode->refreshRate,
+			    currentMode->redBits, currentMode->blueBits,  currentMode->greenBits);
+		
+		for(int j=0; j<numModes; j++)
+		{
+			const GLFWvidmode mode = modes[j];
+			msg(MSG_DEBUG, "Monitor %d available mode: resolution=%dx%d@%dHz RGBbits=%d %d %d\n",
+			    i, mode.width, mode.height, mode.refreshRate,
+			    mode.redBits, mode.blueBits,  mode.greenBits);
+		}
+	}
+
+
 	/* Lots of OpenGL calls were deprecated in 3.0. The following code
 	 * tells GLFW that we want to use the requested OpenGL version. */
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, oglProfile/10);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, oglProfile%10);
 	/* Report runtime errors if we try to use deprecated functions. */
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
+	if(msaaSamples > 1)
+		glfwWindowHint(GLFW_SAMPLES, msaaSamples);
 
 	/* Create window, make sure we succeeded. */
 	GLFWwindow *window = glfwCreateWindow(width, height, argv[0], NULL, NULL);
@@ -120,27 +172,9 @@ GLFWwindow* kuhl_ogl_init_new(int *argcp, char **argv, int width, int height, in
 		exit(EXIT_FAILURE);
 	}
 
-	return window;
+	the_window = window;
 }
-
-/** Performs initialization that almost any OpenGL program needs to
-    do. Should be called before arguments are processed.
-
-    @param argcp A pointer to argc.
-
-    @param argv The argv parameter from the program. Used to look for GLUT-related arguments.
-
-    @param width The initial width of the window.
-
-    @param height The initial height of the window.
-
-    @param oglProfile Set to 32 to use the OpenGL 3.2 core
-    profile. Use 0 to not specify a core profile.
-    
-    @param mode The mode parameter to be passed to
-    glutInitiDisplayMode(). Typically is something like: GLUT_DOUBLE |
-    GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE
- */
+#if 0
 void kuhl_ogl_init(int *argcp, char **argv, int width, int height,
                    int oglProfile, unsigned int mode, int msaaSamples)
 {
@@ -190,7 +224,7 @@ void kuhl_ogl_init(int *argcp, char **argv, int width, int height,
 	 * http://www.opengl.org/wiki/OpenGL_Loading_Library */
 	glGetError();
 }
-
+#endif
 
 
 
@@ -1867,8 +1901,10 @@ float kuhl_read_texture_file(const char *filename, GLuint *texName)
 static void kuhl_screenshot_im(const char *outputImageFilename)
 {
 	// Get window size
-	int windowWidth  = glutGet(GLUT_WINDOW_WIDTH);
-	int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+	//int windowWidth  = glutGet(GLUT_WINDOW_WIDTH);
+	//int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+	int windowWidth,windowHeight;
+	glfwGetFramebufferSize(kuhl_get_window(), &windowWidth, &windowHeight);
 
 	// Allocate space for data from window
 	char *data = kuhl_malloc(windowWidth * windowHeight * 3);
@@ -1897,8 +1933,12 @@ static void kuhl_screenshot_im(const char *outputImageFilename)
 static void kuhl_screenshot_stb(const char *outputImageFilename)
 {
 	// Get window size
-	int windowWidth  = glutGet(GLUT_WINDOW_WIDTH);
-	int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+	//int windowWidth  = glutGet(GLUT_WINDOW_WIDTH);
+	//int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
+	int windowWidth,windowHeight;
+	glfwGetFramebufferSize(kuhl_get_window(), &windowWidth, &windowHeight);
+
+	
 	int comp = 3; // 3 = RGB, 4 = RGBA
 	int stride_in_bytes = windowWidth*comp*sizeof(char);
 	// Allocate space for data from window

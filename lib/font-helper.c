@@ -1,4 +1,5 @@
 #include "font-helper.h"
+#include <GLFW/glfw3.h>
 #include "kuhl-util.h"
 
 #define min(x, y) (x < y) ? x : y
@@ -205,10 +206,12 @@ void font_draw(font_info* info, const char *text, float x, float y) {
 	glEnableVertexAttribArray(info->attribute_coord);
 	
 	y += info->pointSize; // Bitmaps start at bottom-left corner.
-	
+
+	int windowWidth=0, windowHeight=0;
+	glfwGetFramebufferSize(kuhl_get_window(), &windowWidth, &windowHeight);
 	float aspect = 1.0; //min((float) glutGet(GLUT_WINDOW_WIDTH) / width, (float) glutGet(GLUT_WINDOW_HEIGHT) / height);
-	float sx = aspect * (float)info->pixelsPerPoint / glutGet(GLUT_WINDOW_WIDTH);//
-	float sy = aspect * (float)info->pixelsPerPoint / glutGet(GLUT_WINDOW_HEIGHT);
+	float sx = aspect * (float)info->pixelsPerPoint / windowWidth;
+	float sy = aspect * (float)info->pixelsPerPoint / windowHeight;
 
 	x = -1 + x * sx;
 	y = 1 - y * sy;

@@ -12,31 +12,40 @@
 #include <stdio.h>
 #include <math.h>
 #include <GL/glew.h>
-#ifdef FREEGLUT
-#include <GL/freeglut.h>
-#else
-#include <GLUT/glut.h>
-#endif
+#include <GLFW/glfw3.h>
 
 #include "msg.h"
 
+/* Will print messages when glfw errors occur. */
+void glfw_error(int error, const char* description)
+{
+	msg(MSG_ERROR, "GLFW error: %s\n", description);
+}
+
+
 int main(int argc, char** argv)
 {
-	/* set up our GLUT window */
-	glutInit(&argc, argv);
-	glutInitWindowSize(512, 512);
-	/* Ask GLUT to for a double buffered, full color window that
-	 * includes a depth buffer */
-#ifdef FREEGLUT
-	glutInitDisplayMode(GLUT_RGB);
-	// Don't specify a specific context.
-	// If we did, it can affect the information that gets printed out.
-	//glutInitContextVersion(3,2);
-	//glutInitContextProfile(GLUT_CORE_PROFILE);
-#else
-	glutInitDisplayMode(GLUT_RGB);
-#endif
-	glutCreateWindow(argv[0]); // set window title to executable name
+	glfwSetErrorCallback(glfw_error);
+	if(!glfwInit()) // initialize glfw
+	{
+		msg(MSG_FATAL, "Failed to initialize GLFW.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
+	glfwWindowHint(GLFW_VISIBLE, GL_FALSE); // don't show window
+	GLFWwindow *window = glfwCreateWindow(512, 512, argv[0], NULL, NULL);
+	if(!window)
+	{
+		msg(MSG_FATAL, "Failed to create a GLFW window.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	glfwMakeContextCurrent(window);
 
 	/* Initialize GLEW */
 	glewExperimental = GL_TRUE;
