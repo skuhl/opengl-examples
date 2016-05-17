@@ -35,7 +35,8 @@
  * passed to your compiler and set up the appropriate callbacks:
  *
  *    glfwSetMouseButtonCallback(window, mousemove_glfwMouseButtonCallback);<br>
- *    glfwSetCursorPosCallback(window, mousemove_glfwCursorPosCallback);
+ *    glfwSetCursorPosCallback(window, mousemove_glfwCursorPosCallback);<br>
+ *    glfwSetScrollCallback(window, mousemove_glfwScrollCallback);
  *
  * 3) Get the camera position/orientation whenever you draw a scene.
  *
@@ -53,7 +54,10 @@
 extern "C" {
 #endif
 
-
+#if defined(MOUSEMOVE_GLUT) && defined(MOUSEMOVE_GLFW)
+#error "mousemove requires MOUSEMOVE_GLUT or MOUSEMOVE_GLFW preprocessor variable to be set---you have both of them set."
+#endif
+	
 #if !defined(MOUSEMOVE_GLUT) && !defined(MOUSEMOVE_GLFW)
 #error "mousemove requires MOUSEMOVE_GLUT or MOUSEMOVE_GLFW preprocessor variable to be set."
 #endif
@@ -78,6 +82,7 @@ void mousemove_glutMotionFunc(int x, int y);
 #ifdef MOUSEMOVE_GLFW
 void mousemove_glfwCursorPosCallback(GLFWwindow *window, double x, double y);
 void mousemove_glfwMouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
+void mousemove_glfwScrollCallback(GLFWwindow *window, double xoff, double yoff);
 #endif
 
 /* Don't need to be called directly if you are using the GLUT or GLFW callback functions listed above. */

@@ -7,18 +7,7 @@
  * @author Scott Kuhl
  */
 
-#ifdef MOUSEMOVE_GLUT
-#ifdef FREEGLUT
-#include <GL/freeglut.h>
-#else
-#include <GLUT/glut.h>
-#endif
-#endif
-
-#ifdef MOUSEMOVE_GLFW
-#include <GLFW/glfw3.h>
-#endif
-
+#include "mousemove.h"
 
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
@@ -30,11 +19,12 @@
 
 #include "kuhl-util.h"
 #include "vecmat.h"
-#include "mousemove.h"
+
 
 #define EPSILON 0.0001
 
-/** Current camera lookat point (the lookat vector is created by subtracting the lookat point from the camera position. */
+/** Current camera lookat *point*. A lookat vector is created by
+ * subtracting the lookat point from the camera position. */
 static float cam_lookat[3];
 /** Current camera position */
 static float cam_position[3]; 
@@ -163,9 +153,9 @@ static void mousemove_private_rotate_point(float degrees, float axis[3], float p
  * and mousemove_glutMouseFunc()
  *
  * @param down 1 if the button is being pressed down or 0 if the button is being released.
- * @param leftMidRight 0=left button is pressed, 1=middle button is pressed, 2=right button is pressed, -1 no button is pressed.
- * @param x The x coordinate of the mouse cursor when the button is pressed.
- * @param y The y coordinate of the mouse cursor when the button is pressed.
+ * @param leftMidRight 0=left button is pressed, 1=middle button is pressed, 2=right button is pressed, 3=scoll up, 4=scroll down, -1 no button is pressed.
+ * @param x The x coordinate of the mouse cursor when the button is pressed (or amount to scroll horizontally if scrolling event).
+ * @param y The y coordinate of the mouse cursor when the button is pressed (or amount to scroll vertically if scrolling event).
  */
 void mousemove_buttonPress(int down, int leftMidRight, int x, int y)
 {
@@ -186,9 +176,9 @@ void mousemove_buttonPress(int down, int leftMidRight, int x, int y)
 			// look at point and normalize it.
 			vec3f_sub_new(lookAt,cam_lookat_down,cam_position_down);
 			if(cur_button == 3) // scroll up (zoom in)
-				mousemove_translate_inout(-2,lookAt);
+				mousemove_translate_inout(y,lookAt);
 			else // cur_button = 4
-				mousemove_translate_inout(2,lookAt);
+				mousemove_translate_inout(y,lookAt);
 		}
 	}
 	else
@@ -308,8 +298,8 @@ void mousemove_glutMouseFunc(int button, int state, int x, int y)
 			 * called on all systems. See
 			 * http://stackoverflow.com/questions/14378
 			 */
-		case 3:  /* up */        leftMidRight = 3;  break;
-		case 4:  /* down */      leftMidRight = 4;  break;
+		case 3:  /* up */        leftMidRight = 3; x=0; y=-2; break;
+		case 4:  /* down */      leftMidRight = 4; x=0; y=2;  break;
 		default:                 leftMidRight = -1; break;
 	}
 	mousemove_buttonPress(state==GLUT_DOWN, leftMidRight, x, y);
@@ -338,7 +328,7 @@ void mousemove_glutMotionFunc(int x, int y)
 
 /** A callback function suitable for use with
  * glfwSetMouseButtonCallback(). Typically, you would call
- * glftSetMouseButtonCallback(mousemove_glfwMouseButtonCallback) to
+ * glftSetMouseButtonCallback(window, mousemove_glfwMouseButtonCallback) to
  * tell GLFW to call this function whenever a mouse button is
  * pressed. MOUSEMOVE_GLFW must be defined in the preprocessor to use
  * this function.
@@ -364,7 +354,7 @@ void mousemove_glfwMouseButtonCallback(GLFWwindow *window, int button, int actio
 
 /** A callback function suitable for use with
  *  glfwSetCursorPosCallback(). Typically, you would call
- *  glfwSetCursorPosCallback(mousemove_glfwCursorPosCallback) to tell
+ *  glfwSetCursorPosCallback(window, mousemove_glfwCursorPosCallback) to tell
  *  GLFW to call this function whenever a mouse is moved while a mouse
  *  button is pressed. MOUSEMOVE_GLFW must be defined in the
  *  preprocessor to use this function.
@@ -379,4 +369,25 @@ void mousemove_glfwCursorPosCallback(GLFWwindow *window, double x, double y)
 {
 	mousemove_movement(x,y);
 }
+
+/** A callback function suitable for use with
+ * glfwSetScrollCallback(). Typically, you would call
+ * glfwSetScrollCallback(window, mousemove_glfwCursorPosCallback) to
+ * tell GLFW to call this function whenever a scroll event (mouse
+ * scroll wheel, touchpad scroll, etc) occurs.
+ *
+ * @param window The GLFW window we are working with.
+ * @param xoff The change in x (0 if scroll is vertical)
+ * @param yoff The change in y (0 if scroll is horizontal)
+ */
+void mousemove_glfwScrollCallback(GLFWwindow *window, double xoff, double yoff)
+{
+	// msg(MSG_INFO, "glfw scroll %f %f\n", xoff, yoff);
+	if(yoff > 0)
+		mousemove_buttonPress(1, 3, 0, (int)(yoff*10));
+	else if(yoff < 0)
+		mousemove_buttonPress(1, 4, 0, (int)(yoff*10));
+}
+
+
 #endif // ifdef MOUSEMOVE_GLFW
