@@ -126,10 +126,6 @@ void viewmat_window_size(int *width, int *height)
 		savedWidth  = glutGet(GLUT_WINDOW_WIDTH);
 		savedHeight = glutGet(GLUT_WINDOW_HEIGHT);
 		savedTime = kuhl_milliseconds();
-<<<<<<< HEAD
-=======
-
->>>>>>> master
 		// msg(MSG_INFO, "Updated window size\n");
 	}
 
