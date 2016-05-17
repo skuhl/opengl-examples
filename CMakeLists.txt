@@ -1,7 +1,15 @@
 cmake_minimum_required(VERSION 2.6)
 
+
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER "g++")
+
+# Use homebrew gcc if it is installed.
+#if(APPLE AND EXISTS /usr/local/bin/gcc-5)
+#set(CMAKE_C_COMPILER "/usr/local/bin/gcc-5")
+#set(CMAKE_CXX_COMPILER "/usr/local/bin/g++-5")
+#endif()
+
 
 #set(CMAKE_C_COMPILER "clang")
 #set(CMAKE_CXX_COMPILER "clang++")
@@ -18,7 +26,7 @@ project("opengl-examples" C CXX)  # This project uses C and C++
 # Options which we may add in future (not supported by older compilers):
 # -Wshadow should probably be added eventually
 # -Wvla should be included because Visual Studio does not support VLAs, so we avoid using them. They are optional in C11 even though they were part of C99.
-set(C_CXX_FLAGS "-Wall -Wextra -pedantic -g -O2  -Wformat -Wno-unused-parameter -Wno-unused-function")  # Compiler options used by both the C++ and C compiler
+set(C_CXX_FLAGS " -Wall -Wextra -pedantic -g -Wformat -Wno-unused-parameter -Wno-unused-function")  # Compiler options used by both the C++ and C compiler
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_CXX_FLAGS} -std=gnu99")
 
 # Use no-variadic-macros to prevent C++ programs from warning about the variadic msg() macro
