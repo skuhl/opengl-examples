@@ -148,6 +148,13 @@ endif()
 find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIRS})
 
+# --- GLFW3 ---
+#Use GLFW's recommended way to find GLFW---not using this approach!
+find_package(PkgConfig REQUIRED)
+pkg_search_module(GLFW REQUIRED glfw3)
+include_directories(${GLFW_INCLUDE_DIRS})
+
+
 # --- Freeglut (need version 2.6(?) or higher) ---
 find_package(GLUT REQUIRED)
 include_directories(${GLUT_INCLUDE_DIR})

@@ -9,6 +9,7 @@
 
 
 #include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #ifdef FREEGLUT
 #include <GL/freeglut.h>
 #else
@@ -77,6 +78,50 @@ int kuhl_errorcheckFileLine(const char *file, int line, const char *func)
 	return 0;
 }
 
+/* Will print messages when glfw errors occur. */
+void kuhl_glfw_error(int error, const char* description)
+{
+	msg(MSG_ERROR, "GLFW error: %s\n", description);
+}
+
+
+GLFWwindow* kuhl_ogl_init_new(int *argcp, char **argv, int width, int height, int oglProfile)
+{
+	// call glfwError() when any GLFW errors occur
+	glfwSetErrorCallback(kuhl_glfw_error);
+
+	if(!glfwInit()) // initialize glfw
+	{
+		msg(MSG_FATAL, "Failed to initialize GLFW.\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	/* Lots of OpenGL calls were deprecated in 3.0. The following code
+	 * tells GLFW that we want to use the requested OpenGL version. */
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, oglProfile/10);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, oglProfile%10);
+	/* Report runtime errors if we try to use deprecated functions. */
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
+	/* Create window, make sure we succeeded. */
+	GLFWwindow *window = glfwCreateWindow(width, height, argv[0], NULL, NULL);
+	if(!window)
+	{
+		msg(MSG_FATAL, "Failed to create a GLFW window.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	glfwMakeContextCurrent(window);
+	glewExperimental = GL_TRUE;
+	GLenum glewError = glewInit();
+	if(glewError) // initialize glew, must be done after glfwMakeContextCurrent()
+	{
+		msg(MSG_FATAL, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
+		exit(EXIT_FAILURE);
+	}
+
+	return window;
+}
 
 /** Performs initialization that almost any OpenGL program needs to
     do. Should be called before arguments are processed.
