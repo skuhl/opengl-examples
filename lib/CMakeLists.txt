@@ -14,6 +14,6 @@ add_library(kuhl STATIC ${FILES_IN_LIBKUHL})
 set_target_properties(kuhl PROPERTIES COMPILE_DEFINITIONS "${PREPROC_DEFINE}")
 
 if(APPLE)
-	# Some Mac OSX machines need this to ensure that freeglut.h is found.
+	# Some Mac OSX machines need this to ensure that freetype.h is found.
 	target_include_directories(kuhl PUBLIC "/opt/X11/include/freetype2/")
 endif()
