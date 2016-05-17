@@ -281,8 +281,7 @@ int main(int argc, char* argv[])
 	{
 		objNamesv = (char**)malloc(sizeof(char**));
 		objNamesv[0] = (char*)("Tracker0");
-		objNamesv[1] = (char*)("Tracker1");
-		objNamesc = 2;
+		objNamesc = 1;
 	}
 	
 	if(verbose)
