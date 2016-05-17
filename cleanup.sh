@@ -36,8 +36,11 @@ done
 echo
 echo "=== Cleaning other files"
 rm -vrf "${THIS_DIR}/doxygen-docs"
-rm -vf "${THIS_DIR}/bin/"*.frag "${THIS_DIR}/bin/"*.vert "${THIS_DIR}/bin/"*libOVR*.so*
-rm -vf "${THIS_DIR}/"*.exe
+rm -vf "${THIS_DIR}/bin/"*.frag "${THIS_DIR}/bin/"*.vert
+# Linux:
+rm -vf "${THIS_DIR}/bin/"*libOVR*.so*
+# Mac:
+rm -vrf "${THIS_DIR}/bin/"*.dSYM
 
 # Find any log files anywhere in this tree and delete them.
 find ${THIS_DIR} -type f \( -name 'log.txt' -o -name 'log-ivs-left.txt' -o -name 'log-ivs-right.txt' \) -exec rm -vf "{}" \;
