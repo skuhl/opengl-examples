@@ -25,8 +25,7 @@
     @author Scott Kuhl
  */
 
-#ifndef __VIEWMAT_H__
-#define __VIEWMAT_H__
+#pragma once
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -53,4 +52,3 @@ void viewmat_get_viewport(int viewportValue[4], int viewportNum);
 #ifdef __cplusplus
 } // end extern "C"
 #endif
-#endif // end __VIEWMAT_H__

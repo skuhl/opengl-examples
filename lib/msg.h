@@ -3,9 +3,7 @@
  * the file named "LICENSE" for a full copy of the license.
  */
 
-
-#ifndef __MSG_H__
-#define __MSG_H__
+#pragma once
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,4 +43,4 @@ void msg_assimp_callback(const char* msg, char *usr);
 #ifdef __cplusplus
 } // end extern "C"
 #endif
-#endif // end __MSG_H__
+

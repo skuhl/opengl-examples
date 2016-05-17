@@ -3,6 +3,7 @@
  * @author John Thomas
  */
 
+#pragma once
 #ifdef __cplusplus
 extern "C" {
 #endif

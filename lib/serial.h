@@ -13,8 +13,7 @@
     @author Evan Hauck (contributed original versions of read/write functions)
 */
 
-#ifndef __SERIAL_H__
-#define __SERIAL_H__
+#pragma once
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,4 +38,3 @@ void serial_close(int fd);
 #ifdef __cplusplus
 } // end extern "C"
 #endif
-#endif // end __SERIAL_H__

@@ -22,8 +22,7 @@ General tips for learning the vector and matrix functions provided by this file:
  
 */
 
-#ifndef __VECMAT_H__
-#define __VECMAT_H__
+#pragma once
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1787,5 +1786,3 @@ void mat4f_stack_peek(const list *l, float m[16]);
 #ifdef __cplusplus
 } // end extern "C"
 #endif
-#endif // end __VECMAT_H__
-

@@ -12,8 +12,7 @@
  */
 
 
-#ifndef __KUHL_NODEP_H__
-#define __KUHL_NODEP_H__
+#pragma once
 
 #include "msg.h"
 
@@ -64,4 +63,3 @@ float kuhl_getfps(kuhl_fps_state *state);
 #ifdef __cplusplus
 } // end extern "C"
 #endif
-#endif // __KUHL_NODEP_H__

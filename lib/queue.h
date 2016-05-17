@@ -17,8 +17,7 @@
     @author Scott Kuhl 
  */
 
-#ifndef __QUEUE_H__
-#define __QUEUE_H__
+#pragma once
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -53,4 +52,3 @@ void queue_print_stats(const queue *q);
 #ifdef __cplusplus
 } // end extern "C"
 #endif
-#endif // end __QUEUE_H__

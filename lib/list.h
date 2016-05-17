@@ -56,8 +56,7 @@
     @author Scott Kuhl
  */
 
-#ifndef __LIST_H__
-#define __LIST_H__
+#pragma once
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -131,4 +130,3 @@ int set_remove(list *l, void *item);
 #ifdef __cplusplus
 } // end extern "C"
 #endif
-#endif // end __LIST_H__

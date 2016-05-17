@@ -1,5 +1,4 @@
-#ifndef __FONT_HELPER_H__
-#define __FONT_HELPER_H__
+#pragma once
 
 #include <GL/glew.h>
 #ifdef FREEGLUT
@@ -41,5 +40,3 @@ void font_draw(font_info* info, const char *text, float x, float y);
 void font_info_release(font_info* info);
 
 void font_release();
-
-#endif

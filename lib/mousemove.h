@@ -48,8 +48,7 @@
  *
  */
 
-#ifndef __MOUSEMOVE_H__
-#define __MOUSEMOVE_H__
+#pragma once
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -100,4 +99,3 @@ void mousemove_speed(float translationSpeed, float rotationSpeed);
 #ifdef __cplusplus
 } // end extern "C"
 #endif
-#endif // end __MOUSEMOVE_H__

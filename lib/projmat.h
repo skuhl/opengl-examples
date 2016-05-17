@@ -30,8 +30,7 @@
     @author Scott Kuhl
  */
 
-#ifndef __PROJMAT_H__
-#define __PROJMAT_H__
+#pragma once
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -43,4 +42,3 @@ void projmat_get_master_frustum(float result[6]);
 #ifdef __cplusplus
 } // end extern "C"
 #endif
-#endif // end __PROJMAT_H__
