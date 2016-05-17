@@ -26,11 +26,11 @@ typedef enum {
 	MSG_FATAL,   /*< Complete failure, message prior to exit (bold, red; written to stderr + logfile)*/
 
 	/* Other types of messages intended for developers to use however they want: */
-	BOLD,   /*< (bold, written to stdout + logfile) */
-	GREEN,  /*< (bold, green, written to stdout + logfile) */
-	BLUE,   /*< (bold, blue, written to stdout + logfile) */
-	CYAN,   /*< (bold, cyan, written to stdout + logfile) */
-	PURPLE  /*< (bold, magenta, written to stdout + logfile) */
+	MSG_BOLD,   /*< (bold, written to stdout + logfile) */
+	MSG_GREEN,  /*< (bold, green, written to stdout + logfile) */
+	MSG_BLUE,   /*< (bold, blue, written to stdout + logfile) */
+	MSG_CYAN,   /*< (bold, cyan, written to stdout + logfile) */
+	MSG_PURPLE  /*< (bold, magenta, written to stdout + logfile) */
 } msg_type;
 
 void msg_details(msg_type type, const char *fileName, int lineNum, const char *funcName, const char *msg, ...);

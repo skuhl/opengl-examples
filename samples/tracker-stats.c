@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 	const char *vrpnObject = argv[1];
 
 	
-	msg(BLUE, "Collecting %d samples from tracker...please wait...\n", numRecords);
+	msg(MSG_BLUE, "Collecting %d samples from tracker...please wait...\n", numRecords);
 	float *data = vrpn_get_raw(vrpnObject, NULL, numRecords);
 	if(data == NULL)
 	{
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 	filter(data, numRecords, 0, x);
 	filter(data, numRecords, 1, y);
 	filter(data, numRecords, 2, z);
-	msg(BLUE, "--- XYZ ---\n");
+	msg(MSG_BLUE, "--- XYZ ---\n");
 	
 	msg(MSG_INFO, "Means: %f %f %f\n",
 	    mean(x, numRecords),
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 	filter(data, numRecords, 5, q3);
 	filter(data, numRecords, 6, q4);
 
-	msg(BLUE, "--- Quat ---\n");
+	msg(MSG_BLUE, "--- Quat ---\n");
 	
 	msg(MSG_INFO, "Means: %f %f %f %f\n",
 	    mean(q1, numRecords),

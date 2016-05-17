@@ -226,7 +226,7 @@ static void orient_sensor_get_bno055(OrientSensorState *state, float quaternion[
 			msg(MSG_WARNING, "Magnetometer calibration is poor. Use figure 8 motion.");
 
 		if(sys < 2 || gyro < 2 || accel < 2 || mag < 2)
-			msg(BLUE, "Raw orientation sensor calib data: sys=%d gyro=%d accel=%d mag=%d", sys, gyro, accel, mag);
+			msg(MSG_BLUE, "Raw orientation sensor calib data: sys=%d gyro=%d accel=%d mag=%d", sys, gyro, accel, mag);
 	}
 	// msg(MSG_INFO, "sys=%d gyro=%d accel=%d mag=%d", sys, gyro, accel, mag);
 

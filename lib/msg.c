@@ -92,19 +92,19 @@ static void msg_type_string(msg_type type, char *buf, int len)
 		case MSG_FATAL:
 			snprintf(buf, len, "[FATAL]");
 			break;
-		case BOLD:
+		case MSG_BOLD:
 			snprintf(buf, len, "[BOLD ]");
 			break;
-		case GREEN:
+		case MSG_GREEN:
 			snprintf(buf, len, "[GREEN]");
 			break;
-		case BLUE:
+		case MSG_BLUE:
 			snprintf(buf, len, "[BLUE ]");
 			break;
-		case CYAN:
+		case MSG_CYAN:
 			snprintf(buf, len, "[CYAN ]");
 			break;
-		case PURPLE:
+		case MSG_PURPLE:
 			snprintf(buf, len, "[PURPL]");
 			break;
 		default:
@@ -157,19 +157,19 @@ static void msg_start_color(msg_type type, FILE *stream)
 			fprintf(stream, "\x1B[31m"); // red text
 			fprintf(stream, "\x1B[1m");  // bold
 			break;
-		case GREEN:
+		case MSG_GREEN:
 			fprintf(stream, "\x1B[32m"); // green text
 			fprintf(stream, "\x1B[1m");  // bold
 			break;
-		case BLUE:
+		case MSG_BLUE:
 			fprintf(stream, "\x1B[34m"); // blue text
 			fprintf(stream, "\x1B[1m");  // bold
 			break;
-		case CYAN:
+		case MSG_CYAN:
 			fprintf(stream, "\x1B[36m"); // cyan text
 			fprintf(stream, "\x1B[1m");  // bold
 			break;
-		case PURPLE:
+		case MSG_PURPLE:
 			fprintf(stream, "\x1B[35m"); // magenta text
 			fprintf(stream, "\x1B[1m");  // bold
 			break;
