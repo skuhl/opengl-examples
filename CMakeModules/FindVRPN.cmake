@@ -11,10 +11,10 @@ set(CMAKE_LIBRARY_PATH /research/kuhl/public-ogl/vrpn/build/quat ${CMAKE_LIBRARY
 set(CMAKE_INCLUDE_PATH /research/kuhl/public-ogl/vrpn/ ${CMAKE_INCLUDE_PATH})
 set(CMAKE_INCLUDE_PATH /research/kuhl/public-ogl/vrpn/quat ${CMAKE_INCLUDE_PATH})
 # Search path for Rekhi lab
-set(CMAKE_LIBRARY_PATH /home/campus11/kuhl/public-ogl/vrpn/build ${CMAKE_LIBRARY_PATH})
-set(CMAKE_LIBRARY_PATH /home/campus11/kuhl/public-ogl/vrpn/build/quat ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH /home/campus11/kuhl/public-ogl/vrpn/ ${CMAKE_INCLUDE_PATH})
-set(CMAKE_INCLUDE_PATH /home/campus11/kuhl/public-ogl/vrpn/quat ${CMAKE_INCLUDE_PATH})
+set(CMAKE_LIBRARY_PATH /local/kuhl-public-share/opengl/vrpn/build ${CMAKE_LIBRARY_PATH})
+set(CMAKE_LIBRARY_PATH /local/kuhl-public-share/opengl/vrpn/build/quat ${CMAKE_LIBRARY_PATH})
+set(CMAKE_INCLUDE_PATH /local/kuhl-public-share/opengl/vrpn/ ${CMAKE_INCLUDE_PATH})
+set(CMAKE_INCLUDE_PATH /local/kuhl-public-share/opengl/vrpn/quat ${CMAKE_INCLUDE_PATH})
 
 
 

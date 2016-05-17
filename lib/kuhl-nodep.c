@@ -228,7 +228,7 @@ char* kuhl_find_file(const char *filename)
 	strncpy(commonDirs[commonDirsLen++], "../samples", 255); // Find fragment programs in samples directory
 #endif
 	strncpy(commonDirs[commonDirsLen++], "/home/kuhl/public-ogl/data", 255); // CCSR
-	strncpy(commonDirs[commonDirsLen++], "/home/campus11/kuhl/public-ogl/data", 255); // Rekhi
+	strncpy(commonDirs[commonDirsLen++], "/local/kuhl-public-share/opengl/data", 255); // Rekhi
 	strncpy(commonDirs[commonDirsLen++], "/research/kuhl/public-ogl/data", 255); // IVS
 
 #ifdef __linux__

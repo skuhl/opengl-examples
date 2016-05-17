@@ -30,3 +30,6 @@
 # Binaries created in vrpn folder
 /fake-server
 /recorder
+
+# Apple OS X debugging information
+/*.dSYM

@@ -290,10 +290,10 @@ void display()
 
 	/* Get current frames per second calculations. */
 	float fps = kuhl_getfps(&fps_state);
-
+	
 	if(dgr_is_enabled() == 0 || dgr_is_master())
 	{
-		// If DGR is being used, only display dgr counter if we are
+		// If DGR is being used, only display FPS info if we are
 		// the master process.
 
 		// Check if FPS value was just updated by kuhl_getfps()
@@ -309,6 +309,7 @@ void display()
 			/* Make a new label */
 			float labelColor[3] = { 1,1,1 };
 			float labelBg[4] = { 0,0,0,.3 };
+
 			/* Change the last parameter (point size) to adjust the
 			 * size of the texture that the text is rendered in to. */
 			fpsLabelAspectRatio = kuhl_make_label(label,
@@ -447,7 +448,7 @@ void display()
 
 	} // finish viewport loop
 	viewmat_end_frame();
-	
+
 	/* Update the model for the next frame based on the time. We
 	 * convert the time to seconds and then use mod to cause the
 	 * animation to repeat. */

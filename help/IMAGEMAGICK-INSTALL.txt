@@ -1,13 +1,34 @@
 You can typically install ImageMagick using the package manager in
-your Linux distribution or homebrew for OSX. Ghostscript is also
-required for fonts to work on OSX. Simply search for packages that
-include the word "magick" and install any packages that look like
-they are related to the ImageMagick MagickCore library.
+your Linux distribution or homebrew for OS X.
 
+== Ubuntu instructions ==
 On Ubuntu 14.04, try installing the following two packages (and the
 packages that they depend on):
 imagemagick
 libmagickcore-dev
+
+
+== Mac OS X - Homebrew instructions ==
+
+Install imagemagick and ensure that ghostscript support is
+enabled. Ghostscript support is necessary to support using imagemagick
+to render text onto textures. Run the following command:
+
+brew install imagemagick --with-ghostscript
+
+Verify that ghostscript support is enabled with:
+
+brew info imagemagick
+
+Verify that imagemagick has access to fonts by running:
+
+convert -list font
+
+If fonts are not available, then try follow these instructions:
+http://stackoverflow.com/questions/24696433/
+
+
+== Compiling form source ==
 
 If you need to compile ImageMagick yourself:
 
