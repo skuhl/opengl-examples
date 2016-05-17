@@ -1,0 +1,29 @@
+=== Linux installation ===
+
+On recent Ubuntu installations (16.04, for example), you can install
+GLFW3 by installing the libglfw3 and libglfw3-dev packages.
+
+
+=== Mac OS X installation ===
+
+Install glfw via homebrew.
+
+
+=== Compiling GLFW yourself ===
+
+If none of the options above work for you, you can download and compile GLFW yourself.
+
+Download the source for GLFW: http://www.glfw.org/download.html
+
+Unzip the source code.
+
+Make sure cmake is installed.
+
+Run "cmake ." to create makefiles
+
+Run "make" to compile the library
+
+Next, use one of the following two options:
+ 1) Run "sudo make install" to install GLFW into /usr/local/include/GLFW and /usr/local/lib
+ 2) In CMakeLists.txt for the example OpenGL programs included in this package, set the glfw_src_path variable to the path to the GLFW source.
+
