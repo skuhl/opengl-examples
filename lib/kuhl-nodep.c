@@ -21,6 +21,10 @@
 #include <unistd.h>
 #include <libgen.h> // dirname()
 
+#if __APPLE__
+#include <mach-o/dyld.h>  // for _NSGetExectuablePath()
+#endif
+
 #include "kuhl-nodep.h"
 
 
@@ -223,7 +227,8 @@ char* kuhl_find_file(const char *filename)
 	strncpy(commonDirs[commonDirsLen++], "/local/kuhl-public-share/opengl/data", 255); // Rekhi
 	strncpy(commonDirs[commonDirsLen++], "/research/kuhl/public-ogl/data", 255); // IVS
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
+	#ifdef __linux__
 	/* If we can't open the filename directly, then try opening it
 	   with the full path based on the path to the
 	   executable. This allows us to more easily run programs from
@@ -234,7 +239,14 @@ char* kuhl_find_file(const char *filename)
 	ssize_t len = readlink("/proc/self/exe", exe, 1023);
 	exe[len]='\0';
 	char *dir = dirname(exe);
-
+	#endif
+	#ifdef __APPLE__
+	char exe[1024];
+	uint32_t size = 1024;
+	_NSGetExecutablePath(exe, &size); // Todo: if returns non-zero, it didn't fit
+    #endif
+	char *dir = dirname(exe);
+	
 	/* For every relative path in commonDirs, add an additional
 	 * directory which has the path to the executable prepended to
 	 * it. */
