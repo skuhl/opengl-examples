@@ -231,6 +231,6 @@ int main(int argc, char** argv)
 		/* process events (keyboard, mouse, etc) */
 		glfwPollEvents();
 	}
-
+	dgr_exit();
 	exit(EXIT_SUCCESS);
 }

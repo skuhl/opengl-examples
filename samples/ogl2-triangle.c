@@ -8,38 +8,30 @@
  * @author Scott Kuhl
  */
 
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <GL/glew.h>
-#ifdef FREEGLUT
-#include <GL/freeglut.h>
-#else
-#include <GLUT/glut.h>
-#endif
+#include <GLFW/glfw3.h>
 
 #include "kuhl-util.h"
 #include "dgr.h"
 #include "projmat.h"
 #include "viewmat.h"
 
-/* Called by GLUT whenever a key is pressed. */
-void keyboard(unsigned char key, int x, int y)
+/* Called by GLFW whenever a key is pressed. */
+void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	if(action != GLFW_PRESS)
+		return;
+	
 	switch(key)
 	{
-		case 'q':
-		case 'Q':
-		case 27: // ASCII code for Escape key
-			dgr_exit();
-			exit(EXIT_SUCCESS);
+		case GLFW_KEY_Q:
+		case GLFW_KEY_ESCAPE:
+			glfwSetWindowShouldClose(window, GL_TRUE);
 			break;
 	}
-
-	/* Whenever any key is pressed, request that display() get
-	 * called. */ 
-	glutPostRedisplay();
 }
 
 
@@ -94,11 +86,11 @@ void display()
 		glMultMatrixf(viewMat); // view/camera matrix
 		kuhl_errorcheck();
 
-		/* Change angle for animation. */
-		int count = glutGet(GLUT_ELAPSED_TIME) % 10000; // get a counter that repeats every 10 seconds
-		float angle = count / 10000.0 * 360;
+		/* Calculate an angle to rotate the object. glfwGetTime() gets
+		 * the time in seconds since GLFW was initialized. Rotates 45 degrees every second. */
+		float angle = fmod(glfwGetTime()*45, 360);
 		dgr_setget("angle", &angle, sizeof(GLfloat));
-	    
+
 		glScalef(3,3,3); /* Scale triangle (second!) */
 #ifdef VICON
 		float vpos[3], vorient[16];
@@ -138,39 +130,16 @@ void display()
 		 * calls to kuhl_errorcheck() in your code. */
 		kuhl_errorcheck();
 	} // finish viewport loop
-    
-	/* Display the buffer we just drew (necessary for double buffering). */
-	glutSwapBuffers();
 
-	/* Ask GLUT to call display() again. We shouldn't call display()
-	 * ourselves recursively because it will not leave time for GLUT
-	 * to call other callback functions for when a key is pressed, the
-	 * window is resized, etc. */
-	glutPostRedisplay();
+	viewmat_end_frame();
 }
 
 int main(int argc, char** argv)
 {
-	/* set up our GLUT window */
-	glutInit(&argc, argv);
-	glutInitWindowSize(512, 512);
-	/* Ask GLUT to for a double buffered, full color window that
-	 * includes a depth buffer */
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	glutCreateWindow(argv[0]); // set window title to executable name
+	kuhl_ogl_init(&argc, argv, 512, 512, 20, 4);
 
-	/* Initialize GLEW */
-	GLenum glewError = glewInit();
-	if(glewError != GLEW_OK)
-	{
-		fprintf(stderr, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
-		exit(EXIT_FAILURE);
-	}
-	kuhl_errorcheck();
-
-	// setup callbacks
-	glutDisplayFunc(display);
-	glutKeyboardFunc(keyboard);
+	/* Specify function to call when keys are pressed. */
+	glfwSetKeyCallback(kuhl_get_window(), keyboard);
 
 	float initPos[3] = {0,0,3};
 	float initLook[3] = {0,0,0};
@@ -181,8 +150,14 @@ int main(int argc, char** argv)
 	projmat_init();
 	viewmat_init(initPos, initLook, initUp);
 
-	/* Tell GLUT to start running the main loop and to call display(),
-	 * keyboard(), etc callback methods as needed. */
-	glutMainLoop();
+	while(!glfwWindowShouldClose(kuhl_get_window()))
+	{
+		display();
+		kuhl_errorcheck();
+
+		/* process events (keyboard, mouse, etc) */
+		glfwPollEvents();
+	}
+	dgr_exit();
 	exit(EXIT_SUCCESS);
 }
