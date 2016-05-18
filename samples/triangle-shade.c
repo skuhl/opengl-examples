@@ -33,8 +33,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 	
 	switch(key)
 	{
-		case 'q':
-		case 'Q':
+		case GLFW_KEY_Q:
 		case GLFW_KEY_ESCAPE:
 			glfwSetWindowShouldClose(window, GL_TRUE);
 			break;
