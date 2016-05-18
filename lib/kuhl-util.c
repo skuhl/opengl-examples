@@ -143,14 +143,16 @@ void kuhl_ogl_init(int *argcp, char **argv, int width, int height, int oglProfil
 		}
 	}
 
-
-	/* Lots of OpenGL calls were deprecated in 3.0. The following code
-	 * tells GLFW that we want to use the requested OpenGL version. */
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	if(oglProfile >= 30)
+	{
+		/* Lots of OpenGL calls were deprecated in 3.0. The following code
+		 * tells GLFW that we want to use the requested OpenGL version. */
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		/* Report runtime errors if we try to use deprecated functions. */
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	}
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, oglProfile/10);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, oglProfile%10);
-	/* Report runtime errors if we try to use deprecated functions. */
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	if(msaaSamples > 1)
 		glfwWindowHint(GLFW_SAMPLES, msaaSamples);
