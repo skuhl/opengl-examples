@@ -238,18 +238,17 @@ char* kuhl_find_file(const char *filename)
 	char exe[1024];
 	ssize_t len = readlink("/proc/self/exe", exe, 1023);
 	exe[len]='\0';
-	char *dir = dirname(exe);
 	#endif
 	#ifdef __APPLE__
 	char exe[1024];
 	uint32_t size = 1024;
 	_NSGetExecutablePath(exe, &size); // Todo: if returns non-zero, it didn't fit
     #endif
-	char *dir = dirname(exe);
 	
 	/* For every relative path in commonDirs, add an additional
 	 * directory which has the path to the executable prepended to
 	 * it. */
+	char *dir = dirname(exe);
 	int origLen = commonDirsLen;
 	strncpy(commonDirs[commonDirsLen++], dir, 255); // Rekhi
 	for(int i=0; i<origLen; i++)
