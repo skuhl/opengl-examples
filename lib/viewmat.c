@@ -734,6 +734,8 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 		                        refresh rate. May not work on all
 		                        machines. */
 	}
+
+	// glfwSwapInterval(0); // Let FPS go as fast as possible, let tearing (potentially) happen.
 	
 	const char* controlModeString = getenv("VIEWMAT_CONTROL_MODE");
 
