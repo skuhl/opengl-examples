@@ -13,11 +13,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <GL/glew.h>
-#ifdef FREEGLUT
-#include <GL/freeglut.h>
-#else
-#include <GLUT/glut.h>
-#endif
+#include <GLFW/glfw3.h>
 
 #include "kuhl-util.h"
 #include "vecmat.h"
@@ -25,14 +21,13 @@
 #include "projmat.h"
 #include "viewmat.h"
 #include "vrpn-help.h"
-
+GLuint program = 0; /**< id value for the GLSL program */
 
 int global_argc = 0;
 char **global_argv;
 
 static kuhl_fps_state fps_state;
 
-GLuint program = 0; // id value for the GLSL program
 kuhl_geometry *modelgeom  = NULL;
 
 kuhl_geometry quad;
@@ -55,28 +50,19 @@ const float initCamUp[3]   = {0,1,0};
 #define GLSL_VERT_FILE "assimp.vert"
 #define GLSL_FRAG_FILE "assimp.frag"
 
-/** Called by GLUT whenever a key is pressed. */
-void keyboard(unsigned char key, int x, int y)
+/* Called by GLFW whenever a key is pressed. */
+void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	if(action != GLFW_PRESS)
+		return;
+	
 	switch(key)
 	{
-		case 'q':
-		case 'Q':
-		case 27: // ASCII code for Escape key
-			dgr_exit();
-			exit(EXIT_SUCCESS);
-			break;
-		case 'f': // full screen
-			glutFullScreen();
-			break;
-		case 'F': // switch to window from full screen mode
-			glutPositionWindow(0,0);
+		case GLFW_KEY_Q:
+		case GLFW_KEY_ESCAPE:
+			glfwSetWindowShouldClose(window, GL_TRUE);
 			break;
 	}
-
-	/* Whenever any key is pressed, request that display() get
-	 * called. */ 
-	glutPostRedisplay();
 }
 
 /** Draw a object at the location and orientation of the tracked vrpn object */
@@ -161,10 +147,7 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 }
 
 
-/** Called by GLUT whenever the window needs to be redrawn. This
- * function should not be called directly by the programmer. Instead,
- * we can call glutPostRedisplay() to request that GLUT call display()
- * at some point. */
+/** Draws the 3D scene. */
 void display()
 {
 	/* If we are using DGR, send or receive data to keep multiple
@@ -187,7 +170,7 @@ void display()
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will
 	 * run twice for HMDs (once for the left eye and once for the
-	 * right. */
+	 * right). */
 	viewmat_begin_frame();
 	for(int viewportID=0; viewportID<viewmat_num_viewports(); viewportID++)
 	{
@@ -196,11 +179,12 @@ void display()
 		/* Where is the viewport that we are drawing onto and what is its size? */
 		int viewport[4]; // x,y of lower left corner, width, height
 		viewmat_get_viewport(viewport, viewportID);
+		/* Tell OpenGL the area of the window that we will be drawing in. */
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
 		/* Clear the current viewport. Without glScissor(), glClear()
 		 * clears the entire screen. We could call glClear() before
-		 * this viewport loop---but on order for all variations of
+		 * this viewport loop---but in order for all variations of
 		 * this code to work (Oculus support, etc), we can only draw
 		 * after viewmat_begin_eye(). */
 		glScissor(viewport[0], viewport[1], viewport[2], viewport[3]);
@@ -243,9 +227,9 @@ void display()
 	/* Update the model for the next frame based on the time. We
 	 * convert the time to seconds and then use mod to cause the
 	 * animation to repeat. */
-	int time = glutGet(GLUT_ELAPSED_TIME);
-	dgr_setget("time", &time, sizeof(int));
-	kuhl_update_model(modelgeom, 0, ((time%10000)/1000.0));
+	double time = glfwGetTime();
+	dgr_setget("time", &time, sizeof(double));
+	kuhl_update_model(modelgeom, 0, fmod(time, 10));
 
 	/* Check for errors. If there are errors, consider adding more
 	 * calls to kuhl_errorcheck() in your code. */
@@ -253,31 +237,26 @@ void display()
 
 	//kuhl_video_record("videoout", 30);
 	
-	/* Ask GLUT to call display() again. We shouldn't call display()
-	 * ourselves recursively because it will not leave time for GLUT
-	 * to call other callback functions for when a key is pressed, the
-	 * window is resized, etc. */
-	glutPostRedisplay();
 }
 
 int main(int argc, char** argv)
 {
 	/* Initialize GLUT and GLEW */
-	kuhl_ogl_init(&argc, argv, 512, 512, 32,
-	              GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE, 4);
+	kuhl_ogl_init(&argc, argv, 512, 512, 32, 4);
+
+	/* Specify function to call when keys are pressed. */
+	glfwSetKeyCallback(kuhl_get_window(), keyboard);
+	// glfwSetFramebufferSizeCallback(window, reshape);
 
 	if(argc == 1)
 	{
 		msg(MSG_FATAL, "You didn't provide the name of the object(s) that you want to track.");
-		msg(MSG_FATAL, "Usage: %s vrpnObjectName1 vrpnObjectName2 ...");
+		msg(MSG_FATAL, "Usage: %s vrpnObjectName1 vrpnObjectName2 ...", argv[0]);
 		exit(EXIT_FAILURE);
 	}
 	global_argc = argc;
 	global_argv = argv;
-	
-	// setup callbacks
-	glutDisplayFunc(display);
-	glutKeyboardFunc(keyboard);
+
 
 	/* Compile and link a GLSL program composed of a vertex shader and
 	 * a fragment shader. */
@@ -309,15 +288,19 @@ int main(int argc, char** argv)
 	}
 	
 
-	kuhl_getfps_init(&fps_state);
+	float initCamPos[3]  = {0,0,10}; // location of camera
+	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
+	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
+	viewmat_init(initCamPos, initCamLook, initCamUp);
 	
-	/* Tell GLUT to start running the main loop and to call display(),
-	 * keyboard(), etc callback methods as needed. */
-	glutMainLoop();
-	/* // An alternative approach:
-	   while(1)
-	   glutMainLoopEvent();
-	*/
+	while(!glfwWindowShouldClose(kuhl_get_window()))
+	{
+		display();
+		kuhl_errorcheck();
 
+		/* process events (keyboard, mouse, etc) */
+		glfwPollEvents();
+	}
+	dgr_exit();
 	exit(EXIT_SUCCESS);
 }
