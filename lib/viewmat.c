@@ -251,8 +251,13 @@ void viewmat_end_frame(void)
 	/* Need to swap front and back buffers here unless we are using
 	 * Oculus. (Oculus draws to the screen directly). */
 	if(viewmat_display_mode != VIEWMAT_OCULUS)
-			//glutSwapBuffers();
+	{
+		glfwSwapInterval(1); // Wait for monitor refresh. Set to 0 to
+							 // let framerate go above the monitor
+							 // refresh rate. May not work on all
+							 // machines.
 		glfwSwapBuffers(kuhl_get_window());
+	}
 
 
 	viewmat_validate_fps();

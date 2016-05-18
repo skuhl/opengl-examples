@@ -14,8 +14,8 @@ cmake_minimum_required(VERSION 2.6)
 #set(NEED_ASSIMP viewer slerp explode flock ik frustum)
 set(NEED_ASSIMP   )
 # Programs that don't rely on ASSIMP
-#set(NEED_NOTHING text prerend picker teartest panorama ogl2-triangle ogl2-slideshow ogl2-texture pong glinfo tracker-demo tracker-stats)
-set(NEED_NOTHING triangle triangle-shade triangle-color texture glinfo)
+#set(NEED_NOTHING text prerend picker panorama ogl2-triangle ogl2-slideshow ogl2-texture pong glinfo tracker-demo tracker-stats)
+set(NEED_NOTHING triangle triangle-shade triangle-color texture glinfo teartest )
 
 
 # IMPORTANT: If ASSIMP is installed, NEED_NOTHING will link against

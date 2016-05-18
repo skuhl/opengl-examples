@@ -82,7 +82,7 @@ void kuhl_glfw_error(int error, const char* description)
 }
 
 
-GLFWwindow* kuhl_get_window()
+GLFWwindow* kuhl_get_window(void)
 {
 	return the_window;
 }
