@@ -304,7 +304,7 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 
 int main(int argc, char** argv)
 {
-	/* Initialize GLUT and GLEW */
+	/* Initialize GLFW and GLEW */
 	kuhl_ogl_init(&argc, argv, 512, 512, 32,
 	              GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE, 4);
 

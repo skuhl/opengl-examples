@@ -415,7 +415,7 @@ void init_geometryCylinder(kuhl_geometry *cyl, GLuint prog)
 
 int main(int argc, char** argv)
 {
-	/* Initialize GLUT and GLEW */
+	/* Initialize GLFW and GLEW */
 	kuhl_ogl_init(&argc, argv, 512, 512, 32, 4);
 
 	

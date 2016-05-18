@@ -523,7 +523,7 @@ void drawPaddle(Paddle paddle, float depth)
 
 int main( int argc, char* argv[] )
 {	
-	/* Initialize GLUT and GLEW */
+	/* Initialize GLFW and GLEW */
 	kuhl_ogl_init(&argc, argv, 768, 512, 0,  // don't use core profile!
 	              GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE, 4);
 	glEnable(GL_POINT_SMOOTH);
