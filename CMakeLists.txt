@@ -205,24 +205,25 @@ find_package(Threads)
 #endif()
 
 # --- LibOVR (Oculus Rift) ---
-find_package(OVR)
-if(OVR_FOUND)
-	# LibOVR relies on a LibOVRRT library at run time. It must be in /usr/lib or /usr/local/lib or in the same directory as the binary.
-	# Here, we make "cmake ." copy the .so files into the bin folder.
-	add_custom_target(copyOVR)
-	# TODO: The PATH variable below should be renamed to DIRECTORY once all computers use versions newer than cmake 2.8.11 (Rekhi lab uses 2.8.11)
-	get_filename_component(ovrSoDir ${OVR_LIBRARY_SO} PATH)
-	file(GLOB SO_FILES "${ovrSoDir}/*.so" "${ovrSoDir}/*.so.*")
-	foreach(SOFILE ${SO_FILES})
-	    add_custom_command(TARGET copyOVR PRE_BUILD
-		COMMAND ${CMAKE_COMMAND} -E
-		copy ${SOFILE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-	endforeach()
+set(MISSING_OVR_DEFINITION "MISSING_OVR")
+if(LINUX AND NOT APPLE)
+	find_package(OVR)
+	if(OVR_FOUND)
+		# LibOVR relies on a LibOVRRT library at run time. It must be in /usr/lib or /usr/local/lib or in the same directory as the binary.
+		# Here, we make "cmake ." copy the .so files into the bin folder.
+		add_custom_target(copyOVR)
+		# TODO: The PATH variable below should be renamed to DIRECTORY once all computers use versions newer than cmake 2.8.11 (Rekhi lab uses 2.8.11)
+		get_filename_component(ovrSoDir ${OVR_LIBRARY_SO} PATH)
+		file(GLOB SO_FILES "${ovrSoDir}/*.so" "${ovrSoDir}/*.so.*")
+		foreach(SOFILE ${SO_FILES})
+			add_custom_command(TARGET copyOVR PRE_BUILD
+			COMMAND ${CMAKE_COMMAND} -E
+			copy ${SOFILE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+		endforeach()
 
-	include_directories(${OVR_INCLUDE_DIRS})
-	set(MISSING_OVR_DEFINITION "")
-else()
-	set(MISSING_OVR_DEFINITION "MISSING_OVR")
+		include_directories(${OVR_INCLUDE_DIRS})
+		set(MISSING_OVR_DEFINITION "")
+    endif()
 endif()
 
 # Set the preprocessor flags.
