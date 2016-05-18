@@ -252,11 +252,24 @@ void viewmat_end_frame(void)
 	 * Oculus. (Oculus draws to the screen directly). */
 	if(viewmat_display_mode != VIEWMAT_OCULUS)
 	{
-		glfwSwapInterval(1); // Wait for monitor refresh. Set to 0 to
-							 // let framerate go above the monitor
-							 // refresh rate. May not work on all
-							 // machines.
+		const int timing_debug = 0;
+		long t0,t1,t2,t3;
+		if(timing_debug)
+		{
+			t0 = kuhl_microseconds();
+			glFlush();
+			t1 = kuhl_microseconds();
+			msg(MSG_DEBUG, "microseconds to flush: %ld", t1-t0);
+			glFinish();
+			t2=kuhl_microseconds();
+			msg(MSG_DEBUG, "microseconds to finish %ld", t2-t1);
+		}
 		glfwSwapBuffers(kuhl_get_window());
+		if(timing_debug)
+		{
+			t3 = kuhl_microseconds();
+			msg(MSG_DEBUG, "microseconds to swap: %ld", t3-t2);
+		}
 	}
 
 
@@ -705,6 +718,23 @@ static void viewmat_init_hmd_oculus(const float pos[3])
  */
 void viewmat_init(const float pos[3], const float look[3], const float up[3])
 {
+	if(glfwExtensionSupported("GLX_EXT_swap_control_tear") ||
+	   glfwExtensionSupported("WGL_EXT_swap_control_tear"))
+	{
+		// https://www.opengl.org/registry/specs/EXT/glx_swap_control_tear.txt
+		// https://www.opengl.org/registry/specs/EXT/wgl_swap_control_tear.txt
+		glfwSwapInterval(-1); /* Sync to monitor refresh, but allow
+		                       * tearing if we fall beind. */
+	}
+	else
+	{
+		msg(MSG_DEBUG, "Machine lacks support for swap_control_tear extension");
+		glfwSwapInterval(1); /* Wait for monitor refresh. Set to 0 to
+		                        let framerate go above the monitor
+		                        refresh rate. May not work on all
+		                        machines. */
+	}
+	
 	const char* controlModeString = getenv("VIEWMAT_CONTROL_MODE");
 
 	/* Make an intelligent guess if unspecified */
