@@ -43,12 +43,14 @@ void viewmat_begin_frame(void);
 void viewmat_begin_eye(int viewportID);
 int viewmat_get_blitted_framebuffer(int viewportID);
 void viewmat_end_frame(void);
+void viewmat_swap_buffers(void); // use viewmat_end_frame() if you can instead of this!
 	
 void viewmat_init(const float pos[3], const float look[3], const float up[3]);
 viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportNum);
 int viewmat_num_viewports(void);
 void viewmat_get_viewport(int viewportValue[4], int viewportNum);
 
+	
 #ifdef __cplusplus
 } // end extern "C"
 #endif

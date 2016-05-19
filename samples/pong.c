@@ -5,12 +5,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include <GL/glew.h>
-
-#ifdef FREEGLUT
-#include <GL/freeglut.h>
-#else
-#include <GLUT/glut.h>
-#endif
+#include <GLFW/glfw3.h>
 
 #include "kuhl-util.h"
 #include "vecmat.h"
@@ -102,42 +97,45 @@ void clampPaddles()
 		paddleB.xpos = frustum[1]-paddleB.width/2;
 }
 
-/* Called by GLUT whenever a key is pressed. */
-void keyboard(unsigned char key, int x, int y)
+/* Called by GLFW whenever a key is pressed. */
+void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	if(action != GLFW_PRESS)
+		return;
+	
 	switch(key)
 	{
-		case 'q':
-		case 'Q':
-		case 27: // ASCII code for Escape key
-			dgr_exit();
-			exit(0);
+		case GLFW_KEY_Q:
+		case GLFW_KEY_ESCAPE:
+			glfwSetWindowShouldClose(window, GL_TRUE);
 			break;
+#if 0
 		case 'f': // full screen
 			glutFullScreen();
 			break;
 		case 'F': // switch to window from full screen mode
 			glutPositionWindow(0,0);
 			break;
-		case 'a':
+#endif
+		case GLFW_KEY_A:
 			paddleA.xpos -= .01;
 			clampPaddles();
 			break;
-		case 's':
+		case GLFW_KEY_S:
 			paddleA.ready = true;
 			break;
-		case 'd':
+		case GLFW_KEY_D:
 			paddleA.xpos += .01;
 			clampPaddles();
 			break;
-		case 'j':
+		case GLFW_KEY_J:
 			paddleB.xpos -= .01;
 			clampPaddles();
 			break;
-		case 'k':
+		case GLFW_KEY_K:
 			paddleB.ready = true;
 			break;
-		case 'l':
+		case GLFW_KEY_L:
 			paddleB.xpos += .01;
 			clampPaddles();
 			break;
@@ -465,7 +463,11 @@ void display()
     glColor3fv(ball.color);
 	glPushMatrix();
 	glTranslatef(ball.xpos, ball.ypos, depth+4.0f);
-	glutSolidSphere(ball.radius, 100, 100);
+	// glutSolidSphere(ball.radius, 100, 100);
+	GLUquadric* sphere;
+	sphere = gluNewQuadric();
+	gluQuadricNormals(sphere, GL_SMOOTH);
+	gluSphere(sphere, ball.radius, 100, 100);
 	glPopMatrix();
 	
 	/* If DGR is enabled, only do this in the master*/
@@ -474,10 +476,8 @@ void display()
 		// Run the game code
 		game();	
 	}
-	
-	glFlush();
-	glutSwapBuffers();
-	glutPostRedisplay(); // call display() repeatedly
+
+	viewmat_swap_buffers();
 }
 
 void drawPaddle(Paddle paddle, float depth)
@@ -524,13 +524,12 @@ void drawPaddle(Paddle paddle, float depth)
 int main( int argc, char* argv[] )
 {	
 	/* Initialize GLFW and GLEW */
-	kuhl_ogl_init(&argc, argv, 768, 512, 0,  // don't use core profile!
-	              GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE, 4);
+	kuhl_ogl_init(&argc, argv, 768, 512, 20, 4);
 	glEnable(GL_POINT_SMOOTH);
 	
-	/* Initialize call backs */
-	glutDisplayFunc(display);
-	glutKeyboardFunc(keyboard);
+	/* Specify function to call when keys are pressed. */
+	glfwSetKeyCallback(kuhl_get_window(), keyboard);
+	// glfwSetFramebufferSizeCallback(window, reshape);
 	
 	/* Initialize DGR */
 	dgr_init();     /* Initialize DGR based on environment variables. */
@@ -579,6 +578,14 @@ int main( int argc, char* argv[] )
 	kuhl_read_texture_file(CLOUDS, &texIdClouds);
 	kuhl_read_texture_file(STARS, &texIdStars);
 
-	glutMainLoop();
-	
+	while(!glfwWindowShouldClose(kuhl_get_window()))
+	{
+		display();
+		kuhl_errorcheck();
+
+		/* process events (keyboard, mouse, etc) */
+		glfwPollEvents();
+	}
+	dgr_exit();
+	exit(EXIT_SUCCESS);
 }

@@ -80,7 +80,7 @@ static int viewports_size = 0; /**< Number of viewports in viewports array */
 static const char *viewmat_vrpn_obj = NULL; /**< Name of the VRPN object that we are tracking */
 static OrientSensorState viewmat_orientsense;
 
-static int viewmat_swapinterval = 0;
+static int viewmat_swapinterval = 1;
 
 
 
