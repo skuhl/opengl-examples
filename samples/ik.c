@@ -12,17 +12,14 @@
 #include <stdio.h>
 #include <math.h>
 #include <GL/glew.h>
-#ifdef FREEGLUT
-#include <GL/freeglut.h>
-#else
-#include <GLUT/glut.h>
-#endif
+#include <GLFW/glfw3.h>
 
 #include "kuhl-util.h"
 #include "vecmat.h"
 #include "dgr.h"
 #include "projmat.h"
 #include "viewmat.h"
+GLuint program = 0; /**< id value for the GLSL program */
 
 static kuhl_fps_state fps_state;
 GLuint fpsLabel = 0;
@@ -30,7 +27,6 @@ float fpsLabelAspectRatio = 0;
 kuhl_geometry labelQuad;
 int renderStyle = 0;
 
-GLuint program = 0; // id value for the GLSL program
 kuhl_geometry *modelgeom = NULL;
 float bbox[6];
 
@@ -54,30 +50,33 @@ float angles[] = { 10, 15, 20,  // arm 1
 int anglesCount = 6;
 float target[4] = { 0, 4, 0, 1};
 
-/** Called by GLUT whenever a key is pressed. */
-void keyboard(unsigned char key, int x, int y)
+/* Called by GLFW whenever a key is pressed. */
+void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	if(action != GLFW_PRESS)
+		return;
+	
 	switch(key)
 	{
-		case 'q':
-		case 'Q':
-		case 27: // ASCII code for Escape key
-			dgr_exit();
-			exit(EXIT_SUCCESS);
+		case GLFW_KEY_Q:
+		case GLFW_KEY_ESCAPE:
+			glfwSetWindowShouldClose(window, GL_TRUE);
 			break;
+#if 0
 		case 'f': // full screen
 			glutFullScreen();
 			break;
 		case 'F': // switch to window from full screen mode
 			glutPositionWindow(0,0);
 			break;
-		case 'a': target[0]+=.05; break;
-		case 'A': target[0]-=.05; break;
-		case 's': target[1]+=.05; break;
-		case 'S': target[1]-=.05; break;
-		case 'd': target[2]+=.05; break;
-		case 'D': target[2]-=.05; break;
-		case 'r':
+#endif
+		case GLFW_KEY_A: target[0]+=.05; break;
+		case GLFW_KEY_D: target[0]-=.05; break;
+		case GLFW_KEY_W: target[1]+=.05; break;
+		case GLFW_KEY_S: target[1]-=.05; break;
+		case GLFW_KEY_X: target[2]+=.05; break;
+		case GLFW_KEY_Z: target[2]-=.05; break;
+		case GLFW_KEY_R:
 		{
 			// Reload GLSL program from disk
 			kuhl_delete_program(program);
@@ -89,29 +88,7 @@ void keyboard(unsigned char key, int x, int y)
 
 			break;
 		}
-		case 'w':
-		{
-			// Toggle between wireframe and solid
-			int polygonMode;
-			glGetIntegerv(GL_POLYGON_MODE, &polygonMode);
-			if(polygonMode == GL_LINE)
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			else
-				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			break;
-		}
-		case 'p':
-		{
-			// Toggle between points and solid
-			int polygonMode;
-			glGetIntegerv(GL_POLYGON_MODE, &polygonMode);
-			if(polygonMode == GL_POINT)
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			else
-				glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-			break;
-		}
-		case 'c':
+		case GLFW_KEY_C:
 		{
 			// Toggle front, back, and no culling
 			int cullMode;
@@ -138,58 +115,8 @@ void keyboard(unsigned char key, int x, int y)
 			kuhl_errorcheck();
 			break;
 		}
-		case '+': // increase size of points and width of lines
-		{
-			GLfloat currentPtSize;
-			GLfloat sizeRange[2];
-			glGetFloatv(GL_POINT_SIZE, &currentPtSize);
-			glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, sizeRange);
-			GLfloat temp = currentPtSize+1;
-			if(temp > sizeRange[1])
-				temp = sizeRange[1];
-			glPointSize(temp);
-			printf("Point size is %f (can be between %f and %f)\n", temp, sizeRange[0], sizeRange[1]);
-			kuhl_errorcheck();
-
-			GLfloat currentLineWidth;
-			GLfloat widthRange[2];
-			glGetFloatv(GL_LINE_WIDTH, &currentLineWidth);
-			glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, widthRange);
-			temp = currentLineWidth+1;
-			if(temp > widthRange[1])
-				temp = widthRange[1];
-			glLineWidth(temp);
-			printf("Line width is %f (can be between %f and %f)\n", temp, widthRange[0], widthRange[1]);
-			kuhl_errorcheck();
-			break;
-		}
-		case '-': // decrease size of points and width of lines
-		{
-			GLfloat currentPtSize;
-			GLfloat sizeRange[2];
-			glGetFloatv(GL_POINT_SIZE, &currentPtSize);
-			glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, sizeRange);
-			GLfloat temp = currentPtSize-1;
-			if(temp < sizeRange[0])
-				temp = sizeRange[0];
-			glPointSize(temp);
-			printf("Point size is %f (can be between %f and %f)\n", temp, sizeRange[0], sizeRange[1]);
-			kuhl_errorcheck();
-
-			GLfloat currentLineWidth;
-			GLfloat widthRange[2];
-			glGetFloatv(GL_LINE_WIDTH, &currentLineWidth);
-			glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, widthRange);
-			temp = currentLineWidth-1;
-			if(temp < widthRange[0])
-				temp = widthRange[0];
-			glLineWidth(temp);
-			printf("Line width is %f (can be between %f and %f)\n", temp, widthRange[0], widthRange[1]);
-			kuhl_errorcheck();
-			break;
-		}
 		
-		case ' ': // Toggle different sections of the GLSL fragment shader
+		case GLFW_KEY_SPACE: // Toggle different sections of the GLSL fragment shader
 			renderStyle++;
 			if(renderStyle > 9)
 				renderStyle = 0;
@@ -208,13 +135,10 @@ void keyboard(unsigned char key, int x, int y)
 			}
 			break;
 	}
-
-	/* Whenever any key is pressed, request that display() get
-	 * called. */ 
-	glutPostRedisplay();
 }
 
 
+/** Gets a model matrix which is appropriate for the model that we have loaded. */
 void get_model_matrix(float result[16])
 {
 	mat4f_identity(result);
@@ -440,7 +364,7 @@ void effector_target(float target[4])
 
 
 
-/* Called by GLUT whenever the window needs to be redrawn. This
+/** Called by GLUT whenever the window needs to be redrawn. This
  * function should not be called directly by the programmer. Instead,
  * we can call glutPostRedisplay() to request that GLUT call display()
  * at some point. */
@@ -452,10 +376,10 @@ void display()
 
 	/* Get current frames per second calculations. */
 	float fps = kuhl_getfps(&fps_state);
-
+	
 	if(dgr_is_enabled() == 0 || dgr_is_master())
 	{
-		// If DGR is being used, only display dgr counter if we are
+		// If DGR is being used, only display FPS info if we are
 		// the master process.
 
 		// Check if FPS value was just updated by kuhl_getfps()
@@ -471,6 +395,7 @@ void display()
 			/* Make a new label */
 			float labelColor[3] = { 1,1,1 };
 			float labelBg[4] = { 0,0,0,.3 };
+
 			/* Change the last parameter (point size) to adjust the
 			 * size of the texture that the text is rendered in to. */
 			fpsLabelAspectRatio = kuhl_make_label(label,
@@ -490,7 +415,7 @@ void display()
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will
 	 * run twice for HMDs (once for the left eye and once for the
-	 * right. */
+	 * right). */
 	viewmat_begin_frame();
 	for(int viewportID=0; viewportID<viewmat_num_viewports(); viewportID++)
 	{
@@ -499,11 +424,12 @@ void display()
 		/* Where is the viewport that we are drawing onto and what is its size? */
 		int viewport[4]; // x,y of lower left corner, width, height
 		viewmat_get_viewport(viewport, viewportID);
+		/* Tell OpenGL the area of the window that we will be drawing in. */
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
 		/* Clear the current viewport. Without glScissor(), glClear()
 		 * clears the entire screen. We could call glClear() before
-		 * this viewport loop---but on order for all variations of
+		 * this viewport loop---but in order for all variations of
 		 * this code to work (Oculus support, etc), we can only draw
 		 * after viewmat_begin_eye(). */
 		glScissor(viewport[0], viewport[1], viewport[2], viewport[3]);
@@ -524,7 +450,6 @@ void display()
 		/* Get the view or camera matrix; update the frustum values if needed. */
 		float viewMat[16], perspective[16];
 		viewmat_get(viewMat, perspective, viewportID);
-
 
 		glUseProgram(program);
 
@@ -608,25 +533,19 @@ void display()
 
 	} // finish viewport loop
 	viewmat_end_frame();
-	
+
 	/* Update the model for the next frame based on the time. We
 	 * convert the time to seconds and then use mod to cause the
 	 * animation to repeat. */
-	int time = glutGet(GLUT_ELAPSED_TIME);
-	dgr_setget("time", &time, sizeof(int));
-	kuhl_update_model(modelgeom, 0, ((time%10000)/1000.0));
+	double time = glfwGetTime();
+	dgr_setget("time", &time, sizeof(double));
+	kuhl_update_model(modelgeom, 0, fmod(time,10));
 
 	/* Check for errors. If there are errors, consider adding more
 	 * calls to kuhl_errorcheck() in your code. */
 	kuhl_errorcheck();
 
 	//kuhl_video_record("videoout", 30);
-	
-	/* Ask GLUT to call display() again. We shouldn't call display()
-	 * ourselves recursively because it will not leave time for GLUT
-	 * to call other callback functions for when a key is pressed, the
-	 * window is resized, etc. */
-	glutPostRedisplay();
 }
 
 /* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
@@ -665,19 +584,17 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 	kuhl_errorcheck();
 }
 
-
 int main(int argc, char** argv)
 {
 	/* Initialize GLFW and GLEW */
-	kuhl_ogl_init(&argc, argv, 512, 512, 32,
-	              GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE, 4);
+	kuhl_ogl_init(&argc, argv, 512, 512, 32, 4);
 
 	char *modelFilename    = "../models/cube/cube.obj";
 	char *modelTexturePath = NULL;
 
-	// setup callbacks
-	glutDisplayFunc(display);
-	glutKeyboardFunc(keyboard);
+	/* Specify function to call when keys are pressed. */
+	glfwSetKeyCallback(kuhl_get_window(), keyboard);
+	// glfwSetFramebufferSizeCallback(window, reshape);
 
 	/* Compile and link a GLSL program composed of a vertex shader and
 	 * a fragment shader. */
@@ -706,13 +623,14 @@ int main(int argc, char** argv)
 
 	kuhl_getfps_init(&fps_state);
 	
-	/* Tell GLUT to start running the main loop and to call display(),
-	 * keyboard(), etc callback methods as needed. */
-	glutMainLoop();
-	/* // An alternative approach:
-	   while(1)
-	   glutMainLoopEvent();
-	*/
+	while(!glfwWindowShouldClose(kuhl_get_window()))
+	{
+		display();
+		kuhl_errorcheck();
 
+		/* process events (keyboard, mouse, etc) */
+		glfwPollEvents();
+	}
+	dgr_exit();
 	exit(EXIT_SUCCESS);
 }

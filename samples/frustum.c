@@ -13,11 +13,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <GL/glew.h>
-#ifdef FREEGLUT
-#include <GL/freeglut.h>
-#else
-#include <GLUT/glut.h>
-#endif
+#include <GLFW/glfw3.h>
 
 #include "kuhl-util.h"
 #include "vecmat.h"
@@ -34,46 +30,43 @@ const float screen[6] = { -2, 2, 0, 4, -1, -100 };
 
 kuhl_geometry *modelgeom = NULL;
 
-/** Called by GLUT whenever a key is pressed. */
-void keyboard(unsigned char key, int x, int y)
+/* Called by GLFW whenever a key is pressed. */
+void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	if(action != GLFW_PRESS)
+		return;
+	
 	switch(key)
 	{
-		case 'q':
-		case 'Q':
-		case 27: // ASCII code for Escape key
-			dgr_exit();
-			exit(EXIT_SUCCESS);
+		case GLFW_KEY_Q:
+		case GLFW_KEY_ESCAPE:
+			glfwSetWindowShouldClose(window, GL_TRUE);
 			break;
 
-		case 'a': // left
+		case GLFW_KEY_A: // left
 			camPos[0] -= .2;
 			break;
-		case 'd': // right
+		case GLFW_KEY_D: // right
 			camPos[0] += .2;
 			break;
-		case 'w': // up
+		case GLFW_KEY_W: // up
 			camPos[1] += .2;
 			break;
-		case 's': // down
+		case GLFW_KEY_S: // down
 			camPos[1] -= .2;
 			break;
-		case 'z': // toward screen
+		case GLFW_KEY_Z: // toward screen
 			camPos[2] -= .2;
 			if(screen[4]-camPos[2] > -.2)
 				camPos[2] = .2+screen[4];
 			break;
-		case 'x': // away from screen
+		case GLFW_KEY_X: // away from screen
 			camPos[2] += .2;
 			break;
 	}
 	printf("camera position: ");
 	vec3f_print(camPos);
 
-	
-	/* Whenever any key is pressed, request that display() get
-	 * called. */ 
-	glutPostRedisplay();
 }
 
 /** Called by GLUT whenever the window needs to be redrawn. This
@@ -127,15 +120,6 @@ void display()
 		                  screen[2]-camPos[1], screen[3]-camPos[1], // bottom, top
 		                  screen[4]-camPos[2], screen[5]-camPos[2]); // near, far
 
-		
-		/* Calculate an angle to rotate the
-		 * object. glutGet(GLUT_ELAPSED_TIME) is the number of
-		 * milliseconds since glutInit() was called. */
-		int count = glutGet(GLUT_ELAPSED_TIME) % 10000; // get a counter that repeats every 10 seconds
-		float angle = count / 10000.0 * 360; // rotate 360 degrees every 10 seconds
-		/* Make sure all computers/processes use the same angle */
-		dgr_setget("angle", &angle, sizeof(GLfloat));
-
 		/* Combine the scale and rotation matrices into a single model matrix.
 		   modelMat = scaleMat * rotateMat
 		*/
@@ -179,23 +163,17 @@ void display()
 	 * calls to kuhl_errorcheck() in your code. */
 	kuhl_errorcheck();
 
-	/* Ask GLUT to call display() again. We shouldn't call display()
-	 * ourselves recursively because it will not leave time for GLUT
-	 * to call other callback functions for when a key is pressed, the
-	 * window is resized, etc. */
-	glutPostRedisplay();
 }
 
 
 int main(int argc, char** argv)
 {
 	/* Initialize GLFW and GLEW */
-	kuhl_ogl_init(&argc, argv, 512, 512, 32,
-	              GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE, 4);
+	kuhl_ogl_init(&argc, argv, 512, 512, 32, 4);
 
-	// setup callbacks
-	glutDisplayFunc(display);
-	glutKeyboardFunc(keyboard);
+	/* Specify function to call when keys are pressed. */
+	glfwSetKeyCallback(kuhl_get_window(), keyboard);
+	// glfwSetFramebufferSizeCallback(window, reshape);
 
 	/* Compile and link a GLSL program composed of a vertex shader and
 	 * a fragment shader. */
@@ -216,13 +194,14 @@ int main(int argc, char** argv)
 	//projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
 	//viewmat_init(camPos, camLook, camUp);
 	
-	/* Tell GLUT to start running the main loop and to call display(),
-	 * keyboard(), etc callback methods as needed. */
-	glutMainLoop();
-    /* // An alternative approach:
-    while(1)
-       glutMainLoopEvent();
-    */
+	while(!glfwWindowShouldClose(kuhl_get_window()))
+	{
+		display();
+		kuhl_errorcheck();
 
+		/* process events (keyboard, mouse, etc) */
+		glfwPollEvents();
+	}
+	dgr_exit();
 	exit(EXIT_SUCCESS);
 }
