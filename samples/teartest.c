@@ -86,7 +86,7 @@ void display()
 
 	float fps = kuhl_getfps(&fps_state);
 	if(fps_state.frame == 0)
-		printf("FPS: %.1f\n", fps);
+		msg(MSG_INFO, "FPS: %.1f\n", fps);
 
 	toggle++;
 	if(toggle > 1)
