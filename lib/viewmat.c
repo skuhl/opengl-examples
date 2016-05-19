@@ -7,6 +7,7 @@
  * @author Scott Kuhl
  */
 
+#include <unistd.h> // usleep()
 #include <stdlib.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -79,7 +80,7 @@ static int viewports_size = 0; /**< Number of viewports in viewports array */
 static const char *viewmat_vrpn_obj = NULL; /**< Name of the VRPN object that we are tracking */
 static OrientSensorState viewmat_orientsense;
 
-
+static int viewmat_swapinterval = 0;
 
 
 
@@ -209,6 +210,202 @@ void viewmat_begin_frame(void)
 #endif
 }
 
+/** Guesses or esimates the refresh rate of the monitor that is
+ * displaying our graphics. */
+int viewmat_get_refresh_rate(void)
+{
+	GLFWwindow *window = kuhl_get_window();
+
+	/* If we are full screen, we can get the monitor we are on and get
+	 * the refresh rate. */
+	GLFWmonitor *monitor = glfwGetWindowMonitor(window);
+	if(monitor != NULL) // monitor will be null if we are using a windowed mode window.
+	{
+		const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+		if(mode != NULL)
+			return mode->refreshRate;
+	}
+
+	/* We get here if we aren't full screen. */
+
+	/* If there is only one monitor, we can figure out the refresh rate */
+	int numMonitors = 0;
+	GLFWmonitor** monitorList = glfwGetMonitors(&numMonitors);
+	if(numMonitors == 1)
+	{
+		const GLFWvidmode *mode = glfwGetVideoMode(monitorList[0]);
+		if(mode != NULL)
+			return mode->refreshRate;
+	}
+
+	/* If there are multiple monitors using the same refresh rate, we
+	 * can figure out the refresh rate. */
+	const GLFWvidmode *mode = glfwGetVideoMode(monitorList[0]); // not checking for error.
+	int firstRefresh = mode->refreshRate;
+	int allSame = 1;
+	for(int i=0; i<numMonitors; i++)
+	{
+		mode = glfwGetVideoMode(monitorList[i]); // not checking for error.
+		// Allow for 59.9 to be the same as 60.
+		if(abs(firstRefresh - mode->refreshRate) > 1)
+			allSame = 0;
+	}
+	if(allSame)
+		return firstRefresh;
+
+
+	/* If we can't figure the refresh rate out, assume it is the same
+	 * as the primary monitor. */
+	monitor = glfwGetPrimaryMonitor();
+	if(monitor == NULL)
+		return 60;
+	mode = glfwGetVideoMode(monitor);
+	if(mode == NULL)
+		return 60;
+	return mode->refreshRate;
+}
+	
+
+
+/** Swaps buffers. */
+void viewmat_swap_buffers(void)
+{
+	if(viewmat_swapinterval == 0) // if FPS is unrestricted.
+	{
+		glfwSwapBuffers(kuhl_get_window());
+		return;
+	}
+	
+	static long count = 0;
+	if(count < 100)
+		count++;
+	static float avgRenderingLastFrame = -1;
+	static float avgWaitingForVsync = -1;
+	static long postswap_prev = -1;
+	static long postsleep_prev = -1;
+
+	// 1 / (frames/second) * 1000000 microseconds/second = microseconds/frame
+	static int vsyncTime = -1; // microseconds/frame
+	if(vsyncTime == -1)
+	{
+		int refreshRate = viewmat_get_refresh_rate();
+		vsyncTime = 1.0/refreshRate * 1000000;
+		msg(MSG_WARNING, "Latency reduction is turned on; assuming monitor is %dHz and we have %d microseconds/frame\n", refreshRate, vsyncTime);
+	}
+
+	GLFWwindow *window = kuhl_get_window();
+	long preswap = kuhl_microseconds();
+	glfwSwapBuffers(window);
+	long postswap = kuhl_microseconds();
+	int timeWaitingForVsync = postswap - preswap;
+
+	if(count < 10) // initialize averages, skip first few frames.
+	{
+		if(count > 2)
+			avgRenderingLastFrame = preswap - postsleep_prev;
+		
+		avgWaitingForVsync = timeWaitingForVsync;
+		postswap_prev = postswap;
+		postsleep_prev = postswap; // we aren't sleeping.
+		return;
+	}
+
+	/* Figure out if we missed a frame */
+	int missedFrame = 0;
+	if(postswap_prev+(((long)vsyncTime)*3)/2 < postswap)
+	{
+		if(count > 60)
+		{
+			msg(MSG_INFO, "Missed at least one frame");
+			//msg(MSG_WARNING, "Displayed previous frame at  %ld", postswap_prev);
+			//msg(MSG_WARNING, "Displayed this frame at      %ld", postswap);
+			//msg(MSG_WARNING, "Expected this frame before   %ld", postswap_prev+(((long)vsyncTime)*3)/2);
+		}
+		missedFrame = 1;
+	}
+	
+	// Update average waiting for vsync time (except if we missed a
+	// frame; missed frames would artificially inflate our average)
+	if(missedFrame == 0)
+		avgWaitingForVsync    = .9 * avgWaitingForVsync    + .1 * timeWaitingForVsync;
+
+	int timeRenderingLastFrame = preswap - postsleep_prev;
+	avgRenderingLastFrame = .9 * avgRenderingLastFrame + .1 * timeRenderingLastFrame;
+
+	if(count < 60) // collected enough data so our averages are reasonable.
+	{
+		postswap_prev = postswap;
+		postsleep_prev = postswap; // we aren't sleeping.
+		return;
+	}
+
+
+	//msg(MSG_DEBUG, "Timing:   render=%7d waitingForVsync=%7d",
+	//   timeRenderingLastFrame, timeWaitingForVsync);
+	//msg(MSG_DEBUG, "Avg time: render=%7.0f waitingForVsync=%7.0f", avgRenderingLastFrame, avgWaitingForVsync);
+
+	/* Calculate a conservative estimate for how long it will take to
+	 * render next frame. */
+	int renderingTimeMax = timeRenderingLastFrame;
+	if(renderingTimeMax < avgRenderingLastFrame)
+		renderingTimeMax = avgRenderingLastFrame;
+	if(renderingTimeMax < 0)
+	{
+		msg(MSG_WARNING, "We calculated a negative rendering time. This shouldn't happen.");
+		renderingTimeMax = 0;
+	}
+
+	const float goal = 1000; // ideal amount of time to wait for vsync
+	static float adjustment = -goal*10; // adjust sleep so we don't sleep or sleep very little initially
+
+	// Calculate ideal adjustment that would have made us reach goal
+	// this frame. This value represents how much we should *change* the
+	// current adjustment!
+	float avgIdealAdjust = avgWaitingForVsync - goal;
+	//msg(MSG_DEBUG, "avgIdealAdjust %f = %f - %f\n", avgIdealAdjust, avgWaitingForVsync, goal);
+
+	// Update our adjustment factor---but don't trust our ideal
+	// adjustment factor completely.
+	adjustment = .7*(adjustment+avgIdealAdjust) + .3*adjustment;
+
+	// 'adjustment' should be a negative value below '-goal'. For
+	// example, if adjustment is 0, then we aren't actually reserving
+	// 'goal' microseconds for the vsync to sleep.
+	if(adjustment > -goal)
+		adjustment = -goal;
+	/* 'adjustment' shouldn't try to subtract out more time than we
+	   have between frames. */
+	if(adjustment < -vsyncTime)
+		adjustment = -vsyncTime;
+		
+	// Sleep less if we just missed a frame.
+	if(missedFrame)
+		adjustment -= goal;
+
+	int sleepTime = vsyncTime - renderingTimeMax + adjustment;
+	if(sleepTime > vsyncTime)
+	{
+		msg(MSG_WARNING, "We would sleep longer than the vsync time? This shouldn't happen.\n");
+		sleepTime = 0;
+		adjustment = -goal;
+	}
+	
+	//msg(MSG_DEBUG, "Sleeping for %d = %d - %d + %0.0f\n", sleepTime, vsyncTime, renderingTimeMax, adjustment);
+	
+	if(sleepTime < 0)
+	{
+		msg(MSG_DEBUG, "Skipping sleep");
+		postsleep_prev = postswap;
+		postswap_prev = postswap;
+		return;
+	}
+	
+	usleep(sleepTime);
+	postsleep_prev = kuhl_microseconds();
+	postswap_prev = postswap;
+	return;
+}
+
 /** Should be called when we have completed rendering a frame. For
  * HMDs, this should be called after both the left and right eyes have
  * been rendered. */
@@ -252,28 +449,11 @@ void viewmat_end_frame(void)
 	 * Oculus. (Oculus draws to the screen directly). */
 	if(viewmat_display_mode != VIEWMAT_OCULUS)
 	{
-		const int timing_debug = 0;
-		long t0,t1,t2,t3;
-		if(timing_debug)
-		{
-			t0 = kuhl_microseconds();
-			glFlush();
-			t1 = kuhl_microseconds();
-			msg(MSG_DEBUG, "microseconds to flush: %ld", t1-t0);
-			glFinish();
-			t2=kuhl_microseconds();
-			msg(MSG_DEBUG, "microseconds to finish %ld", t2-t1);
-		}
-		glfwSwapBuffers(kuhl_get_window());
-		if(timing_debug)
-		{
-			t3 = kuhl_microseconds();
-			msg(MSG_DEBUG, "microseconds to swap: %ld", t3-t2);
-		}
+		viewmat_swap_buffers();
 	}
 
 
-	viewmat_validate_fps();
+	//viewmat_validate_fps();
 }
 
 
@@ -725,6 +905,7 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 		// https://www.opengl.org/registry/specs/EXT/wgl_swap_control_tear.txt
 		glfwSwapInterval(-1); /* Sync to monitor refresh, but allow
 		                       * tearing if we fall beind. */
+		viewmat_swapinterval = -1;
 	}
 	else
 	{
@@ -733,9 +914,14 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 		                        let framerate go above the monitor
 		                        refresh rate. May not work on all
 		                        machines. */
+		viewmat_swapinterval = 1;
 	}
 
-	// glfwSwapInterval(0); // Let FPS go as fast as possible, let tearing (potentially) happen.
+	if(0) // Change to 1 to let FPS go as fast as possible.
+	{
+		glfwSwapInterval(0); 
+		viewmat_swapinterval =0;
+	}
 	
 	const char* controlModeString = getenv("VIEWMAT_CONTROL_MODE");
 
