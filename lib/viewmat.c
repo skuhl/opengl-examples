@@ -134,6 +134,14 @@ void viewmat_window_size(int *width, int *height)
 	*height = savedHeight;
 }
 
+/** Returns the aspect ratio of the current GLFW window. */
+float viewmat_window_aspect_ratio(void)
+{
+	int w,h;
+	viewmat_window_size(&w, &h);
+	return w/(float)h;
+}
+
 
 /** Checks if the viewportID is an appropriate value. Exits if it is
  * invalid.
@@ -264,7 +272,43 @@ int viewmat_get_refresh_rate(void)
 		return 60;
 	return mode->refreshRate;
 }
+
+
+/** Call once per frame to update the 'fps' variable. */
+static float fps = 0;
+static void viewmat_stats_fps(void)
+{
+#define FPS_SAMPLES 20
+	static long list[FPS_SAMPLES];
+	static int index = 0;         // where next value should be stored
+	static int listfull = 0;      // have we filled up the array?
+
+	long now = kuhl_microseconds();
+
+	if(listfull)
+	{
+		long oldest = list[index]; // the item we are going to overwrite is the oldest one in the list.
+		long change = now-oldest;  // time to render FPS_SAMPLES frames in microseconds
+		float usecPerFrame = (float) change/FPS_SAMPLES;
+		float secPerFrame = usecPerFrame / 1000000.0f;
+		fps = 1.0f/secPerFrame;
+	}
+
+	list[index] = now;
 	
+	index = (index+1) % FPS_SAMPLES; // increment index, wrap around
+	if(index == 0)
+		listfull = 1;
+	
+#undef FPS_SAMPLES
+}
+
+/** Retrieve the current FPS. This will work if you call
+    viewmat_end_frame() to swap the buffers at the end of every frame. */
+float viewmat_fps(void)
+{
+	return fps;
+}
 
 
 /** Swaps buffers. */
@@ -273,6 +317,7 @@ void viewmat_swap_buffers(void)
 	if(viewmat_swapinterval == 0) // if FPS is unrestricted.
 	{
 		glfwSwapBuffers(kuhl_get_window());
+		viewmat_stats_fps();
 		return;
 	}
 	
@@ -297,6 +342,7 @@ void viewmat_swap_buffers(void)
 	long preswap = kuhl_microseconds();
 	glfwSwapBuffers(window);
 	long postswap = kuhl_microseconds();
+	viewmat_stats_fps();
 	int timeWaitingForVsync = postswap - preswap;
 
 	if(count < 10) // initialize averages, skip first few frames.
