@@ -115,6 +115,41 @@ void kuhl_ogl_init(int *argcp, char **argv, int width, int height, int oglProfil
 		exit(EXIT_FAILURE);
 	}
 
+	int commandLen = 0;
+	for(int i=0; i<*argcp; i++)
+		commandLen = commandLen + strlen(argv[i]) + 1;
+	commandLen += 1024; // extra
+	char *command = malloc(commandLen);
+	command[0] = '\0';
+	for(int i=0; i<*argcp; i++)
+	{
+		strcat(command, argv[i]);
+		strcat(command, " ");
+	}
+	msg(MSG_DEBUG, "Parameters: %s", command);
+	free(command);
+
+	char hostname[1024];
+	gethostname(hostname, 1024);
+	hostname[1023] = '\0';
+	msg(MSG_DEBUG, "Hostname: %s\n", hostname);
+
+	time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+	msg(MSG_DEBUG, "Date/time: %d-%d-%d %d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+	msg(MSG_DEBUG, "GLFW version: %s\n", glfwGetVersionString());
+#ifdef KUHL_UTIL_USE_ASSIMP
+	msg(MSG_DEBUG, "ASSIMP version: %d.%d.%d\n", aiGetVersionMajor(), aiGetVersionMinor(), aiGetVersionRevision());
+#else
+	msg(MSG_DEBUG, "ASSIMP support is missing.\n");
+#endif
+#ifdef KUHL_UTIL_USE_IMAGEMAGICK
+	msg(MSG_DEBUG, "ImageMagick version: %s\n", MagickLibVersionText);
+#else
+	msg(MSG_DEBUG, "ImageMagick support is missing\n", MagickLibVersionText);
+#endif
+
 	/* Print information about the available monitors. */
 	int numMonitors = 0;
 	GLFWmonitor** monitorList = glfwGetMonitors(&numMonitors);
