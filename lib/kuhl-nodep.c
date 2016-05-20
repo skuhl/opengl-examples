@@ -392,7 +392,7 @@ void kuhl_limitfps(int fps)
 }
 
 /** Returns the current time in microseconds. 1 second = 1,000,000 microseconds. 1 millisecond = 1000 microseconds */
-long kuhl_microseconds()
+long kuhl_microseconds(void)
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
@@ -400,8 +400,10 @@ long kuhl_microseconds()
 	return us;
 }
 
+/** Returns the number of milliseconds since the first time this
+ * function was called. */
 static long kuhl_microseconds_start_time = -1;
-long kuhl_microseconds_start()
+long kuhl_microseconds_start(void)
 {
 	if(kuhl_microseconds_start_time == -1)
 		kuhl_microseconds_start_time = kuhl_microseconds();
@@ -411,7 +413,7 @@ long kuhl_microseconds_start()
 
 /** Returns the current time in milliseconds. 1 second = 1000
  * milliseconds */
-long kuhl_milliseconds()
+long kuhl_milliseconds(void)
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
@@ -422,7 +424,7 @@ long kuhl_milliseconds()
 /** Returns the number of milliseconds since the first time this
  * function was called. */
 static long kuhl_milliseconds_start_time = -1;
-long kuhl_milliseconds_start()
+long kuhl_milliseconds_start(void)
 {
 	if(kuhl_milliseconds_start_time == -1)
 		kuhl_milliseconds_start_time = kuhl_milliseconds();
@@ -475,7 +477,8 @@ float kuhl_getfps(kuhl_fps_state *state)
 	return state->fps;
 }
 
-static int kuhl_random_init_done = 0; /*< Have we called srand48() yet? */
+
+
 /** Generates a random integer between min and max inclusive. This
  * uses floating point to avoid possible issues with using rand()
  * along with modulo. This approach isn't completely bias free since
@@ -488,6 +491,8 @@ static int kuhl_random_init_done = 0; /*< Have we called srand48() yet? */
  */
 int kuhl_randomInt(int min, int max)
 {
+	static int kuhl_random_init_done = 0; /*< Have we called srand48() yet? */
+
 	if(kuhl_random_init_done == 0)
 	{
 		// http://stackoverflow.com/questions/8056371
@@ -573,7 +578,7 @@ char* kuhl_trim_whitespace(char *str)
    Source: http://c-faq.com/lib/gaussian.html
    Discussed in Knuth and described by Marsaglia
  */
-double kuhl_gauss()
+double kuhl_gauss(void)
 {
 	static double V2;
 	static double S;

@@ -51,12 +51,12 @@ void kuhl_limitfps(int fps);
 int kuhl_randomInt(int min, int max);
 void kuhl_shuffle(void *array, int n, int size);
 char* kuhl_trim_whitespace(char *str);
-double kuhl_gauss();
+double kuhl_gauss(void);
 
-long kuhl_microseconds();
-long kuhl_microseconds_start();
-long kuhl_milliseconds();
-long kuhl_milliseconds_start();
+long kuhl_microseconds(void);
+long kuhl_microseconds_start(void);
+long kuhl_milliseconds(void);
+long kuhl_milliseconds_start(void);
 void kuhl_getfps_init(kuhl_fps_state *state);
 float kuhl_getfps(kuhl_fps_state *state);
 
