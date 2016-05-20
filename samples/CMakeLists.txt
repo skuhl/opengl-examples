@@ -13,8 +13,7 @@ cmake_minimum_required(VERSION 2.6)
 # Programs that need ASSIMP
 set(NEED_ASSIMP viewer slerp explode flock frustum ik)
 # Programs that don't rely on ASSIMP
-#set(NEED_NOTHING    ogl2-slideshow )
-set(NEED_NOTHING triangle triangle-shade triangle-color texture glinfo teartest picker prerend panorama text ogl2-triangle ogl2-texture tracker-stats tracker-demo pong)
+set(NEED_NOTHING triangle triangle-shade triangle-color texture glinfo teartest picker prerend panorama text ogl2-triangle ogl2-texture tracker-stats tracker-demo pong ogl2-slideshow)
 
 
 # IMPORTANT: If ASSIMP is installed, NEED_NOTHING will link against
@@ -75,7 +74,7 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 
 	target_link_libraries(${arg} ${GLEW_LIBRARIES} ${GLFW_LIBRARIES} ${M_LIB} ${OPENGL_LIBRARIES} )
 	if(APPLE)
-		# Some Mac OSX machines need this to ensure that freeglut.h is found.
+		# Some Mac OSX machines need this to ensure that freetype.h is found.
 		target_include_directories(${arg} PUBLIC "/opt/X11/include/freetype2/")
 	endif()
 

@@ -21,11 +21,7 @@
 #endif
 
 #include <GL/glew.h>
-#ifdef FREEGLUT
-#include <GL/freeglut.h>
-#else
-#include <GLUT/glut.h>
-#endif
+#include <GLFW/glfw3.h>
 
 #include "kuhl-util.h"
 #include "dgr.h"
@@ -42,7 +38,7 @@
 #define MAX_TILES 100
 
 int autoAdvance = 0; // Automatically advance from image to image after a time out.
-int lastAdvance = 0; // Time (in ms from when our program started) that we advanced picture.
+double lastAdvance = 0; // Time (in ms from when our program started) that we advanced picture.
 float scrollAmount = 0; // How far has the image scrolled?
 
 /* The current image that we are displaying. */
@@ -216,7 +212,7 @@ void loadTexture(int textureIndex)
 
 	scrollAmount = 0;
 	aspectRatio = readfile(globalargv[textureIndex], texNames, &numTiles);
-	lastAdvance = glutGet(GLUT_ELAPSED_TIME);
+	lastAdvance = glfwGetTime();
 }
 
 void display(void)
@@ -229,15 +225,15 @@ void display(void)
 		dgr_update();
 	}
 
-	kuhl_limitfps(100);
-
 	if(dgr_is_enabled() && !dgr_is_master())
 	{
 		dgr_update();
 		dgr_setget("currentTex", &currentTexture, sizeof(int));
 		dgr_setget("scrollAmount", &scrollAmount, sizeof(float));
 	}
-	
+
+	kuhl_limitfps(100);
+
 	/* If the texture has changed since we were previously in display() */
 	if(alreadyDisplayedTexture != currentTexture)
 	{
@@ -286,7 +282,7 @@ void display(void)
 
 // TODO: Maybe just scale the image vertically if the image almost fits in the screen horizontally?
 
-	int msSincePictureDisplayed = glutGet(GLUT_ELAPSED_TIME)-lastAdvance;
+	double SecSincePictureDisplayed = glfwGetTime()-lastAdvance;
 	int scrollStatus = 0; // 0=don't need to scroll or done scrolling, 1=currently scrolling
 	if(masterFrustumWidth < quadWidth)// do we need to scroll on this image
 	{
@@ -298,8 +294,8 @@ void display(void)
 		{
 			// Wait a few seconds before scrolling. It takes a while
 			// for all slaves on IVS to get the images.
-			if(msSincePictureDisplayed > 5000)
-				scrollAmount = ((msSincePictureDisplayed-5000) / (SCROLL_SPEED*1000.0))*masterFrustumWidth;
+			if(SecSincePictureDisplayed > 5)
+				scrollAmount = ((SecSincePictureDisplayed-5) / SCROLL_SPEED)*masterFrustumWidth;
 			else
 				scrollAmount = 0;
 
@@ -308,13 +304,13 @@ void display(void)
 			if(scrollAmount > quadWidth-masterFrustumWidth)
 			{
 				// dwell at the end of the image even if autoadvance is on.
-				int now = glutGet(GLUT_ELAPSED_TIME);
+				double now = glfwGetTime();
 				// make sure we still have a few seconds before advancing
-				if(SLIDESHOW_WAIT*1000-(now-lastAdvance) < 3000)
+				if(SLIDESHOW_WAIT-(now-lastAdvance) < 3)
 				{
 					// Go back and set lastAdvance time so we have
 					// some time to dwell here.
-					lastAdvance = now-SLIDESHOW_WAIT*1000+3000;
+					lastAdvance = now-SLIDESHOW_WAIT+3;
 				}
 			}
 		}
@@ -326,7 +322,7 @@ void display(void)
 	if(autoAdvance == 1 && scrollStatus != 1)
 	{
 //		printf("time since last advance %d\n", glutGet(GLUT_ELAPSED_TIME)-lastAdvance);
-		if(glutGet(GLUT_ELAPSED_TIME)-lastAdvance > SLIDESHOW_WAIT*1000) // time to show new image:
+		if(glfwGetTime()-lastAdvance > SLIDESHOW_WAIT) // time to show new image:
 		{
 			msg(MSG_INFO, "Automatically advancing to next image, please wait.\n");
 			currentTexture = getNextTexture();
@@ -363,7 +359,8 @@ void display(void)
 	}
 
 	glDisable(GL_TEXTURE_2D);
-
+	
+#if 0
 	/* Draw filename label on top of a quad. */
 	glColor4f(0,0,0,.3);
 	glBegin(GL_QUADS);
@@ -379,23 +376,32 @@ void display(void)
 	char *str = globalargv[currentTexture];
 	for(GLuint i=0; i<strlen(str); i++)
 		glutBitmapCharacter(font, str[i]);
+#endif
 
 	/* Flush and swap the OpenGL buffers. */
-	glFlush();
-	glutSwapBuffers();
-	glutPostRedisplay();
+	glfwSwapBuffers(kuhl_get_window());
 }
 
 
 
 
-void keyboard(unsigned char key, int x, int y)
+/* Called by GLFW whenever a key is pressed. */
+void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	if(action != GLFW_PRESS)
+		return;
+	
 	// Ignore keys if DGR is enabled and we are not master
 	if(dgr_is_enabled() && !dgr_is_master())
 		return;
+
+	if (key == 27 || key == 'q')  // escape key, exit program
+	{
+		dgr_exit();
+		exit(EXIT_SUCCESS);
+	}
 	
-	if (key == 'n' || key == ' ')
+	if (key == 'n' || key == ' ' || key == GLFW_KEY_PAGE_DOWN)
 	{
 		msg(MSG_INFO, "Advancing to next image, please wait.\n");
 		
@@ -410,7 +416,7 @@ void keyboard(unsigned char key, int x, int y)
 		dgr_update();
 	}
 
-	if (key == 'b' || key == 'p' || key == 73) // back or previous - 73=pageup
+	if (key == 'b' || key == 'p' || key == GLFW_KEY_PAGE_UP) // back or previous
 	{
 		msg(MSG_INFO, "Advancing to previous image...please wait...\n");
 
@@ -425,11 +431,6 @@ void keyboard(unsigned char key, int x, int y)
 	}
 
 
-	if (key == 27 || key == 'q')  // escape key, exit program
-	{
-		dgr_exit();
-		exit(EXIT_SUCCESS);
-	}
 	if(key == 's')
 	{
 		if(autoAdvance == 1)
@@ -443,16 +444,8 @@ void keyboard(unsigned char key, int x, int y)
 			autoAdvance = 1;
 		}
 	}
-	glutPostRedisplay();
 }
 
-void special_keyboard(int key, int x, int y)
-{
-	if(key == GLUT_KEY_PAGE_DOWN)
-		keyboard('n', 0,0);
-	if(key == GLUT_KEY_PAGE_UP)
-		keyboard('p', 0,0);
-}
 
 int handle_directory(int argc, char** argv)
 {
@@ -535,28 +528,10 @@ int main(int argc, char** argv)
 		globalargv = &(argv[1]);
 	}
 
+	kuhl_ogl_init(&argc, argv, 1152, 432, 20, 4); // same aspect ratio as IVS
 
-	/* set up our GLUT window */
-	glutInit(&argc, argv);
-	glutInitWindowSize(1152, 432); // same aspect ratio as IVS
-	/* Ask GLUT to for a double buffered, full color window that
-	 * includes a depth buffer */
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	glutCreateWindow(argv[0]); // set window title to executable name
-
-	/* Initialize GLEW */
-	GLenum glewError = glewInit();
-	if(glewError != GLEW_OK)
-	{
-		msg(MSG_FATAL, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
-		exit(EXIT_FAILURE);
-	}
-	kuhl_errorcheck();
-
-	// setup callbacks
-	glutDisplayFunc(display);
-	glutKeyboardFunc(keyboard);
-	glutSpecialFunc(special_keyboard); // pageup,pagedown, etc
+	/* Specify function to call when keys are pressed. */
+	glfwSetKeyCallback(kuhl_get_window(), keyboard);
 
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
@@ -566,8 +541,14 @@ int main(int argc, char** argv)
 
 	loadTexture(currentTexture);
 
-	/* Tell GLUT to start running the main loop and to call display(),
-	 * keyboard(), etc callback methods as needed. */
-	glutMainLoop();
+	while(!glfwWindowShouldClose(kuhl_get_window()))
+	{
+		display();
+		kuhl_errorcheck();
+
+		/* process events (keyboard, mouse, etc) */
+		glfwPollEvents();
+	}
+	dgr_exit();
 	exit(EXIT_SUCCESS);
 }
