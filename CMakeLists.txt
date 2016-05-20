@@ -144,10 +144,13 @@ include_directories(${OPENGL_INCLUDE_DIRS})
 
 # --- GLFW3 ---
 #Use GLFW's recommended way to find GLFW---not using this approach!
+set(ENV{PKG_CONFIG_PATH} /local/kuhl-public-share/opengl/glfw/src)
+include_directories(/local/kuhl-public-share/opengl/glfw/include)
 find_package(PkgConfig REQUIRED)
 pkg_search_module(GLFW REQUIRED glfw3)
 include_directories(${GLFW_INCLUDE_DIRS})
 link_directories(${GLFW_LIBRARY_DIRS}) # os x
+link_directories(/local/kuhl-public-share/opengl/glfw/src) # rekhi lab
 
 
 # --- GLEW ---
