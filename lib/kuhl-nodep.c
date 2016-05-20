@@ -352,13 +352,8 @@ static struct timeval limitfps_last = { .tv_sec = 0, .tv_usec = 0 };
  * value. (2) Allows you to test to see how your program might run if
  * it were running on hardware with a lower frame rate.
  *
- * kuhl_limitfps() does not reduce tearing. Tearing can eliminated on
- * one monitor connected to a machine via various options in drivers
- * or with special calls to glXSwapIntervalEXT() (not implemented here
- * because I've had difficulty reliably getting it to work/compile),
- * setting options in your video card driver, or setting an
- * environment variable (on Linux machines with NVIDIA cards):
- * http://us.download.nvidia.com/XFree86/Linux-x86/180.22/README/chapter-11.html
+ * kuhl_limitfps() does not reduce tearing. Use glfwSwapInterval() to
+ * change how tearing is handled.
  *
  * @param fps Requested frames per second that we should not exceed.
  *
@@ -369,6 +364,13 @@ void kuhl_limitfps(int fps)
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 
+	if(limitfps_last.tv_usec == 0 && limitfps_last.tv_sec == 0)
+	{
+		limitfps_last.tv_usec = tv.tv_usec;
+		limitfps_last.tv_sec = tv.tv_sec;
+		return;
+	}
+	
 	// How many microseconds have elapsed since previous call to limitfps() was completed? */
 	suseconds_t elapsed_micro = (tv.tv_sec - limitfps_last.tv_sec)*1000000L + (tv.tv_usec - limitfps_last.tv_usec);
 	// printf("elapsed_micro %ld\n", elapsed_micro);
@@ -380,10 +382,7 @@ void kuhl_limitfps(int fps)
 	// How many microseconds do we have to kill? 
 	suseconds_t microsec_sleep = (suseconds_t)microspf - elapsed_micro;
 	if(microsec_sleep > 0)
-	{
-		// printf("sleeping %ld\n", microsec_sleep);
 		usleep(microsec_sleep);
-	}
 	else
 	{
 		// printf("Sleep not needed! We are %ld behind.\n", microsec_sleep);
