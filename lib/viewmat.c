@@ -355,24 +355,24 @@ void viewmat_swap_buffers(void)
 		renderingTimeMax = 0;
 	}
 
-	const float goal = 1000; // ideal amount of time to wait for vsync
-	static float adjustment = -goal*10; // adjust sleep so we don't sleep or sleep very little initially
+	#define VSYNC_BUFFER_GOAL 1000 // ideal amount of time to wait for vsync
+	static float adjustment = -VSYNC_BUFFER_GOAL*10; // adjust sleep so we don't sleep or sleep very little initially
 
 	// Calculate ideal adjustment that would have made us reach goal
 	// this frame. This value represents how much we should *change* the
 	// current adjustment!
-	float avgIdealAdjust = avgWaitingForVsync - goal;
+	float avgIdealAdjust = avgWaitingForVsync - VSYNC_BUFFER_GOAL;
 	//msg(MSG_DEBUG, "avgIdealAdjust %f = %f - %f\n", avgIdealAdjust, avgWaitingForVsync, goal);
 
 	// Update our adjustment factor---but don't trust our ideal
 	// adjustment factor completely.
 	adjustment = .7*(adjustment+avgIdealAdjust) + .3*adjustment;
 
-	// 'adjustment' should be a negative value below '-goal'. For
+	// 'adjustment' should be a negative value below '-VSYNC_BUFFER_GOAL'. For
 	// example, if adjustment is 0, then we aren't actually reserving
-	// 'goal' microseconds for the vsync to sleep.
-	if(adjustment > -goal)
-		adjustment = -goal;
+	// 'VSYNC_BUFFER_GOAL' microseconds for the vsync to sleep.
+	if(adjustment > -VSYNC_BUFFER_GOAL)
+		adjustment = -VSYNC_BUFFER_GOAL;
 	/* 'adjustment' shouldn't try to subtract out more time than we
 	   have between frames. */
 	if(adjustment < -vsyncTime)
@@ -380,14 +380,14 @@ void viewmat_swap_buffers(void)
 		
 	// Sleep less if we just missed a frame.
 	if(missedFrame)
-		adjustment -= goal;
+		adjustment -= VSYNC_BUFFER_GOAL;
 
 	int sleepTime = vsyncTime - renderingTimeMax + adjustment;
 	if(sleepTime > vsyncTime)
 	{
 		msg(MSG_WARNING, "We would sleep longer than the vsync time? This shouldn't happen.\n");
 		sleepTime = 0;
-		adjustment = -goal;
+		adjustment = -VSYNC_BUFFER_GOAL;
 	}
 	
 	//msg(MSG_DEBUG, "Sleeping for %d = %d - %d + %0.0f\n", sleepTime, vsyncTime, renderingTimeMax, adjustment);
