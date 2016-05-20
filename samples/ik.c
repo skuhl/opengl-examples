@@ -21,10 +21,6 @@
 #include "viewmat.h"
 GLuint program = 0; /**< id value for the GLSL program */
 
-static kuhl_fps_state fps_state;
-GLuint fpsLabel = 0;
-float fpsLabelAspectRatio = 0;
-kuhl_geometry labelQuad;
 int renderStyle = 0;
 
 kuhl_geometry *modelgeom = NULL;
@@ -83,57 +79,8 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			program = kuhl_create_program(GLSL_VERT_FILE, GLSL_FRAG_FILE);
 			/* Apply the program to the model geometry */
 			kuhl_geometry_program(modelgeom, program, KG_FULL_LIST);
-			/* and the fps label*/
-			kuhl_geometry_program(&labelQuad, program, KG_FULL_LIST);
-
 			break;
 		}
-		case GLFW_KEY_C:
-		{
-			// Toggle front, back, and no culling
-			int cullMode;
-			glGetIntegerv(GL_CULL_FACE_MODE, &cullMode);
-			if(glIsEnabled(GL_CULL_FACE))
-			{
-				if(cullMode == GL_FRONT)
-				{
-					glCullFace(GL_BACK);
-					printf("Culling: Culling back faces; drawing front faces\n");
-				}
-				else
-				{
-					glDisable(GL_CULL_FACE);
-					printf("Culling: No culling; drawing all faces.\n");
-				}
-			}
-			else
-			{
-				glEnable(GL_CULL_FACE);
-				glCullFace(GL_FRONT);
-				printf("Culling: Culling front faces; drawing back faces\n");
-			}
-			kuhl_errorcheck();
-			break;
-		}
-		
-		case GLFW_KEY_SPACE: // Toggle different sections of the GLSL fragment shader
-			renderStyle++;
-			if(renderStyle > 9)
-				renderStyle = 0;
-			switch(renderStyle)
-			{
-				case 0: printf("Render style: Diffuse (headlamp light)\n"); break;
-				case 1: printf("Render style: Texture (color is used on non-textured geometry)\n"); break;
-				case 2: printf("Render style: Texture+diffuse (color is used on non-textured geometry)\n"); break;
-				case 3: printf("Render style: Vertex color\n"); break;
-				case 4: printf("Render style: Vertex color + diffuse (headlamp light)\n"); break;
-				case 5: printf("Render style: Normals\n"); break;
-				case 6: printf("Render style: Texture coordinates\n"); break;
-				case 7: printf("Render style: Front (green) and back (red) faces based on winding\n"); break;
-				case 8: printf("Render style: Front (green) and back (red) based on normals\n"); break;
-				case 9: printf("Render style: Depth (white=far; black=close)\n"); break;
-			}
-			break;
 	}
 }
 
@@ -374,39 +321,6 @@ void display()
 	 * processes/computers synchronized. */
 	dgr_update();
 
-	/* Get current frames per second calculations. */
-	float fps = kuhl_getfps(&fps_state);
-	
-	if(dgr_is_enabled() == 0 || dgr_is_master())
-	{
-		// If DGR is being used, only display FPS info if we are
-		// the master process.
-
-		// Check if FPS value was just updated by kuhl_getfps()
-		if(fps_state.frame == 0)
-		{
-			char label[1024];
-			snprintf(label, 1024, "FPS: %0.1f", fps);
-
-			/* Delete old label if it exists */
-			if(fpsLabel != 0) 
-				glDeleteTextures(1, &fpsLabel);
-
-			/* Make a new label */
-			float labelColor[3] = { 1,1,1 };
-			float labelBg[4] = { 0,0,0,.3 };
-
-			/* Change the last parameter (point size) to adjust the
-			 * size of the texture that the text is rendered in to. */
-			fpsLabelAspectRatio = kuhl_make_label(label,
-			                                      &fpsLabel,
-			                                      labelColor, labelBg, 24);
-
-			if(fpsLabel != 0)
-				kuhl_geometry_texture(&labelQuad, fpsLabel, "tex", 1);
-		}
-	}
-	
 	/* Ensure the slaves use the same render style as the master
 	 * process. */
 	dgr_setget("style", &renderStyle, sizeof(int));
@@ -496,40 +410,12 @@ void display()
 		end_effector_loc(ealoc, arm2Mat);
 
 		
-		if((dgr_is_enabled() == 0 || dgr_is_master()) && fpsLabelAspectRatio > 0)
-		{
-			/* The shape of the frames per second quad depends on the
-			 * aspect ratio of the label texture and the aspect ratio of
-			 * the window (because we are placing the quad in normalized
-			 * device coordinates). */
-			int windowWidth, windowHeight;
-			viewmat_window_size(&windowWidth, &windowHeight);
-			float windowAspect = windowWidth / (float)windowHeight;
-			
-			float stretchLabel[16];
-			mat4f_scale_new(stretchLabel, 1/8.0 * fpsLabelAspectRatio / windowAspect, 1/8.0, 1);
-
-			/* Position label in the upper left corner of the screen */
-			float transLabel[16];
-			mat4f_translate_new(transLabel, -.9, .8, 0);
-			mat4f_mult_mat4f_new(modelview, transLabel, stretchLabel);
-			glUniformMatrix4fv(kuhl_get_uniform("ModelView"), 1, 0, modelview);
-
-			/* Make sure we don't use a projection matrix */
-			float identity[16];
-			mat4f_identity(identity);
-			glUniformMatrix4fv(kuhl_get_uniform("Projection"), 1, 0, identity);
-
-			/* Don't use depth testing and make sure we use the texture
-			 * rendering style */
-			glDisable(GL_DEPTH_TEST);
-			glUniform1i(kuhl_get_uniform("renderStyle"), 1);
-			kuhl_geometry_draw(&labelQuad); /* Draw the quad */
-			glEnable(GL_DEPTH_TEST);
-			kuhl_errorcheck();
-		}
-
 		glUseProgram(0); // stop using a GLSL program.
+
+		static int counter = 0;
+		counter++;
+		if(counter % 60 == 0)
+			msg(MSG_INFO, "FPS: %f\n", viewmat_fps());
 
 	} // finish viewport loop
 	viewmat_end_frame();
@@ -548,41 +434,6 @@ void display()
 	//kuhl_video_record("videoout", 30);
 }
 
-/* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
-void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
-{
-	kuhl_geometry_new(geom, prog,
-	                  4, // number of vertices
-	                  GL_TRIANGLES); // type of thing to draw
-
-	/* The data that we want to draw */
-	GLfloat vertexPositions[] = {0, 0, 0,
-	                             1, 0, 0,
-	                             1, 1, 0,
-	                             0, 1, 0 };
-	kuhl_geometry_attrib(geom, vertexPositions,
-	                     3, // number of components x,y,z
-	                     "in_Position", // GLSL variable
-	                     KG_WARN); // warn if attribute is missing in GLSL program?
-
-	GLfloat texcoord[] = {0, 0,
-	                      1, 0,
-	                      1, 1,
-	                      0, 1};
-	kuhl_geometry_attrib(geom, texcoord,
-	                     2, // number of components x,y,z
-	                     "in_TexCoord", // GLSL variable
-	                     KG_WARN); // warn if attribute is missing in GLSL program?
-
-
-	
-
-	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
-	                       0, 2, 3 }; // indices of second triangle.
-	kuhl_geometry_indices(geom, indexData, 6);
-
-	kuhl_errorcheck();
-}
 
 int main(int argc, char** argv)
 {
@@ -619,10 +470,7 @@ int main(int argc, char** argv)
 		msg(MSG_FATAL, "Unable to load the requested model: %s", modelFilename);
 		exit(EXIT_FAILURE);
 	}
-	init_geometryQuad(&labelQuad, program);
 
-	kuhl_getfps_init(&fps_state);
-	
 	while(!glfwWindowShouldClose(kuhl_get_window()))
 	{
 		display();
