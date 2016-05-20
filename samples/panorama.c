@@ -203,16 +203,10 @@ void display()
 	kuhl_errorcheck();
 
 
-	static int fps_state_init = 0;
-	static kuhl_fps_state fps_state;
-	if(fps_state_init == 0)
-	{
-		kuhl_getfps_init(&fps_state);
-		fps_state_init = 1;
-	}
-	float fps = kuhl_getfps(&fps_state);
-	if(fps_state.frame == 0)
-		msg(MSG_INFO, "fps: %6.1f\n", fps);
+	static int counter = 0;
+	counter++;
+	if(counter % 10 == 0)
+		msg(MSG_INFO, "fps: %6.2f\n", viewmat_fps());
 }
 
 
@@ -448,15 +442,18 @@ int main(int argc, char** argv)
 	if(argc == 2)
 	{
 		msg(MSG_INFO, "Cylinder mono image: %s\n", argv[1]);
-		kuhl_read_texture_file(argv[1], &texIdLeft);
+		if(kuhl_read_texture_file(argv[1], &texIdLeft) < 0)
+			exit(EXIT_FAILURE);
 		texIdRight = texIdLeft;
 	}
 	if(argc == 3)
 	{
 		msg(MSG_INFO, "Cylinder left  image: %s\n", argv[1]);
-		kuhl_read_texture_file(argv[1], &texIdLeft);
+		if(kuhl_read_texture_file(argv[1], &texIdLeft) < 0)
+			exit(EXIT_FAILURE);
 		msg(MSG_INFO, "Cylinder right image: %s\n", argv[2]);
-		kuhl_read_texture_file(argv[2], &texIdRight);
+		if(kuhl_read_texture_file(argv[2], &texIdRight) < 0)
+			exit(EXIT_FAILURE);
 	}
 
 	char *cubemapNames[] = { "front", "back", "left", "right", "down", "up" };	
@@ -465,7 +462,8 @@ int main(int argc, char** argv)
 		for(int i=0; i<6; i++)
 		{
 			msg(MSG_INFO, "Cubemap image (%-5s): %s\n", cubemapNames[i], argv[i+1]);
-			kuhl_read_texture_file(argv[i+1], &(cubemapLeftTex[i]));
+			if(kuhl_read_texture_file(argv[i+1], &(cubemapLeftTex[i])) < 0)
+				exit(EXIT_FAILURE);
 			cubemapRightTex[i]= cubemapLeftTex[i];
 			texIdLeft =0;
 			texIdRight=0;
@@ -476,9 +474,11 @@ int main(int argc, char** argv)
 		for(int i=0; i<6; i++)
 		{
 			msg(MSG_INFO, "Cubemap image (left,  %-5s): %s\n", cubemapNames[i], argv[i+6+1]);
-			kuhl_read_texture_file(argv[i+6+1], &(cubemapLeftTex[i]));
+			if(kuhl_read_texture_file(argv[i+1], &(cubemapLeftTex[i])) < 0)
+				exit(EXIT_FAILURE);
 			msg(MSG_INFO, "Cubemap image (right, %-5s)\n", cubemapNames[i], argv[i+6+1]);
-			cubemapRightTex[i]= cubemapLeftTex[i];
+			if(kuhl_read_texture_file(argv[i+6+1], &(cubemapRightTex[i])) < 0)
+				exit(EXIT_FAILURE);
 			texIdLeft =0;
 			texIdRight=0;
 		}
