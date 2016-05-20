@@ -21,12 +21,9 @@
 #include "viewmat.h"
 GLuint program = 0; /**< id value for the GLSL program */
 
-static kuhl_fps_state fps_state;
-GLuint fpsLabel = 0;
-float fpsLabelAspectRatio = 0;
-kuhl_geometry labelQuad;
 int renderStyle = 2;
 
+kuhl_geometry *fpsgeom = NULL;
 kuhl_geometry *modelgeom  = NULL;
 kuhl_geometry *origingeom = NULL;
 float bbox[6];
@@ -91,7 +88,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			/* Apply the program to the model geometry */
 			kuhl_geometry_program(modelgeom, program, KG_FULL_LIST);
 			/* and the fps label*/
-			kuhl_geometry_program(&labelQuad, program, KG_FULL_LIST);
+			kuhl_geometry_program(fpsgeom, program, KG_FULL_LIST);
 
 			break;
 		}
@@ -284,36 +281,23 @@ void display()
 	 * processes/computers synchronized. */
 	dgr_update();
 
-	/* Get current frames per second calculations. */
-	float fps = kuhl_getfps(&fps_state);
-	
-	if(dgr_is_enabled() == 0 || dgr_is_master())
+
+	/* Display FPS if we are a DGR master OR if we are running without dgr. */
+	if(dgr_is_master())
 	{
-		// If DGR is being used, only display FPS info if we are
-		// the master process.
-
-		// Check if FPS value was just updated by kuhl_getfps()
-		if(fps_state.frame == 0)
+		static unsigned int fpscount = 0;
+		fpscount++;
+		if(fpscount % 10 == 0)
 		{
-			char label[1024];
-			snprintf(label, 1024, "FPS: %0.1f", fps);
-
-			/* Delete old label if it exists */
-			if(fpsLabel != 0) 
-				glDeleteTextures(1, &fpsLabel);
-
-			/* Make a new label */
+			float fps = viewmat_fps(); // get current fps
+			char message[1024];
+			snprintf(message, 1024, "FPS: %0.2f", fps); // make a string with fps on it
 			float labelColor[3] = { 1,1,1 };
 			float labelBg[4] = { 0,0,0,.3 };
 
-			/* Change the last parameter (point size) to adjust the
-			 * size of the texture that the text is rendered in to. */
-			fpsLabelAspectRatio = kuhl_make_label(label,
-			                                      &fpsLabel,
-			                                      labelColor, labelBg, 24);
-
-			if(fpsLabel != 0)
-				kuhl_geometry_texture(&labelQuad, fpsLabel, "tex", 1);
+			// If DGR is being used, only display FPS info if we are
+			// the master process.
+			fpsgeom = kuhl_label_geom(fpsgeom, program, NULL, message, labelColor, labelBg, 24);
 		}
 	}
 	
@@ -408,19 +392,11 @@ void display()
 		}
 
 		// aspect ratio will be zero when the program starts (and FPS hasn't been computed yet)
-		if((dgr_is_enabled() == 0 || dgr_is_master()) && fpsLabelAspectRatio != 0)
+		if(dgr_is_master())
 		{
-			/* The shape of the frames per second quad depends on the
-			 * aspect ratio of the label texture and the aspect ratio of
-			 * the window (because we are placing the quad in normalized
-			 * device coordinates). */
-			int windowWidth, windowHeight;
-			viewmat_window_size(&windowWidth, &windowHeight);
-			float windowAspect = windowWidth / (float)windowHeight;
-			
 			float stretchLabel[16];
-			mat4f_scale_new(stretchLabel, 1/8.0 * fpsLabelAspectRatio / windowAspect, 1/8.0, 1);
-
+			mat4f_scale_new(stretchLabel, 1/8.0 / viewmat_window_aspect_ratio(), 1/8.0, 1);
+			
 			/* Position label in the upper left corner of the screen */
 			float transLabel[16];
 			mat4f_translate_new(transLabel, -.9, .8, 0);
@@ -436,7 +412,7 @@ void display()
 			 * rendering style */
 			glDisable(GL_DEPTH_TEST);
 			glUniform1i(kuhl_get_uniform("renderStyle"), 1);
-			kuhl_geometry_draw(&labelQuad); /* Draw the quad */
+			kuhl_geometry_draw(fpsgeom); /* Draw the quad */
 			glEnable(GL_DEPTH_TEST);
 			kuhl_errorcheck();
 		}
@@ -460,41 +436,7 @@ void display()
 	//kuhl_video_record("videoout", 30);
 }
 
-/* This illustrates how to draw a quad by drawing two triangles and reusing vertices. */
-void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
-{
-	kuhl_geometry_new(geom, prog,
-	                  4, // number of vertices
-	                  GL_TRIANGLES); // type of thing to draw
 
-	/* The data that we want to draw */
-	GLfloat vertexPositions[] = {0, 0, 0,
-	                             1, 0, 0,
-	                             1, 1, 0,
-	                             0, 1, 0 };
-	kuhl_geometry_attrib(geom, vertexPositions,
-	                     3, // number of components x,y,z
-	                     "in_Position", // GLSL variable
-	                     KG_WARN); // warn if attribute is missing in GLSL program?
-
-	GLfloat texcoord[] = {0, 0,
-	                      1, 0,
-	                      1, 1,
-	                      0, 1};
-	kuhl_geometry_attrib(geom, texcoord,
-	                     2, // number of components x,y,z
-	                     "in_TexCoord", // GLSL variable
-	                     KG_WARN); // warn if attribute is missing in GLSL program?
-
-
-	
-
-	GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
-	                       0, 2, 3 }; // indices of second triangle.
-	kuhl_geometry_indices(geom, indexData, 6);
-
-	kuhl_errorcheck();
-}
 
 int main(int argc, char** argv)
 {
@@ -560,9 +502,9 @@ int main(int argc, char** argv)
 
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
-	init_geometryQuad(&labelQuad, program);
 
-	kuhl_getfps_init(&fps_state);
+
+
 	
 	while(!glfwWindowShouldClose(kuhl_get_window()))
 	{
