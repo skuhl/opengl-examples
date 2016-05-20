@@ -1729,7 +1729,6 @@ kuhl_geometry* kuhl_label_geom(kuhl_geometry *geom, GLuint program, float *width
 {
 	if(geom == NULL)
 	{
-		printf("allocating!\n");
 		geom = malloc(sizeof(kuhl_geometry));
 		
 		kuhl_geometry_new(geom, program,
