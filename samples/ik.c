@@ -230,7 +230,7 @@ float* get_jacobian(float delta)
 	for(int i=0; i<anglesCount; i++)
 	{
 		angles[i] += delta;
-		float newLoc[3];
+		float newLoc[4];
 		end_effector_loc(newLoc, angles);
 		float deltaLoc[3];
 		vec3f_sub_new(deltaLoc, newLoc, origLoc);
@@ -346,7 +346,7 @@ void effector_target(float target[4])
 		}
 		printf("\n");
 
-		float newLoc[3];
+		float newLoc[4];
 		end_effector_loc(newLoc, angles);
 		float actualChange[3];
 		vec3f_sub_new(actualChange, newLoc, currentLoc);
