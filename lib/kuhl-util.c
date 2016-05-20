@@ -1674,7 +1674,7 @@ GLuint kuhl_read_texture_rgba_array(const unsigned char* array, int width, int h
  *
  * @param pointsize The size of the text in points. Use a larger value for higher resolution text.
  *
- * @return The aspect ratio of the texture. texName is set to 0 and an aspect ratio of 1 is returned. */
+ * @return The aspect ratio of the texture. Upon error, texName is set to 0 and an aspect ratio of 1 is returned. */
 float kuhl_make_label(const char *label, GLuint *texName, float color[3], float bgcolor[4], float pointsize)
 {
 #ifdef KUHL_UTIL_USE_IMAGEMAGICK
@@ -1693,6 +1693,100 @@ float kuhl_make_label(const char *label, GLuint *texName, float color[3], float 
 	return 1.0f;
 #endif
 }
+
+/** Generates a quad with a message on it (implemented as a texture on
+    the quad). The first time you call this function, geom should be
+    NULL and it will return a newly allocated and created
+    kuhl_geometry object. If you want to update the text label on the
+    quad, call this function but pass in a kuhl_geometry object
+    previously returned by this function.
+
+    The aspect ratio of the quad will be updated based on the shape of
+    the text by changing the model matrix stored in the kuhl_geometry
+    object. The height of the quad will always be 1.
+
+    @param geom A kuhl_geometry object previously returned by this
+    function. Or, use NULL if you want to generate a new label.
+
+    @param program The GLSL program that will be used to draw the label.
+
+    @param width To be filled in with the width of the quad. The
+    height of the quad will always be 1.
+
+    @param message The message to be displayed on the quad.
+
+    @param color The color of the font.
+
+    @param bgcolor The background color of the quad.
+
+    @param pointsize The size of the font. Use a large number for
+    higher resolution text.
+
+    @return The new geometry or NULL upon error.
+*/    
+kuhl_geometry* kuhl_label_geom(kuhl_geometry *geom, GLuint program, float *width,
+                               const char *message, float color[3], float bgcolor[4], float pointsize)
+{
+	if(geom == NULL)
+	{
+		printf("allocating!\n");
+		geom = malloc(sizeof(kuhl_geometry));
+		
+		kuhl_geometry_new(geom, program,
+		                  4, // number of vertices
+		                  GL_TRIANGLES); // type of thing to draw
+		
+		/* The data that we want to draw */
+		GLfloat vertexPositions[] = {0, 0, 0,
+		                             1, 0, 0,
+		                             1, 1, 0,
+		                             0, 1, 0 };
+		kuhl_geometry_attrib(geom, vertexPositions,
+		                     3, // number of components x,y,z
+		                     "in_Position", // GLSL variable
+		                     KG_WARN); // warn if attribute is missing in GLSL program?
+		
+		GLfloat texcoord[] = {0, 0,
+		                      1, 0,
+		                      1, 1,
+		                      0, 1};
+		kuhl_geometry_attrib(geom, texcoord,
+		                     2, // number of components x,y,z
+		                     "in_TexCoord", // GLSL variable
+		                     KG_WARN); // warn if attribute is missing in GLSL program?
+		
+		GLuint indexData[] = { 0, 1, 2,  // first triangle is index 0, 1, and 2 in the list of vertices
+		                       0, 2, 3 }; // indices of second triangle.
+		kuhl_geometry_indices(geom, indexData, 6);
+		
+		kuhl_errorcheck();
+	}
+
+	/* Find any texture that seems to be the old label and tell OpenGL
+	 * that we don't need it anymore. */
+	for(unsigned int i=0; i<geom->texture_count; i++)
+	{
+		if(strcmp(geom->textures[i].name, "tex"))
+			glDeleteTextures(1, &(geom->textures[i].textureId));
+	}
+
+	/* Create a new texture to use. */
+	GLuint labelTexture = 0;
+	float fpsLabelAspectRatio = kuhl_make_label(message,
+	                                            &labelTexture,
+	                                            color, bgcolor, pointsize);
+	if(labelTexture != 0)
+	{
+		kuhl_geometry_texture(geom, labelTexture, "tex", 1);
+		mat4f_scale_new(geom->matrix, fpsLabelAspectRatio, 1, 1);
+		if(width != NULL)
+			*width = fpsLabelAspectRatio;
+		return geom;
+	}
+
+	return NULL;
+}
+	
 
 
 /** This code flips an image vertically. This is helpful since OpenGL

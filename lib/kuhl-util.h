@@ -189,6 +189,8 @@ GLuint kuhl_read_texture_rgba_array_wrap(const unsigned char *array, int width, 
 GLuint kuhl_read_texture_rgba_array(const unsigned char *array, int width, int height);
 
 float kuhl_make_label(const char *label, GLuint *texName, float color[3], float bgcolor[4], float pointsize);
+kuhl_geometry* kuhl_label_geom(kuhl_geometry *geom, GLuint program, float *width,
+                               const char *message, float color[3], float bgcolor[4], float pointsize);
 float kuhl_read_texture_file_wrap(const char *filename, GLuint *texName, GLuint wrapS, GLuint wrapT);
 float kuhl_read_texture_file(const char *filename, GLuint *texName);
 void kuhl_screenshot(const char *outputImageFilename);
