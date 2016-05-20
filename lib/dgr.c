@@ -58,8 +58,8 @@ static struct addrinfo *dgr_addrinfo;
 static time_t dgr_time_lastreceive; /**< time we received last packet, 0 if haven't received anything yet. */
 
 /* Other DGR variables. */
-static int dgr_mode = 0;  /**< Set to 1 if we are master, 0 otherwise */
-static int dgr_disabled = 0; /**< Set to 1 if we are running in a DGR environment, 0 otherwise */
+static int dgr_mode     = 1; /**< Set to 1 if we are master, 0 otherwise */
+static int dgr_disabled = 1; /**< Is DGR disabled? */
 
 
 /** Frees resources that DGR has used. */
@@ -179,10 +179,16 @@ static void dgr_init_slave()
 /** Indicates if this process is either a master process or a slave
     process as specified by the DGR environment variables.
 
-    @return 1 if we are a master process, 0 if we are a slave process.
+    @return 1 if we are a master process or if DGR is
+    disabled. Returns 0 if we are a slave process.
 */
 int dgr_is_master(void)
-{ return dgr_mode; }
+{
+	if(dgr_disabled)
+		return 1;
+	else
+		return dgr_mode;
+}
 
 /** Indicates if DGR is properly enabled or if it is disabled.
 
@@ -203,7 +209,9 @@ void dgr_init(void)
 {
 	const char* mode = getenv("DGR_MODE");
 
+	dgr_mode = 1;
 	dgr_disabled = 1;
+
 	if(mode != NULL)
 	{
 		if(strcmp(mode, "master") == 0)
