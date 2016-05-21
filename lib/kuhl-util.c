@@ -1,4 +1,4 @@
-/* Copyright (c) 2014 Scott Kuhl. All rights reserved.
+/* Copyright (c) 2014-2016 Scott Kuhl. All rights reserved.
  * License: This code is licensed under a 3-clause BSD license. See
  * the file named "LICENSE" for a full copy of the license.
  */
@@ -11,6 +11,9 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#if defined(__APPLE__) || defined(__linux__) || defined(__unix__)
+#include <sys/utsname.h> //uname()
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,7 +78,7 @@ int kuhl_errorcheckFileLine(const char *file, int line, const char *func)
 	return 0;
 }
 
-/* Will print messages when glfw errors occur. */
+/** An error callback function to be used with GLFW. */
 void kuhl_glfw_error(int error, const char* description)
 {
 	msg(MSG_ERROR, "GLFW error: %s\n", description);
@@ -88,33 +91,137 @@ GLFWwindow* kuhl_get_window(void)
 }
 
 
-/** Initialize GLFW and GLEW using reasonable settings.
+/** Write diagnostic information to the log file. Should be called
+ * after GLFW and GLEW are initialized. */
+void kuhl_diagnostics(void)
+{
+	time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+	msg(MSG_DEBUG, "Current time: %d-%d-%d %d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+#if defined(__TIMESTAMP__)
+	msg(MSG_DEBUG, "Library compiled at: %s", __TIMESTAMP__);
+#endif
+
+	char hostname[1024];
+	gethostname(hostname, 1024);
+	hostname[1023] = '\0';
+	msg(MSG_DEBUG, "Hostname: %s\n", hostname);
+
+#if defined(_WIN32)
+#if defined(_WIN64)
+	msg(MSG_DEBUG, "Platform: Windows (64bit)");
+#else
+	msg(MSG_DEBUG, "Platform: Windows (32bit)");
+#endif
+#elif defined(__APPLE__)
+	msg(MSG_DEBUG, "Platform: Apple");
+#elif defined(__linux__)
+	msg(MSG_DEBUG, "Platform: Linux");
+#elif defined(__unix__)
+	msg(MSG_DEBUG, "Platform: Unix");
+#else
+	msg(MSG_DEBUG, "Platform: Unknown");
+#endif
+
+#if defined(__APPLE__) || defined(__linux__) || defined(__unix__)
+	struct utsname name;
+	if(uname(&name) == 0)
+		msg(MSG_DEBUG, "Uname: %s %s %s %s %s",
+		    name.sysname, name.nodename, name.release, name.version, name.machine);
+#endif
+	
+	msg(MSG_DEBUG, "OpenGL version: %s", glGetString(GL_VERSION));
+	msg(MSG_DEBUG, "GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+	msg(MSG_DEBUG, "OpenGL vendor: %s", glGetString(GL_VENDOR));
+	msg(MSG_DEBUG, "OpenGL renderer: %s", glGetString(GL_RENDERER));
+
+	msg(MSG_DEBUG, "GLFW version: %s", glfwGetVersionString());
+	msg(MSG_DEBUG, "GLEW version: %s", glewGetString(GLEW_VERSION));
+#ifdef KUHL_UTIL_USE_ASSIMP
+	msg(MSG_DEBUG, "ASSIMP version: %d.%d.%d",
+	    aiGetVersionMajor(), aiGetVersionMinor(), aiGetVersionRevision());
+#else
+	msg(MSG_DEBUG, "ASSIMP is unavailable");
+#endif
+#ifdef KUHL_UTIL_USE_IMAGEMAGICK
+	msg(MSG_DEBUG, "ImageMagick version: %s", MagickLibVersionText);
+#else
+	msg(MSG_DEBUG, "ImageMagick is missing");
+#endif
+
+
+#if defined(__clang__)
+	msg(MSG_DEBUG, "Compiler Type: clang");
+#elif defined(__INTEL_COMPILER)
+	msg(MSG_DEBUG, "Compiler Type: intel");
+#elif defined(_MSC_VER)
+	msg(MSG_DEBUG, "Compiler Type: microsoft visual studio");
+#else
+	msg(MSG_DEBUG, "Compiler Type: gcc or other");
+#endif
+
+#if defined(__VERSION__)
+	msg(MSG_DEBUG, "Compiler version: %s", __VERSION__);
+#elif defined(_MSC_FULL_VER)
+	msg(MSG_DEBUG, "Compiler version: %d", _MSC_FULL_VER);
+#endif
+	
+	/* Print information about the available monitors. */
+	int numMonitors = 0;
+	GLFWmonitor** monitorList = glfwGetMonitors(&numMonitors);
+	GLFWmonitor *primaryMonitor = glfwGetPrimaryMonitor();
+	for(int i=0; i<numMonitors; i++) // for each monitor
+	{
+		// Print monitor name, size, position
+		GLFWmonitor *monitor = monitorList[i];
+		int monitorPos[2], monitorDimen[2];
+		glfwGetMonitorPos(monitor, &monitorPos[0], &monitorPos[1]);
+		glfwGetMonitorPos(monitor, &monitorDimen[0], &monitorDimen[1]);
+		msg(MSG_DEBUG, "Monitor %d: \"%s\" isPrimary=%d pos=%d,%d dimen=%dmmx%dmm", i, glfwGetMonitorName(monitor), monitor==primaryMonitor, monitorPos[0], monitorPos[1], monitorDimen[0], monitorDimen[1]);
+
+		// Get video modes for the monitor
+		int numModes = 0;
+		const GLFWvidmode *modes = glfwGetVideoModes(monitor, &numModes);
+		const GLFWvidmode *currentMode = glfwGetVideoMode(monitor);
+
+		// Print current monitor mode
+		msg(MSG_DEBUG, "Monitor %d CURRENT mode: resolution=%dx%d@%dHz RGBbits=%d %d %d\n",
+			    i, currentMode->width, currentMode->height, currentMode->refreshRate,
+			    currentMode->redBits, currentMode->blueBits,  currentMode->greenBits);
+
+		// Print available monitor modes
+		for(int j=0; j<numModes; j++)
+		{
+			const GLFWvidmode mode = modes[j];
+			msg(MSG_DEBUG, "Monitor %d available mode: resolution=%dx%d@%dHz RGBbits=%d %d %d\n",
+			    i, mode.width, mode.height, mode.refreshRate,
+			    mode.redBits, mode.blueBits,  mode.greenBits);
+		}
+	}
+	msg(MSG_DEBUG, "===================");
+}
+
+/** Initialize GLFW and GLEW using reasonable settings. Exits on
+    error.
 
     @param argcp A pointer to argc.
 
-    @param argv The argv parameter from the program. Used to look for GLUT-related arguments.
+    @param argv The argv parameter from the program.
 
     @param width The initial width of the window.
 
     @param height The initial height of the window.
 
     @param oglProfile Set to 32 to use the OpenGL 3.2 core
-    profile. Use 0 to not specify a core profile.
+    profile. Use 20 to request OpenGL 2.0.
 
     @param msaaSamples Number of samples to use for multisampling
     antialiasing. Set to 0 for no antialiasing.
  */
 void kuhl_ogl_init(int *argcp, char **argv, int width, int height, int oglProfile, int msaaSamples)
 {
-	// call glfwError() when any GLFW errors occur
-	glfwSetErrorCallback(kuhl_glfw_error);
-
-	if(!glfwInit()) // initialize glfw
-	{
-		msg(MSG_FATAL, "Failed to initialize GLFW.\n");
-		exit(EXIT_FAILURE);
-	}
-
+	/* Log the command that the user ran the program with. */
 	int commandLen = 0;
 	for(int i=0; i<*argcp; i++)
 		commandLen = commandLen + strlen(argv[i]) + 1;
@@ -129,53 +236,12 @@ void kuhl_ogl_init(int *argcp, char **argv, int width, int height, int oglProfil
 	msg(MSG_DEBUG, "Parameters: %s", command);
 	free(command);
 
-	char hostname[1024];
-	gethostname(hostname, 1024);
-	hostname[1023] = '\0';
-	msg(MSG_DEBUG, "Hostname: %s\n", hostname);
-
-	time_t t = time(NULL);
-	struct tm tm = *localtime(&t);
-	msg(MSG_DEBUG, "Date/time: %d-%d-%d %d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-
-	msg(MSG_DEBUG, "GLFW version: %s\n", glfwGetVersionString());
-#ifdef KUHL_UTIL_USE_ASSIMP
-	msg(MSG_DEBUG, "ASSIMP version: %d.%d.%d\n", aiGetVersionMajor(), aiGetVersionMinor(), aiGetVersionRevision());
-#else
-	msg(MSG_DEBUG, "ASSIMP support is missing.\n");
-#endif
-#ifdef KUHL_UTIL_USE_IMAGEMAGICK
-	msg(MSG_DEBUG, "ImageMagick version: %s\n", MagickLibVersionText);
-#else
-	msg(MSG_DEBUG, "ImageMagick support is missing\n");
-#endif
-
-	/* Print information about the available monitors. */
-	int numMonitors = 0;
-	GLFWmonitor** monitorList = glfwGetMonitors(&numMonitors);
-	GLFWmonitor *primaryMonitor = glfwGetPrimaryMonitor();
-	for(int i=0; i<numMonitors; i++)
+	// Tell GLFW to call our function when an error occurs.
+	glfwSetErrorCallback(kuhl_glfw_error);
+	if(!glfwInit()) // initialize glfw
 	{
-		GLFWmonitor *monitor = monitorList[i];
-		int monitorPos[2], monitorDimen[2];
-		glfwGetMonitorPos(monitor, &monitorPos[0], &monitorPos[1]);
-		glfwGetMonitorPos(monitor, &monitorDimen[0], &monitorDimen[1]);
-		msg(MSG_DEBUG, "Monitor %d: \"%s\" isPrimary=%d pos=%d,%d dimen=%dmmx%dmm", i, glfwGetMonitorName(monitor), monitor==primaryMonitor, monitorPos[0], monitorPos[1], monitorDimen[0], monitorDimen[1]);
-
-		int numModes = 0;
-		const GLFWvidmode *modes = glfwGetVideoModes(monitor, &numModes);
-		const GLFWvidmode *currentMode = glfwGetVideoMode(monitor);
-		msg(MSG_DEBUG, "Monitor %d CURRENT mode: resolution=%dx%d@%dHz RGBbits=%d %d %d\n",
-			    i, currentMode->width, currentMode->height, currentMode->refreshRate,
-			    currentMode->redBits, currentMode->blueBits,  currentMode->greenBits);
-		
-		for(int j=0; j<numModes; j++)
-		{
-			const GLFWvidmode mode = modes[j];
-			msg(MSG_DEBUG, "Monitor %d available mode: resolution=%dx%d@%dHz RGBbits=%d %d %d\n",
-			    i, mode.width, mode.height, mode.refreshRate,
-			    mode.redBits, mode.blueBits,  mode.greenBits);
-		}
+		msg(MSG_FATAL, "Failed to initialize GLFW.\n");
+		exit(EXIT_FAILURE);
 	}
 
 	if(oglProfile >= 30)
@@ -192,18 +258,19 @@ void kuhl_ogl_init(int *argcp, char **argv, int width, int height, int oglProfil
 	if(msaaSamples > 1)
 		glfwWindowHint(GLFW_SAMPLES, msaaSamples);
 
-	/* Create window, make sure we succeeded. */
+	/* Create a GLFW window */
 	GLFWwindow *window = glfwCreateWindow(width, height, argv[0], NULL, NULL);
 	if(!window)
 	{
 		msg(MSG_FATAL, "Failed to create a GLFW window.\n");
 		exit(EXIT_FAILURE);
 	}
-
 	glfwMakeContextCurrent(window);
+
+	/* Initialize GLEW (must be done after context is made current) */
 	glewExperimental = GL_TRUE;
 	GLenum glewError = glewInit();
-	if(glewError) // initialize glew, must be done after glfwMakeContextCurrent()
+	if(glewError)
 	{
 		msg(MSG_FATAL, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
 		exit(EXIT_FAILURE);
@@ -216,7 +283,9 @@ void kuhl_ogl_init(int *argcp, char **argv, int width, int height, int oglProfil
 	 * http://www.opengl.org/wiki/OpenGL_Loading_Library */
 	glGetError();
 
-	
+
+	kuhl_diagnostics(); /* print additional information in log file */
+
 	the_window = window;
 }
 
