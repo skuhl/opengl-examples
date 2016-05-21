@@ -102,11 +102,8 @@ function(kuhl_add_paths path)
   endif()
 
  # GLFW
- if(EXISTS ${path}/glfw)
-   set(ENV{PKG_CONFIG_PATH} ${path}/glfw/src)
-   include_directories(${path}/glfw/include)
-   link_directories(${path}/glfw/src)
- endif()
+ kuhl_add_library_path(${path}/glfw/src)
+ kuhl_add_include_path(${path}/glfw/include)
 
  # GLEW
  kuhl_add_library_path(${path}/glew/lib)
@@ -140,7 +137,6 @@ kuhl_add_paths(/research/kuhl/public-ogl/) # ivs
 kuhl_add_paths(${CMAKE_CURRENT_SOURCE_DIR}/..) # Alongside this folder
 kuhl_add_paths(${CMAKE_CURRENT_SOURCE_DIR}/../opengl-libs) # Alongside this folder in a folder named opengl-libs
 
-
 # SITE_NAME sets the HOSTNAME variable to the name of this computer.
 SITE_NAME(HOSTNAME)
 
@@ -169,12 +165,8 @@ find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIRS})
 
 # --- GLFW3 ---
-#Use GLFW's recommended way to find GLFW---not using this approach!
-find_package(PkgConfig REQUIRED)
-pkg_search_module(GLFW REQUIRED glfw3)
-include_directories(${GLFW_INCLUDE_DIRS})
-link_directories(${GLFW_LIBRARY_DIRS})
-
+find_package(GLFW REQUIRED)
+include_directories(${GLFW_INCLUDE_DIR})
 
 # --- GLEW ---
 find_package(GLEW REQUIRED)
@@ -224,11 +216,6 @@ endif()
 set(CMAKE_THREADS_PREFER_PTHREAD TRUE)   # prefer pthread over other threading libraries
 # set(THREADS_PREFER_PTHREAD_FLAG TRUE)   # prefer -pthread compiler flag over just using -lpthread, but it might not be supported by all compilers.
 find_package(Threads)
-# find_packge(Threads) seems to fail on CCSR, try to find it ourselves:
-#if(NOT Threads_FOUND)
-#find_library(CMAKE_THREAD_LIBS_INIT NAMES pthread PATHS "/lib64" "/lib" "/usr/lib" )
-#message("Last attempt to find pthreads: " ${CMAKE_THREAD_LIBS_INIT})
-#endif()
 
 # --- LibOVR (Oculus Rift) ---
 set(MISSING_OVR_DEFINITION "MISSING_OVR")
