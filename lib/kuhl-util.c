@@ -147,7 +147,7 @@ void kuhl_ogl_init(int *argcp, char **argv, int width, int height, int oglProfil
 #ifdef KUHL_UTIL_USE_IMAGEMAGICK
 	msg(MSG_DEBUG, "ImageMagick version: %s\n", MagickLibVersionText);
 #else
-	msg(MSG_DEBUG, "ImageMagick support is missing\n", MagickLibVersionText);
+	msg(MSG_DEBUG, "ImageMagick support is missing\n");
 #endif
 
 	/* Print information about the available monitors. */
