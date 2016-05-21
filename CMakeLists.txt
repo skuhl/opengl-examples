@@ -1,14 +1,90 @@
 cmake_minimum_required(VERSION 2.6)
 
+set(CMAKE_C_COMPILER "gcc")
+set(CMAKE_CXX_COMPILER "g++")
+
+# Use homebrew gcc if it is installed.
+if(APPLE AND EXISTS /usr/local/bin/gcc-5)
+set(CMAKE_C_COMPILER "/usr/local/bin/gcc-5")
+set(CMAKE_CXX_COMPILER "/usr/local/bin/g++-5")
+endif()
+
+
+#set(CMAKE_C_COMPILER "clang")
+#set(CMAKE_CXX_COMPILER "clang++")
+
+project("opengl-examples" C CXX)  # This project uses C and C++
+
+
+
+# Add "-pg" to to both the C_FLAGS and the CXX_FLAGS to enable profiling
+# -O2 or -O3 is necessary to get the compiler to inline the inlined functions used by vecmat.c and vecmat.h
+# -march=native will cause the compiler to use features that are available on the current CPU (SSE, etc)---but will make the resulting executable less portable.
+#   -march=native is removed because it doesn't work on IVS as of May 2015
+# -pedantic forces warnings when non-C99 extensions are used.
+
+# Options which we may add in future (not supported by older compilers):
+# -Wshadow should probably be added eventually
+# -Wvla should be included because Visual Studio does not support VLAs, so we avoid using them. They are optional in C11 even though they were part of C99.
+set(C_CXX_FLAGS " -Wall -Wextra -pedantic -g -Wformat -Wno-unused-parameter -Wno-unused-function")  # Compiler options used by both the C++ and C compiler
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_CXX_FLAGS} -std=gnu99 -Wno-deprecated-declarations")
+
+# Use no-variadic-macros to prevent C++ programs from warning about the variadic msg() macro
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${C_CXX_FLAGS} -Wno-variadic-macros")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/CMakeModules)
+
+
+# Write programs out to "bin" directory.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+
+
+# Include rpath
+# SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+# use color messages
+include(${CMAKE_SOURCE_DIR}/CMakeModules/colorMessage.cmake)
+
+
+
+# Get custom Windows library installation paths
+if (WIN32)
+	include(CMakeModules/Windows.cmake)
+	
+	# GLUT installation
+	set(GLUT_ROOT_PATH "${WINDOWS_LIBRARY_PATH}${WINDOWS_GLUT_FOLDER}/" ${GLUT_ROOT_PATH})
+	set(CMAKE_LIBRARY_PATH "${GLUT_ROOT_PATH}lib" ${CMAKE_LIBRARY_PATH})
+	set(CMAKE_INCLUDE_PATH "${GLUT_ROOT_PATH}include" ${CMAKE_INCLUDE_PATH})
+
+	# GLEW installation
+	set(GLEW_ROOT_PATH "${WINDOWS_LIBRARY_PATH}${WINDOWS_GLEW_FOLDER}/")
+	set(CMAKE_LIBRARY_PATH "${GLEW_ROOT_PATH}lib" ${CMAKE_LIBRARY_PATH})
+	set(CMAKE_INCLUDE_PATH "${GLEW_ROOT_PATH}include" ${CMAKE_INCLUDE_PATH})
+
+	# ZLIB installation
+	set(ZLIB_ROOT_PATH "${WINDOWS_LIBRARY_PATH}${WINDOWS_ZLIB_FOLDER}/")
+	set(CMAKE_LIBRARY_PATH "${ZLIB_ROOT_PATH}" ${CMAKE_LIBRARY_PATH})
+	set(CMAKE_INCLUDE_PATH "${ZLIB_ROOT_PATH}" ${CMAKE_INCLUDE_PATH})
+	
+	# ASSIMP installation
+	set(ASSIMP_ROOT_PATH "${WINDOWS_LIBRARY_PATH}${WINDOWS_ASSIMP_FOLDER}/")
+	set(CMAKE_LIBRARY_PATH "${ASSIMP_ROOT_PATH}lib" ${CMAKE_LIBRARY_PATH})
+	set(CMAKE_INCLUDE_PATH "${ASSIMP_ROOT_PATH}include" ${CMAKE_INCLUDE_PATH})
+
+	# FreeType installation
+	set(FREETYPE_ROOT_PATH "${WINDOWS_LIBRARY_PATH}${WINDOWS_FREETYPE_FOLDER}/")
+	set(CMAKE_LIBRARY_PATH "${FREETYPE_ROOT_PATH}" ${CMAKE_LIBRARY_PATH})
+	set(CMAKE_INCLUDE_PATH "${FREETYPE_ROOT_PATH}include" ${CMAKE_INCLUDE_PATH})
+endif()
+
 function(kuhl_add_library_path path)
   if(EXISTS ${path})
-    set(CMAKE_LIBRARY_PATH ${path} ${CMAKE_LIBRARY_PATH})
+    set(CMAKE_LIBRARY_PATH ${path} ${CMAKE_LIBRARY_PATH} CACHE INTERNAL "")
   endif()
 endfunction(kuhl_add_library_path)
 
 function(kuhl_add_include_path path)
   if(EXISTS ${path})
-    set(CMAKE_INCLUDE_PATH ${path} ${CMAKE_INCLUDE_PATH})
+    set(CMAKE_INCLUDE_PATH ${path} ${CMAKE_INCLUDE_PATH} CACHE INTERNAL "")
   endif()
 endfunction(kuhl_add_include_path)
 
@@ -19,10 +95,10 @@ function(kuhl_add_paths path)
 
  if(EXISTS ${path}/glfw OR
     EXISTS ${path}/glew OR
-	EXISTS ${path}/ImageMagick OR
-	EXISTS ${path}/vrpn OR
-	EXISTS ${path}/ovr_sdk_linux_0.5.0.1)
-	message("Found one or more supporting libraries in ${path}")
+    EXISTS ${path}/ImageMagick OR
+    EXISTS ${path}/vrpn OR
+    EXISTS ${path}/ovr_sdk_linux_0.5.0.1)
+    message("Found one or more supporting libraries in ${path}")
   endif()
 
  # GLFW
@@ -58,129 +134,12 @@ function(kuhl_add_paths path)
  
 endfunction(kuhl_add_paths)
 
-
 kuhl_add_paths(/home/kuhl/public-ogl/) # CCSR, self-administered machines
 kuhl_add_paths(/local/kuhl-public-share/opengl) # MTU campus linux lab machines
 kuhl_add_paths(/research/kuhl/public-ogl/) # ivs
 kuhl_add_paths(${CMAKE_CURRENT_SOURCE_DIR}/..) # Alongside this folder
 kuhl_add_paths(${CMAKE_CURRENT_SOURCE_DIR}/../opengl-libs) # Alongside this folder in a folder named opengl-libs
 
-
-
-
-set(CMAKE_C_COMPILER "gcc")
-set(CMAKE_CXX_COMPILER "g++")
-
-# Use homebrew gcc if it is installed.
-if(APPLE AND EXISTS /usr/local/bin/gcc-5)
-set(CMAKE_C_COMPILER "/usr/local/bin/gcc-5")
-set(CMAKE_CXX_COMPILER "/usr/local/bin/g++-5")
-endif()
-
-
-#set(CMAKE_C_COMPILER "clang")
-#set(CMAKE_CXX_COMPILER "clang++")
-
-project("opengl-examples" C CXX)  # This project uses C and C++
-
-
-# Add "-pg" to to both the C_FLAGS and the CXX_FLAGS to enable profiling
-# -O2 or -O3 is necessary to get the compiler to inline the inlined functions used by vecmat.c and vecmat.h
-# -march=native will cause the compiler to use features that are available on the current CPU (SSE, etc)---but will make the resulting executable less portable.
-#   -march=native is removed because it doesn't work on IVS as of May 2015
-# -pedantic forces warnings when non-C99 extensions are used.
-
-# Options which we may add in future (not supported by older compilers):
-# -Wshadow should probably be added eventually
-# -Wvla should be included because Visual Studio does not support VLAs, so we avoid using them. They are optional in C11 even though they were part of C99.
-set(C_CXX_FLAGS " -Wall -Wextra -pedantic -g -Wformat -Wno-unused-parameter -Wno-unused-function")  # Compiler options used by both the C++ and C compiler
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_CXX_FLAGS} -std=gnu99 -Wno-deprecated-declarations")
-
-# Use no-variadic-macros to prevent C++ programs from warning about the variadic msg() macro
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${C_CXX_FLAGS} -Wno-variadic-macros")
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/CMakeModules)
-
-
-# Write programs out to "bin" directory.
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
-
-
-# Include rpath
-# SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-# use color messages
-include(${CMAKE_SOURCE_DIR}/CMakeModules/colorMessage.cmake)
-
-
-# Use glxinfo or glewinfo to determine OpenGL version if they are
-# available. Fail if a high enough version of OpenGL is not supported.
-find_file(GLXINFO glxinfo)
-find_file(GLEWINFO glewinfo)
-if(UNIX AND GLXINFO)
-	# Print out graphics card information
-	execute_process(COMMAND ${GLXINFO} COMMAND grep "OpenGL renderer string" COMMAND cut -d ":" -f 2 OUTPUT_VARIABLE openglrenderingstring OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-	execute_process(COMMAND ${GLXINFO} COMMAND grep "OpenGL core profile version string" COMMAND cut -d " " -f 6 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-
-
-	if(openglrenderingstring)
-		message("OpenGL renderer - ${openglrenderingstring}")
-	endif()
-
-	if(openglversion)
-		message("OpenGL core profile version - ${openglversion}")
-		if(openglversion VERSION_LESS "3.2")
-			message(WARNING "This software expect OpenGL version 3.2 or higher; some or all programs may fail to run correctly.")
-		endif()
-	endif()
-endif()
-
-if(APPLE AND GLEWINFO)
-	# Specifying core profile 3.2 is necessary to get glewinfo to print correct information on OSX. The version of GLEW on Ubuntu 15.10 isn't new enough to support this new flag however.
-	execute_process(COMMAND ${GLEWINFO} -version 3.2 -profile core COMMAND grep "OpenGL version " COMMAND cut -d " " -f 3 OUTPUT_VARIABLE openglversion OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-	execute_process(COMMAND ${GLEWINFO} -version 3.2 -profile core COMMAND grep "Running on a " COMMAND cut -d " " -f 4- OUTPUT_VARIABLE openglrenderingstring OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-
-	if(openglrenderingstring)
-		message("OpenGL renderer - ${openglrenderingstring}")
-	endif()
-
-	if(openglversion)
-		message("OpenGL core profile version - ${openglversion}")
-		if(openglversion VERSION_LESS "3.2")
-			message(WARNING "This software expect OpenGL version 3.2 or higher; some or all programs may fail to run correctly.")
-		endif()
-	endif()
-endif()
-
-
-# Get custom Windows library installation paths
-if (WIN32)
-	include(CMakeModules/Windows.cmake)
-	
-	# GLUT installation
-	set(GLUT_ROOT_PATH "${WINDOWS_LIBRARY_PATH}${WINDOWS_GLUT_FOLDER}/" ${GLUT_ROOT_PATH})
-	set(CMAKE_LIBRARY_PATH "${GLUT_ROOT_PATH}lib" ${CMAKE_LIBRARY_PATH})
-	set(CMAKE_INCLUDE_PATH "${GLUT_ROOT_PATH}include" ${CMAKE_INCLUDE_PATH})
-
-	# GLEW installation
-	set(GLEW_ROOT_PATH "${WINDOWS_LIBRARY_PATH}${WINDOWS_GLEW_FOLDER}/")
-	set(CMAKE_LIBRARY_PATH "${GLEW_ROOT_PATH}lib" ${CMAKE_LIBRARY_PATH})
-	set(CMAKE_INCLUDE_PATH "${GLEW_ROOT_PATH}include" ${CMAKE_INCLUDE_PATH})
-
-	# ZLIB installation
-	set(ZLIB_ROOT_PATH "${WINDOWS_LIBRARY_PATH}${WINDOWS_ZLIB_FOLDER}/")
-	set(CMAKE_LIBRARY_PATH "${ZLIB_ROOT_PATH}" ${CMAKE_LIBRARY_PATH})
-	set(CMAKE_INCLUDE_PATH "${ZLIB_ROOT_PATH}" ${CMAKE_INCLUDE_PATH})
-	
-	# ASSIMP installation
-	set(ASSIMP_ROOT_PATH "${WINDOWS_LIBRARY_PATH}${WINDOWS_ASSIMP_FOLDER}/")
-	set(CMAKE_LIBRARY_PATH "${ASSIMP_ROOT_PATH}lib" ${CMAKE_LIBRARY_PATH})
-	set(CMAKE_INCLUDE_PATH "${ASSIMP_ROOT_PATH}include" ${CMAKE_INCLUDE_PATH})
-
-	# FreeType installation
-	set(FREETYPE_ROOT_PATH "${WINDOWS_LIBRARY_PATH}${WINDOWS_FREETYPE_FOLDER}/")
-	set(CMAKE_LIBRARY_PATH "${FREETYPE_ROOT_PATH}" ${CMAKE_LIBRARY_PATH})
-	set(CMAKE_INCLUDE_PATH "${FREETYPE_ROOT_PATH}include" ${CMAKE_INCLUDE_PATH})
-endif()
 
 # SITE_NAME sets the HOSTNAME variable to the name of this computer.
 SITE_NAME(HOSTNAME)
