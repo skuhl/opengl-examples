@@ -1,14 +1,81 @@
 cmake_minimum_required(VERSION 2.6)
 
+function(kuhl_add_library_path path)
+  if(EXISTS ${path})
+    set(CMAKE_LIBRARY_PATH ${path} ${CMAKE_LIBRARY_PATH})
+  endif()
+endfunction(kuhl_add_library_path)
+
+function(kuhl_add_include_path path)
+  if(EXISTS ${path})
+    set(CMAKE_INCLUDE_PATH ${path} ${CMAKE_INCLUDE_PATH})
+  endif()
+endfunction(kuhl_add_include_path)
+
+function(kuhl_add_paths path)
+ if(NOT EXISTS ${path})
+   return()
+ endif()
+
+ if(EXISTS ${path}/glfw OR
+    EXISTS ${path}/glew OR
+	EXISTS ${path}/ImageMagick OR
+	EXISTS ${path}/vrpn OR
+	EXISTS ${path}/ovr_sdk_linux_0.5.0.1)
+	message("Found one or more supporting libraries in ${path}")
+  endif()
+
+ # GLFW
+ if(EXISTS ${path}/glfw)
+   set(ENV{PKG_CONFIG_PATH} ${path}/glfw/src)
+   include_directories(${path}/glfw/include)
+   link_directories(${path}/glfw/src)
+ endif()
+
+ # GLEW
+ kuhl_add_library_path(${path}/glew/lib)
+ kuhl_add_include_path(${path}/glew/include)
+
+ # Assimp
+ kuhl_add_library_path(${path}/assimp/lib)
+ kuhl_add_include_path(${path}/assimp/include)
+ 
+ # ImageMagick
+ kuhl_add_library_path(${path}/ImageMagick/.libs)
+ kuhl_add_include_path(${path}/ImageMagick/)
+
+ # VRPN
+ kuhl_add_library_path(${path}/vrpn/build)
+ kuhl_add_library_path(${path}/vrpn/build/quat)
+ kuhl_add_include_path(${path}/vrpn)
+ kuhl_add_include_path(${path}/vrpn/quat)
+
+ # OVR - Linux
+ kuhl_add_library_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Lib/Linux/Release/x86_64)
+ kuhl_add_library_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Lib/Linux/Debug/x86_64)
+ kuhl_add_include_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Include)
+ kuhl_add_include_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Src)
+ 
+endfunction(kuhl_add_paths)
+
+
+kuhl_add_paths(/home/kuhl/public-ogl/) # CCSR, self-administered machines
+kuhl_add_paths(/local/kuhl-public-share/opengl) # MTU campus linux lab machines
+kuhl_add_paths(/research/kuhl/public-ogl/) # ivs
+kuhl_add_paths(${CMAKE_CURRENT_SOURCE_DIR}/..) # Alongside this folder
+kuhl_add_paths(${CMAKE_CURRENT_SOURCE_DIR}/../opengl-libs) # Alongside this folder in a folder named opengl-libs
+
+
+
 
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER "g++")
 
 # Use homebrew gcc if it is installed.
-#if(APPLE AND EXISTS /usr/local/bin/gcc-5)
-#set(CMAKE_C_COMPILER "/usr/local/bin/gcc-5")
-#set(CMAKE_CXX_COMPILER "/usr/local/bin/g++-5")
-#endif()
+if(APPLE AND EXISTS /usr/local/bin/gcc-5)
+set(CMAKE_C_COMPILER "/usr/local/bin/gcc-5")
+set(CMAKE_CXX_COMPILER "/usr/local/bin/g++-5")
+endif()
 
 
 #set(CMAKE_C_COMPILER "clang")
@@ -144,13 +211,10 @@ include_directories(${OPENGL_INCLUDE_DIRS})
 
 # --- GLFW3 ---
 #Use GLFW's recommended way to find GLFW---not using this approach!
-set(ENV{PKG_CONFIG_PATH} /local/kuhl-public-share/opengl/glfw/src)
-include_directories(/local/kuhl-public-share/opengl/glfw/include)
 find_package(PkgConfig REQUIRED)
 pkg_search_module(GLFW REQUIRED glfw3)
 include_directories(${GLFW_INCLUDE_DIRS})
-link_directories(${GLFW_LIBRARY_DIRS}) # os x
-link_directories(/local/kuhl-public-share/opengl/glfw/src) # rekhi lab
+link_directories(${GLFW_LIBRARY_DIRS})
 
 
 # --- GLEW ---

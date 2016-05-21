@@ -1,14 +1,3 @@
-
-# IVS - installed version is too old. Use a local copy instead.
-set(CMAKE_LIBRARY_PATH "/research/kuhl/public-ogl/ImageMagick/magick/.libs/" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "/research/kuhl/public-ogl/ImageMagick/" ${CMAKE_INCLUDE_PATH})
-
-# CCSR - version on the system lacks the corresponding header files; has library only. Use a local copy instead.
-set(CMAKE_LIBRARY_PATH "/home/kuhl/public-ogl/ImageMagick/magick/.libs/" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "/home/kuhl/public-ogl/ImageMagick/" ${CMAKE_INCLUDE_PATH})
-
-
-
 # FindImageMagick.cmake is typically installed on any machines with cmake on them. However, we need this specific version of this file because this version works on the IVS machines (while still working on other machines too!)
 #
 # This file is based on the file that is packed with CMake and

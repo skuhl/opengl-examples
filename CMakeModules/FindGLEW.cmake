@@ -1,16 +1,3 @@
-# Search paths for IVS machine - NOTE: The copy of GLEW in /opt/viz is too old---haven't investigated exactly which version is needed.
-set(CMAKE_LIBRARY_PATH "/research/kuhl/public-ogl/glew/lib" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "/research/kuhl/public-ogl/glew/include" ${CMAKE_INCLUDE_PATH})
-
-# Search paths for Rekhi Lab machines
-set(CMAKE_LIBRARY_PATH "/local/kuhl-public-share/opengl/glew/lib" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "/local/kuhl-public-share/opengl/glew/include" ${CMAKE_INCLUDE_PATH})
-
-# Search paths for newell.cs and CCSR
-set(CMAKE_LIBRARY_PATH "/home/kuhl/public-ogl/glew/lib" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_INCLUDE_PATH "/home/kuhl/public-ogl/glew/include" ${CMAKE_INCLUDE_PATH})
-
-
 #.rst:
 # FindGLEW
 # --------
