@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 int vrpn_get(const char *object, const char *hostname, float pos[3], float orient[16]);
-char* vrpn_default_host(void);
+const char* vrpn_default_host(void);
 int vrpn_is_vicon(const char *hostname);
 float* vrpn_get_raw(const char *name, const char *host, int count);
 	

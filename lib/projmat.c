@@ -18,48 +18,6 @@ float projmat_vfov = -1;
 int projmat_mode = -1; /**< -1=undefined, 0=vfov, 1=frustum 2=dsight */
 
 
-/** 
- Updates the size and position of the GLUT window based on environment variables.
-
- PROJMAT_WINDOW_SIZE - width and height of window.
-
- PROJMAT_WINDOW_POS - position of window on the screen.
-
- PROJMAT_FULLSCREEN - Sets the window to fill the screen.
-*/
-static void projmat_init_window()
-{
-	/* Change size of window if we were asked to. */
-	const char* windowSizeString = getenv("PROJMAT_WINDOW_SIZE");
-	int windowSize[2];
-	if(windowSizeString != NULL &&
-	   sscanf(windowSizeString, "%d %d", &(windowSize[0]), &(windowSize[1])) == 2)
-	{
-		msg(MSG_INFO, "Setting window size %d %d\n", windowSize[0], windowSize[1]);
-		// glutReshapeWindow(windowSize[0], windowSize[1]);
-		glfwSetWindowSize(kuhl_get_window(), windowSize[0], windowSize[1]);
-	}
-
-	/* Change position of window if we were asked to. */
-	const char* windowPosString = getenv("PROJMAT_WINDOW_POS");
-	int windowPos[2];
-	if(windowPosString != NULL &&
-	   sscanf(windowPosString, "%d %d", &(windowPos[0]), &(windowPos[1])) == 2)
-	{
-		msg(MSG_INFO, "Setting window position %d %d\n", windowPos[0], windowPos[1]);
-		//glutPositionWindow(windowPos[0], windowPos[1]);
-		glfwSetWindowPos(kuhl_get_window(), windowPos[0], windowPos[1]);
-	}
-
-	/* Change to fullscreen mode if we were asked to. */
-	const char* fullscreenString = getenv("PROJMAT_FULLSCREEN");
-	if(fullscreenString && strlen(fullscreenString) > 0)
-	{
-		msg(MSG_INFO, "Requesting fullscreen\n");
-		// glutFullScreen();
-		// TODO: Implement GLFW version....
-	}
-}
 
 
 /** Initialize projmat. This will apply any adjustments to the GLUT
@@ -67,8 +25,6 @@ static void projmat_init_window()
  * variables. */
 void projmat_init()
 {
-	projmat_init_window();
-
 	const char* frustumString = getenv("PROJMAT_FRUSTUM");
 	int foundFrustum = 0;
 	if(frustumString != NULL)

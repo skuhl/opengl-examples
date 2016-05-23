@@ -357,22 +357,35 @@ void viewmat_swap_buffers(void)
 	}
 
 	/* Figure out if we missed a frame */
-	int missedFrame = 0;
-	if(postswap_prev+(((long)vsyncTime)*3)/2 < postswap)
+	float missedFrames = -1;
+	long elapsed = postswap - postswap_prev;
+	if(elapsed > (((long)vsyncTime)*3)/2)
 	{
-		if(count > 60)
+		static int maxMessages = 20;
+		missedFrames = elapsed / (float) vsyncTime - 1;
+		if(count > 60) // don't print message for first 60 frames.
 		{
-			msg(MSG_INFO, "Missed at least one frame");
+			if(maxMessages >= 0)
+				maxMessages--;
+			
+			if(maxMessages > 0)
+				msg(MSG_INFO, "Missed approximately %0.2f frame(s)", missedFrames);
+			else
+			{
+				if(maxMessages == 0)
+					msg(MSG_INFO, "No more messages about dropped frames, but messages will still be saved to log file.");
+				msg(MSG_DEBUG, "Missed approximately %0.2f frame(s)", missedFrames);
+			}
+				
 			//msg(MSG_WARNING, "Displayed previous frame at  %ld", postswap_prev);
 			//msg(MSG_WARNING, "Displayed this frame at      %ld", postswap);
 			//msg(MSG_WARNING, "Expected this frame before   %ld", postswap_prev+(((long)vsyncTime)*3)/2);
 		}
-		missedFrame = 1;
 	}
 	
 	// Update average waiting for vsync time (except if we missed a
 	// frame; missed frames would artificially inflate our average)
-	if(missedFrame == 0)
+	if(missedFrames < 0)
 		avgWaitingForVsync    = .9 * avgWaitingForVsync    + .1 * timeWaitingForVsync;
 
 	int timeRenderingLastFrame = preswap - postsleep_prev;
@@ -425,13 +438,16 @@ void viewmat_swap_buffers(void)
 		adjustment = -vsyncTime;
 		
 	// Sleep less if we just missed a frame.
-	if(missedFrame)
+	if(missedFrames > 0)
 		adjustment -= VSYNC_BUFFER_GOAL;
+	else if(missedFrames > 1)
+		adjustment -= VSYNC_BUFFER_GOAL*missedFrames;
 
 	int sleepTime = vsyncTime - renderingTimeMax + adjustment;
 	if(sleepTime > vsyncTime)
 	{
 		msg(MSG_WARNING, "We would sleep longer than the vsync time? This shouldn't happen.\n");
+		/* Reset to no sleep and adjust what we think we'd ideally need */
 		sleepTime = 0;
 		adjustment = -VSYNC_BUFFER_GOAL;
 	}
@@ -440,7 +456,7 @@ void viewmat_swap_buffers(void)
 	
 	if(sleepTime < 0)
 	{
-		msg(MSG_DEBUG, "Skipping sleep");
+		//msg(MSG_DEBUG, "Skipping sleep");
 		postsleep_prev = postswap;
 		postswap_prev = postswap;
 		return;
@@ -1029,8 +1045,8 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 	}
 
 
-	const char* modeString = getenv("VIEWMAT_DISPLAY_MODE");
-	if(modeString == NULL)
+	const char* modeString = kuhl_config_get("viewmat.displaymode");
+	if(modeString == NULL || strlen(modeString) == 0)
 		modeString = "none";
 	
 	if(strcasecmp(modeString, "ivs") == 0)
@@ -1119,7 +1135,7 @@ static void viewmat_fix_rotation(float orient[16])
 	if(viewmat_vrpn_obj == NULL || strlen(viewmat_vrpn_obj) == 0)
 		return;
 
-	char *hostname = vrpn_default_host();
+	const char *hostname = vrpn_default_host();
 	if(hostname == NULL)
 		return;
 	
@@ -1218,8 +1234,7 @@ static void viewmat_get_generic(float viewmatrix[16], const float cyclopsViewMat
 }
 
 
-/** Get the view matrix from the mouse. Or, if a VRPN object is
- * specified, get the view matrix from VRPN.
+/** Get the view matrix from the mouse.
  *
  * @param viewmatrix The view matrix to be filled in.
  *

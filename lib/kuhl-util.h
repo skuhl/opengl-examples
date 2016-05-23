@@ -35,6 +35,7 @@
 #include <GL/gl.h>
 #endif
 
+#include "kuhl-config.h"
 #include "kuhl-nodep.h"
 #include "msg.h"
 

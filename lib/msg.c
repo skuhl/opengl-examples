@@ -33,6 +33,7 @@
 #include <errno.h>
 
 #include "msg.h"
+#include "kuhl-config.h"
 
 static FILE *f = NULL;  /*< The file stream for our log file */
 static char *logfile = NULL;
@@ -236,15 +237,27 @@ static void msg_init(void)
 		return;
 
 	// Set to 1 to overwrite existing log file, 0 to append.
-	const int append = 0;
+	const int append = kuhl_config_boolean("log.append", 0,0);
 
 	// Check if log file name is specified in an environment variable
-	const char* envvar_logfile = getenv("MSG_LOGFILE");
-	if(envvar_logfile != NULL && strlen(envvar_logfile) > 0)
-		logfile = strdup(envvar_logfile);
+	const char* config_logfile = kuhl_config_get("log.filename");
+	if(config_logfile != NULL && strlen(config_logfile) > 0)
+		logfile = strdup(config_logfile);
 	else
 		logfile = strdup("log.txt"); // default log file name
 
+	/* When the first message gets printed, we will also probably call
+	 * kuhl_config_get() for the first time. kuhl_config_get() will
+	 * then try to print a message about the newly loaded config
+	 * file---calling msg() again. This second call to msg() will work
+	 * because kuhl_config_get() doesn't print a message the second
+	 * time that it is called. However, the first call to msg() can
+	 * get to this point only to find that the log file is already
+	 * open (i.e., kuhl_config_get() indirectly opened the file and
+	 * completed the initialization. */
+	if(f != NULL)
+		return;
+	
 	f = fopen(logfile, append ? "a" : "w");
 	if(f == NULL)
 	{
@@ -269,7 +282,6 @@ static void msg_init(void)
 		msg(MSG_INFO, "Messages are being appended to '%s'\n", logfile);
 	else
 		msg(MSG_INFO, "Messages are being written to '%s'\n", logfile);
-
 }
 
 /** Writes a message to the log file.

@@ -202,6 +202,58 @@ void kuhl_diagnostics(void)
 	msg(MSG_DEBUG, "===================");
 }
 
+
+/** Creates an appropriate GLFW window given the settings the user
+ * provided. */
+static GLFWwindow* kuhl_glfw_create_window(int width, int height, const char *title)
+{
+	/* If window.setting is set to anything (besides false, no, 0,
+	 * etc) then assume that they want the window fullscreen. */
+	const char *theMonitor = kuhl_config_get("window.fullscreen");
+	if(kuhl_config_boolean("window.fullscreen", 0,1) == 0)
+		theMonitor = NULL;
+		
+	if(theMonitor == NULL) // if windowed mode
+	{
+		float windowWidth = kuhl_config_int("window.width", width, width);
+		float windowHeight = kuhl_config_int("window.height", height, height);
+		return glfwCreateWindow(windowWidth, windowHeight, title, NULL, NULL);
+	}
+
+	/* If full screen was requested, try to find a monitor that matches the name */
+	int numMonitors;
+	GLFWmonitor** monitorList = glfwGetMonitors(&numMonitors);
+	for(int i=0; i<numMonitors; i++)
+	{
+		GLFWmonitor *monitor = monitorList[i];
+		const char* monitorName = glfwGetMonitorName(monitor);
+		if(strcasecmp(monitorName, theMonitor) == 0)
+		{
+			const GLFWvidmode *currentMode = glfwGetVideoMode(monitor);
+			return glfwCreateWindow(currentMode->width, currentMode->height, title, monitor, NULL);
+		}
+	}
+
+	/* If we didn't find the monitor. */
+	if(numMonitors > 1)
+		msg(MSG_INFO, "Config: Making fullscreen on primary monitor. You can specify the monitor name in the 'fullscreen' config setting. See the top of log.txt for the monitor names available on your machine.");
+	GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+	const GLFWvidmode *currentMode = glfwGetVideoMode(monitor);
+	return glfwCreateWindow(currentMode->width, currentMode->height, title, monitor, NULL);	
+}
+
+void kuhl_glfw_move_window(GLFWwindow *window)
+{
+	int x, y;
+	glfwGetWindowPos(window, &x, &y);
+
+	int newX = kuhl_config_int("window.posx", x,x);
+	int newY = kuhl_config_int("window.posy", y,y);
+	if(newX != x || newY != y)
+		glfwSetWindowPos(window,newX,newY);
+}
+
+
 /** Initialize GLFW and GLEW using reasonable settings. Exits on
     error.
 
@@ -259,12 +311,14 @@ void kuhl_ogl_init(int *argcp, char **argv, int width, int height, int oglProfil
 		glfwWindowHint(GLFW_SAMPLES, msaaSamples);
 
 	/* Create a GLFW window */
-	GLFWwindow *window = glfwCreateWindow(width, height, argv[0], NULL, NULL);
+	
+	GLFWwindow *window = kuhl_glfw_create_window(width, height, argv[0]);
 	if(!window)
 	{
 		msg(MSG_FATAL, "Failed to create a GLFW window.\n");
 		exit(EXIT_FAILURE);
 	}
+	kuhl_glfw_move_window(window);
 	glfwMakeContextCurrent(window);
 
 	/* Initialize GLEW (must be done after context is made current) */

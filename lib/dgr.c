@@ -31,7 +31,7 @@
 #include <errno.h>
 #include <time.h>
 #include "msg.h"
-
+#include "kuhl-config.h"
 
 
 /** The dgr_record struct is used internally by DGR to hold a single
@@ -75,8 +75,8 @@ static void dgr_free(void)
 static void dgr_init_master()
 {
 #ifndef __MINGW32__
-	const char *ipAddr = getenv("DGR_MASTER_DEST_IP");
-	const char *port = getenv("DGR_MASTER_DEST_PORT");
+	const char *ipAddr = kuhl_config_get("dgr.master.destip");
+	const char *port = kuhl_config_get("dgr.master.destport");
 	if(ipAddr == NULL || strcmp(ipAddr, "0.0.0.0") == 0)
 	{
 		dgr_disabled = 1;
@@ -128,7 +128,7 @@ static void dgr_init_master()
 static void dgr_init_slave()
 {
 #ifndef __MINGW32__
-	const char* port = getenv("DGR_SLAVE_LISTEN_PORT");
+	const char* port = kuhl_config_get("dgr.slave.listenport");
 	if(port == NULL)
 	{
 		msg(MSG_FATAL, "DGR Slave: DGR_SLAVE_LISTEN_PORT was not set.\n");
@@ -207,7 +207,7 @@ int dgr_is_enabled(void)
  * beginning of a DGR program. */
 void dgr_init(void)
 {
-	const char* mode = getenv("DGR_MODE");
+	const char* mode = kuhl_config_get("dgr.mode");
 
 	dgr_mode = 1;
 	dgr_disabled = 1;
@@ -226,14 +226,14 @@ void dgr_init(void)
 			dgr_disabled = 0;
 			dgr_init_slave();
 		}
-		else
+		else if(strlen(mode) > 0)
 		{
-			msg(MSG_ERROR, "DGR_MODE must be 'slave' or 'master' but you set it to '%s'", mode);
+			msg(MSG_ERROR, "dgr.mode must be 'slave' or 'master' but you set it to '%s'", mode);
 		}
 	}
 	
 	if(dgr_disabled)
-		msg(MSG_INFO, "DGR is disabled; not a valid DGR environment.\n");
+		msg(MSG_INFO, "DGR is disabled.\n");
 
 	// if there already is a list, free it.
 	if(dgr_list_size > 0)

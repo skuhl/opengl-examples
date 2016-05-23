@@ -313,7 +313,7 @@ int vrpn_is_vicon(const char *hostname)
     NOT be free()'d because the same string will be returned each time
     we call this function.
  */
-char* vrpn_default_host(void)
+const char* vrpn_default_host(void)
 {
 	static char *cachedHostname = NULL;
 	if(cachedHostname != NULL)
@@ -378,7 +378,7 @@ void vrpn_fullname(const char* object, const char* hostname, char result[256])
 	/* Construct an object@hostname string. */
 	if(hostname == NULL)
 	{
-		char *hostnameInFile = vrpn_default_host();
+		const char *hostnameInFile = vrpn_default_host();
 		if(hostnameInFile == NULL)
 		{
 			msg(MSG_FATAL, "Failed to find hostname of VRPN server.\n");
