@@ -25,36 +25,36 @@ int projmat_mode = -1; /**< -1=undefined, 0=vfov, 1=frustum 2=dsight */
  * variables. */
 void projmat_init()
 {
-	const char* frustumString = getenv("PROJMAT_FRUSTUM");
+	const char* frustumString = kuhl_config_get("projmat.frustum");
 	int foundFrustum = 0;
 	if(frustumString != NULL)
 	{
 		if(sscanf(frustumString, "%f %f %f %f %f %f",
 		          &(projmat_frustum[0]), &(projmat_frustum[1]), &(projmat_frustum[2]),
 		          &(projmat_frustum[3]), &(projmat_frustum[4]), &(projmat_frustum[5])) != 6)
-			msg(MSG_ERROR, "Unable to parse PROJMAT_FRUSTUM environment variable.\n");
+			msg(MSG_ERROR, "Unable to parse projmat.frustum configuration variable.\n");
 		else
 			foundFrustum = 1;
 	}
 
-	const char* masterFrustumString = getenv("PROJMAT_MASTER_FRUSTUM");
+	const char* masterFrustumString = kuhl_config_get("projmat.masterfrustum");
 	int foundMasterFrustum = 0;
 	if(masterFrustumString != NULL)
 	{
 		if(sscanf(masterFrustumString, "%f %f %f %f %f %f",
 		          &(projmat_master_frustum[0]), &(projmat_master_frustum[1]), &(projmat_master_frustum[2]),
 		          &(projmat_master_frustum[3]), &(projmat_master_frustum[4]), &(projmat_master_frustum[5])) != 6)
-			msg(MSG_ERROR, "Unable to parse PROJMAT_MASTER_FRUSTUM environment variable.\n");
+			msg(MSG_ERROR, "Unable to parse projmat.masterfrustum configuration variable.\n");
 		else
 			foundMasterFrustum = 1;
 	}
 	
-	const char* vfovString = getenv("PROJMAT_VFOV");
+	const char* vfovString = kuhl_config_get("projmat.vfov");
 	int foundFov = 0;
 	if(vfovString != NULL)
 	{
 		if(sscanf(vfovString, "%f", &projmat_vfov) != 1)
-			msg(MSG_ERROR, "Unable to parse PROJMAT_VFOV environment variable.\n");
+			msg(MSG_ERROR, "Unable to parse projmat.vfov configuration variable.\n");
 		else
 			foundFov = 1;
 	}
@@ -85,10 +85,10 @@ void projmat_init()
 	else if(foundMasterFrustum == 0 && foundFrustum == 1)
 	{
 		projmat_mode = 1;
-		// If running on a multi-computer cluster, environment
+		// If running on a multi-computer cluster, configuration
 		// variables must specify the overall frustum and the
 		// individual screen frustum.
-		msg(MSG_WARNING, "PROJMAT_FRUSTUM was defined but PROJMAT_MASTER_FRUSTUM was not.");
+		msg(MSG_WARNING, "projmat.frustum was defined but projmat.masterfrustum was not.");
 		msg(MSG_WARNING, "Assuming that the two frustums are the same (should work if running on a single machine).");
 		for(int i=0; i<6; i++)
 			projmat_master_frustum[i] = projmat_frustum[i];
@@ -96,10 +96,10 @@ void projmat_init()
 	else if(foundMasterFrustum == 1 && foundFrustum == 0)
 	{
 		projmat_mode = 1;
-		// If running on a multi-computer cluster, environment
+		// If running on a multi-computer cluster, configuration
 		// variables must specify the overall frustum and the
 		// individual screen frustum.
-		msg(MSG_WARNING, "PROJMAT_MASTER_FRUSTUM was defined but PROJMAT_FRUSTUM was not.");
+		msg(MSG_WARNING, "projmat.masterfrustum was defined but projmat.frustum was not.");
 		msg(MSG_WARNING, "Assuming that the two frustums are the same (should work if running on a single machine).");
 		for(int i=0; i<6; i++)
 			projmat_frustum[i] = projmat_master_frustum[i];

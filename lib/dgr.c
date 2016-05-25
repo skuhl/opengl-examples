@@ -32,7 +32,7 @@
 #include <time.h>
 #include "msg.h"
 #include "kuhl-config.h"
-
+#include "dgr.h"
 
 /** The dgr_record struct is used internally by DGR to hold a single
  * variable that DGR is keeping track of. */
@@ -201,95 +201,22 @@ int dgr_is_enabled(void)
 	return 1;
 }
 
-
-/** Initialize DGR. DGR options are specified via environment
- * variables. This function should typically be called once near the
- * beginning of a DGR program. */
-void dgr_init(void)
-{
-	const char* mode = kuhl_config_get("dgr.mode");
-
-	dgr_mode = 1;
-	dgr_disabled = 1;
-
-	if(mode != NULL)
-	{
-		if(strcmp(mode, "master") == 0)
-		{
-			dgr_mode = 1;
-			dgr_disabled = 0;
-			dgr_init_master();
-		}
-		else if(strcmp(mode, "slave") == 0)
-		{
-			dgr_mode = 0;
-			dgr_disabled = 0;
-			dgr_init_slave();
-		}
-		else if(strlen(mode) > 0)
-		{
-			msg(MSG_ERROR, "dgr.mode must be 'slave' or 'master' but you set it to '%s'", mode);
-		}
-	}
-	
-	if(dgr_disabled)
-		msg(MSG_INFO, "DGR is disabled.\n");
-
-	// if there already is a list, free it.
-	if(dgr_list_size > 0)
-		dgr_free();
-}
-
-
 /** Given a name, find the index of the name in our list. Returns -1 if
  * name is not found. */
 static int dgr_findIndex(const char *name)
 {
 	for(int i=0; i<dgr_list_size; i++)
+	{
 		if(strcmp(name, dgr_list[i].name) == 0)
 			return i;
+	}
 	return -1;
 }
 
 
-/** Given a label, a buffer to store data, and the size of that buffer,
- * get data from DGR, store it in buffer and return the actual size of
- * the data we copied into the buffer.
+/** Adds a variable to DGRs list of variables. These variables will be
+ * sent to slaves when dgr_update() is called.
  *
- * @param name The label or name to apply to the piece of data to be retrieved from DGR.
- *
- * @param buffer A buffer for the retrieved data should be stored in.
- *
- * @param bufferSize The size of the buffer.
- *
- *
- * @return Returns the size of the data if success, and a negative
- * number upon error. Returns -1 if DGR didn't know about the
- * name. Returns -2 the buffer you provided was too small. Returns -3
- * if DGR is not enabled.
- */
-static int dgr_get(const char *name, void* buffer, int bufferSize)
-{
-	if(dgr_disabled)
-		return -3;
-	
-	int index = dgr_findIndex(name);
-	if(index == -1)
-		return -1;
-
-	/* If we found the record... */
-	dgr_record *rec = &(dgr_list[index]);
-	/* Copy the data if there is enough room */
-	if(bufferSize >= rec->size)
-	{
-		memcpy(buffer, rec->buffer, rec->size);
-		return rec->size;
-	}
-	else /* 'buffer' wasn't large enough to store data. */
-		return -2;
-}
-
-/** Adds a variable to DGRs list of variables. These variables will be sent to slaves when dgr_update() is called.
  * @param name The name of the variable.
  * @param buffer A pointer to the variable.
  * @param size The number of bytes used by the variable.
@@ -335,6 +262,117 @@ static void dgr_set(const char *name, const void *buffer, int size)
 	}
 }
 
+
+
+/** If master, sends a special DGR message to the slave machines
+ * indicating that they should exit. If slave, does nothing.
+ */
+static void dgr_exit(void)
+{
+	if(dgr_is_enabled() && dgr_is_master())
+	{
+		msg(MSG_DEBUG, "dgr_exit() is informing slaves that the master is exiting.\n");
+		dgr_free(); // clear the list of records to send.
+		int died = 1;
+		dgr_set("!!!dgr_died!!!", &died, sizeof(int));
+		dgr_update();
+
+		// Don't let this get called repeatedly.
+		dgr_mode = 1;
+		dgr_disabled = 1;
+	}
+}
+
+
+
+/** Initialize DGR. DGR options are specified via the configuration
+ * file. This function should typically be called once near the
+ * beginning of a DGR program. */
+void dgr_init(void)
+{
+	const char* mode = kuhl_config_get("dgr.mode");
+
+	dgr_mode = 1;
+	dgr_disabled = 1;
+
+	// if there already is a list, free it.
+	if(dgr_list_size > 0)
+		dgr_free();
+	
+	if(mode != NULL)
+	{
+		if(strcmp(mode, "master") == 0)
+		{
+			dgr_mode = 1;
+			dgr_disabled = 0;
+			dgr_init_master();
+			dgr_update();
+		}
+		else if(strcmp(mode, "slave") == 0)
+		{
+			dgr_mode = 0;
+			dgr_disabled = 0;
+			dgr_init_slave();
+			dgr_update();
+		}
+		else if(strlen(mode) > 0)
+		{
+			msg(MSG_ERROR, "dgr.mode must be 'slave' or 'master' but you set it to '%s'", mode);
+		}
+	}
+	
+	if(dgr_disabled)
+		msg(MSG_DEBUG, "DGR is disabled.\n");
+
+	static int atexit_registered = 0;
+	if(atexit_registered == 0)
+	{
+		atexit(dgr_exit);
+		atexit_registered = 1;
+	}
+}
+
+
+
+
+/** Given a label, a buffer to store data, and the size of that buffer,
+ * get data from DGR, store it in buffer and return the actual size of
+ * the data we copied into the buffer.
+ *
+ * @param name The label or name to apply to the piece of data to be retrieved from DGR.
+ *
+ * @param buffer A buffer for the retrieved data should be stored in.
+ *
+ * @param bufferSize The size of the buffer.
+ *
+ *
+ * @return Returns the size of the data if success, and a negative
+ * number upon error. Returns -1 if DGR didn't know about the
+ * name. Returns -2 the buffer you provided was too small. Returns -3
+ * if DGR is not enabled.
+ */
+static int dgr_get(const char *name, void* buffer, int bufferSize)
+{
+	if(dgr_disabled)
+		return -3;
+	
+	int index = dgr_findIndex(name);
+	if(index == -1)
+		return -1;
+
+	/* If we found the record... */
+	dgr_record *rec = &(dgr_list[index]);
+	/* Copy the data if there is enough room */
+	if(bufferSize >= rec->size)
+	{
+		memcpy(buffer, rec->buffer, rec->size);
+		return rec->size;
+	}
+	else /* 'buffer' wasn't large enough to store data. */
+		return -2;
+}
+
+
 /** Set a variable if we are a DGR master (so that we can send it to
  * slaves) and get a variable if we are a DGR slave. The variable is
  * stored in 'buffer' and is 'bufferSize' bytes long.
@@ -365,7 +403,7 @@ void dgr_setget(const char *name, void* buffer, int bufferSize)
 	{
 		int ret = dgr_get(name, buffer, bufferSize);
 		if(ret == -1)
-			msg(MSG_ERROR, "DGR Slave: Tried to get '%s' from DGR, but DGR didn't have it!\n", name);
+			msg(MSG_ERROR, "DGR Slave: Tried to get '%s' from DGR, but DGR didn't have it\n", name);
 		else if(ret == -2)
 			msg(MSG_ERROR, "DGR Slave: Tried to get '%s' from DGR, but you didn't provide a large enough buffer.\n", name);
 
@@ -434,7 +472,7 @@ static void dgr_unserialize(int size, const char *serialized)
 		}
 		name[c++] = '\0';
 		ptr++;
-		// printf("unserialized: %s\n", name);
+		//msg(MSG_DEBUG, "DGR unserialized: %s\n", name);
 
 		int size = 0;
 		memcpy(&size, ptr, sizeof(int));
@@ -603,17 +641,3 @@ void dgr_update(void)
 	}
 }
 
-/** If master, sends a special DGR message to the slave machines
- * indicating that they should exit. If slave, does nothing.
- */
-void dgr_exit(void)
-{
-	if(dgr_is_enabled() && dgr_is_master())
-	{
-		int died = 1;
-		msg(MSG_DEBUG, "dgr_exit() is informing slaves that the master is exiting.\n");
-		dgr_free(); // clear the list of records to send.
-		dgr_set("!!!dgr_died!!!", &died, sizeof(int));
-		dgr_update();
-	}
-}

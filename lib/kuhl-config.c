@@ -21,6 +21,39 @@
 #include "kuhl-util.h"
 #include "cfg_parse.h"
 
+static struct cfg_struct *cfg = NULL;
+static char *cfg_filename = NULL;  /*< Filename that holds the configuration */
+
+/** Set the configuration file to be used. If another configuration
+    file is already loaded, it will be unloaded and the new file will
+    later be loaded when a key is requested.
+
+    @param filename The name of the configuration file to be
+    loaded. If NULL, then any existing configuration file will be
+    unloaded.
+ */
+void kuhl_config_filename(const char *filename)
+{
+	// If the user sets the filename to the file we are already using.
+	if(cfg_filename != NULL && filename != NULL && strcmp(cfg_filename, filename) == 0)
+		return;
+
+	// Unload any settings we have already loaded.
+	if(cfg != NULL)
+	{
+		cfg_free(cfg);
+		cfg = NULL;
+	}
+
+	if(cfg_filename != NULL)
+		msg(MSG_WARNING, "We have already loaded config file '%s' but we are now switching to file '%s'. This can happen when the program requests a configuration value and then kuhl_config_filename is called.", cfg_filename, filename);
+
+	if(cfg_filename)
+		free(cfg_filename);
+	cfg_filename = strdup(filename);
+}
+
+
 /** Gets the value for a given key in the config file.
 
     @param key The key to look up in the config file.
@@ -31,13 +64,23 @@
 */
 const char* kuhl_config_get(const char *key)
 {
-	static struct cfg_struct *cfg = NULL;
 	if(cfg == NULL)
 	{
+		int using_defaultFile = 0;
+		if(cfg_filename == NULL)
+		{
+			cfg_filename = "settings.ini";
+			using_defaultFile = 1;
+		}
 		cfg = cfg_init();
-		char *filename = kuhl_find_file("settings.ini");
+		char *filename = kuhl_find_file(cfg_filename);
 		if(cfg_load(cfg, filename) == EXIT_FAILURE)
-			msg(MSG_INFO, "Failed to read settings.ini\n");
+		{
+			if(using_defaultFile)
+				msg(MSG_INFO, "Failed to read default config file: %s\n", filename);
+			else
+				msg(MSG_ERROR, "Failed to read user-specified config file: %s\n", filename);
+		}
 		else
 			msg(MSG_DEBUG, "Using settings file at: %s\n", filename);
 	}

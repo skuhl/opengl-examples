@@ -273,6 +273,11 @@ void kuhl_glfw_move_window(GLFWwindow *window)
  */
 void kuhl_ogl_init(int *argcp, char **argv, int width, int height, int oglProfile, int msaaSamples)
 {
+	/* Setup proper config file as soon as we can. Any call to msg()
+	   can cause it to be loaded. */
+	if(*argcp >= 3 && strcmp(argv[1], "--config") == 0)
+		kuhl_config_filename(argv[2]);
+
 	/* Log the command that the user ran the program with. */
 	int commandLen = 0;
 	for(int i=0; i<*argcp; i++)
@@ -287,6 +292,16 @@ void kuhl_ogl_init(int *argcp, char **argv, int width, int height, int oglProfil
 	}
 	msg(MSG_DEBUG, "Parameters: %s", command);
 	free(command);
+
+	/* Remove the parameters which specify the config file so the
+	 * caller never knows that they were there. */
+	if(*argcp >= 3 && strcmp(argv[1], "--config") == 0)
+	{
+		for(int i=3; i<*argcp; i++)
+			argv[i-2]=argv[i];
+		*argcp = *argcp-2;
+	}
+
 
 	// Tell GLFW to call our function when an error occurs.
 	glfwSetErrorCallback(kuhl_glfw_error);
@@ -3447,7 +3462,6 @@ kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDir
 	vec3f_add_new(ctr, min, max);
 	vec3f_scalarDiv(ctr, 2);
 
-	msg(MSG_DEBUG, "%s: Model loaded with assimp version %d.%d", modelFilename, aiGetVersionMajor(), aiGetVersionMinor());
 	/* Print bounding box information to stout */
 	msg(MSG_DEBUG, "%s: bbox min: %10.3f %10.3f %10.3f", modelFilename, min[0], min[1], min[2]);
 	msg(MSG_DEBUG, "%s: bbox max: %10.3f %10.3f %10.3f", modelFilename, max[0], max[1], max[2]);

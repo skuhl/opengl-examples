@@ -396,10 +396,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 		return;
 
 	if (key == 27 || key == 'q')  // escape key, exit program
-	{
-		dgr_exit();
 		exit(EXIT_SUCCESS);
-	}
 	
 	if (key == 'n' || key == ' ' || key == GLFW_KEY_PAGE_DOWN)
 	{
@@ -549,6 +546,5 @@ int main(int argc, char** argv)
 		/* process events (keyboard, mouse, etc) */
 		glfwPollEvents();
 	}
-	dgr_exit();
 	exit(EXIT_SUCCESS);
 }

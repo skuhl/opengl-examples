@@ -18,6 +18,7 @@ extern "C" {
 #endif
 
 
+void kuhl_config_filename(const char *filename);
 const char* kuhl_config_get(const char *key);
 int kuhl_config_isset(const char *key);
 int kuhl_config_boolean(const char *key, int returnWhenMissing, int returnInvalidValue);

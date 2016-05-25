@@ -316,8 +316,10 @@ void viewmat_swap_buffers(void)
 {
 	if(viewmat_swapinterval == 0) // if FPS is unrestricted.
 	{
+		dgr_update(); // make sure master can send before blocking at swap
 		glfwSwapBuffers(kuhl_get_window());
 		viewmat_stats_fps();
+		dgr_update(); // make sure slave receives after blocking at swap
 		return;
 	}
 	
@@ -338,11 +340,14 @@ void viewmat_swap_buffers(void)
 		msg(MSG_WARNING, "Latency reduction is turned on; assuming monitor is %dHz and we have %d microseconds/frame\n", refreshRate, vsyncTime);
 	}
 
+	
+	dgr_update(); // make sure master can send before blocking at swap
 	GLFWwindow *window = kuhl_get_window();
 	long preswap = kuhl_microseconds();
 	glfwSwapBuffers(window);
 	long postswap = kuhl_microseconds();
 	viewmat_stats_fps();
+	dgr_update(); // make sure slave receives after blocking at swap
 	int timeWaitingForVsync = postswap - preswap;
 
 	if(count < 10) // initialize averages, skip first few frames.

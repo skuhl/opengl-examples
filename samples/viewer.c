@@ -277,11 +277,6 @@ void get_model_matrix(float result[16])
  * at some point. */
 void display()
 {
-	/* If we are using DGR, send or receive data to keep multiple
-	 * processes/computers synchronized. */
-	dgr_update();
-
-
 	/* Display FPS if we are a DGR master OR if we are running without dgr. */
 	if(dgr_is_master())
 	{
@@ -291,7 +286,7 @@ void display()
 		{
 			float fps = viewmat_fps(); // get current fps
 			char message[1024];
-			snprintf(message, 1024, "FPS: %0.2f", fps); // make a string with fps on it
+			snprintf(message, 1024, "FPS: %0.2f", fps); // make a string with fps in it
 			float labelColor[3] = { 1,1,1 };
 			float labelBg[4] = { 0,0,0,.3 };
 
@@ -514,6 +509,5 @@ int main(int argc, char** argv)
 		/* process events (keyboard, mouse, etc) */
 		glfwPollEvents();
 	}
-	dgr_exit();
 	exit(EXIT_SUCCESS);
 }
