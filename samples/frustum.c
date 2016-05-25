@@ -75,10 +75,6 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
  * at some point. */
 void display()
 {
-	/* If we are using DGR, send or receive data to keep multiple
-	 * processes/computers synchronized. */
-	dgr_update();
-
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will
 	 * run twice for HMDs (once for the left eye and once for the

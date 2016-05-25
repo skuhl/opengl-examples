@@ -77,9 +77,6 @@ int toggle = 0;
  * at some point. */
 void display()
 {
-	/* If we are using DGR, send or receive data to keep multiple
-	 * processes/computers synchronized. */
-	dgr_update();
 	int tmp=1;
 	// send something to DGR so the slaves don't think that the server has died.
 	dgr_setget("dummy", &tmp, sizeof(int));

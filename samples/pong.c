@@ -353,10 +353,6 @@ void game()
 
 void display()
 {
-	/* If we are using DGR, send or receive data to keep multiple
-	 * processes/computers synchronized. */
-	dgr_update();
-		
 	/* Syncronize the DGR objects */
 	dgr_setget("paddleA", &paddleA, sizeof(Paddle));
 	dgr_setget("paddleB", &paddleB, sizeof(Paddle));

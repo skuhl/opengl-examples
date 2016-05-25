@@ -150,10 +150,6 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 /** Draws the 3D scene. */
 void display()
 {
-	/* If we are using DGR, send or receive data to keep multiple
-	 * processes/computers synchronized. */
-	dgr_update();
-
 	/* Get current frames per second calculations. */
 	float fps = kuhl_getfps(&fps_state);
 

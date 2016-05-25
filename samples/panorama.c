@@ -104,10 +104,6 @@ void setupCubemap(GLuint texId[6], kuhl_geometry q, const float origModelView[16
  * at some point. */
 void display()
 {
-	/* If we are using DGR, send or receive data to keep multiple
-	 * processes/computers synchronized. */
-	dgr_update();
-
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will
 	 * run twice for HMDs (once for the left eye and once for the

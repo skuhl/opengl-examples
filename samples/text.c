@@ -62,13 +62,8 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 static kuhl_fps_state fps_state;
 void display()
 {
-	/* If we are using DGR, send or receive data to keep multiple
-	 * processes/computers synchronized. */
-	dgr_update();
-
 	/* Get current frames per second calculations. */
 	float fps = kuhl_getfps(&fps_state);
-	
 	
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will

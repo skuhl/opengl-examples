@@ -316,10 +316,10 @@ void viewmat_swap_buffers(void)
 {
 	if(viewmat_swapinterval == 0) // if FPS is unrestricted.
 	{
-		dgr_update(); // make sure master can send before blocking at swap
+		dgr_update(1,0); // make sure master can send before blocking at swap
 		glfwSwapBuffers(kuhl_get_window());
 		viewmat_stats_fps();
-		dgr_update(); // make sure slave receives after blocking at swap
+		dgr_update(0,1); // make sure slave receives after blocking at swap
 		return;
 	}
 	
@@ -341,13 +341,14 @@ void viewmat_swap_buffers(void)
 	}
 
 	
-	dgr_update(); // make sure master can send before blocking at swap
+	dgr_update(1,0); // make sure master can send before blocking at swap
 	GLFWwindow *window = kuhl_get_window();
 	long preswap = kuhl_microseconds();
 	glfwSwapBuffers(window);
 	long postswap = kuhl_microseconds();
 	viewmat_stats_fps();
-	dgr_update(); // make sure slave receives after blocking at swap
+	// Note: The dgr_update(0,1) call happens after the sleep at the
+	// end of this function.
 	int timeWaitingForVsync = postswap - preswap;
 
 	if(count < 10) // initialize averages, skip first few frames.
@@ -470,6 +471,7 @@ void viewmat_swap_buffers(void)
 	usleep(sleepTime);
 	postsleep_prev = kuhl_microseconds();
 	postswap_prev = postswap;
+	dgr_update(0,1); // make sure slave receives after blocking at swap
 	return;
 }
 

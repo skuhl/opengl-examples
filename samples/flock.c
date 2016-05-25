@@ -96,12 +96,8 @@ void get_model_matrix(float result[16], float placeToPutModel[3])
  * at some point. */
 void display()
 {
-	/* If we are using DGR, send or receive data to keep multiple
-	 * processes/computers synchronized. */
-	dgr_update();
-
-
-	/* Display FPS if we are a DGR master OR if we are running without dgr. */
+	/* Display FPS if we are a DGR master OR if we are running without
+	 * dgr. */
 	if(dgr_is_master())
 	{
 		static unsigned int fpscount = 0;

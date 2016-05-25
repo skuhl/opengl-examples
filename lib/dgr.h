@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 void dgr_init(void);
-void dgr_update(void);
+void dgr_update(int send, int receive);
 void dgr_setget(const char *name, void* buffer, int bufferSize);
 void dgr_print_list(void);
 int dgr_is_master(void);

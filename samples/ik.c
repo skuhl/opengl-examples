@@ -317,10 +317,6 @@ void effector_target(float target[4])
  * at some point. */
 void display()
 {
-	/* If we are using DGR, send or receive data to keep multiple
-	 * processes/computers synchronized. */
-	dgr_update();
-
 	/* Ensure the slaves use the same render style as the master
 	 * process. */
 	dgr_setget("style", &renderStyle, sizeof(int));

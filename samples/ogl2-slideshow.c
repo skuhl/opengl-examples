@@ -217,22 +217,10 @@ void loadTexture(int textureIndex)
 
 void display(void)
 {
-	// If master, send the latest data out.
-	if(dgr_is_enabled() && dgr_is_master())
-	{
-		dgr_setget("currentTex", &currentTexture, sizeof(int));
-		dgr_setget("scrollAmount", &scrollAmount, sizeof(float));
-		dgr_update();
-	}
+	dgr_setget("currentTex", &currentTexture, sizeof(int));
+	dgr_setget("scrollAmount", &scrollAmount, sizeof(float));
 
-	if(dgr_is_enabled() && !dgr_is_master())
-	{
-		dgr_update();
-		dgr_setget("currentTex", &currentTexture, sizeof(int));
-		dgr_setget("scrollAmount", &scrollAmount, sizeof(float));
-	}
-
-	kuhl_limitfps(100);
+	//kuhl_limitfps(100);
 
 	/* If the texture has changed since we were previously in display() */
 	if(alreadyDisplayedTexture != currentTexture)
@@ -410,7 +398,6 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			currentTexture = getNextTexture();
 
 		dgr_setget("currentTexture", &currentTexture, sizeof(int));
-		dgr_update();
 	}
 
 	if (key == 'b' || key == 'p' || key == GLFW_KEY_PAGE_UP) // back or previous
@@ -424,7 +411,6 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 		else
 			currentTexture = getPrevTexture();
 		dgr_setget("currentTexture", &currentTexture, sizeof(int));
-		dgr_update();
 	}
 
 

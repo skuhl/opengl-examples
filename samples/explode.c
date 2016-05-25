@@ -276,10 +276,6 @@ void get_model_matrix(float result[16])
  * at some point. */
 void display()
 {
-	/* If we are using DGR, send or receive data to keep multiple
-	 * processes/computers synchronized. */
-	dgr_update();
-
 	dgr_setget("style", &renderStyle, sizeof(int));
 
 	

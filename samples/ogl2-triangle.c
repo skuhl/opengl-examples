@@ -37,8 +37,6 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 
 void display()
 {
-	dgr_update();
-
 	glClearColor(0,0,0,0); // set clear color to black
 	// Clear the screen to black, clear the depth buffer
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);

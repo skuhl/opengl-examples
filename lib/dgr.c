@@ -6,7 +6,8 @@
 /**
    @file
 
-    DGR provides a framework for a master process to share data with slave processes via UDP packets on a network.
+    DGR provides a framework for a master process to share data with
+    slave processes via UDP packets on a network.
 
     @author Scott Kuhl
  */
@@ -275,7 +276,7 @@ static void dgr_exit(void)
 		dgr_free(); // clear the list of records to send.
 		int died = 1;
 		dgr_set("!!!dgr_died!!!", &died, sizeof(int));
-		dgr_update();
+		dgr_update(1,1);
 
 		// Don't let this get called repeatedly.
 		dgr_mode = 1;
@@ -306,14 +307,14 @@ void dgr_init(void)
 			dgr_mode = 1;
 			dgr_disabled = 0;
 			dgr_init_master();
-			dgr_update();
+			dgr_update(1,1);
 		}
 		else if(strcmp(mode, "slave") == 0)
 		{
 			dgr_mode = 0;
 			dgr_disabled = 0;
 			dgr_init_slave();
-			dgr_update();
+			dgr_update(1,1);
 		}
 		else if(strlen(mode) > 0)
 		{
@@ -550,7 +551,8 @@ static void dgr_receive(int timeout)
 #ifndef __MINGW32__
 	if(dgr_disabled)
 		return;
-	
+
+	/* If too much time has elapsed since the last packet that we received, exit. */
 	if(dgr_time_lastreceive != 0) // if we have received a packet previously
 	{
 		int seconds = 15;
@@ -560,7 +562,8 @@ static void dgr_receive(int timeout)
 			exit(EXIT_FAILURE);
 		}
 	}
-	
+
+	/* Use poll to wait for up to timeout seconds. */
 	struct pollfd fds;
 	fds.fd = dgr_socket;
 	fds.events = POLLIN;
@@ -609,6 +612,15 @@ static void dgr_receive(int timeout)
 	dgr_time_lastreceive = time(NULL);
 	
 	dgr_unserialize(numbytes, serialized);
+	
+	/* If the packet we received indicates that dgr has died. */
+	int died = 0;
+	if(dgr_get("!!!dgr_died!!!", &died, sizeof(int)) >= 0 &&
+	   died == 1)
+	{
+		msg(MSG_DEBUG, "The master told slaves to exit. Exiting...\n");
+		exit(EXIT_SUCCESS);
+	}
 #endif // __MINGW32__
 }
 
@@ -618,26 +630,36 @@ static void dgr_receive(int timeout)
  * OpenGL DGR program, you would typically call this method every time
  * you render a frame. This function may call exit() if we are a slave
  * which has received a special packet indicating that we should
- * exit. */
-void dgr_update(void)
+ * exit.
+ *
+ * The master process and the slave process migh want to call
+ * dgr_update() at different times, however. For example, a master
+ * process should send information as soon as it is set (perhaps after
+ * rendering but before buffer swap). A slave process should receive
+ * last minute before any dgr variables are used. To support this, you
+ * can use the parameters passed to dgr_update() to disable sending or
+ * receiving.
+ *
+ * @param send If set to 1 and if process is a DGR master, will call
+ * dgr_send().
+ *
+ * @param receive If set to 1 and if process is a DGR slave, will call
+ * dgr_receive().
+ */
+void dgr_update(int send, int receive)
 {
-	if(dgr_mode)
+	if(dgr_disabled)
+		return;
+	
+	if(dgr_is_master() && send == 1)
 		dgr_send();
-	else
+	
+	if(dgr_is_master() == 0 && receive == 1)
 	{
 		// if it is our first time receiving, allow for a delay.
 		if(dgr_time_lastreceive == 0)
-			dgr_receive(10000);
+			dgr_receive(10000);  // 10000 milliseconds = 10 seconds
 		else
 			dgr_receive(0);
-
-		int died = 0;
-		if(dgr_get("!!!dgr_died!!!", &died, sizeof(int)) >= 0 &&
-		   died == 1)
-		{
-			msg(MSG_DEBUG, "The master told slaves to exit. Exiting...\n");
-			exit(EXIT_SUCCESS);
-		}
 	}
 }
-
