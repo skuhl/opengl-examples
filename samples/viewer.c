@@ -277,13 +277,15 @@ void get_model_matrix(float result[16])
  * at some point. */
 void display()
 {
-	/* Display FPS if we are a DGR master OR if we are running without dgr. */
+	/* Display FPS if we are a DGR master OR if we are running without DGR. */
 	if(dgr_is_master())
 	{
-		static unsigned int fpscount = 0;
-		fpscount++;
-		if(fpscount % 10 == 0)
+		static long lasttime = 0;
+		long now = kuhl_milliseconds();
+		if(now - lasttime > 200) // reduce number to increase frequency of FPS label updates.
 		{
+			lasttime = now;
+			
 			float fps = viewmat_fps(); // get current fps
 			char message[1024];
 			snprintf(message, 1024, "FPS: %0.2f", fps); // make a string with fps in it
