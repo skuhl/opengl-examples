@@ -75,7 +75,7 @@ Michigan Tech: Run code on the IVS display wall and account for the screen bezel
 
 OpenGL 3.2 or higher (required) - OpenGL is available on all Linux
 machines. To check the version of OpenGL on your computer, run
-"glxgears | grep version". Ignore any lines that say "glx" and the
+"glxinfo | grep version". Ignore any lines that say "glx" and the
 other version numbers should indicate which version of OpenGL your
 machine supports. The program "glxgears" is also typically available
 on Linux. It is a simple OpenGL program that shows spinning gears and
@@ -92,18 +92,16 @@ features are supported on the computer you are running the program on.
  - Homepage: http://glew.sourceforge.net/
  - License: https://github.com/nigels-com/glew/blob/master/LICENSE.txt
 
-Freeglut (required) - OpenGL doesn't provide a cross-platform way to
-create a window that you can draw on. Freeglut is one cross platform
+GLFW (required) - OpenGL doesn't provide a cross-platform way to
+create a window that you can draw on. GLFW is one cross platform
 library that makes it relatively easy to create windows, handle
-mouse/keyboard inputs, etc. A new, but similar, alternative is
-GLFW. To install Freeglut, look for packages named freeglut,
-freeglut-dev in your package manager and install those packages. An
-earlier version of a similar library, called GLUT may or may not work
-with this code.
+mouse/keyboard inputs, etc. A older, but similar, alternative is GLUT
+or freeglut. To install GLFW, look for packages named glfw, libglfw,
+libglfw-lib in your package manager and install those packages.
 
- - For a guide to install Freeglut, see FREEGLUT-INSTALL.txt
- - Homepage: http://freeglut.sourceforge.net/
- - Freeglut license: https://github.com/dcnieho/FreeGLUT/blob/git_master/freeglut/freeglut/COPYING
+ - For a guide to install GLFW, see GLFW3-INSTALL.txt
+ - Homepage: http://www.glfw.org/
+ - License: http://www.glfw.org/license.html
 
 ImageMagick's MagickCore library (optional) - By default, this
 codebase uses STB (code included in this repository) to load some
@@ -113,7 +111,7 @@ supports nearly every possible file format.
  - For a guide to install ImageMagick, see IMAGEMAGICK-INSTALL.txt
  - Version 6.7.5-5 (circa 2012) or higher is recommended; the brightness of images in older versions may be incorrect.
  - Homepage: http://www.imagemagick.org/
- - ImageMagick License: http://www.imagemagick.org/script/license.php
+ - License: http://www.imagemagick.org/script/license.php
 
 ASSIMP (optional, necessary to load 3D model files)
  - For a guide to install ASSIMP, see ASSIMP-INSTALL.txt
