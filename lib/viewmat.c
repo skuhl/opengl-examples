@@ -311,10 +311,10 @@ float viewmat_fps(void)
 }
 
 
-/** Swaps buffers. */
+/** Swaps buffers and implements latency reduction. */
 void viewmat_swap_buffers(void)
 {
-	if(viewmat_swapinterval == 0) // if FPS is unrestricted.
+	if(viewmat_swapinterval == 0 || kuhl_config_boolean("viewmat.latencyreduce", 1,1) == 0) // if FPS is unrestricted.
 	{
 		dgr_update(1,0); // make sure master can send before blocking at swap
 		glfwSwapBuffers(kuhl_get_window());
@@ -337,7 +337,9 @@ void viewmat_swap_buffers(void)
 	{
 		int refreshRate = viewmat_get_refresh_rate();
 		vsyncTime = 1.0/refreshRate * 1000000;
-		msg(MSG_WARNING, "Latency reduction is turned on; assuming monitor is %dHz and we have %d microseconds/frame\n", refreshRate, vsyncTime);
+		msg(MSG_INFO, "Latency reduction is turned on; assuming monitor is %dHz and we have %d microseconds/frame\n", refreshRate, vsyncTime);
+		msg(MSG_INFO, "Set viewmat.latencyreduce to 0 to disable latency reduction.\n", refreshRate, vsyncTime);
+
 	}
 
 	
@@ -958,6 +960,46 @@ static void viewmat_init_hmd_oculus(const float pos[3])
 #endif
 }
 
+/** Get the swap interval settings and call glfwSwapInterval().
+ */
+static void viewmat_init_swapinterval(void)
+{
+	viewmat_swapinterval = kuhl_config_int("viewmat.swapinterval", -1, -1);
+
+	/* If swap_control_tear extension doesn't exist, don't use it. */
+	if(!glfwExtensionSupported("GLX_EXT_swap_control_tear") &&
+	   !glfwExtensionSupported("WGL_EXT_swap_control_tear"))
+	{
+		// https://www.opengl.org/registry/specs/EXT/glx_swap_control_tear.txt
+		// https://www.opengl.org/registry/specs/EXT/wgl_swap_control_tear.txt
+
+		msg(MSG_DEBUG, "Machine lacks support for swap_control_tear extension");
+		if(viewmat_swapinterval == -1)
+			viewmat_swapinterval = 1;
+	}
+
+	if(viewmat_swapinterval < -1 || viewmat_swapinterval > 1)
+		msg(MSG_WARNING, "viewmat.swapinterval should be set to -1, 0 or 1. You have set it to %d\n", viewmat_swapinterval);
+
+	/* If configuration requested 0 */
+	if(viewmat_swapinterval == 0)
+	{
+		msg(MSG_WARNING, "Buffer swapping can happen at any time; FPS can go above monitor refresh rate; tearing may occur.");
+		msg(MSG_WARNING, "Set viewmat.swapinterval to -1 to swap buffers during monitor refresh.");
+	}
+
+	/* Swap interval settings:
+
+	   0 - Swap buffers whenever possible. Tearing can occur. FPS can go above monitor refresh rate.
+
+	   1 - Swap buffers only during monitor refresh. Tearing never occurs.
+
+	   -1 - Swap buffers during monitor refresh if FPS is high enough. If FPS drops below monitor refresh, tearing can occur.
+	*/
+	glfwSwapInterval(viewmat_swapinterval);
+}
+
+
 /** Initialize viewmat and use the specified pos/look/up values as a
  * starting location when mouse movement is used.
  *
@@ -967,30 +1009,8 @@ static void viewmat_init_hmd_oculus(const float pos[3])
  */
 void viewmat_init(const float pos[3], const float look[3], const float up[3])
 {
-	if(glfwExtensionSupported("GLX_EXT_swap_control_tear") ||
-	   glfwExtensionSupported("WGL_EXT_swap_control_tear"))
-	{
-		// https://www.opengl.org/registry/specs/EXT/glx_swap_control_tear.txt
-		// https://www.opengl.org/registry/specs/EXT/wgl_swap_control_tear.txt
-		glfwSwapInterval(-1); /* Sync to monitor refresh, but allow
-		                       * tearing if we fall beind. */
-		viewmat_swapinterval = -1;
-	}
-	else
-	{
-		msg(MSG_DEBUG, "Machine lacks support for swap_control_tear extension");
-		glfwSwapInterval(1); /* Wait for monitor refresh. Set to 0 to
-		                        let framerate go above the monitor
-		                        refresh rate. May not work on all
-		                        machines. */
-		viewmat_swapinterval = 1;
-	}
 
-	if(0) // Change to 1 to let FPS go as fast as possible.
-	{
-		glfwSwapInterval(0); 
-		viewmat_swapinterval =0;
-	}
+	viewmat_init_swapinterval();
 	
 	const char* controlModeString = getenv("VIEWMAT_CONTROL_MODE");
 

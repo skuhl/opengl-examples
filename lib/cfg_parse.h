@@ -38,7 +38,7 @@ void cfg_free(struct cfg_struct *);
 /**
  * @brief Loads key=value pairs from a file into cfg_struct.
  */
-int cfg_load(struct cfg_struct *, const char *);
+int cfg_load(struct cfg_struct *, const char *, int);
 
 /**
  * @brief Saves a cfg_struct to a file as key=value pairs.

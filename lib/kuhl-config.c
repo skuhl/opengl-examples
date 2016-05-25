@@ -74,7 +74,7 @@ const char* kuhl_config_get(const char *key)
 		}
 		cfg = cfg_init();
 		char *filename = kuhl_find_file(cfg_filename);
-		if(cfg_load(cfg, filename) == EXIT_FAILURE)
+		if(cfg_load(cfg, filename, 1) == EXIT_FAILURE)
 		{
 			if(using_defaultFile)
 				msg(MSG_INFO, "Failed to read default config file: %s\n", filename);
@@ -83,6 +83,24 @@ const char* kuhl_config_get(const char *key)
 		}
 		else
 			msg(MSG_DEBUG, "Using settings file at: %s\n", filename);
+		free(filename);
+
+		while(cfg_get(cfg, "include") != NULL)
+		{
+			const char *include = cfg_get(cfg, "include");
+			filename = kuhl_find_file(include);
+			cfg_delete(cfg, "include");
+			if(kuhl_can_read_file(filename))
+			{
+				msg(MSG_DEBUG, "Config file '%s' included '%s'.", cfg_filename, filename);
+				cfg_load(cfg, filename, 0); // don't overwrite
+			}
+			else
+			{
+				msg(MSG_ERROR, "Config file '%s' included '%s', but it doesn't exist or isn't readable.", cfg_filename, filename);
+			}
+			free(filename);
+		}
 	}
 
 	const char *value = cfg_get(cfg, key);

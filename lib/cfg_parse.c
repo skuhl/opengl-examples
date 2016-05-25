@@ -80,15 +80,16 @@ static char *cfg_trim(const char *str)
 
 /**
  * This function loads data from a file, and inserts / updates the specified cfg_struct.
- * New keys will be inserted.  Existing keys will have values overwritten by those read from the file.
+ * New keys will be inserted.  Existing keys can optionally have values overwritten by those read from the file.
  * The format of config-files is "key=value", with any amount of whitespace.
  * Comments can be included by using a # character: processing ends at that point.
  * The maximum line size is CFG_MAX_LINE-1 bytes (see cfg_parse.h)
  * @param cfg Pointer to cfg_struct to update.
  * @param filename String containing filename to open and parse.
+ * @param overwrite If 1, existing values will be overwritten.
  * @return EXIT_SUCCESS (0) on success, or EXIT_FAILURE if file could not be opened.
  */
-int cfg_load(struct cfg_struct *cfg, const char *filename)
+int cfg_load(struct cfg_struct *cfg, const char *filename, int overwrite)
 {
   FILE *fp;
   char buffer[CFG_MAX_LINE], *delim;
@@ -115,7 +116,13 @@ int cfg_load(struct cfg_struct *cfg, const char *filename)
         *delim = '\0';
         delim ++;
 
-        cfg_set(cfg,buffer,delim);
+        if(overwrite == 1)
+	        cfg_set(cfg,buffer,delim);
+        else
+        {
+	        if(cfg_get(cfg, buffer) == NULL)
+		        cfg_set(cfg,buffer,delim);
+        }
       }
     }
   }
