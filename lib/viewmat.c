@@ -156,54 +156,6 @@ static void viewmat_validate_viewportId(int viewportID)
 	}
 }
 
-/** Performs a sanity check on how long it took us to render a
- * frame. At 60fps, we have approximately 16 milliseconds or 16000
- * microseconds per frame. If the time between two subsequent
- * renderings of viewportID 0 is too large, a warning message is
- * printed.
- *
- * Even though the average FPS over a period of time may be above 60,
- * the rendering might not appear smooth if an occasional frame misses
- * the time budget.
- */
-static void viewmat_validate_fps(void)
-{
-	/* Set the time budget. If vblank syncing is turned on, we'd
-	 * expect to always get a FPS close to the monitor. Setting this
-	 * to 55 (instead of 60) will prevent messages from getting
-	 * printed out constantly on such machines. */
-#define targetFps 55 // older compilers won't let us use a static const variable to calculate another static const variable.
-	static const int timeBudget = 1000000.0f / targetFps;
-	
-	/* Initialize our warning message counter and the time that the
-	 * last frame was rendered. */
-	static int warnMsgCount = 0;
-	static long lastTime = -1;
-	if(lastTime < 0) // if our first time called, initialize time and return.
-	{
-		lastTime = kuhl_microseconds();
-		return;
-	}
-
-	/* If it took too long to render the frame, print a message. */
-	long delay = kuhl_microseconds() - lastTime;
-	// msg(MSG_INFO, "Time to render frame %d\n", delay);
-	if(delay > timeBudget)
-	{
-		warnMsgCount++;
-
-		/* Don't print the message if the first few frames took too
-		 * long to render. Also, eventually stop printing the
-		 * message. */
-		if(warnMsgCount > 5 && warnMsgCount <= 100)
-			msg(MSG_WARNING, "It took %ld microseconds to render a frame. Time budget for %d fps is %d microseconds.\n", delay, targetFps, timeBudget);
-		if(warnMsgCount == 100)
-			msg(MSG_WARNING, "That was your last warning about the time budget per frame.\n");
-	}
-
-	lastTime = kuhl_microseconds();
-}
-
 
 
 /** Should be called prior to rendering a frame. */
@@ -522,9 +474,6 @@ void viewmat_end_frame(void)
 	{
 		viewmat_swap_buffers();
 	}
-
-
-	//viewmat_validate_fps();
 }
 
 
@@ -737,16 +686,16 @@ static void viewmat_refresh_viewports(void)
 	}
 }
 
-/** Checks if VIEWMAT_VRPN_OBJECT environment variable is set. If it
+/** Checks if 'viewmat.vrpn.object' config variable is set. If it
     is, use VRPN to control the camera position and orientation.
     
-    @return Returns 1 if VRPN is set up, 0 otherwise.
+    @return Returns 1 if viewmat.vrpn.object is set up, 0 otherwise.
 */
 static int viewmat_init_vrpn(void)
 {
 	viewmat_vrpn_obj = NULL;
 	
-	const char* vrpnObjString = getenv("VIEWMAT_VRPN_OBJECT");
+	const char* vrpnObjString = kuhl_config_get("viewmat.vrpn.object");
 	if(vrpnObjString != NULL && strlen(vrpnObjString) > 0)
 	{
 		viewmat_vrpn_obj = vrpnObjString;
@@ -757,6 +706,11 @@ static int viewmat_init_vrpn(void)
 		float vrpnOrient[16];
 		vrpn_get(viewmat_vrpn_obj, NULL, vrpnPos, vrpnOrient);
 		return 1;
+	}
+	else
+	{
+		msg(MSG_FATAL, "viewmat is unable to control the camera with VRPN because you didn't specify the name of the tracked object that the camera should follow. Please fill in the name of the object in a configuration file with the key 'viewmat.vrpn.object'.");
+		exit(EXIT_FAILURE);
 	}
 	return 0;
 }
@@ -990,11 +944,14 @@ static void viewmat_init_swapinterval(void)
 
 	/* Swap interval settings:
 
-	   0 - Swap buffers whenever possible. Tearing can occur. FPS can go above monitor refresh rate.
+	   0  - Swap buffers whenever possible. Tearing can occur. FPS can
+	        go above monitor refresh rate.
 
-	   1 - Swap buffers only during monitor refresh. Tearing never occurs.
+	   1  - Swap buffers only during monitor refresh. Tearing never occurs.
 
-	   -1 - Swap buffers during monitor refresh if FPS is high enough. If FPS drops below monitor refresh, tearing can occur.
+	   -1 - Swap buffers during monitor refresh if FPS is high
+	        enough. If FPS drops below monitor refresh, tearing can
+	        occur.
 	*/
 	glfwSwapInterval(viewmat_swapinterval);
 }
@@ -1012,7 +969,7 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 
 	viewmat_init_swapinterval();
 	
-	const char* controlModeString = getenv("VIEWMAT_CONTROL_MODE");
+	const char* controlModeString = kuhl_config_get("viewmat.controlmode");
 
 	/* Make an intelligent guess if unspecified */
 	if(controlModeString == NULL) 
