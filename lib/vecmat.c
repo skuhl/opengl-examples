@@ -666,11 +666,11 @@ void mat3d_rotateEuler_new(double result[9], double a1_degrees, double a2_degree
 	for(int i=0; i<3; i++)
 	{
 		if(order[i] == 'X' || order[i] == '1')
-			mat3d_rotateAxis_new(rot, 1, 0, 0, angles[i]);
+			mat3d_rotateAxis_new(rot, angles[i], 1, 0, 0);
 		else if(order[i] == 'Y' || order[i] == '2')
-			mat3d_rotateAxis_new(rot, 0, 1, 0, angles[i]);
+			mat3d_rotateAxis_new(rot, angles[i], 0, 1, 0);
 		else if(order[i] == 'Z' || order[i] == '3')
-			mat3d_rotateAxis_new(rot, 0, 0, 1, angles[i]);
+			mat3d_rotateAxis_new(rot, angles[i], 0, 0, 1);
 		else
 			msg(MSG_ERROR, "Unknown axis: %c\n", order[i]);
 		mat3d_mult_mat3d_new(result, rot, result);
