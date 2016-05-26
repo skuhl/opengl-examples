@@ -253,4 +253,6 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/samples)
 add_subdirectory(${PROJECT_SOURCE_DIR}/vrpn)
 # build DGR relay
 add_subdirectory(${PROJECT_SOURCE_DIR}/dgr)
+# build self tests
+add_subdirectory(${PROJECT_SOURCE_DIR}/selftests)
 
