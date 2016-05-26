@@ -781,23 +781,25 @@ void eulerf_from_mat3f(float angles[3], const float m[9], const char order[3])
 		float index00 = m[mat3_getIndex(index[0],index[0])];
 		float index01 = m[mat3_getIndex(index[0],index[1])];
 		float index02 = m[mat3_getIndex(index[0],index[2])];
-//		float index10 = m[mat3_getIndex(index[1],index[0])]; // unused
-		float index11 = m[mat3_getIndex(index[1],index[1])];
-		float index12 = m[mat3_getIndex(index[1],index[2])];
-//		float index20 = m[mat3_getIndex(index[2],index[0])]; // unused
-		float index21 = m[mat3_getIndex(index[2],index[1])];
+		float index10 = m[mat3_getIndex(index[1],index[0])];
+		//float index11 = m[mat3_getIndex(index[1],index[1])];
+		//float index12 = m[mat3_getIndex(index[1],index[2])];
+		float index20 = m[mat3_getIndex(index[2],index[0])];
+		//float index21 = m[mat3_getIndex(index[2],index[1])];
 		float index22 = m[mat3_getIndex(index[2],index[2])];
 
-		double sy = sqrtf(index01*index01 + index02*index02);
+		float sy = sqrtf(index01*index01 + index02*index02);
 		angles[0] = atan2f(index01, -sign*index02);
 		angles[1] = atan2f(sy, index00);
-		float s1=sinf(angles[0]);
-		float c1=cosf(angles[0]);
-		float c2=cosf(angles[1]);
-		angles[2] = atan2f(c1*index12-s1*index22,
-		                   c1*index11+s1*c2*index21);
+		angles[2] = atan2f(index10, sign*index20);
+
+		if(angles[1] == 0)
+		{
+			angles[0] = acosf(index22);
+			angles[2] = 0;
+		}
 	}
-	else // first and last rotations are different axes
+	else // first and last rotations are different axes - tait bryan
 	{
 		float sign = 1;
 		if((index[0] == 1 && index[1] == 2 && index[2] == 0) ||
@@ -884,23 +886,25 @@ void eulerd_from_mat3d(double angles[3], const double m[9], const char order[3])
 		double index00 = m[mat3_getIndex(index[0],index[0])];
 		double index01 = m[mat3_getIndex(index[0],index[1])];
 		double index02 = m[mat3_getIndex(index[0],index[2])];
-//		float index10 = m[mat3_getIndex(index[1],index[0])]; // unused
-		double index11 = m[mat3_getIndex(index[1],index[1])];
-		double index12 = m[mat3_getIndex(index[1],index[2])];
-//		double index20 = m[mat3_getIndex(index[2],index[0])]; // unused
-		double index21 = m[mat3_getIndex(index[2],index[1])];
+		double index10 = m[mat3_getIndex(index[1],index[0])];
+		//double index11 = m[mat3_getIndex(index[1],index[1])];
+		//double index12 = m[mat3_getIndex(index[1],index[2])];
+		double index20 = m[mat3_getIndex(index[2],index[0])];
+		//double index21 = m[mat3_getIndex(index[2],index[1])];
 		double index22 = m[mat3_getIndex(index[2],index[2])];
 
 		double sy = sqrt(index01*index01 + index02*index02);
 		angles[0] = atan2(index01, -sign*index02);
 		angles[1] = atan2(sy, index00);
-		double s1=sin(angles[0]);
-		double c1=cos(angles[0]);
-		double c2=cos(angles[1]);
-		angles[2] = atan2(c1*index12-s1*index22,
-		                   c1*index11+s1*c2*index21);
+		angles[2] = atan2(index10, sign*index20);
+
+		if(angles[1] == 0)
+		{
+			angles[0] = acos(index22);
+			angles[2] = 0;
+		}
 	}
-	else // first and last rotations are different axes
+	else // first and last rotations are different axes - tait bryan
 	{
 		double sign = 1;
 		if((index[0] == 1 && index[1] == 2 && index[2] == 0) ||
