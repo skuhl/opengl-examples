@@ -306,8 +306,8 @@ int vrpn_is_vicon(const char *hostname)
 	return 0;
 }
 
-/** Returns the default hostname based on the contents of
-    "~/.vrpn-server". Returns NULL on failure.
+/** Returns the default hostname based on the vrpn.server
+    configuration variable. Returns NULL on failure.
 
     @return NULL on failure or a string. The returned string should
     NOT be free()'d because the same string will be returned each time
@@ -315,41 +315,9 @@ int vrpn_is_vicon(const char *hostname)
  */
 const char* vrpn_default_host(void)
 {
-	static char *cachedHostname = NULL;
-	if(cachedHostname != NULL)
-		return cachedHostname;
-
-	/* Try reading VRPN server information from ~/.vrpn-server
-	   
-	   This file should contain a single line that says something like:
-	   tcp://VRPN.SERVER.IP.ADDR
-	*/
-	const char *homedir = getenv("HOME");
-	char path[1024];
-	snprintf(path, 1024, "%s/.vrpn-server", homedir);
-	FILE *f = fopen(path, "r");
-	if(f == NULL)
-	{
-		msg(MSG_WARNING, "Can't open file %s to get VRPN server information.\n", path);
-		return NULL;
-	}
-	char *vrpnString = (char*)malloc(1024);
-	*vrpnString='\0';
-
-	do
-	{
-		if(fgets(vrpnString, 1024, f) == NULL)
-		{
-			msg(MSG_WARNING, "Can't read %s to get VRPN server information.\n", path);
-			return NULL;
-		}
-		kuhl_trim_whitespace(vrpnString);
-	} while(*vrpnString == '#' || strlen(vrpnString) == 0);  // allow for comments and blank lines in vrpn-server file.
-	fclose(f);
-
-	// msg(MSG_DEBUG, "Found in %s: '%s'\n", path, vrpnString);
-	cachedHostname = vrpnString;
-	return vrpnString;
+	const char* vrpnserver = kuhl_config_get("vrpn.server");
+	msg(MSG_DEBUG, "Using VRPN server: %s\n", vrpnserver);
+	return vrpnserver;
 }
 
 
