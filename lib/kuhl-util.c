@@ -1363,7 +1363,7 @@ void kuhl_geometry_new(kuhl_geometry *geom, GLuint program, unsigned int vertexC
  *
  * @param geom The geometry that the indices should be used with.
  *
- * @param indicies A list of indices. Each index refers to a specific vertex.
+ * @param indices A list of indices. Each index refers to a specific vertex.
  *
  * @param indexCount The number of indices. For example, if the
  * geometry object consists of triangles, indexCount should be
