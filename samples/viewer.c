@@ -417,7 +417,6 @@ void display()
 		glUseProgram(0); // stop using a GLSL program.
 
 	} // finish viewport loop
-	viewmat_end_frame();
 
 	/* Update the model for the next frame based on the time. We
 	 * convert the time to seconds and then use mod to cause the
@@ -425,6 +424,8 @@ void display()
 	double time = glfwGetTime();
 	dgr_setget("time", &time, sizeof(double));
 	kuhl_update_model(modelgeom, 0, fmod(time,10));
+	
+	viewmat_end_frame();
 
 	/* Check for errors. If there are errors, consider adding more
 	 * calls to kuhl_errorcheck() in your code. */
