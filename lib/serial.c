@@ -295,7 +295,7 @@ static void serial_settings(int fd, int speed, int parity, int vmin, int vtime)
  @param bytes The bytes we are looking for.
  @param len The number of bytes in bytes.
  @param maxbytes The maximum number of bytes to read while we are looking for the pattern. Set to -1 to keep reading until pattern is found.
- @param return 1 if the pattern was found, 0 otherwise. -1 on error.
+ @return Returns 1 if the pattern was found, 0 otherwise. -1 on error.
  */
 int serial_find(int fd, char *bytes, int len, int maxbytes)
 {

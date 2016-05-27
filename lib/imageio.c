@@ -18,7 +18,7 @@
  * storage type in bytes. This function is intended to be used inside
  * of imageio.c only.
  *
- * @param The input StorageType to get the size of.  @return The size
+ * @param t The input StorageType to get the size of.  @return The size
  * of the StorageType in bytes.
  */
 static int imageio_type_to_bytes(StorageType t)
@@ -132,7 +132,7 @@ int imageout(const imageio_info *iio_info, void* array)
 /** Reads an image from disk and returns the resulting image data in
  * an array.
  *
- * @param An imageio_info object.
+ * @param iio_info An imageio_info object.
  *
  * @return An array of pixels or NULL if there is an error reading the
  * file. The array of pixels should be free()'d by the caller when

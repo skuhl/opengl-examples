@@ -193,7 +193,7 @@ static char* kuhl_path_concat_read(const char* a, const char* b)
 	}
 }
 
-/* Given a filename, tries to find that file by:
+/** Given a filename, tries to find that file by:
    1) Looking for the file using the given path.
 
    2) Change '\' characters to '/' in case the provided path uses
@@ -206,6 +206,7 @@ static char* kuhl_path_concat_read(const char* a, const char* b)
    try changing the path separators).
 
    @param filename The name of the file the caller wants to open.
+   
    @return A path to the file that may be different than the path
    provided in the filename parameter. The returned string should be
    free()'d. If the file was not found, a copy of the original
