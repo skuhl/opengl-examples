@@ -34,8 +34,8 @@
 
 #include "msg.h"
 
-static FILE *f = NULL;  /*< The file stream for our log file */
-static char *logfile = NULL;
+static FILE *f = NULL;  /**< The file stream for our log file */
+static char *logfile = NULL; /**< The filename of the log file. */
 
 /** Writes a timestamp string to a pre-allocated char array.
 

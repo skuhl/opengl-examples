@@ -17,10 +17,10 @@
 #include "kuhl-util.h"
 #include "viewmat.h"
 
-float projmat_frustum[6];
-float projmat_master_frustum[6];
-float projmat_vfov = -1;
-int projmat_mode = -1; /**< -1=undefined, 0=vfov, 1=frustum 2=dsight */
+static float projmat_frustum[6];
+static float projmat_master_frustum[6];
+static float projmat_vfov = -1;
+static int projmat_mode = -1; /**< -1=undefined, 0=vfov, 1=frustum 2=dsight */
 
 
 /** 

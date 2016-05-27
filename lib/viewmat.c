@@ -40,14 +40,14 @@
 #include "OVR_CAPI_GL.h"
 
 /* TODO: These should be organized into a ovr_state struct */
-ovrHmd hmd;
-GLint leftFramebuffer, rightFramebuffer, leftFramebufferAA, rightFramebufferAA;
-ovrSizei recommendTexSizeL,recommendTexSizeR;
-ovrGLTexture EyeTexture[2];
-ovrEyeRenderDesc eye_rdesc[2];
-ovrFrameTiming timing;
-ovrPosef pose[2];
-float oculus_initialPos[3];
+static ovrHmd hmd;
+static GLint leftFramebuffer, rightFramebuffer, leftFramebufferAA, rightFramebufferAA;
+static ovrSizei recommendTexSizeL,recommendTexSizeR;
+static ovrGLTexture EyeTexture[2];
+static ovrEyeRenderDesc eye_rdesc[2];
+static ovrFrameTiming timing;
+static ovrPosef pose[2];
+static float oculus_initialPos[3];
 
 #endif
 
