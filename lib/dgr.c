@@ -307,14 +307,13 @@ void dgr_init(void)
 			dgr_mode = 1;
 			dgr_disabled = 0;
 			dgr_init_master();
-			dgr_update(1,1);
 		}
 		else if(strcmp(mode, "slave") == 0)
 		{
 			dgr_mode = 0;
 			dgr_disabled = 0;
 			dgr_init_slave();
-			dgr_update(1,1);
+			dgr_update(0,1); // get anything that is already sent to us.
 		}
 		else if(strlen(mode) > 0)
 		{
