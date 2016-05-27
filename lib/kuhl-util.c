@@ -230,16 +230,20 @@ static GLFWwindow* kuhl_glfw_create_window(int width, int height, const char *ti
 		if(strcasecmp(monitorName, theMonitor) == 0)
 		{
 			const GLFWvidmode *currentMode = glfwGetVideoMode(monitor);
-			return glfwCreateWindow(currentMode->width, currentMode->height, title, monitor, NULL);
+			GLFWwindow *window = glfwCreateWindow(currentMode->width, currentMode->height, title, monitor, NULL);
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); // hide mouse cursor
+			return window;
 		}
 	}
 
-	/* If we didn't find the monitor. */
+	/* If we didn't find the monitor for fullscreen. */
 	if(numMonitors > 1)
 		msg(MSG_INFO, "Config: Making fullscreen on primary monitor. You can specify the monitor name in the 'fullscreen' config setting. See the top of log.txt for the monitor names available on your machine.");
 	GLFWmonitor *monitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode *currentMode = glfwGetVideoMode(monitor);
-	return glfwCreateWindow(currentMode->width, currentMode->height, title, monitor, NULL);	
+	GLFWwindow *window = glfwCreateWindow(currentMode->width, currentMode->height, title, monitor, NULL);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); // hide mouse cursor
+	return window;
 }
 
 void kuhl_glfw_move_window(GLFWwindow *window)

@@ -658,7 +658,13 @@ void dgr_update(int send, int receive)
 	{
 		// if it is our first time receiving, allow for a delay.
 		if(dgr_time_lastreceive == 0)
-			dgr_receive(10000);  // 10000 milliseconds = 10 seconds
+		{
+			/* Give plenty of time for us to receive the first
+			 * packet. It might arrive very slowly if the master
+			 * process is starting up slowly because it is loading a
+			 * large image or model file. */
+			dgr_receive(300000);  // 300000 milliseconds = 30 seconds
+		}
 		else
 			dgr_receive(0);
 	}
