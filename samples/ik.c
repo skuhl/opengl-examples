@@ -19,12 +19,12 @@
 #include "dgr.h"
 #include "projmat.h"
 #include "viewmat.h"
-GLuint program = 0; /**< id value for the GLSL program */
+static GLuint program = 0; /**< id value for the GLSL program */
 
-int renderStyle = 0;
+static int renderStyle = 0;
 
-kuhl_geometry *modelgeom = NULL;
-float bbox[6];
+static kuhl_geometry *modelgeom = NULL;
+static float bbox[6];
 
 /** Set this variable to 1 to force this program to scale the entire
  * model and translate it so that we can see the entire model. This is
@@ -35,16 +35,16 @@ float bbox[6];
  * center of the bottom face of the bounding box. If
  * FIT_TO_VIEW is not set, this is the location in world
  * coordinates that we want to model's origin to appear at. */
-float placeToPutModel[3] = { 0, 0, 0 };
+static float placeToPutModel[3] = { 0, 0, 0 };
 
 #define GLSL_VERT_FILE "assimp.vert"
 #define GLSL_FRAG_FILE "assimp.frag"
 
-float angles[] = { 10, 15, 20,  // arm 1
+static float angles[] = { 10, 15, 20,  // arm 1
                    20, 25, 30,  // arm 2
 };
-int anglesCount = 6;
-float target[4] = { 0, 4, 0, 1};
+static int anglesCount = 6;
+static float target[4] = { 0, 4, 0, 1};
 
 /* Called by GLFW whenever a key is pressed. */
 void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -411,7 +411,7 @@ void display()
 		static int counter = 0;
 		counter++;
 		if(counter % 60 == 0)
-			msg(MSG_INFO, "FPS: %f\n", viewmat_fps());
+			msg(MSG_INFO, "FPS: %0.2f\n", viewmat_fps());
 
 	} // finish viewport loop
 	viewmat_end_frame();
