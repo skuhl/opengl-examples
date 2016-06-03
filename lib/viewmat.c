@@ -230,7 +230,7 @@ int viewmat_get_refresh_rate(void)
 static float fps = 0;
 static void viewmat_stats_fps(void)
 {
-#define FPS_SAMPLES 20
+#define FPS_SAMPLES 40
 	static long list[FPS_SAMPLES];
 	static int index = 0;         // where next value should be stored
 	static int listfull = 0;      // have we filled up the array?
@@ -275,32 +275,48 @@ void viewmat_swap_buffers(void)
 		return;
 	}
 	
-	static long count = 0;
+	static int count = 0;
 	if(count < 100)
 		count++;
 	static float avgRenderingLastFrame = -1;
+	static float avgRenderingLastFrameDev = 0;
 	static float avgWaitingForVsync = -1;
 	static long postswap_prev = -1;
 	static long postsleep_prev = -1;
 
-	// 1 / (frames/second) * 1000000 microseconds/second = microseconds/frame
-	static int vsyncTime = -1; // microseconds/frame
+
+	static int vsyncTime = -1; //**< microseconds/frame
 	if(vsyncTime == -1)
 	{
 		int refreshRate = viewmat_get_refresh_rate();
+		// 1 / (frames/second) * 1000000 microseconds/second = microseconds/frame
 		vsyncTime = 1.0/refreshRate * 1000000;
 		msg(MSG_INFO, "Latency reduction is turned on; assuming monitor is %dHz and we have %d microseconds/frame\n", refreshRate, vsyncTime);
 		msg(MSG_INFO, "Set viewmat.latencyreduce to 0 to disable latency reduction.\n", refreshRate, vsyncTime);
-
 	}
 
 	
 	dgr_update(1,0); // make sure master can send before blocking at swap
 	GLFWwindow *window = kuhl_get_window();
+	/* We can call glFinish() to ensure that all rendering is done so
+	 * that our preswap time has a higher chance of being
+	 * accurate. Otherwise, our the time spent in swapbuffers can be
+	 * both the time waiting for vsync and the time waiting for the
+	 * previous OpenGL calls to finish. For more information, see:
+	 * https://www.opengl.org/wiki/Performance
+	 *
+	 * Skipping glFinish() may result in a slight performance increase
+	 * and may have a detrimental impact on our latency reduction
+	 * code.
+	 */
+	//glFinish();
 	long preswap = kuhl_microseconds();
 	glfwSwapBuffers(window);
-	long postswap = kuhl_microseconds();
 	viewmat_stats_fps();
+	long postswap = kuhl_microseconds();
+
+
+
 	// Note: The dgr_update(0,1) call happens after the sleep at the
 	// end of this function.
 	int timeWaitingForVsync = postswap - preswap;
@@ -317,40 +333,48 @@ void viewmat_swap_buffers(void)
 	}
 
 	/* Figure out if we missed a frame */
-	float missedFrames = -1;
+	float missedFrames = 0.0f;
 	long elapsed = postswap - postswap_prev;
+	
 	if(elapsed > (((long)vsyncTime)*3)/2)
 	{
 		static int maxMessages = 20;
-		missedFrames = elapsed / (float) vsyncTime - 1;
+		missedFrames = elapsed / (float) vsyncTime - 1.0f;
 		if(count > 60) // don't print message for first 60 frames.
 		{
 			if(maxMessages >= 0)
 				maxMessages--;
-			
+
 			if(maxMessages > 0)
-				msg(MSG_INFO, "Missed approximately %0.2f frame(s)", missedFrames);
+				msg(MSG_INFO, "Missed approximately %0.2f frame(s), %ld usec have elapsed", missedFrames, elapsed);
 			else
 			{
 				if(maxMessages == 0)
 					msg(MSG_INFO, "No more messages about dropped frames, but messages will still be saved to log file.");
-				msg(MSG_DEBUG, "Missed approximately %0.2f frame(s)", missedFrames);
+				msg(MSG_DEBUG, "Missed approximately %0.2f frame(s), %ld usec have elapsed", missedFrames, elapsed);
 			}
-				
-			//msg(MSG_WARNING, "Displayed previous frame at  %ld", postswap_prev);
-			//msg(MSG_WARNING, "Displayed this frame at      %ld", postswap);
-			//msg(MSG_WARNING, "Expected this frame before   %ld", postswap_prev+(((long)vsyncTime)*3)/2);
+#if 0				
+			msg(MSG_WARNING, "Displayed previous frame at  %ld", postswap_prev);
+			msg(MSG_WARNING, "Displayed this frame at      %ld", postswap);
+			msg(MSG_WARNING, "Expected this frame before   %ld", postswap_prev+(((long)vsyncTime)*3)/2);
+#endif
 		}
 	}
-	
-	// Update average waiting for vsync time (except if we missed a
-	// frame; missed frames would artificially inflate our average)
-	if(missedFrames < 0)
-		avgWaitingForVsync    = .9 * avgWaitingForVsync    + .1 * timeWaitingForVsync;
 
+	const float alpha = .95; // weight to put on running average
+
+	// Update average waiting for vsync time. Note: The wait time can
+	// get large if the frame rate is low. I.e., if we miss a vsync,
+	// we have to wait until the next vsync. We calculate the time
+	// waiting for vsync for informational purposes only.
+	avgWaitingForVsync    = alpha * avgWaitingForVsync    + (1-alpha) * timeWaitingForVsync;
+
+	/* Update our estimates of the time it takes to render a
+	 * frame---both the average and our estimate of the deviation.  */
 	int timeRenderingLastFrame = preswap - postsleep_prev;
-	avgRenderingLastFrame = .9 * avgRenderingLastFrame + .1 * timeRenderingLastFrame;
-
+	avgRenderingLastFrame    = alpha * avgRenderingLastFrame + (1-alpha) * timeRenderingLastFrame;
+	avgRenderingLastFrameDev = alpha * avgRenderingLastFrameDev + (1-alpha)*(fabsf(avgRenderingLastFrame-timeRenderingLastFrame));
+	
 	if(count < 60) // collected enough data so our averages are reasonable.
 	{
 		postswap_prev = postswap;
@@ -358,73 +382,36 @@ void viewmat_swap_buffers(void)
 		return;
 	}
 
+	/* Add in more time based on our deviation estimate */
+	float renderingTimeMax = avgRenderingLastFrame + avgRenderingLastFrameDev * 2;
 
-	//msg(MSG_DEBUG, "Timing:   render=%7d waitingForVsync=%7d",
-	//   timeRenderingLastFrame, timeWaitingForVsync);
-	//msg(MSG_DEBUG, "Avg time: render=%7.0f waitingForVsync=%7.0f", avgRenderingLastFrame, avgWaitingForVsync);
+	/** The ideal time that we want to save in microseconds. If we set
+	 * this to 1000, and we have 16666 microseconds per frame, then we
+	 * will try to sleep such that the rendering will finish at
+	 * 16666-1000=15666 microseconds. If we set this value to 0, then
+	 * we won't save any extra time and we risk missing a frame. */
+	const int buffer_time = 1000;
 
-	/* Calculate a conservative estimate for how long it will take to
-	 * render next frame. */
-	int renderingTimeMax = timeRenderingLastFrame;
-	if(renderingTimeMax < avgRenderingLastFrame)
-		renderingTimeMax = avgRenderingLastFrame;
-	if(renderingTimeMax < 0)
-	{
-		msg(MSG_WARNING, "We calculated a negative rendering time. This shouldn't happen.");
-		renderingTimeMax = 0;
-	}
+	/* We have vsyncTime until the next vsync. Subtract out expected
+	 * rendering time and the buffer time. Also subtract out
+	 * additional time if we missed one or more frames. */
+	int sleepTime = vsyncTime - renderingTimeMax - buffer_time - missedFrames*1000;
 
-	#define VSYNC_BUFFER_GOAL 1000 // ideal amount of time to wait for vsync
-	static float adjustment = -VSYNC_BUFFER_GOAL*10; // adjust sleep so we don't sleep or sleep very little initially
-
-	// Calculate ideal adjustment that would have made us reach goal
-	// this frame. This value represents how much we should *change* the
-	// current adjustment!
-	float avgIdealAdjust = avgWaitingForVsync - VSYNC_BUFFER_GOAL;
-	//msg(MSG_DEBUG, "avgIdealAdjust %f = %f - %f\n", avgIdealAdjust, avgWaitingForVsync, goal);
-
-	// Update our adjustment factor---but don't trust our ideal
-	// adjustment factor completely.
-	adjustment = .7*(adjustment+avgIdealAdjust) + .3*adjustment;
-
-	// 'adjustment' should be a negative value below '-VSYNC_BUFFER_GOAL'. For
-	// example, if adjustment is 0, then we aren't actually reserving
-	// 'VSYNC_BUFFER_GOAL' microseconds for the vsync to sleep.
-	if(adjustment > -VSYNC_BUFFER_GOAL)
-		adjustment = -VSYNC_BUFFER_GOAL;
-	/* 'adjustment' shouldn't try to subtract out more time than we
-	   have between frames. */
-	if(adjustment < -vsyncTime)
-		adjustment = -vsyncTime;
-		
-	// Sleep less if we just missed a frame.
-	if(missedFrames > 0)
-		adjustment -= VSYNC_BUFFER_GOAL;
-	else if(missedFrames > 1)
-		adjustment -= VSYNC_BUFFER_GOAL*missedFrames;
-
-	int sleepTime = vsyncTime - renderingTimeMax + adjustment;
-	if(sleepTime > vsyncTime)
-	{
-		msg(MSG_WARNING, "We would sleep longer than the vsync time? This shouldn't happen.\n");
-		/* Reset to no sleep and adjust what we think we'd ideally need */
-		sleepTime = 0;
-		adjustment = -VSYNC_BUFFER_GOAL;
-	}
+#if 0
+	msg(MSG_INFO, "Sleeping for %6d = %6d(avail) - %6.0f(rendermax) - %d(buf) - %6.0f(missedframe)\n", sleepTime, vsyncTime, renderingTimeMax, buffer_time, missedFrames*1000);
+	msg(MSG_INFO, "LastRender=%d AvgRender=%.0f AvgRenderDev=%.0f VsyncWait=%d AvgVsyncWait=%.0f",
+	    timeRenderingLastFrame, avgRenderingLastFrame, avgRenderingLastFrameDev, timeWaitingForVsync, avgWaitingForVsync);
+#endif
 	
-	//msg(MSG_DEBUG, "Sleeping for %d = %d - %d + %0.0f\n", sleepTime, vsyncTime, renderingTimeMax, adjustment);
-	
-	if(sleepTime < 0)
-	{
-		//msg(MSG_DEBUG, "Skipping sleep");
-		postsleep_prev = postswap;
-		postswap_prev = postswap;
-		return;
-	}
-	
-	usleep(sleepTime);
-	postsleep_prev = kuhl_microseconds();
+	postsleep_prev = postswap;
 	postswap_prev = postswap;
+
+	if(sleepTime > 0)
+	{
+		usleep(sleepTime);
+		postsleep_prev = kuhl_microseconds();
+	}
+
 	dgr_update(0,1); // make sure slave receives after blocking at swap
 	return;
 }
