@@ -118,6 +118,11 @@ ASSIMP (optional, necessary to load 3D model files)
  - Homepage: http://assimp.sourceforge.net/
  - License: http://assimp.sourceforge.net/main_license.html
 
+FFmpeg (optional, necessary to load video files)
+ - For a guide to install FFmpeg, see FFMPEG-INSTALL.txt
+ - Homepage: https://www.ffmpeg.org/
+ - License: https://www.ffmpeg.org/legal.html
+
 VRPN (optional, necessary to communicate with a VRPN tracking system server)
  - For a guide to install VRPN, see VRPN-INSTALL.txt
  - Homepage: http://www.cs.unc.edu/Research/vrpn/
