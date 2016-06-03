@@ -184,9 +184,8 @@ void kuhl_geometry_attrib(kuhl_geometry *geom, const GLfloat *data, GLuint compo
 void kuhl_geometry_texture(kuhl_geometry *geom, GLuint texture, const char* name, int kg_options);
 
 
-
-void kuhl_flip_texture_rgba_array(unsigned char *image, const int width, const int height, const int components);
-GLuint kuhl_read_texture_rgba_array_wrap(const unsigned char *array, int width, int height, GLuint wrapS, GLuint wrapT);
+GLuint kuhl_read_texture_array(const unsigned char* array, int width, int height, int components, GLuint wrapS, GLuint wrapT);
+void kuhl_flip_texture_array(unsigned char *image, const int width, const int height, const int components);
 GLuint kuhl_read_texture_rgba_array(const unsigned char *array, int width, int height);
 
 float kuhl_make_label(const char *label, GLuint *texName, float color[3], float bgcolor[4], float pointsize);

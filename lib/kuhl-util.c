@@ -15,6 +15,10 @@
 #include <sys/utsname.h> //uname()
 #endif
 
+#ifdef HAVE_FFMPEG
+#include <libavutil/ffversion.h> // get ffmpeg version
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -130,7 +134,8 @@ void kuhl_diagnostics(void)
 		msg(MSG_DEBUG, "Uname: %s %s %s %s %s",
 		    name.sysname, name.nodename, name.release, name.version, name.machine);
 #endif
-	
+
+
 	msg(MSG_DEBUG, "OpenGL version: %s", glGetString(GL_VERSION));
 	msg(MSG_DEBUG, "GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 	msg(MSG_DEBUG, "OpenGL vendor: %s", glGetString(GL_VENDOR));
@@ -150,6 +155,11 @@ void kuhl_diagnostics(void)
 	msg(MSG_DEBUG, "ImageMagick is missing");
 #endif
 
+#ifdef HAVE_FFMPEG
+	msg(MSG_DEBUG, "FFmpeg is installed: %s", FFMPEG_VERSION);
+#else
+	msg(MSG_DEBUG, "FFmpeg is missing");
+#endif	
 
 #if defined(__clang__)
 	msg(MSG_DEBUG, "Compiler Type: clang");
@@ -1687,7 +1697,8 @@ void kuhl_geometry_delete(kuhl_geometry *geom)
 }
 
 
-/** Converts an array containing RGBA image data into an OpenGL texture using the specified wrapping parameters.
+/** Converts an array containing RGB or RGBA image data into an OpenGL
+ * texture using the specified wrapping parameters.
  *
  * @param array Contains a row-major list of pixels in R, G, B, A
  * format starting from the bottom left corner of the image. Each
@@ -1707,7 +1718,7 @@ void kuhl_geometry_delete(kuhl_geometry *geom)
  * textureName is set to the value returned by this function. Returns
  * 0 on error.
  */
-GLuint kuhl_read_texture_rgba_array_wrap(const unsigned char* array, int width, int height, GLuint wrapS, GLuint wrapT)
+GLuint kuhl_read_texture_array(const unsigned char* array, int width, int height, int components, GLuint wrapS, GLuint wrapT)
 {
 	GLuint texName = 0;
 	if(!GLEW_VERSION_2_0)
@@ -1715,8 +1726,8 @@ GLuint kuhl_read_texture_rgba_array_wrap(const unsigned char* array, int width, 
 		/* OpenGL 2.0+ supports non-power-of-2 textures. Also, need to
 		 * ensure we have a new enough version for the different
 		 * mipmap generation techniques below. */
-		printf("ERROR: kuhl_read_texture_rgba_array() requires OpenGL 2.0 to generate mipmaps.\n");
-		printf("Either your video card/driver doesn't support OpenGL 2.0 or better OR you forgot to call glewInit() at the appropriate time at the beginning of your program.\n");
+		msg(MSG_WARNING, "Texture loading code requires OpenGL 2.0 (to generate mipmaps and support non power of 2 texture dimensions).");
+		msg(MSG_WARNING, "Either your video card/driver doesn't support OpenGL 2.0 or better OR you forgot to call glewInit() at the appropriate time at the beginning of your program.");
 		return 0;
 	}
 	kuhl_errorcheck();
@@ -1727,6 +1738,15 @@ GLuint kuhl_read_texture_rgba_array_wrap(const unsigned char* array, int width, 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	kuhl_errorcheck();
+
+	GLuint internalformat = GL_RGB8;
+	GLuint imageformat = GL_RGB;
+	GLuint pixeldatatype = GL_UNSIGNED_BYTE;
+	if(components == 4)
+	{
+		internalformat = GL_RGBA8;
+		imageformat = GL_RGBA;
+	}
 	
 	/* If anisotropic filtering is available, turn it on.  This does not
 	 * override the MIN_FILTER. The MIN_FILTER setting may affect how the
@@ -1752,8 +1772,8 @@ GLuint kuhl_read_texture_rgba_array_wrap(const unsigned char* array, int width, 
 	 * the file are too big, OpenGL might not load it. NOTE: The parameters
 	 * here should match the parameters of the actual (non-proxy) calls to
 	 * glTexImage2D() below. */
-	glTexImage2D(GL_PROXY_TEXTURE_2D, 0, GL_RGBA8, width, height,
-	             0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_PROXY_TEXTURE_2D, 0, internalformat, width, height,
+	             0, imageformat, pixeldatatype, NULL);
 	int tmp;
 	glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &tmp);
 	if(tmp == 0)
@@ -1782,16 +1802,16 @@ GLuint kuhl_read_texture_rgba_array_wrap(const unsigned char* array, int width, 
 		 * glGenerateMipmaps().  Older versions of OpenGL that provided the
 		 * same capability as an extension, called it
 		 * glGenerateMipmapsEXT(). */
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height,
-		             0, GL_RGBA, GL_UNSIGNED_BYTE, array);
+		glTexImage2D(GL_TEXTURE_2D, 0, internalformat, width, height,
+		             0, imageformat, pixeldatatype, array);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else // if(glewIsSupported("GL_SGIS_generate_mipmap"))
 	{
 		/* Should be used for 1.4 <= OpenGL version < 3.   */
 		glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height,
-		             0, GL_RGBA, GL_UNSIGNED_BYTE, array);
+		glTexImage2D(GL_TEXTURE_2D, 0, internalformat, width, height,
+		             0, imageformat, pixeldatatype, array);
 	}
 
 	/* render textures perspectively correct---instead of interpolating
@@ -1828,7 +1848,7 @@ GLuint kuhl_read_texture_rgba_array_wrap(const unsigned char* array, int width, 
  * 0 on error.
  */
 GLuint kuhl_read_texture_rgba_array(const unsigned char* array, int width, int height) {
-	return kuhl_read_texture_rgba_array_wrap(array, width, height, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+	return kuhl_read_texture_array(array, width, height, 4, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
 /** Creates a texture from a string of text. For example, if you want
@@ -1969,7 +1989,7 @@ kuhl_geometry* kuhl_label_geom(kuhl_geometry *geom, GLuint program, float *width
  * puts the first pixel at the bottom left corner and other
  * image-handling libraries may put the pixel in the top left
  * corner. */
-void kuhl_flip_texture_rgba_array(unsigned char *image, const int width, const int height, const int components) {
+void kuhl_flip_texture_array(unsigned char *image, const int width, const int height, const int components) {
 	// printf("Flipping texture with width = %d, height = %d\n", width, height);
 	unsigned int bytesPerRow = components * width; // 1 byte per component
 	unsigned int pivot = height/2;
@@ -1999,7 +2019,7 @@ static float kuhl_read_texture_file_im(const char *filename, GLuint *texName, GL
     /* It is generally best to just load images in RGBA8 format even
      * if we don't need the alpha component. ImageMagick will fill the
      * alpha component in correctly (opaque if there is no alpha
-     * component in the file or with the actual alpha data. For more
+     * component in the file or with the actual alpha data). For more
      * information about why we use RGBA by default, see:
      * http://www.opengl.org/wiki/Common_Mistakes#Image_precision
      */
@@ -2022,7 +2042,7 @@ static float kuhl_read_texture_file_im(const char *filename, GLuint *texName, GL
 	 * for the lowest left pixel in the texture. */
 	int width  = (int)iioinfo.width;
 	int height = (int)iioinfo.height;
-	*texName = kuhl_read_texture_rgba_array_wrap(image, width, height, wrapS, wrapT);
+	*texName = kuhl_read_texture_array(image, width, height, 4, wrapS, wrapT);
 	msg(MSG_DEBUG, "Finished reading '%s' (%dx%d, texName=%d) with ImageMagick\n", filename, width, height, *texName);
 
 	if(iioinfo.comment)

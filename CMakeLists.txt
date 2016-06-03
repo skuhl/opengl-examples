@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 2.6)
 
-set(CMAKE_C_COMPILER "gcc")
-set(CMAKE_CXX_COMPILER "g++")
+#set(CMAKE_C_COMPILER "gcc")
+#set(CMAKE_CXX_COMPILER "g++")
 
 # Use homebrew gcc if it is installed.
-if(APPLE AND EXISTS /usr/local/bin/gcc-5)
-set(CMAKE_C_COMPILER "/usr/local/bin/gcc-5")
-set(CMAKE_CXX_COMPILER "/usr/local/bin/g++-5")
-endif()
+#if(APPLE AND EXISTS /usr/local/bin/gcc-5)
+#set(CMAKE_C_COMPILER "/usr/local/bin/gcc-5")
+#set(CMAKE_CXX_COMPILER "/usr/local/bin/g++-5")
+#endif()
 
 
 #set(CMAKE_C_COMPILER "clang")
@@ -212,6 +212,16 @@ else()
 	set(MISSING_VRPN_DEFINITION "MISSING_VRPN")
 endif()
 
+# --- FFMPEG ---
+find_package(FFmpeg)
+if(FFMPEG_FOUND)
+	include_directories(${FFMPEG_INCLUDE_DIRS})
+	set(HAVE_FFMPEG_DEFINITION "HAVE_FFMPEG")
+	message(${FFMPEG_LIBRARIES})
+	else()
+	set(HAVE_FFMPEG_DEFINITION "")
+endif()
+
 # --- pthreads (required for DGR) ---
 set(CMAKE_THREADS_PREFER_PTHREAD TRUE)   # prefer pthread over other threading libraries
 # set(THREADS_PREFER_PTHREAD_FLAG TRUE)   # prefer -pthread compiler flag over just using -lpthread, but it might not be supported by all compilers.
@@ -240,7 +250,7 @@ if(LINUX AND NOT APPLE)
 endif()
 
 # Set the preprocessor flags.
-set(PREPROC_DEFINE "MOUSEMOVE_GLFW;${FREETYPE_FOUND_DEFINITION};${ASSIMP_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION};${IMAGEMAGICK_FOUND_DEFINITION}")
+set(PREPROC_DEFINE "MOUSEMOVE_GLFW;${FREETYPE_FOUND_DEFINITION};${ASSIMP_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION};${IMAGEMAGICK_FOUND_DEFINITION};${HAVE_FFMPEG_DEFINITION}")
 
 # Look in lib folder for libraries and header files
 include_directories("lib")
