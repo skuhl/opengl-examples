@@ -484,6 +484,7 @@ static void viewmat_init_hmd_oculus(const float pos[3])
 	msg(MSG_FATAL, "Oculus support is missing: You have not compiled this code against the LibOVR library.\n");
 	exit(EXIT_FAILURE);
 #else
+#ifdef __linux__
 	ovr_Initialize(NULL);
 
 	int useDebugMode = 0;
@@ -629,7 +630,87 @@ static void viewmat_init_hmd_oculus(const float pos[3])
 	// TODO: We are supposed to do these things when we are done:
 	//ovrHmd_Destroy(hmd);
 	//ovr_Shutdown();
+#else // if not linux...
+	ovrResult result = ovr_Initialize(NULL);
+	if(!OVR_SUCCESS(result))
+		msg(MSG_ERROR, "ovr_Initialize() error");
+
+	ovrSession session;
+	ovrGraphicsLuid luid;
+	result = ovr_Create(&session, &luid);
+	if(!OVR_SUCCESS(result))
+		msg(MSG_ERROR, "ovr_Create() error");
+	   
+	ovrHmdDesc hmdDesc = ovr_GetHmdDesc(session);
+
+	/* pixelDensity can range between 0 to 1 (where 1 has the highest
+	 * resolution). Using smaller values will result in smaller
+	 * textures that each eye is rendered into. */
+	float pixelDensity = 1;
+	int eyes[2] = { ovrEye_Left, ovrEye_Right };
+	for(int i=0; i<2; i++)
+	{
+		int eye = eyes[i];
+		int recommendTexSize = ovrHmd_GetFovTextureSize(session, eye,  hmd->DefaultEyeFov[eye],  pixelDensity);
+
+		ovrTextureSwapChainDesc desc;
+		desc.Type = ovrTexture_2D;
+		desc.ArraySize = 1;
+		desc.Width  = recommendTexSize.w;
+		desc.Height = reocommendTexSize.h;
+		desc.MipLevels = 1;
+		desc.Format = OVR_FORMAT_R8G8B8A8_UNORM_SRGB;
+		desc.SampleCount = 1;
+		desc.StaticImage = ovrFalse;
+
+		ovrTextureSwapChain TextureChain;
+		ovrResult createResult = ovr_CreateTextureSwapChainGL(session, &desc, &TextureChain);
+		int length = 0;
+		ovr_GetTExtureSwapChainLength(session, TextureChain, &length);
+		if(OVR_SUCCESS(createResult))
+		{
+			for(int i=0; i<length; i++)
+			{
+				GLuint chainTexId;
+				ovr_GetTextureChainBufferGL(session, TextureChain, i, &chainTexId);
+				glBindTexture(GL_TEXTURE_2D, chainTexId);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			}
+		}
+
+		GLuint depthBufferId;
+		glGenTextures(1, &depthBufferId);
+		glBindTexture(GL_TEXTURE_2D, depthBufferId);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		GLenum internalFormat = GL_DEPTH_COMPONENT24;
+		GLenum type = GL_UNSIGNED_INT;
+
+		/*
+		if (GLE_ARB_depth_buffer_float)
+		{
+			internalFormat = GL_DEPTH_COMPONENT32F;
+			type = GL_FLOAT;
+			}
+		*/
+
+		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, size.w, size.h, 0, GL_DEPTH_COMPONENT, type, NULL);
+
+
+		ovrMirrorTextureDesc desc;
+		memset(&desc, 0, sizeof(desc));
+//		desc. TODO!
+
+		ovr_SetTrackingOriginType(session, ovrTrackingOrigin_FloorLevel);
+	
 #endif
+#endif // MISSING_VRPN
 }
 
 /** Initialize viewmat and use the specified pos/look/up values as a
