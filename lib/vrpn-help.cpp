@@ -8,19 +8,15 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <map>
 #include <string>
 
 #ifndef MISSING_VRPN
 #include <vrpn_Tracker.h>
 #include <quat.h>
-#endif
-
-#ifdef __APPLE__
-#include <OpenGL/gl.h>
-#else
-#include <GL/gl.h>
 #endif
 
 #include "kuhl-util.h"

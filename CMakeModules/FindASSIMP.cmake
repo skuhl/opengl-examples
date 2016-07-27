@@ -5,17 +5,21 @@ FIND_PACKAGE(ZLIB)
 FIND_LIBRARY(ASSIMP_LIBRARIES assimp)
 FIND_PATH(ASSIMP_INCLUDE_DIRS assimp/mesh.h)
 
+FIND_LIBRARY(ASSIMP_LIBRARIES NAMES assimp assimp-vc*-mtd assimp-vc-mt)
+FIND_PATH(ASSIMP_INCLUDE_DIRS assimp/mesh.h)
 
-if(ASSIMP_SOURCE)
-find_package_handle_standard_args(ASSIMP DEFAULT_MSG
-    ASSIMP_INCLUDE_DIRS
-    ASSIMP_SOURCE
-)
-else()
+# We don't need to find zlib if we are on windows...
+if(WIN32)
 find_package_handle_standard_args(ASSIMP DEFAULT_MSG
     ASSIMP_LIBRARIES
     ASSIMP_INCLUDE_DIRS
-    ZLIB_LIBRARIES
+)
+else()
+FIND_PACKAGE(ZLIB)
+find_package_handle_standard_args(ASSIMP DEFAULT_MSG
+    ASSIMP_LIBRARIES
+    ASSIMP_INCLUDE_DIRS
+   ZLIB_LIBRARIES
 )
 endif()
 

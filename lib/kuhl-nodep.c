@@ -16,10 +16,14 @@
 #include <string.h>
 #include <time.h>
 #include <sys/types.h>
+#ifdef _WIN32
+#include <Windows.h>
+#else
 #include <sys/time.h>
-#include <ctype.h> // isspace()
 #include <unistd.h>
 #include <libgen.h> // dirname()
+#endif
+#include <ctype.h> // isspace()
 
 #if __APPLE__
 #include <mach-o/dyld.h>  // for _NSGetExectuablePath()
@@ -29,7 +33,7 @@
 
 
 // When compiling on windows, add suseconds_t and the rand48 functions.
-#ifdef __MINGW32__
+#if defined __MINGW32__ || defined _WIN32
 #define RAND48_SEED_0   (0x330e)
 #define RAND48_SEED_1 (0xabcd)
 #define RAND48_SEED_2 (0x1234)
@@ -223,7 +227,11 @@ char* kuhl_find_file(const char *filename)
 
 	char commonDirs[32][256];
 	int commonDirsLen = 0;
+#ifdef _WIN32
+	strncpy(commonDirs[commonDirsLen++], "../../samples", 255); // On windows, binaries get put into extra subdirectory
+#else
 	strncpy(commonDirs[commonDirsLen++], "../samples", 255); // Find fragment programs in samples directory
+#endif
 	strncpy(commonDirs[commonDirsLen++], "/home/kuhl/public-ogl/data", 255); // CCSR
 	strncpy(commonDirs[commonDirsLen++], "/local/kuhl-public-share/opengl/data", 255); // Rekhi
 	strncpy(commonDirs[commonDirsLen++], "/Users/kuhl/public-ogl/data", 255); // OS X laptop
@@ -344,8 +352,6 @@ char* kuhl_text_read(const char *filename)
 
 
 
-/** The time at which kuhl_limitfps() was last called. */
-static struct timeval limitfps_last = { .tv_sec = 0, .tv_usec = 0 };
 /** When called per frame, sleeps for a short period of time to limit
  * the frames per second. There are two potential uses for this: (1)
  * When FPS are far higher than the monitor refresh rate and CPU load
@@ -362,6 +368,11 @@ static struct timeval limitfps_last = { .tv_sec = 0, .tv_usec = 0 };
  */
 void kuhl_limitfps(int fps)
 {
+#ifndef _WIN32   // TODO, implement for windows!
+
+	/** The time at which kuhl_limitfps() was last called. */
+	static struct timeval limitfps_last = { .tv_sec = 0,.tv_usec = 0 };
+
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 
@@ -390,15 +401,24 @@ void kuhl_limitfps(int fps)
 	}
 
 	gettimeofday(&limitfps_last, NULL);
+#endif
 }
 
 /** Returns the current time in microseconds. 1 second = 1,000,000 microseconds. 1 millisecond = 1000 microseconds */
 long kuhl_microseconds(void)
 {
+#if _WIN32
+	// TODO: check/fix me
+	LARGE_INTEGER freq, start;
+	QueryPerformanceFrequency(&freq);
+	QueryPerformanceCounter(&start);
+	return (start.QuadPart / freq.QuadPart)*1000000;
+#else
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	long us = (tv.tv_sec * 1000000L) + tv.tv_usec;
 	return us;
+#endif
 }
 
 /** Returns the number of milliseconds since the first time this
@@ -416,10 +436,18 @@ long kuhl_microseconds_start(void)
  * milliseconds */
 long kuhl_milliseconds(void)
 {
+#ifdef _WIN32
+	// TODO: check/fix me
+	LARGE_INTEGER freq, start;
+	QueryPerformanceFrequency(&freq);
+	QueryPerformanceCounter(&start);
+	return (start.QuadPart / freq.QuadPart) * 1000;
+#else
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	long ms = (tv.tv_sec * 1000L) + tv.tv_usec / 1000L;
 	return ms;
+#endif
 }
 
 /** Returns the number of milliseconds since the first time this

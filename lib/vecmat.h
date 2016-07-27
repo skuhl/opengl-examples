@@ -43,9 +43,13 @@ extern "C" {
 #define M_PI 3.14159265358979323846
 #endif
 
-	
+/* https://stackoverflow.com/questions/32851292/vs2015-cannot-fathom-static-inline-functions */
+#if defined _MSC_VER && defined __EDG__ && !defined __cplusplus
+#define inline
+#endif
+
 /** Set the values in a 3-component float vector */
-static inline void   vec3f_set(float  v[3], float  a, float  b, float  c)
+static inline void vec3f_set(float  v[3], float  a, float  b, float  c)
 { v[0]=a; v[1]=b; v[2]=c; }
 /** Set the values in a 3-component double vector */
 static inline void   vec3d_set(double v[3], double a, double b, double c)

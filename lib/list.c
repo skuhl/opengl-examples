@@ -11,11 +11,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h> /* int32_t */
 
 /* For random number generation: */
 #include <time.h>      // time()
+#ifndef _WIN32
 #include <unistd.h>    // getpid()
+#endif
 #include <sys/types.h> // getpid()
+
 
 #include "list.h"
 #include "msg.h"
@@ -966,6 +970,10 @@ int list_bsearch(list *l, const void *item)
  */
 int32_t list_rand_interval(int32_t min, int32_t max)
 {
+#ifdef _WIN32
+	msg(MSG_ERROR, "This function is not defined on windows.");
+	return 0;
+#else
 	/* Although srand48() might have been called elsewhere, make sure
 	 * that we call it at least once to seed the generator. */
 	static int srand_done = 0;
@@ -997,6 +1005,7 @@ int32_t list_rand_interval(int32_t min, int32_t max)
 	long r;
 	do { r = lrand48(); } while( r >= limit );
 	return (int32_t) (min + r/buckets);
+#endif
 }
 
 /** Randomly shuffles all of the items in the list. Exits on failure,

@@ -5,7 +5,9 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -17,6 +19,7 @@
 #endif
 
 #include "tdl-util.h"
+#include "msg.h"
 /*
  * Moves the cursor to the first data point entry.
  * This MUST be called before any calls to tdl_read.
@@ -29,6 +32,10 @@
  */
 int tdl_prepare(int fd, char** name)
 {
+#ifdef _WIN32
+	msg(MSG_ERROR, "This function is not defined on Windows.");
+#else
+
 	//Seek to the begining of the file.
 	lseek(fd, 0, SEEK_SET);
 	
@@ -74,6 +81,7 @@ int tdl_prepare(int fd, char** name)
 	
 	//Everthing went fine, so return 1.
 	return 1;
+#endif
 }
 
 /*
@@ -95,6 +103,10 @@ int tdl_prepare(int fd, char** name)
  */
 int tdl_create(const char* path, const char* name)
 {
+#ifdef _WIN32
+	msg(MSG_ERROR, "This function is not defined on Windows.");
+#else
+
 	int pathLen = strlen(path);
 	int nameLen = strlen(name);
 	nameLen = nameLen > 32 ? 32 : nameLen;
@@ -141,6 +153,7 @@ int tdl_create(const char* path, const char* name)
 	}
 	
 	return fd;
+#endif
 }
 /*
  * Returns the next tracked point in the file.
@@ -158,6 +171,10 @@ int tdl_create(const char* path, const char* name)
  */
 int tdl_read(int fd, float pos[3], float orient[9])
 {
+#ifdef _WIN32
+	msg(MSG_ERROR, "This function is not defined on Windows.");
+#else
+
 	int posSize = 3*(signed int)sizeof(float);
 	int orientSize = 9*(signed int)sizeof(float);
 	
@@ -189,6 +206,7 @@ int tdl_read(int fd, float pos[3], float orient[9])
 	}
 	
 	return 0;
+#endif
 }
 
 /*
@@ -201,6 +219,10 @@ int tdl_read(int fd, float pos[3], float orient[9])
  */
 void tdl_write(int fd, float pos[3], float orient[9])
 {
+#ifdef _WIN32
+	msg(MSG_ERROR, "This function is not defined on Windows.");
+#else
+
 	int posSize = 3*(signed int)sizeof(float);
 	int orientSize = 9*(signed int)sizeof(float);
 	if(write(fd, pos, posSize) < posSize)
@@ -212,6 +234,7 @@ void tdl_write(int fd, float pos[3], float orient[9])
 	{
 		perror("Writing orientation failed");
 	}
+#endif
 }
 
 /*
@@ -231,6 +254,9 @@ bool tdl_validate(int fd)
 int tdl_validate(int fd)
 #endif
 {
+#ifdef _WIN32
+	msg(MSG_ERROR, "This function is not defined on Windows.");
+#else
 	unsigned char buff[9];
 	int valid = 0;
 	ssize_t lenRead = read(fd, buff, 9);
@@ -247,6 +273,8 @@ int tdl_validate(int fd)
 	return (bool)valid;
 #else
 	return valid;
+#endif
+
 #endif
 }
 

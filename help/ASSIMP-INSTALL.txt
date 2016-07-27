@@ -1,39 +1,60 @@
-=== How do I get a copy of ASSIMP? ===
+--- LOCATION ---
 
-Linux: Use built-in package manager. Install both the library and the
-development files (i.e., install libassimp3 and libassimp-dev
-packages---although they might have different names on your
-system). If it isn't available in your package manager, download and
-compile ASSIMP yourself.
+You can find ASSIMP at: https://github.com/assimp/assimp/releases
 
-OS X: Use homebrew.
+--- SELECTING AN ASSIMP VERSION ---
 
-Windows: Download and compile it yourself. 
+If you want to use ASSIMP you should use the following versions: 
+   
+   - 3.0 or higher should work (but it has a problem where some models
+     are scaled incorrectly when loaded)
 
-=== Where can I download the ASSIMP source code? ===
+   - 3.1.1 or 3.2 is recommended
 
-Visit: https://github.com/assimp/assimp/releases
-
-
-=== Which version of ASSIMP do I need? ===
-
-We recommend 3.1.1 or higher. We have not found any problems with
-using ASSIMP 3.2. Initial testing indicates that ASSIMP 3.3 and 3.3.1
-works too.
+   - 3.3 or 3.3.1 should also work but hasn't been tested as heavily.
 
 
-=== Compiling ASSIMP from source on Linux ===
 
-Download the ASSIMP source code (see above).
+--- LINUX INSTRUCTIONS ---
 
-Run "cmake ."
-Run "make"
-Run "make install" to install files into /usr/local
+First try installing ASSIMP via your distributions package manager. On
+many systems, you will need to install both the library and the
+associated headers (for example libassimp3 and libassimp-dev).
+
+If you decide to compile it yourself:
+Download it from the website listed above
+Extract files
+cmake .
+make
 
 If you encounter problems compiling assimp 3.2, try changing "cmake ."
 to "cmake -DASSIMP_BUILD_TESTS=OFF ."
 
-To make sure that the opengl-examples cmake finds your copy of the
-library, run "./cleanup.sh" to clean up all of the binaries and CMake
-cache files from your opengl-examples directory. Then run "cmake ."
-and "make" to compile with ASSIMP.
+Next, use one of the following two options:
+ 1) Run "sudo make install" to install ASSIMP into /usr/local
+ 2) Edit opengl-examples/CMakeModules/FindASSIMP.txt so that this software can find your copy of the library.
+
+
+--- OSX INSTRUCTIONS ---
+
+Install homebrew and run "brew install assimp"
+
+
+--- WINDOWS INSTRUCTIONS ---
+
+Download ASSIMP source code (we've tested with ASSIMP 3.2). Ensure that you have CMake and Visual Studio installed.
+
+Run cmake-gui
+
+Set the root directory of the ASSIMP source code to be "where is the source code:" and "where to build the binaries:".
+
+Click "Configure". Select Visual Studio and native compilers.
+
+Click "Generate".
+
+Open "Assimp.sln" with Visual Studio.
+
+Right click on the ALL_BUILD solution and select "Build"
+
+Refer back to WINDOWS-VisualStudio.txt to get opengl-examples to work with your library.
+

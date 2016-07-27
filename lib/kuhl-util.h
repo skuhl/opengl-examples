@@ -29,10 +29,23 @@
 #include <string.h>
 #include <GLFW/glfw3.h>
 
+#if _WIN32
+#include <windows.h>
+#endif
+
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #else
 #include <GL/gl.h>
+#endif
+
+
+/* Windows does not have some functions, so we need to use the equivalent functions on Windows instead. */
+#ifdef _MSC_VER 
+ //not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in mingw
+#define strncasecmp _strnicmp
+#define strcasecmp _stricmp
+#define sleep(t)  Sleep((t) * 1000)
 #endif
 
 #include "kuhl-config.h"

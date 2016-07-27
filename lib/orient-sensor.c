@@ -15,9 +15,12 @@
 #include "orient-sensor.h"
 #include "kuhl-util.h"
 #include "serial.h"
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h> /* uint8_t */
 #include <time.h>
 
 /** Opens a connection to the orientation sensor.

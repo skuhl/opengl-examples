@@ -1,0 +1,55 @@
+--- GETTING STARTED ---
+
+STEP 0: Install Visual Studio (we have verified that it works with
+Visual Studio Community 2015). You will also need to install cmake for
+Windows. Finally, you may also want to install git to interact with
+the opengl-examples git repository.
+
+STEP 1: You will first need to download several libraries that opengl-examples
+depends on. We recommend that you place the source code and the
+libraries that you compile into a single folder (for example, an
+"opengl-libs" folder on your desktop, right next to your
+"opengl-examples" code also on your desktop).
+
+STEP 2: Download and compile each of the following
+libraries. Instructions for obtaining and compiling these libraries
+are available in separate text files in this directory.
+
+ - ASSIMP
+ - Freeglut
+ - Glew
+
+STEP 3: Modify opengl-examples/CMakeLists.txt. There is a variable
+near the top of the file called OTHER_LIBRARIES_DIR that is intended
+to the be path to the folder which contains one subfolder for each of
+the libraries in step 2.
+
+STEP 4: For GLEW, check the top of CmakeModules/FindGLEW.cmake and
+verify that the name of the subfolder in that file matches the name of
+your subfolder. Some of the subfolder names contain version
+numbers---and the version numbers might not match what is already in
+those cmake files. REPEAT this step for each of the libraries.
+
+STEP 5: Open the cmake-gui app. Set the "Where is the source code" and
+"Where to build the binaries" to be your opengl-examples folder. Click
+"Configure". If there are any obvious error messages, attempt to fix
+them. Once everything is properly configured, press "Generate".
+
+STEP 6: Open opengl-examples.sln in Visual Studio. Try building the
+"triangle" program (a simple program that doesn't depend on ASSIMP)
+and the "viewer" program (a program that does depend on assimp).
+
+STEP 7: Look for the programs you built in
+opengl-examples/bin/Debug. But, before you try to run them, you will
+need to copy freeglutd.dll and assimp-vc130-mtd.dll into the bin/Debug
+folder too! You can find the dll files in the bin folders inside of
+the source code for the corresponding libraries.
+
+
+
+--- TODO ---
+
+ - Get the code to work with ImageMagick and VRPN
+
+
+
