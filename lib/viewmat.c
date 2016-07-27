@@ -7,7 +7,9 @@
  * @author Scott Kuhl
  */
 
+#ifndef _WIN32
 #include <unistd.h> // usleep()
+#endif
 #include <stdlib.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -408,7 +410,10 @@ void viewmat_swap_buffers(void)
 
 	if(sleepTime > 0)
 	{
+#ifndef _WIN32
+		// TODO: Implement this for windows.
 		usleep(sleepTime);
+#endif
 		postsleep_prev = kuhl_microseconds();
 	}
 

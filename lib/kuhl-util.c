@@ -27,7 +27,7 @@
 #include <libgen.h> // for dirname()
 #include <sys/time.h> // gettimeofday()
 #include <unistd.h> // usleep()
-#endif
+#endif 
 
 #include <time.h> // time()
 #ifdef __linux__
@@ -110,9 +110,13 @@ void kuhl_diagnostics(void)
 	msg(MSG_DEBUG, "Library compiled at: %s", __TIMESTAMP__);
 #endif
 
+#ifdef _WIN32
+	const char *hostname = getenv("COMPUTERNAME");
+#else
 	char hostname[1024];
 	gethostname(hostname, 1024);
 	hostname[1023] = '\0';
+#endif
 	msg(MSG_DEBUG, "Hostname: %s\n", hostname);
 
 #if defined(_WIN32)
@@ -2096,7 +2100,7 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName, G
 	 * bytes for each pixel (red, green, blue, alpha). The data in "image"
 	 * is in row major order. The first 4 bytes are the color information
 	 * for the lowest left pixel in the texture. */
-	*texName = kuhl_read_texture_rgba_array_wrap(image, width, height, wrapS, wrapT);
+	*texName = kuhl_read_texture_rgba_array(image, width, height, wrapS, wrapT);
 	msg(MSG_DEBUG, "Finished reading '%s' (%dx%d, texName=%d) with STB\n", filename, width, height, *texName);
 	stbi_image_free(image);
 	
@@ -2200,7 +2204,7 @@ static void kuhl_screenshot_stb(const char *outputImageFilename)
 	             GL_RGB,GL_UNSIGNED_BYTE, data);
 	kuhl_errorcheck();
 
-	kuhl_flip_texture_rgba_array(data, windowWidth, windowHeight, 3);
+	kuhl_flip_texture_array(data, windowWidth, windowHeight, 3);
 
 	int ok=0;
 	const char *s = outputImageFilename;

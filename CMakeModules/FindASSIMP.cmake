@@ -5,7 +5,7 @@ FIND_PACKAGE(ZLIB)
 FIND_LIBRARY(ASSIMP_LIBRARIES assimp)
 FIND_PATH(ASSIMP_INCLUDE_DIRS assimp/mesh.h)
 
-FIND_LIBRARY(ASSIMP_LIBRARIES NAMES assimp assimp-vc*-mtd assimp-vc-mt)
+FIND_LIBRARY(ASSIMP_LIBRARIES NAMES assimp assimp-vc140-mt assimp-vc140-mtd assimp-vc130-mt assimp-vc130-mtd)
 FIND_PATH(ASSIMP_INCLUDE_DIRS assimp/mesh.h)
 
 # We don't need to find zlib if we are on windows...
