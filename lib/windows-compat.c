@@ -77,4 +77,9 @@ void usleep(DWORD waitTime) {
 	} while ((now.QuadPart - start.QuadPart) / (float)(perfCnt.QuadPart) * 1000 * 1000 < waitTime);
 }
 
+#else
+
+static void hackToFixCompilerWarning(void) { }
+
+
 #endif
