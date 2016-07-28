@@ -1,4 +1,3 @@
-
 #if defined __MINGW32__ || defined _WIN32
 #include <Windows.h>
 #include <math.h>
@@ -79,7 +78,6 @@ void usleep(DWORD waitTime) {
 
 #else
 
-static void hackToFixCompilerWarning(void) { }
-
+#error You do not seem to be using Windows. If you are not using windows, do not compile windows-compat.c into the library.
 
 #endif
