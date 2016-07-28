@@ -13,8 +13,12 @@ MACRO(FFMPEG_FIND varname shortname headername)
         DOC "Location of FFMPEG Headers"
     )
 
+	# TODO: Change PATH to DIRECTORY in get_filename_component all
+        # MTU computers are upgraded beyond cmake 2.8.11
+	# https://cmake.org/cmake/help/v3.0/command/get_filename_component.html
+
 	# Include files are all in /usr/include/libavformat/avformat.h --- but we only want the /usr/include part:
-	get_filename_component(FFMPEG_${varname}_INCLUDE_DIRS ${FFMPEG_${varname}_INCLUDE_DIRS} DIRECTORY )
+	get_filename_component(FFMPEG_${varname}_INCLUDE_DIRS ${FFMPEG_${varname}_INCLUDE_DIRS} PATH )
 	LIST(APPEND FFMPEG_INCLUDE_DIRS FFMPEG_${varname}_INCLUDE_DIRS)
 	
     FIND_LIBRARY(FFMPEG_${varname}_LIBRARIES
