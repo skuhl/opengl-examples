@@ -37,11 +37,14 @@
    http://nuclear.mutantstargoat.com/hg/oculus2/file/tip
 */
 
+#ifdef __linux
 #include <GL/glx.h>
 #define OVR_OS_LINUX
+#endif
 #include "OVR_CAPI.h"
 #include "OVR_CAPI_GL.h"
 
+#ifdef __linux
 /* TODO: These should be organized into a ovr_state struct */
 static ovrHmd hmd;
 static GLint leftFramebuffer, rightFramebuffer, leftFramebufferAA, rightFramebufferAA;
@@ -51,6 +54,8 @@ static ovrEyeRenderDesc eye_rdesc[2];
 static ovrFrameTiming timing;
 static ovrPosef pose[2];
 static float oculus_initialPos[3];
+#endif // linux
+
 
 #endif
 
