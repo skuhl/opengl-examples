@@ -44,10 +44,10 @@ endif()
 
 # Compile the list of programs.
 foreach(arg ${PROGRAMS_TO_MAKE})
-	if(EXISTS samples/${arg}.cpp)   # Figure out if the program is a c or cpp file
-		set(SOURCE_FILE ${arg}.cpp)
-	else()
+	if(EXISTS samples/${arg}.c)   # Figure out if the program is a c or cpp file
 		set(SOURCE_FILE ${arg}.c)
+	else()
+		set(SOURCE_FILE ${arg}.cpp)
 	endif()
 	add_executable(${arg} ${SOURCE_FILE})
 
