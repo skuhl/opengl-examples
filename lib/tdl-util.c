@@ -34,6 +34,7 @@ int tdl_prepare(int fd, char** name)
 {
 #ifdef _WIN32
 	msg(MSG_ERROR, "This function is not defined on Windows.");
+	return -1;
 #else
 
 	//Seek to the begining of the file.
@@ -105,6 +106,7 @@ int tdl_create(const char* path, const char* name)
 {
 #ifdef _WIN32
 	msg(MSG_ERROR, "This function is not defined on Windows.");
+	return -1;
 #else
 
 	int pathLen = strlen(path);
@@ -173,6 +175,7 @@ int tdl_read(int fd, float pos[3], float orient[9])
 {
 #ifdef _WIN32
 	msg(MSG_ERROR, "This function is not defined on Windows.");
+	return -1;
 #else
 
 	int posSize = 3*(signed int)sizeof(float);
@@ -256,6 +259,7 @@ int tdl_validate(int fd)
 {
 #ifdef _WIN32
 	msg(MSG_ERROR, "This function is not defined on Windows.");
+	return 0;
 #else
 	unsigned char buff[9];
 	int valid = 0;

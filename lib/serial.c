@@ -78,6 +78,7 @@ int serial_read(int fd, char* buf, size_t numBytes, int options)
 {
 #ifdef _WIN32
 	msg(MSG_ERROR, "This function is not defined on Windows.");
+	return -1;
 #else
 	char *ptr = buf;
 
@@ -316,6 +317,7 @@ int serial_find(int fd, char *bytes, int len, int maxbytes)
 {
 #ifdef _WIN32
 	msg(MSG_ERROR, "This function is not defined on Windows.");
+	return -1;
 #else
 
 	int readbytes = 0;
