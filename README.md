@@ -1,8 +1,18 @@
 OpenGL examples
 ===============
 
-These example programs demonstrate how to develop OpenGL 3.0 programs on multiple platforms. This code is heavily tested on Linux but also has been known to work on OSX and on Windows (through MingW). This project relies on several different libraries to read & write images, read 3D model files, communicate with VRPN tracking systems, red/cyan anaglyph stereoscopy, head-mounted display support (including Oculus DK1 & DK2), and multi-host distributed rendering.
+This code provides a library to support the development of basic OpenGL and virtual reality applications. It was developed at Michigan Technological University for interactive computer graphics and virtual reality courses. Features include:
 
-This software has been primarily developed at Michigan Technological University for use in advanced computer graphics courses and for virtual reality research projects.
+* Cross platform: Runs on Linux, Mac OS X, and Windows.
+* Image loading: Loads a few image formats by default (JPEG, PNG, etc). If ImageMagick is present, nearly any image file format can be loaded (ImageMagick has been tested on Linux and Mac OS X).
+* Image writing: Can save arbitrary data into an image. For example, you can record screenshots of every frame to disk and use a utility to combine them into a video file.
+* 3D model loading: Numerous types of 3D model files can be loaded via the Assimp library. Also supports animated characters.
+* Video file loading: Videos can be displayed as textures if the ffmpeg library is available (tested on Linux and Mac OS X).
+* VRPN support: Can communicate with virtual reality tracking systems which support the VRPN protocol. Includes a utilities to record and playback motions.
+* Example programs: Includes numerous sample programs which demonstrate texturing, panorama images, 3D model loading and use of tracking systems.
+* Oculus support: Older Linux Oculus drivers are supported. Oculus support on Windows is a work in progress.
+* Red/Cyan anaglyph stereoscopy.
+* Multi-host distributed rendering: If multiple computers power multiple screens, this library provides rudimentary support to specify which part of the screen each computer is responsible for rendering and communicating information to keep the scene synchronized.
+
 
 See the "help" folder for basic information about compiling and running this software.
