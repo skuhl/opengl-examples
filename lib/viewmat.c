@@ -7,9 +7,12 @@
  * @author Scott Kuhl
  */
 
-#ifndef _WIN32
-#include <unistd.h> // usleep()
+#ifdef _WIN32
+#include "windows-compat.h" // usleep() on windows
+#else
+#include <unistd.h> // usleep() on Linux and Mac
 #endif
+
 #include <stdlib.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -392,7 +395,7 @@ void viewmat_swap_buffers(void)
 	 * will try to sleep such that the rendering will finish at
 	 * 16666-1000=15666 microseconds. If we set this value to 0, then
 	 * we won't save any extra time and we risk missing a frame. */
-	const int buffer_time = 1000;
+	const int buffer_time = 1500;
 
 	/* We have vsyncTime until the next vsync. Subtract out expected
 	 * rendering time and the buffer time. Also subtract out
@@ -410,10 +413,7 @@ void viewmat_swap_buffers(void)
 
 	if(sleepTime > 0)
 	{
-#ifndef _WIN32
-		// TODO: Implement this for windows.
 		usleep(sleepTime);
-#endif
 		postsleep_prev = kuhl_microseconds();
 	}
 
