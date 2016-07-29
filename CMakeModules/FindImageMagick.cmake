@@ -143,7 +143,6 @@
 
 find_package(PkgConfig QUIET)
 
-find_package(X11)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   find_package(X11 REQUIRED)
   list(APPEND ImageMagick_LIBRARIES ${X11_X11_LIB})
