@@ -104,7 +104,7 @@ void display()
 		fpscount++;
 		if(fpscount % 10 == 0)
 		{
-			float fps = viewmat_fps(); // get current fps
+			float fps = bufferswap_fps(); // get current fps
 			char message[1024];
 			snprintf(message, 1024, "FPS: %0.2f", fps); // make a string with fps on it
 			float labelColor[3] = { 1,1,1 };

@@ -96,7 +96,7 @@ void display()
 	static int counter = 0;
 	counter++;
 	if(counter % 60 == 0)
-		msg(MSG_INFO, "FPS: %0.2f\n", viewmat_fps());
+		msg(MSG_INFO, "FPS: %0.2f\n", bufferswap_fps());
 	
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will

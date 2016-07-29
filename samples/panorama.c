@@ -202,7 +202,7 @@ void display()
 	static int counter = 0;
 	counter++;
 	if(counter % 10 == 0)
-		msg(MSG_INFO, "fps: %6.2f\n", viewmat_fps());
+		msg(MSG_INFO, "fps: %6.2f\n", bufferswap_fps());
 }
 
 
