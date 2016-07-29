@@ -221,7 +221,7 @@ find_package(Threads)
 
 # --- LibOVR (Oculus Rift) ---
 set(MISSING_OVR_DEFINITION "MISSING_OVR")
-if(LINUX AND NOT APPLE)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	find_package(OVR)
 	if(OVR_FOUND)
 		# LibOVR relies on a LibOVRRT library at run time. It must be in /usr/lib or /usr/local/lib or in the same directory as the binary.
