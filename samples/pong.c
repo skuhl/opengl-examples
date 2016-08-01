@@ -10,9 +10,9 @@
 #include "kuhl-util.h"
 #include "vecmat.h"
 #include "dgr.h"
-#include "projmat.h"
 #include "viewmat.h"
 #include "vrpn-help.h"
+#include "bufferswap.h"
 
 // Set this to 1 if you want to use the tracking system to control the
 // paddles. Set it to 0 to use the keyboard to control the paddles.
@@ -473,7 +473,7 @@ void display()
 		game();	
 	}
 
-	viewmat_swap_buffers();
+	bufferswap();
 }
 
 void drawPaddle(Paddle paddle, float depth)
@@ -529,10 +529,10 @@ int main( int argc, char* argv[] )
 	
 	/* Initialize DGR */
 	dgr_init();     /* Initialize DGR based on environment variables. */
-	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
 
 	float frustum[6]; // left, right, bottom, top, near, far
 	                  // 0     1      2       3    4     5
+	
 	projmat_get_frustum(frustum, -1, -1, 0);
 	ball.xpos = (frustum[0] + frustum[1])/2.0;
 	ball.ypos = (frustum[2] + frustum[3])/2.0;

@@ -18,8 +18,8 @@
 #include "kuhl-util.h"
 #include "vecmat.h"
 #include "dgr.h"
-#include "projmat.h"
 #include "viewmat.h"
+#include "bufferswap.h"
 GLuint program = 0; /**< id value for the GLSL program */
 
 kuhl_geometry quad;
@@ -485,7 +485,6 @@ int main(int argc, char** argv)
 	glUseProgram(0);
 
 	dgr_init();     /* Initialize DGR based on environment variables. */
-	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
 
 	float initCamPos[3]  = {0,0,0}; // location of camera
 	float initCamLook[3] = {0,0,-1}; // a point the camera is facing at

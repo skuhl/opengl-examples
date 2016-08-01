@@ -25,7 +25,6 @@
 
 #include "kuhl-util.h"
 #include "dgr.h"
-#include "projmat.h"
 #ifdef KUHL_UTIL_USE_IMAGEMAGICK
 #include "imageio.h"
 #else
@@ -520,7 +519,6 @@ int main(int argc, char** argv)
 
 	// Initialize DGR
 	dgr_init();
-	projmat_init();
 
 	loadTexture(currentTexture);
 
