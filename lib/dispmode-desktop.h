@@ -1,5 +1,5 @@
 #pragma once
-#include "viewmat.h"
+#include "dispmode.h"
 
 class dispmodeDesktop: public dispmode
 {

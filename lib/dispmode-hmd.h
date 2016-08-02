@@ -1,4 +1,4 @@
-#include "viewmat.h"
+#include "dispmode.h"
 
 class dispmodeHMD : public dispmode
 {

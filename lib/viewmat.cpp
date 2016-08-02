@@ -20,6 +20,7 @@
 #include "camcontrol-mouse.h"
 #include "camcontrol-vrpn.h"
 #include "camcontrol-orientsensor.h"
+#include "camcontrol-oculus-linux.h"
 
 #include "kuhl-util.h"
 #include "vecmat.h"
@@ -55,7 +56,7 @@ typedef enum
 	VIEWMAT_CONTROL_ORIENT,
 	VIEWMAT_CONTROL_OCULUS
 } ViewmatControlMode;
-static ViewmatControlMode viewmat_control_mode = VIEWMAT_CONTROL_NONE; /**< Currently active control mode */
+static ViewmatControlMode viewmat_control_mode = VIEWMAT_CONTROL_MOUSE; /**< Currently active control mode */
 
 
 
@@ -135,40 +136,6 @@ void viewmat_end_frame(void)
 }
 
 
-/** If we are rendering a scene for the Oculus, we will be rendering
- * into a multisampled FBO that we are not allowed to read from. We
- * can only read after the multisampled FBO is blitted into a normal
- * FBO inside of viewmat_end_frame(). This function will retrieve the
- * binding for the normal framebuffer. The framebuffer will be from
- * the previous frame unless it is called after
- * viewmat_end_frame().
- *
- * @param viewportID The viewport that we want a framebuffer for.
- * @return An OpenGL framebuffer that we can bind to.
- */
-int viewmat_get_blitted_framebuffer(int viewportID)
-{
-//	viewmat_validate_viewportId(viewportID);
-	
-#ifndef MISSING_OVR
-	if(viewmat_display_mode == VIEWMAT_OCULUS)
-	{
-		ovrEyeType eye = hmd->EyeRenderOrder[viewportID];
-		if(eye == ovrEye_Left)
-			return leftFramebuffer;
-		else if(eye == ovrEye_Right)
-			return rightFramebuffer;
-		else
-			return 0;
-	}
-#endif
-
-	GLint framebuffer;
-	glGetIntegerv(GL_FRAMEBUFFER_BINDING,  &framebuffer);
-	return framebuffer;
-}
-
-
 /** Changes the framebuffer (as needed) that OpenGL is rendering
  * to. Some HMDs (such as the Oculus Rift) require us to prerender the
  * left and right eye scenes to a texture. Those textures are then
@@ -203,6 +170,11 @@ void viewmat_begin_eye(int viewportID)
 void viewmat_init(const float pos[3], const float look[3], const float up[3])
 {
 	const char* controlModeString = kuhl_config_get("viewmat.controlmode");
+	if(controlModeString == NULL)
+		controlModeString = "none";
+	const char* displayModeString = kuhl_config_get("viewmat.displaymode");
+	if(displayModeString == NULL)
+		displayModeString = "none";
 
 	/* Make an intelligent guess if unspecified */
 	if(controlModeString == NULL) 
@@ -228,91 +200,19 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 		controlModeString = "none";
 	}
 
-	/* Initialize control mode */
-	if(strcasecmp(controlModeString, "mouse") == 0)
-	{
-		msg(MSG_INFO, "viewmat control mode: Mouse movement");
-		viewmat_control_mode = VIEWMAT_CONTROL_MOUSE;
-		controller = new camcontrolMouse(pos, look, up);
-	}
-	else if(strcasecmp(controlModeString, "vrpn") == 0)
-	{
-		msg(MSG_INFO, "viewmat control mode: VRPN");
-		viewmat_control_mode = VIEWMAT_CONTROL_VRPN;
-		
-		const char *vrpnObject = kuhl_config_get("viewmat.vrpn.object");
-		controller = new camcontrolVrpn(vrpnObject, NULL);
-	}
-	else if(strcasecmp(controlModeString, "orient") == 0)
-	{
-		msg(MSG_INFO, "viewmat control mode: Orientation sensor");
-		viewmat_control_mode = VIEWMAT_CONTROL_ORIENT;
-		controller = new camcontrolOrientSensor(pos);
-	}
-	else if(strcasecmp(controlModeString, "oculus") == 0)
-	{
-		msg(MSG_INFO, "viewmat control mode: Oculus");
-		viewmat_control_mode = VIEWMAT_CONTROL_OCULUS;
-	}
-	else if(strcasecmp(controlModeString, "none") != 0)
-	{
-		msg(MSG_INFO, "viewmat control mode: None (fixed view)");
-		viewmat_control_mode = VIEWMAT_CONTROL_NONE;
-		controller = new camcontrol(pos, look, up);
-	}
-	else
-	{
-		msg(MSG_FATAL, "viewmat control mode: Unhandled mode '%s'.", controlModeString);
-		exit(EXIT_FAILURE);
-	}
+	/* Set viewmat_control_mode variable appropriately. */
+	static const char *controlStrings[] = { "none", "mouse", "vrpn", "orient", "oculus" };
+	static const ViewmatControlMode controlTypes[]    = { VIEWMAT_CONTROL_NONE, VIEWMAT_CONTROL_MOUSE, VIEWMAT_CONTROL_VRPN, VIEWMAT_CONTROL_ORIENT, VIEWMAT_CONTROL_OCULUS };
+	for(int i=0; i<5; i++)
+		if(strcasecmp(controlModeString, controlStrings[i]) == 0)
+			viewmat_control_mode = controlTypes[i];
 
-
-	const char* modeString = kuhl_config_get("viewmat.displaymode");
-	if(modeString == NULL)
-		modeString = "none";
-	
-	if(strcasecmp(modeString, "ivs") == 0)
-	{
-		desktop = new dispmodeFrustum();
-		viewmat_display_mode = VIEWMAT_IVS;
-		msg(MSG_INFO, "viewmat display mode: IVS");
-	}
-#ifndef MISSING_OVR
-	else if(strcasecmp(modeString, "oculus") == 0)
-	{
-		viewmat_display_mode = VIEWMAT_OCULUS;
-		msg(MSG_INFO, "viewmat display mode: Using Oculus HMD.\n");
-#ifdef __linux__
-		desktop = new dispmodeOculusLinux();
-#else
-		msg(MSG_FATAL, "Oculus support is unavailable on this platform.");
-		exit(EXIT_FAILURE);
-#endif
-	}
-#endif
-	else if(strcasecmp(modeString, "hmd") == 0)
-	{
-		desktop = new dispmodeHMD();
-		viewmat_display_mode = VIEWMAT_HMD;
-		msg(MSG_INFO, "viewmat display mode: Side-by-side left/right view.\n");
-	}
-	else if(strcasecmp(modeString, "none") == 0)
-	{
-		desktop = new dispmodeDesktop();
-		viewmat_display_mode = VIEWMAT_DESKTOP;
-		msg(MSG_INFO, "viewmat display mode: Single window desktop mode.\n");
-	}
-	else if(strcasecmp(modeString, "anaglyph") == 0)
-	{
-		desktop = new dispmodeAnaglyph();
-		viewmat_display_mode = VIEWMAT_ANAGLYPH;
-		msg(MSG_INFO, "viewmat display mode: Anaglyph image rendering. Use the red filter on the left eye and the cyan filter on the right eye.\n");
-	}
-	else
-	{
-		msg(MSG_FATAL, "viewmat display mode: unhandled mode '%s'.", modeString);
-		exit(EXIT_FAILURE);
-	}
+	/* Set viewmat_display_mode variable appropraitely */
+	static const char *displayStrings[] = { "none", "ivs", "oculus", "hmd", "anaglyph" };
+	static const ViewmatDisplayMode displayTypes[] = { VIEWMAT_DESKTOP, VIEWMAT_IVS, VIEWMAT_OCULUS, VIEWMAT_HMD, VIEWMAT_ANAGLYPH };
+	for(int i=0; i<5; i++)
+		if(strcasecmp(displayModeString, displayStrings[i]) == 0)
+			viewmat_display_mode = displayTypes[i];
 
 	/* We can't use the Oculus orientation sensor if we haven't
 	 * initialized the Oculus code. We do that initialization in the
@@ -323,6 +223,75 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 		msg(MSG_FATAL, "viewmat: Oculus can only be used as a control mode if it is also used as a display mode.");
 		exit(EXIT_FAILURE);
 	}
+
+
+	switch(viewmat_display_mode)
+	{
+		case VIEWMAT_DESKTOP:
+			msg(MSG_INFO, "viewmat display mode: Single window desktop mode.\n");
+			desktop = new dispmodeDesktop();
+			break;
+		case VIEWMAT_IVS:
+			msg(MSG_INFO, "viewmat display mode: IVS");
+			desktop = new dispmodeFrustum();
+			break;
+		case VIEWMAT_OCULUS:
+#if defined(__linux__) && !defined(MISSING_OVR)
+			msg(MSG_INFO, "viewmat display mode: Using Oculus HMD (Linux).\n");
+			desktop = new dispmodeOculusLinux();
+#else
+			msg(MSG_FATAL, "Oculus not supported on this platform.");
+			exit(EXIT_FAILURE);
+#endif
+			break;
+		case VIEWMAT_HMD:
+			desktop = new dispmodeHMD();
+			msg(MSG_INFO, "viewmat display mode: Side-by-side left/right view.\n");
+			break;
+			
+		case VIEWMAT_ANAGLYPH:
+			desktop = new dispmodeAnaglyph();
+			msg(MSG_INFO, "viewmat display mode: Anaglyph image rendering. Use the red filter on the left eye and the cyan filter on the right eye.\n");
+			break;
+
+		default:
+			msg(MSG_FATAL, "viewmat display mode: unhandled mode '%s'.", displayModeString);
+			exit(EXIT_FAILURE);
+	}
+	
+	switch(viewmat_control_mode)
+	{
+		case VIEWMAT_CONTROL_NONE:
+			msg(MSG_INFO, "viewmat control mode: None (fixed view)");
+			controller = new camcontrol(pos, look, up);
+			break;
+		case VIEWMAT_CONTROL_MOUSE:
+			msg(MSG_INFO, "viewmat control mode: Mouse movement");
+			controller = new camcontrolMouse(pos, look, up);
+			break;
+		case VIEWMAT_CONTROL_VRPN:
+			msg(MSG_INFO, "viewmat control mode: VRPN");
+			controller = new camcontrolVrpn(kuhl_config_get("viewmat.vrpn.object"), NULL);
+			break;
+		case VIEWMAT_CONTROL_ORIENT:
+			msg(MSG_INFO, "viewmat control mode: Orientation sensor");
+			controller = new camcontrolOrientSensor(pos);
+			break;
+		case VIEWMAT_CONTROL_OCULUS:
+#if defined(__linux__) && !defined(MISSING_OVR)
+			msg(MSG_INFO, "viewmat control mode: Oculus");
+			controller = new camcontrolOculusLinux(pos, desktop);
+#else
+			msg(MSG_FATAL, "Oculus not supported on this platform.");
+			exit(EXIT_FAILURE);
+#endif
+			break;
+		default:
+			msg(MSG_FATAL, "viewmat control mode: Unhandled mode '%s'.", controlModeString);
+			exit(EXIT_FAILURE);
+	}
+
+
 	
 	
 	// If there are two "viewports" then it is likely that we are
@@ -373,6 +342,9 @@ static void viewmat_get_orient_sensor(float viewmatrix[16], int viewportNum)
 */
 static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
 {
+	if(desktop->num_viewports() != 2)
+		return;
+	
 	// First, if viewportID=0, save the matrix so we can do the check when we are called with viewportID=1.
 	static float viewmatrix0[16];
 	static long viewmatrix0time;
@@ -386,7 +358,7 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
 	// If rendering viewportID == 1, and if there are two viewports,
 	// assume that we are running in a stereoscopic configuration and
 	// validate the IPD value.
-	if(viewportID == 1 && desktop->num_viewports() == 2)
+	if(viewportID == 1)
 	{
 		float flip = 1;
 		/* In most cases, viewportID=0 is the left eye. However,
@@ -414,7 +386,7 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
 		{
 			msg(MSG_WARNING, "IPD=%.4f meters, delay=%ld us (IPD validation failed; occasional messages are OK!)\n", ipd, delay);
 		}
-		// msg(MSG_INFO, "IPD=%.4f meters, delay=%ld us\n", ipd, delay);
+		//msg(MSG_INFO, "IPD=%.4f meters, delay=%ld us\n", ipd, delay);
 
 	}
 }
@@ -446,19 +418,20 @@ viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewport
 	viewmat_eye eye = desktop->eye_type(viewportID);
 	
 	int viewport[4]; // x,y of lower left corner, width, height
-	// viewmat_get_viewport(viewport, viewportID);
 	desktop->get_viewport(viewport, viewportID);
 
 	/* Get the current projection matrix. */
 	desktop->get_projmatrix(projmatrix, viewportID);
 
-	/* There is no reason to get the view matrix if DGR is enabled
-	 * and we are a slave because the master process will control
-	 * the viewmatrix. */
+	/* Get the current view matrix.
+	 * 
+	 * NOTE: There is no reason to get the view matrix if DGR is
+	 * enabled and we are a slave because the master process will
+	 * control the viewmatrix. */
 	if((dgr_is_enabled() && dgr_is_master()) || dgr_is_enabled()==0)
 		controller->get(viewmatrix, desktop->eye_type(viewportID));
 	else
-		mat4f_identity(viewmatrix);
+		mat4f_identity(viewmatrix); // if DGR slave
 	
 	/* If we are running in IVS mode and using the tracking systems,
 	 * all computers need to update their frustum differently. The
@@ -551,3 +524,7 @@ int viewmat_num_viewports()
 }
 
 
+int viewmat_get_framebuffer(int viewportID)
+{
+	return desktop->get_framebuffer(viewportID);
+}

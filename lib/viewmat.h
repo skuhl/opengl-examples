@@ -40,7 +40,7 @@ float viewmat_window_aspect_ratio(void);
 	
 void viewmat_begin_frame(void);
 void viewmat_begin_eye(int viewportID);
-int viewmat_get_blitted_framebuffer(int viewportID);
+int viewmat_get_framebuffer(int viewportID);
 void viewmat_end_frame(void);
 	
 void viewmat_init(const float pos[3], const float look[3], const float up[3]);
@@ -77,7 +77,10 @@ public:
 		vec3f_copy(up, inUp);
 	};
 
-	/** Gets camera position and a rotation matrix for the camera.
+	/** Gets camera position and a rotation matrix for the camera. The
+	    get() method serves as a wrapper for this function and it
+	    automatically adjusts for the interpupilary distance if
+	    get_separate does not return the eye that we requested.
 	    
 	    @param outPos The position of the camera.
 	    
@@ -148,39 +151,6 @@ public:
 };
 
 
-#include <stdlib.h>
-#include "msg.h"
-#include "bufferswap.h"
-class dispmode
-{
-public:
-	dispmode()
-	{
-		msg(MSG_FATAL, "You shouldn't use the dispmode class directly---use a class that inherits from it.");
-		exit(1);
-	};
-	virtual viewmat_eye eye_type(int viewportID) { return VIEWMAT_EYE_UNKNOWN;};
-	virtual int num_viewports(void) { return 1; };
-	virtual void get_viewport(int viewportValue[4], int viewportId) { };
-	virtual void get_frustum(float result[6], int viewportID) { };
 
-	/* Ideally, dispmode returns a view frustum. This allows us to
-	 * further adjust the frustum for systems such as those that
-	 * provide a dynamic frustum (e.g., IVS display wall). However,
-	 * other systems might not provide a way to access the view
-	 * frustum and just provides us with a projection matrix (Oculus).
-	 */
-	virtual int provides_projmat_only() { return 0; };
-	virtual void get_projmatrix(float projmatrix[16], int viewportID)
-	{
-		float f[6];  // left, right, bottom, top, near>0, far>0
-		this->get_frustum(f, viewportID);
-		mat4f_frustum_new(projmatrix, f[0], f[1], f[2], f[3], f[4], f[5]);
-	};
-
-	virtual void begin_frame() { };
-	virtual void end_frame() { bufferswap(); };
-	virtual void begin_eye(int viewportID) { };
-};
 
 #endif

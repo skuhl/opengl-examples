@@ -154,7 +154,7 @@ void display()
 			 * read from the multisample FBO until we have blitted it
 			 * into a normal FBO. Here, we get the blitted FBO for the
 			 * *previous* frame. */
-			GLint fb =viewmat_get_blitted_framebuffer(viewportID);
+			GLint fb = viewmat_get_framebuffer(viewportID);
 			glBindFramebuffer(GL_FRAMEBUFFER, fb);
 			
 			GLuint stencilVal = 0;

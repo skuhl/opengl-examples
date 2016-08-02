@@ -86,7 +86,7 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 
 	# Any time we make this program, copy all of the vertex and fragment program files into bin.
 	# add_dependencies(${arg} copyGLSL)
-	if(OVR_FOUND AND copyOVR)
+	if(OVR_FOUND AND ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	    add_dependencies(${arg} copyOVR)
 	endif()
 

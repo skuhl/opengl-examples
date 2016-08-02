@@ -7,25 +7,11 @@
 */
 
 
-#if !defined(MISSING_OVR) && defined(__linux__)
+#include <GL/glew.h>
 #include <GL/glx.h>
-#define OVR_OS_LINUX
-#include "OVR_CAPI.h"
-#include "OVR_CAPI_GL.h"
-
-/* TODO: These should be organized into a ovr_state struct */
-static ovrHmd hmd;
-static GLint leftFramebuffer, rightFramebuffer, leftFramebufferAA, rightFramebufferAA;
-static ovrSizei recommendTexSizeL,recommendTexSizeR;
-static ovrGLTexture EyeTexture[2];
-static ovrEyeRenderDesc eye_rdesc[2];
-static ovrFrameTiming timing;
-static ovrPosef pose[2];
-static float oculus_initialPos[3];
-
-#endif
 
 #include <stdlib.h>
+#include "kuhl-util.h"
 #include "msg.h"
 #include "viewmat.h"
 #include "vecmat.h"
@@ -33,30 +19,19 @@ static float oculus_initialPos[3];
 
 dispmodeOculusLinux::dispmodeOculusLinux()
 {
-#if defined(MISSING_OVR) || !defined(__linux__)
-	msg(MSG_FATAL, "Oculus-Linux support is missing: You have not compiled this code against the LibOVR library or you are not using Linux.\n");
-	exit(EXIT_FAILURE);
-#else
 	ovr_Initialize(NULL);
 
 	int useDebugMode = 0;
 	hmd = ovrHmd_Create(0);
 	if(!hmd)
 	{
-		msg(MSG_WARNING, "Failed to open Oculus HMD. Is ovrd running? Is libOVRRT*.so.* in /usr/lib, /usr/local/lib, or the current directory?\n");
-		msg(MSG_WARNING, "Press any key to proceed with Oculus debugging window.\n");
-		char c; 
-		if(fscanf(stdin, "%c", &c) < 0)
-		{
-			msg(MSG_ERROR, "fscanf error.\n");
-			exit(EXIT_FAILURE);
-		}
+		msg(MSG_ERROR, "Failed to open Oculus HMD, trying to open debug window instead. Is ovrd running? Is libOVRRT*.so.* in /usr/lib, /usr/local/lib, or the current directory?\n");
 
 		hmd = ovrHmd_CreateDebug(ovrHmd_DK2);
 		useDebugMode = 1;
 		if(!hmd)
 		{
-			msg(MSG_ERROR, "Oculus: Failed to create virtual debugging HMD\n");
+			msg(MSG_FATAL, "Oculus: Failed to create virtual debugging HMD\n");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -172,35 +147,28 @@ dispmodeOculusLinux::dispmodeOculusLinux()
 
 	/* disable health and safety warning */
 	ovrHmd_DismissHSWDisplay(hmd);
+}
 
-	vec3f_copy(oculus_initialPos, pos);
-
-	// Try to connect to VRPN
-	//viewmat_init_vrpn();
-
-	
-	// TODO: We are supposed to do these things when we are done:
-	//ovrHmd_Destroy(hmd);
-	//ovr_Shutdown();
-#endif
+dispmodeOculusLinux::~dispmodeOculusLinux()
+{
+	// We are supposed to do these things when we are done:
+	ovrHmd_Destroy(hmd);
+	ovr_Shutdown();
 }
 
 void dispmodeOculusLinux::begin_frame()
 {
-#if !defined(MISSING_OVR) && defined(__linux__)
 	if(hmd)
 		timing = ovrHmd_BeginFrame(hmd, 0);
-#endif
 }
 
 void dispmodeOculusLinux::end_frame()
 {
-#if !defined(MISSING_OVR) && defined(__linux__)
 	/* Copy the prerendered image from a multisample antialiasing
 	   texture into a normal OpenGL texture. This section of code
 	   is not necessary if we are rendering directly into the
 	   normal (non-antialiased) OpenGL texture. */
-	GLuint buffersToBlit[3] = { GL_COLOR_BUFFER_BIT, GL_STENCIL_BUFFER_BIT, GL_DEPTH_BUFFER_BIT };
+	static const GLuint buffersToBlit[3] = { GL_COLOR_BUFFER_BIT, GL_STENCIL_BUFFER_BIT, GL_DEPTH_BUFFER_BIT };
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, leftFramebufferAA);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, leftFramebuffer);
@@ -212,51 +180,43 @@ void dispmodeOculusLinux::end_frame()
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, rightFramebufferAA);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, rightFramebuffer);
 	for(unsigned int i=0; i<sizeof(buffersToBlit)/sizeof(buffersToBlit[0]); i++)
-		glBlitFramebuffer(0, 0, recommendTexSizeL.w,
-		                  recommendTexSizeL.h, 0, 0, recommendTexSizeL.w,
-		                  recommendTexSizeL.h, buffersToBlit[i], GL_NEAREST);
+		glBlitFramebuffer(0, 0, recommendTexSizeR.w,
+		                  recommendTexSizeR.h, 0, 0, recommendTexSizeR.w,
+		                  recommendTexSizeR.h, buffersToBlit[i], GL_NEAREST);
 	kuhl_errorcheck();
 		
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	if(hmd)
 		ovrHmd_EndFrame(hmd, pose, &EyeTexture[0].Texture);
-#endif
 
-	dispmode::end_frame(); // call our parents implementation
+	dispmode::end_frame(); // call our parent's implementation
 }
 
-void dispmodeOculusLinux::begin_eye(int viewportId)
+void dispmodeOculusLinux::begin_eye(int viewportID)
 {
-#if !defined(MISSING_OVR) && defined(__linux__)
-	if(viewmat_display_mode == VIEWMAT_OCULUS)
+	/* The EyeRenderOrder array indicates which eye should be
+	 * rendered first. This code assumes that lower viewport IDs
+	 * are drawn before higher numbers. */
+	ovrEyeType eye = hmd->EyeRenderOrder[viewportID];
+	if(eye == ovrEye_Left)
+		glBindFramebuffer(GL_FRAMEBUFFER, leftFramebufferAA);
+	else if(eye == ovrEye_Right)
+		glBindFramebuffer(GL_FRAMEBUFFER, rightFramebufferAA);
+	else
 	{
-		/* The EyeRenderOrder array indicates which eye should be
-		 * rendered first. This code assumes that lower viewport IDs
-		 * are drawn before higher numbers. */
-		ovrEyeType eye = hmd->EyeRenderOrder[viewportID];
-		if(eye == ovrEye_Left)
-			glBindFramebuffer(GL_FRAMEBUFFER, leftFramebufferAA);
-		else if(eye == ovrEye_Right)
-			glBindFramebuffer(GL_FRAMEBUFFER, rightFramebufferAA);
-		else
-		{
-			msg(MSG_FATAL, "Unknown viewport ID: %d\n",viewportID);
-			exit(EXIT_FAILURE);
-		}
+		msg(MSG_FATAL, "Unknown viewport ID: %d\n", viewportID);
+		exit(EXIT_FAILURE);
 	}
-#endif
 }
 
 viewmat_eye dispmodeOculusLinux::eye_type(int viewportID)
 {
 	if(viewportID != 0 && viewportID != 1)
 	{
-		msg(MSG_FATAL, "Invalid viewport id");
+		msg(MSG_FATAL, "Invalid viewport ID: %", viewportID);
 		exit(EXIT_FAILURE);
 	}
 
-#if !defined(MISSING_OVR) && defined(__linux__)
-	
 	ovrEyeType eye = hmd->EyeRenderOrder[viewportID];
 	if(eye == ovrEye_Left)
 		return VIEWMAT_EYE_LEFT;
@@ -264,12 +224,6 @@ viewmat_eye dispmodeOculusLinux::eye_type(int viewportID)
 		return VIEWMAT_EYE_RIGHT;
 	else
 		return VIEWMAT_EYE_UNKNOWN;
-
-#else
-
-	return VIEWMAT_EYE_UNKNOWN;
-
-#endif
 }
 
 int dispmodeOculusLinux::num_viewports(void)
@@ -277,9 +231,23 @@ int dispmodeOculusLinux::num_viewports(void)
 	return 2;
 }
 
+
+
+int dispmodeOculusLinux::get_framebuffer(int viewportID)
+{
+	ovrEyeType eye = hmd->EyeRenderOrder[viewportID];
+	if(eye == ovrEye_Left)
+		return leftFramebuffer;
+	else if(eye == ovrEye_Right)
+		return rightFramebuffer;
+	else
+		return 0;
+}
+
+
+
 void dispmodeOculusLinux::get_viewport(int viewportValue[4], int viewportID)
 {
-#if !defined(MISSING_OVR) && defined(__linux__)
 	/* Oculus uses one framebuffer per eye */
 	int windowWidth  = EyeTexture[0].OGL.Header.RenderViewport.Size.w;
 	int windowHeight = EyeTexture[0].OGL.Header.RenderViewport.Size.h;
@@ -291,7 +259,6 @@ void dispmodeOculusLinux::get_viewport(int viewportValue[4], int viewportID)
 	viewportValue[1] = 0;
 	viewportValue[2] = windowWidth;
 	viewportValue[3] = windowHeight;
-#endif
 
 	if(viewportID > 2 || viewportID < 0)
 	{
@@ -301,8 +268,13 @@ void dispmodeOculusLinux::get_viewport(int viewportValue[4], int viewportID)
 
 void dispmodeOculusLinux::get_frustum(float result[6], int viewportID)
 {
-#if !defined(MISSING_OVR) && defined(__linux__)
+	// We don't get a view frustum from Oculus---only a projection matrix.
+	msg(MSG_FATAL, "You tried to call get_frustum() on the Oculus dispmode object. Use get_projmatrix() instead.");
+	exit(EXIT_FAILURE);
+}
 
+void dispmodeOculusLinux::get_projmatrix(float projmatrix[16], int viewportID)
+{
 	/* Oculus recommends the order that we should render eyes. We
 	 * assume that smaller viewportIDs are rendered first. So, we need
 	 * to map the viewportIDs to the specific Oculus HMD eye. The
@@ -319,76 +291,4 @@ void dispmodeOculusLinux::get_frustum(float result[6], int viewportID)
 	mat4f_setRow(projmatrix, &(ovrpersp.M[1][0]), 1);
 	mat4f_setRow(projmatrix, &(ovrpersp.M[2][0]), 2);
 	mat4f_setRow(projmatrix, &(ovrpersp.M[3][0]), 3);
-	
-	float offsetMat[16], rotMat[16], posMat[16], initPosMat[16];
-	mat4f_identity(offsetMat);  // Viewpoint offset (IPD, etc);
-	mat4f_identity(rotMat);     // tracking system rotation
-	mat4f_identity(posMat);     // tracking system position
-	mat4f_identity(initPosMat); // camera starting location
-	
-	/* Construct posMat and rotMat matrices which indicate the
-	 * position and orientation of the HMD. */
-	if(viewmat_vrpn_obj) // get position from VRPN
-	{
-		/* Get the offset for the left and right eyes from
-		 * Oculus. If you are using a separate tracking system, you
-		 * may also want to apply an offset here between the tracked
-		 * point and the eye location. */
-		mat4f_translate_new(offsetMat,
-		                    eye_rdesc[eye].HmdToEyeViewOffset.x, // left & right IPD offset
-		                    eye_rdesc[eye].HmdToEyeViewOffset.y, // vertical offset
-		                    eye_rdesc[eye].HmdToEyeViewOffset.z); // forward/back offset
-
-		float pos[3] = { 0,0,0 };
-		vrpn_get(viewmat_vrpn_obj, NULL, pos, rotMat);
-		mat4f_translate_new(posMat, -pos[0], -pos[1], -pos[2]); // position
-		viewmat_fix_rotation(rotMat);
-	}
-	else // get position from Oculus tracker
-	{
-		pose[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
-		mat4f_translate_new(posMat,                           // position (includes IPD offset)
-		                    -pose[eye].Position.x,
-		                    -pose[eye].Position.y,
-		                    -pose[eye].Position.z);
-		mat4f_rotateQuat_new(rotMat,                          // rotation
-		                     pose[eye].Orientation.x,
-		                     pose[eye].Orientation.y,
-		                     pose[eye].Orientation.z,
-		                     pose[eye].Orientation.w);
-
-		// Starting point:
-		
-		// Translate the world based on the initial camera position
-		// specified in viewmat_init(). You may choose to initialize the
-		// camera position with y=1.5 meters to approximate a normal
-		// standing eyeheight.
-		float initPosVec[3];
-		vec3f_scalarMult_new(initPosVec, oculus_initialPos, -1.0f);
-		mat4f_translateVec_new(initPosMat, initPosVec);
-		// TODO: Could also get eyeheight via ovrHmd_GetFloat(hmd, OVR_KEY_EYE_HEIGHT, 1.65)
-	}
-	mat4f_transpose(rotMat); /* orientation sensor rotates camera, not world */
-
-	// viewmatrix = offsetMat * rotMat *  posMat * initposmat
-	mat4f_mult_mat4f_new(viewmatrix, offsetMat, rotMat); // offset is identity if we are using Oculus tracker
-	mat4f_mult_mat4f_new(viewmatrix, viewmatrix, posMat);
-	mat4f_mult_mat4f_new(viewmatrix, viewmatrix, initPosMat);
-
-	if(0)
-	{
-		printf("ViewportID=%d; eye=%s\n", viewportID, eye == ovrEye_Left ? "left" : "right");
-		printf("Eye offset according to OVR (only used if VRPN is used): ");
-		mat4f_print(offsetMat);
-		printf("Rotation sensing (from OVR or VRPN): ");
-		mat4f_print(rotMat);
-		printf("Position tracking (from OVR or VRPN): ");
-		mat4f_print(posMat);
-		printf("Initial position (from set in viewmat_init()): ");
-		mat4f_print(initPosMat);
-		printf("Final view matrix: ");
-		mat4f_print(viewmatrix);
-	}
-#endif
 }
-	
