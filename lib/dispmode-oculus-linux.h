@@ -1,4 +1,7 @@
 #pragma once
+
+#if !defined(MISSING_OVR) && defined(__linux__)
+
 #include "dispmode.h"
 
 #define OVR_OS_LINUX
@@ -31,3 +34,6 @@ public:
 	ovrPosef pose[2];
 
 };
+
+
+#endif

@@ -1,4 +1,7 @@
 #pragma once
+
+#if !defined(MISSING_OVR) && defined(__linux__)
+
 #include "viewmat.h"
 #include "dispmode-oculus-linux.h"
 
@@ -16,3 +19,6 @@ public:
 	~camcontrolOculusLinux();
 	viewmat_eye get_separate(float pos[3], float rot[16], viewmat_eye requestedEye);
 };
+
+
+#endif
