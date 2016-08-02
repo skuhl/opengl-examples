@@ -171,7 +171,7 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 {
 	const char* controlModeString = kuhl_config_get("viewmat.controlmode");
 	if(controlModeString == NULL)
-		controlModeString = "none";
+		controlModeString = "mouse";
 	const char* displayModeString = kuhl_config_get("viewmat.displaymode");
 	if(displayModeString == NULL)
 		displayModeString = "none";
@@ -428,10 +428,7 @@ viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewport
 	 * NOTE: There is no reason to get the view matrix if DGR is
 	 * enabled and we are a slave because the master process will
 	 * control the viewmatrix. */
-	if((dgr_is_enabled() && dgr_is_master()) || dgr_is_enabled()==0)
-		controller->get(viewmatrix, desktop->eye_type(viewportID));
-	else
-		mat4f_identity(viewmatrix); // if DGR slave
+	controller->get(viewmatrix, desktop->eye_type(viewportID));
 	
 	/* If we are running in IVS mode and using the tracking systems,
 	 * all computers need to update their frustum differently. The
