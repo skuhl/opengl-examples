@@ -1,3 +1,4 @@
+#include <GL/glew.h>
 #include "dispmode.h"
 
 class dispmodeAnaglyph : public dispmode

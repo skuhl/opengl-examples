@@ -11,6 +11,11 @@ if(OVR_FOUND AND ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(FILES_IN_LIBKUHL ${FILES_IN_LIBKUHL} camcontrol-oculus-linux.cpp dispmode-oculus-linux.cpp)
 endif()
 
+if(OVR_FOUND AND ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  set(FILES_IN_LIBKUHL ${FILES_IN_LIBKUHL} camcontrol-oculus-windows.cpp dispmode-oculus-windows.cpp)
+endif()
+
+
 if(ImageMagick_FOUND)
 	set(FILES_IN_LIBKUHL ${FILES_IN_LIBKUHL} imageio.c)
 endif()

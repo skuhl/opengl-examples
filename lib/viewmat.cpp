@@ -17,10 +17,14 @@
 #include "dispmode-anaglyph.h"
 #include "dispmode-frustum.h"
 #include "dispmode-oculus-linux.h"
+#include "dispmode-oculus-windows.h"
+
 #include "camcontrol-mouse.h"
 #include "camcontrol-vrpn.h"
 #include "camcontrol-orientsensor.h"
 #include "camcontrol-oculus-linux.h"
+#include "camcontrol-oculus-windows.h"
+
 
 #include "kuhl-util.h"
 #include "vecmat.h"
@@ -153,7 +157,10 @@ void viewmat_begin_eye(int viewportID)
 	desktop->begin_eye(viewportID);
 }
 
-
+void viewmat_end_eye(int viewportID)
+{
+	desktop->end_eye(viewportID);
+}
 
 
 
@@ -237,8 +244,11 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 			break;
 		case VIEWMAT_OCULUS:
 #if defined(__linux__) && !defined(MISSING_OVR)
-			msg(MSG_INFO, "viewmat display mode: Using Oculus HMD (Linux).\n");
+			msg(MSG_INFO, "viewmat display mode: Oculus HMD (Linux).");
 			desktop = new dispmodeOculusLinux();
+#elif defined(_WIN32) && !defined(MISSING_OVR)
+			msg(MSG_INFO, "viewmat display mode: Oculus HMD (Windows).");
+			desktop = new dispmodeOculusWindows();
 #else
 			msg(MSG_FATAL, "Oculus not supported on this platform.");
 			exit(EXIT_FAILURE);
@@ -279,8 +289,11 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 			break;
 		case VIEWMAT_CONTROL_OCULUS:
 #if defined(__linux__) && !defined(MISSING_OVR)
-			msg(MSG_INFO, "viewmat control mode: Oculus");
+			msg(MSG_INFO, "viewmat control mode: Oculus (Linux)");
 			controller = new camcontrolOculusLinux(pos, desktop);
+#elif defined(_WIN32) && !defined(MISSING_OVR)
+			msg(MSG_INFO, "viewmat control mode: Oculus (Windows)");
+			controller = new camcontrolOculusWindows(pos, desktop);
 #else
 			msg(MSG_FATAL, "Oculus not supported on this platform.");
 			exit(EXIT_FAILURE);

@@ -33,10 +33,12 @@
 #include <windows.h>
 #endif
 
+#if 0
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #else
 #include <GL/gl.h>
+#endif
 #endif
 
 
