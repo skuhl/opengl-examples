@@ -17,7 +17,6 @@
 #include "kuhl-util.h"
 #include "vecmat.h"
 #include "dgr.h"
-#include "projmat.h"
 #include "viewmat.h"
 #include "font-helper.h"
 GLuint program = 0; // id value for the GLSL program
@@ -244,7 +243,6 @@ int main(int argc, char** argv)
 	glUseProgram(0);
 
 	dgr_init();     /* Initialize DGR based on environment variables. */
-	projmat_init(); /* Figure out which projection matrix we should use based on environment variables */
 	
 	kuhl_getfps_init(&fps_state);
 

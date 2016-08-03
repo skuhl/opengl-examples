@@ -16,7 +16,6 @@
 
 #include "kuhl-util.h"
 #include "dgr.h"
-#include "projmat.h"
 #include "viewmat.h"
 
 /* Called by GLFW whenever a key is pressed. */
@@ -145,7 +144,6 @@ int main(int argc, char** argv)
 
 	// Initialize DGR
 	dgr_init();
-	projmat_init();
 	viewmat_init(initPos, initLook, initUp);
 
 	while(!glfwWindowShouldClose(kuhl_get_window()))

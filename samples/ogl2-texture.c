@@ -17,7 +17,6 @@
 #include "kuhl-util.h"
 #include "vecmat.h"
 #include "dgr.h"
-#include "projmat.h"
 #include "viewmat.h"
 
 GLuint texID = 0;
@@ -162,7 +161,6 @@ int main(int argc, char** argv)
     
 	// Initialize DGR
 	dgr_init();
-	projmat_init();
 	viewmat_init(initPos, initLook, initUp);
 
 	while(!glfwWindowShouldClose(kuhl_get_window()))

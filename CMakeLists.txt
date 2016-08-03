@@ -30,11 +30,11 @@ if(NOT WIN32)
 # Options which we may add in future (not supported by older compilers):
 # -Wshadow should probably be added eventually
 # -Wvla should be included because Visual Studio does not support VLAs, so we avoid using them. They are optional in C11 even though they were part of C99.
-set(C_CXX_FLAGS " -Wall -Wextra -pedantic -g -Wformat -Wno-unused-parameter -Wno-unused-function")  # Compiler options used by both the C++ and C compiler
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_CXX_FLAGS} -std=gnu99 -Wno-deprecated-declarations")
+set (COMMON_FLAGS " -Wall -Wextra -pedantic -g -Wformat -Wno-unused-parameter -Wno-unused-function") # used for C and C++
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_FLAGS} -std=gnu99 -Wno-deprecated-declarations")
 
 # Use no-variadic-macros to prevent C++ programs from warning about the variadic msg() macro
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${C_CXX_FLAGS} -Wno-variadic-macros")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -std=c++0x -Wno-variadic-macros")
 endif() # end if not windows
 
 
@@ -116,8 +116,8 @@ function(kuhl_add_paths path)
 		#kuhl_add_library_path(${path}/OculusSDK/LibOVR/Lib/Windows/Win32/Release)
 	endif()
 else()
- kuhl_add_library_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Lib/Linux/Release/x86_64)
- kuhl_add_library_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Lib/Linux/Debug/x86_64)
+ kuhl_add_library_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Lib/Linux/x86_64/Release)
+ kuhl_add_library_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Lib/Linux/x86_64/Debug)
  kuhl_add_include_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Include)
  kuhl_add_include_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Src)
 endif()

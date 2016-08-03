@@ -36,6 +36,8 @@ static void bufferswap_stats_fps(void)
 	index = (index+1) % FPS_SAMPLES; // increment index, wrap around
 	if(index == 0)
 		listfull = 1;
+
+	// msg(MSG_INFO, "FPS: %f", fps);
 	
 #undef FPS_SAMPLES
 }
@@ -138,7 +140,7 @@ static void bufferswap_latencyreduce()
 		// 1 / (frames/second) * 1000000 microseconds/second = microseconds/frame
 		vsyncTime = 1.0/refreshRate * 1000000;
 		msg(MSG_INFO, "Latency reduction is turned on; assuming monitor is %dHz and we have %d microseconds/frame\n", refreshRate, vsyncTime);
-		msg(MSG_INFO, "Set viewmat.latencyreduce to 0 to disable latency reduction.\n", refreshRate, vsyncTime);
+		msg(MSG_INFO, "Set bufferswap.latencyreduce to 0 to disable latency reduction.\n", refreshRate, vsyncTime);
 	}
 
 	
@@ -262,7 +264,7 @@ static void bufferswap_latencyreduce()
  */
 static void bufferswap_init(void)
 {
-	viewmat_swapinterval = kuhl_config_int("viewmat.swapinterval", -1, -1);
+	viewmat_swapinterval = kuhl_config_int("bufferswap.swapinterval", -1, -1);
 
 	/* If swap_control_tear extension doesn't exist, don't use it. */
 	if(!glfwExtensionSupported("GLX_EXT_swap_control_tear") &&

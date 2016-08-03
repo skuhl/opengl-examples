@@ -121,7 +121,7 @@ int kuhl_config_isset(const char *key)
 
 /** Returns 1 if the key is set to true in the config file. Returns 0
  * if it is set to false. Returns returnWhenMissing if the key is
- * missing. Retruns returnInvalidValue if the key is set to a
+ * missing. Returns returnInvalidValue if the key is set to a
  * non-boolean value. */
 int kuhl_config_boolean(const char *key, int returnWhenMissing, int returnInvalidValue)
 {
