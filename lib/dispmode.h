@@ -15,4 +15,6 @@ public:
 	virtual void begin_frame();
 	virtual void end_frame();
 	virtual void begin_eye(int viewportID);
+	virtual void end_eye(int viewportID);
+
 };

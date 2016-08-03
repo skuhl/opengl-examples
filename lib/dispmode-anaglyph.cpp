@@ -1,4 +1,3 @@
-#include <GL/glew.h>
 #include "bufferswap.h"
 #include "msg.h"
 #include "viewmat.h"

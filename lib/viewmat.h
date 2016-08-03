@@ -39,9 +39,11 @@ void viewmat_window_size(int *width, int *height);
 float viewmat_window_aspect_ratio(void);
 	
 void viewmat_begin_frame(void);
-void viewmat_begin_eye(int viewportID);
-int viewmat_get_framebuffer(int viewportID);
 void viewmat_end_frame(void);
+void viewmat_begin_eye(int viewportID);
+void viewmat_end_eye(int viewportID);
+
+int viewmat_get_framebuffer(int viewportID);
 	
 void viewmat_init(const float pos[3], const float look[3], const float up[3]);
 viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportNum);

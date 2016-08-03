@@ -87,3 +87,9 @@ void dispmode::begin_eye(int viewportID)
 {
 
 }
+
+
+void dispmode::end_eye(int viewportID)
+{
+
+}

@@ -121,6 +121,7 @@ void display()
 		kuhl_geometry_draw(&triangle);
 		kuhl_geometry_draw(&quad);
 
+		viewmat_end_eye(viewportID);
 		glUseProgram(0); // stop using a GLSL program.
 
 	} // finish viewport loop

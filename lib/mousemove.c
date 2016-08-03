@@ -9,10 +9,12 @@
 
 #include "mousemove.h"
 
+#if 0
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #else
 #include <GL/gl.h>
+#endif
 #endif
 #include <math.h>
 #include <stdio.h>
