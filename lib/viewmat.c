@@ -89,9 +89,8 @@ static OrientSensorState viewmat_orientsense;
 
 
 
-/** TODO: Update for switch to GLFW:
-
- * Sometimes calls to glutGet(GLUT_WINDOW_*) take several milliseconds
+/** 
+ * Sometimes calls to glfwGetFramebufferSize() take several milliseconds
  * to complete. To maintain a 60fps frame rate, we have a budget of
  * about 16 milliseconds per frame. These functions might get called
  * multiple times in multiple places per frame. viewmat_window_size()
@@ -109,7 +108,7 @@ void viewmat_window_size(int *width, int *height)
 {
 	if(width == NULL || height == NULL)
 	{
-		msg(MSG_ERROR, "width and/or height pointers were null.");
+		msg(MSG_FATAL, "width and/or height pointers were null.");
 		exit(EXIT_FAILURE);
 	}
 	
