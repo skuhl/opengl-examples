@@ -191,6 +191,7 @@ void display()
 			else
 				setupCubemap(cubemapLeftTex, quad, modelview);
 		}
+		viewmat_end_eye(viewportID);
 	} // finish viewport loop
 	viewmat_end_frame();
 

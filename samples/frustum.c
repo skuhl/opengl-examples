@@ -150,7 +150,7 @@ void display()
 		kuhl_geometry_draw(modelgeom);
 
 		glUseProgram(0); // stop using a GLSL program.
-
+		viewmat_end_eye(viewportID);
 	} // finish viewport loop
 	viewmat_end_frame();
 

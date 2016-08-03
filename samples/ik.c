@@ -413,6 +413,7 @@ void display()
 		if(counter % 60 == 0)
 			msg(MSG_INFO, "FPS: %0.2f\n", bufferswap_fps());
 
+		viewmat_end_eye(viewportID);
 	} // finish viewport loop
 	viewmat_end_frame();
 

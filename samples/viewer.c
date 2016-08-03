@@ -415,7 +415,7 @@ void display()
 		}
 
 		glUseProgram(0); // stop using a GLSL program.
-
+		viewmat_end_eye(viewportID);
 	} // finish viewport loop
 
 	/* Update the model for the next frame based on the time. We
