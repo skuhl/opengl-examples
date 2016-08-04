@@ -137,6 +137,7 @@ void display()
 		/* Check for errors. If there are errors, consider adding more
 		 * calls to kuhl_errorcheck() in your code. */
 		kuhl_errorcheck();
+		viewmat_end_eye(viewportID);
 	} // finish viewport loop
 
 	viewmat_end_frame();

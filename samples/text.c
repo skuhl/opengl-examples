@@ -164,6 +164,8 @@ void display()
 		
 		glEnable(GL_DEPTH_TEST); // turn on depth testing
 		kuhl_errorcheck();
+		
+		viewmat_end_eye(viewportID);
 	} // finish viewport loop
 	viewmat_end_frame();
 

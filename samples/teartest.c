@@ -117,7 +117,8 @@ void display()
 		glClear(GL_COLOR_BUFFER_BIT);
 		glDisable(GL_SCISSOR_TEST);
 		glEnable(GL_DEPTH_TEST); // turn on depth testing
-
+		
+		viewmat_end_eye(viewportID);
 	} // finish viewport loop
 	viewmat_end_frame();
 

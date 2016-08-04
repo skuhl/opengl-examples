@@ -286,7 +286,7 @@ void display()
 		kuhl_errorcheck();
 
 		glUseProgram(0); // stop using a GLSL program.
-
+		viewmat_end_eye(viewportID);
 	} // finish viewport loop
 	viewmat_end_frame();
 

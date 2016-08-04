@@ -186,8 +186,8 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 	/* Make an intelligent guess if unspecified */
 	if(controlModeString == NULL) 
 	{
-		if(getenv("ORIENT_SENSOR_TTY") != NULL &&
-		   getenv("ORIENT_SENSOR_TYPE") != NULL)
+		if(kuhl_config_get("orientsensor.tty") != NULL &&
+		   kuhl_config_get("orientsensor.type") != NULL)
 		{
 			msg(MSG_INFO, "viewmat control Mode: Unspecified, but using orientation sensor.");
 			controlModeString = "orient";
