@@ -100,10 +100,17 @@ function(kuhl_add_paths path)
  kuhl_add_include_path(${path}/ImageMagick/)
 
  # VRPN
+ if(WIN32)
+ kuhl_add_library_path(${path}/vrpn/pc_win32/Debug)
+ kuhl_add_library_path(${path}/vrpn/quat/pc_win32/Debug)
+ kuhl_add_include_path(${path}/vrpn)
+ kuhl_add_include_path(${path}/vrpn/quat)
+  else()
  kuhl_add_library_path(${path}/vrpn/build)
  kuhl_add_library_path(${path}/vrpn/build/quat)
  kuhl_add_include_path(${path}/vrpn)
  kuhl_add_include_path(${path}/vrpn/quat)
+ endif()
 
  # OVR - Linux
  if(WIN32)

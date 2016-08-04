@@ -19,6 +19,7 @@
 #include <quat.h>
 #endif
 
+#include "windows-compat.h"
 #include "kuhl-util.h"
 #include "vecmat.h"
 #include "kalman.h"

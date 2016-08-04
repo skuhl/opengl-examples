@@ -6,7 +6,18 @@
 // When compiling on windows, add suseconds_t and the rand48 functions.
 #if defined __MINGW32__ || defined _WIN32
 #include <Windows.h>
-double drand48();
-void srand48(long seed);
-void usleep(DWORD waitTime);
+
+#ifdef __cplusplus
+extern "C" {
 #endif
+
+	double drand48();
+	void srand48(long seed);
+	void usleep(DWORD waitTime);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+#endif  // end if windows

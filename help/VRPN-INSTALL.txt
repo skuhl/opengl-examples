@@ -1,5 +1,9 @@
-VRPN is probably not in any common Linux package managers. However, it
-is available in homebrew on OSX.
+Reminder: VRPN is only necessary if you are going to connect to 
+a VRPN tracking system.
+
+=== Linux installation ===
+
+VRPN is often missing from popular Linux package managers. 
 
 To install, follow these steps:
 
@@ -21,9 +25,21 @@ sudo make install
 If you do NOT follow the optional step above, you must modify
 CMakeLists.txt to tell it where your copy of VRPN is.
 
-----
+A NOTE ABOUT IVS:
 
 The exiting CMakeLists.txt should find VRPN on IVS. If VRPN ever needs
 to be recompiled on IVS, we found that this command works:
 
 cmake -DCMAKE_CXX_COMPILER=/usr/bin/g++ -DVRPN_BUILD_PYTHON= -DVRPN_BUILD_PYTHON_HANDCODED_2X= .
+
+
+=== macOS installation ===
+
+VRPN is available in homebrew.
+
+
+=== Windows installation ===
+
+Download the latest VRPN release from github (see link in the Linux instructions above). Extract
+the file inside of a "opengl-libs" folder that is next to your "opengl-examples" folder. Open 
+the "vrpn.sln" solution in Visual Studio and build the "Library" project.

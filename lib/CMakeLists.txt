@@ -20,7 +20,7 @@ if(ImageMagick_FOUND)
 	set(FILES_IN_LIBKUHL ${FILES_IN_LIBKUHL} imageio.c)
 endif()
 
-if(WIN32)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set(FILES_IN_LIBKUHL ${FILES_IN_LIBKUHL} windows-compat.c)
 endif()
 
