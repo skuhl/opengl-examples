@@ -52,13 +52,8 @@ viewmat_eye camcontrol::get_separate(float outPos[3], float outRot[16], viewmat_
 	    
     @param requestedEye The eye that we are requesting.
 
-    @return The eye that the matrix is actually for. In some
-    cases, the requestedEye may not match the actual eye. For
-    example, the mouse movement manipulator might always return
-    VIEWMAT_EYE_MIDDLE regardless of which eye was requested (and
-    the caller must then update it appropriately for a specific
-    eye). Other systems such as that for the Oculus may return
-    different matrices for different eyes.
+    @return The eye that the matrix is actually for. In almost all
+    cases the returned value should match the requested eye.
 */
 viewmat_eye camcontrol::get(float matrix[16], viewmat_eye requestedEye) {
 	float pos[3], rot[16], trans[16];
