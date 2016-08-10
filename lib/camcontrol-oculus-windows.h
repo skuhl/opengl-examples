@@ -16,7 +16,7 @@ private:
 	dispmodeOculusWindows *oculus;
 	float oculusPosition[3];
 public:
-	camcontrolOculusWindows(const float initialPos[3], dispmode *inDispMode);
+	camcontrolOculusWindows(dispmode *currentDisplayMode, const float initialPos[3]);
 	~camcontrolOculusWindows();
 	viewmat_eye get_separate(float pos[3], float rot[16], viewmat_eye requestedEye);
 };

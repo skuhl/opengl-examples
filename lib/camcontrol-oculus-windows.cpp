@@ -4,10 +4,11 @@
 #include "kuhl-util.h"
 #include "vecmat.h"
 
-camcontrolOculusWindows::camcontrolOculusWindows(const float initialPos[3], dispmode *inDispmode)
+camcontrolOculusWindows::camcontrolOculusWindows(dispmode *currentDisplayMode, const float initialPos[3])
+	:camcontrol(currentDisplayMode)
 {
 	vec3f_copy(oculusPosition, initialPos);
-	oculus = dynamic_cast<dispmodeOculusWindows*>(inDispmode);
+	oculus = dynamic_cast<dispmodeOculusWindows*>(currentDisplayMode);
 }
 
 camcontrolOculusWindows::~camcontrolOculusWindows()
