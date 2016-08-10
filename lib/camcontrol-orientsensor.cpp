@@ -5,7 +5,8 @@
 #include "orient-sensor.h"
 
 
-camcontrolOrientSensor::camcontrolOrientSensor(const float initialPos[3])
+camcontrolOrientSensor::camcontrolOrientSensor(dispmode *currentDisplayMode, const float initialPos[3])
+	:camcontrol(currentDisplayMode)
 {
 	vec3f_copy(position, initialPos);
 

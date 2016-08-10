@@ -20,7 +20,7 @@ private:
 	dispmodeOculusLinux *oculus;
 	float oculusPosition[3];
 public:
-	camcontrolOculusLinux(const float initialPos[3], dispmode *inDispMode);
+	camcontrolOculusLinux(dispmode *inDispMode, const float initialPos[3]);
 	~camcontrolOculusLinux();
 	viewmat_eye get_separate(float pos[3], float rot[16], viewmat_eye requestedEye);
 };

@@ -4,7 +4,8 @@
 #include "vecmat.h"
 #include "vrpn-help.h"
 
-camcontrolVrpn::camcontrolVrpn(const char *inObject, const char *inHostname)
+camcontrolVrpn::camcontrolVrpn(dispmode *currentDisplayMode, const char *inObject, const char *inHostname)
+	:camcontrol(currentDisplayMode)
 {
 	if(inObject == NULL)
 		object = NULL;

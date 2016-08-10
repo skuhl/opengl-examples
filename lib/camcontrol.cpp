@@ -2,18 +2,17 @@
 #include "viewmat.h"
 #include "vecmat.h"
 
-camcontrol::camcontrol()
+camcontrol::camcontrol(dispmode *currentDisplayMode)
 {
-	float inPos[3] = { 0,0,0 };
-	float inLook[3] = {0,0,-1};
-	float inUp[3] = {0,1,0};
-	vec3f_copy(pos, inPos);
-	vec3f_copy(look, inLook);
-	vec3f_copy(up, inUp);
+	displaymode = currentDisplayMode;
+	vec3f_set(pos, 0,0,0);
+	vec3f_set(look, 0,0,-1);
+	vec3f_set(up, 0,1,0);
 }
 
-camcontrol::camcontrol(const float inPos[3], const float inLook[3], const float inUp[3])
+camcontrol::camcontrol(dispmode *currentDisplayMode, const float inPos[3], const float inLook[3], const float inUp[3])
 {
+	displaymode = currentDisplayMode;
 	vec3f_copy(pos, inPos);
 	vec3f_copy(look, inLook);
 	vec3f_copy(up, inUp);
@@ -56,26 +55,40 @@ viewmat_eye camcontrol::get_separate(float outPos[3], float outRot[16], viewmat_
     cases the returned value should match the requested eye.
 */
 viewmat_eye camcontrol::get(float matrix[16], viewmat_eye requestedEye) {
-	float pos[3], rot[16], trans[16];
+
+	/* Get the eye's position and orientation */
+	float pos[3], rot[16];
 	viewmat_eye actualEye = this->get_separate(pos, rot, requestedEye);
-	mat4f_translate_new(trans, -pos[0],-pos[1],-pos[2]); // negate translation because we are translating camera, not an object
-	mat4f_transpose(rot); // transpose because we are rotating camera, not an object
+
+	/* Create a translation matrix based on the eye position. Note
+	 * that the eye position is negated because we are translating the
+	 * camera (or, equivalently, translating the world)---not an
+	 * object. */
+	float trans[16];
+	mat4f_translate_new(trans, -pos[0],-pos[1],-pos[2]);
+
+	/* We invert the rotation matrix because we are rotating the camera, not an object. */
+	mat4f_transpose(rot);
+
+	/* Combine into a single view matrix. */
 	mat4f_mult_mat4f_new(matrix, rot, trans);
 
+	/* Determine if the view matrix needs to be updated to get it to
+	 * be appropriate for the requested eye. */
 	if(actualEye == VIEWMAT_EYE_MIDDLE &&
 	   (requestedEye == VIEWMAT_EYE_LEFT ||
 	    requestedEye == VIEWMAT_EYE_RIGHT) )
 	{
 		/* Update the view matrix based on which eye we are rendering */
-		float eyeDist = 0.055f;  // TODO: Make this configurable.
-		float eyeShift = eyeDist/2.0f;
-		if(requestedEye == VIEWMAT_EYE_LEFT)
-			eyeShift = eyeShift * -1;
-			
-		// Negate eyeShift because the matrix would shift the world, not
-		// the eye by default.
+		float eyeOffset[3];
+		displaymode->get_eyeoffset(eyeOffset, requestedEye);
+		//vec3f_print(eyeOffset);
+		
+		/* Create a new matrix which we will use to translate the
+		   existing view matrix. We negate eyeOffset because the
+		   matrix would shift the world, not the eye by default. */
 		float shiftMatrix[16];
-		mat4f_translate_new(shiftMatrix, -eyeShift, 0, 0);
+		mat4f_translate_new(shiftMatrix, -eyeOffset[0], -eyeOffset[1], -eyeOffset[2]);
 			
 		/* Adjust the view matrix by the eye offset */
 		mat4f_mult_mat4f_new(matrix, shiftMatrix, matrix);

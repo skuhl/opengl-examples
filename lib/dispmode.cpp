@@ -21,6 +21,23 @@ viewmat_eye dispmode::eye_type(int viewportID)
 	return VIEWMAT_EYE_MIDDLE;
 }
 
+void dispmode::get_eyeoffset(float offset[3], viewmat_eye eye)
+{
+	vec3f_set(offset, 0,0,0);
+}
+
+
+/** A wrapper around get_eyeoffset(offset, viewmat_eye eye) which works by converting the viewportID into the eye type.
+ *
+ * @param offset The eye offset to be filled in.
+ * @param viewportID The viewport of the eye that we are requesting.
+ */
+void dispmode::get_eyeoffset(float offset[3], int viewportID)
+{
+	this->get_eyeoffset(offset, eye_type(viewportID));
+}
+
+
 
 /** Returns the number of viewports. For most desktop applications, it
  * will return 1. For stereoscopic rendering (Oculus, anaglyph, etc),
@@ -57,7 +74,6 @@ void dispmode::get_frustum(float result[6], int viewportID)
 {
 
 }
-
 
 
 /** If we are rendering a scene for the Oculus, we will be rendering

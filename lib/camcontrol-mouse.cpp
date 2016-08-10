@@ -4,7 +4,8 @@
 #include "camcontrol-mouse.h"
 #include "vecmat.h"
 
-camcontrolMouse::camcontrolMouse(const float pos[3], const float look[3], const float up[3])
+camcontrolMouse::camcontrolMouse(dispmode *currentDisplayMode, const float pos[3], const float look[3], const float up[3])
+	:camcontrol(currentDisplayMode)
 {
 	GLFWwindow *window = kuhl_get_window();
 	glfwSetMouseButtonCallback(window, mousemove_glfwMouseButtonCallback);

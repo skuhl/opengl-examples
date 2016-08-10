@@ -147,6 +147,20 @@ dispmodeOculusLinux::dispmodeOculusLinux()
 
 	/* disable health and safety warning */
 	ovrHmd_DismissHSWDisplay(hmd);
+
+	/* Warn the user that we are using the IPD specified by Oculus. */
+	if(kuhl_config_get("ipd"))
+	{
+		msg(MSG_WARNING, "You specified 'ipd=%s' in the config file. We are IGNORING this value because the Oculus API calculates the IPD for us.", kuhl_config_get("ipd"));
+
+		float offsetLeft[3];
+		float offsetRight[3];
+		get_eyeoffset(offsetLeft, VIEWMAT_EYE_LEFT);
+		get_eyeoffset(offsetRight, VIEWMAT_EYE_RIGHT);
+		float offsetDiff[3];
+		vec3f_sub_new(offsetDiff, offsetRight, offsetLeft);
+		msg(MSG_WARNING, "The Oculus API is telling us to use %0.3f cm for the IPD.", offsetDiff[0]*100);
+	}
 }
 
 dispmodeOculusLinux::~dispmodeOculusLinux()
@@ -231,6 +245,36 @@ int dispmodeOculusLinux::num_viewports(void)
 	return 2;
 }
 
+
+void dispmodeOculusLinux::get_eyeoffset(float offset[3], viewmat_eye eye)
+{
+	/* IMPORTANT: If we are using the Oculus camcontrol, then this
+	 * function shouldn't get called because get_separate() will
+	 * already return the adjusted value.
+	 */
+
+	ovrEyeType oeye;
+	if(eye == VIEWMAT_EYE_LEFT)
+		oeye = ovrEye_Left;
+	else if(eye == VIEWMAT_EYE_RIGHT)
+		oeye = ovrEye_Right;
+	else
+	{
+		msg(MSG_FATAL, "Requested eye offset of something that wasn't the left or right eye");
+		exit(EXIT_FAILURE);
+	}
+
+	/* We negate the values because the documentation for
+	 * HmdToEyeViewOffset says that the values represent how much to
+	 * translate the viewmatrix (not how much to translate the
+	 * eye). */
+	vec3f_set(offset, 
+	          -eye_rdesc[oeye].HmdToEyeViewOffset.x, // left & right IPD offset
+	          -eye_rdesc[oeye].HmdToEyeViewOffset.y, // vertical offset
+	          -eye_rdesc[oeye].HmdToEyeViewOffset.z); // forward/back offset
+
+	//vec3f_print(offset);
+}
 
 
 int dispmodeOculusLinux::get_framebuffer(int viewportID)

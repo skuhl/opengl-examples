@@ -273,27 +273,27 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 	{
 		case VIEWMAT_CONTROL_NONE:
 			msg(MSG_INFO, "viewmat control mode: None (fixed view)");
-			controller = new camcontrol(pos, look, up);
+			controller = new camcontrol(desktop, pos, look, up);
 			break;
 		case VIEWMAT_CONTROL_MOUSE:
 			msg(MSG_INFO, "viewmat control mode: Mouse movement");
-			controller = new camcontrolMouse(pos, look, up);
+			controller = new camcontrolMouse(desktop, pos, look, up);
 			break;
 		case VIEWMAT_CONTROL_VRPN:
 			msg(MSG_INFO, "viewmat control mode: VRPN");
-			controller = new camcontrolVrpn(kuhl_config_get("viewmat.vrpn.object"), NULL);
+			controller = new camcontrolVrpn(desktop, kuhl_config_get("viewmat.vrpn.object"), NULL);
 			break;
 		case VIEWMAT_CONTROL_ORIENT:
 			msg(MSG_INFO, "viewmat control mode: Orientation sensor");
-			controller = new camcontrolOrientSensor(pos);
+			controller = new camcontrolOrientSensor(desktop, pos);
 			break;
 		case VIEWMAT_CONTROL_OCULUS:
 #if defined(__linux__) && !defined(MISSING_OVR)
 			msg(MSG_INFO, "viewmat control mode: Oculus (Linux)");
-			controller = new camcontrolOculusLinux(pos, desktop);
+			controller = new camcontrolOculusLinux(desktop, pos);
 #elif defined(_WIN32) && !defined(MISSING_OVR)
 			msg(MSG_INFO, "viewmat control mode: Oculus (Windows)");
-			controller = new camcontrolOculusWindows(pos, desktop);
+			controller = new camcontrolOculusWindows(desktop, pos);
 #else
 			msg(MSG_FATAL, "Oculus not supported on this platform.");
 			exit(EXIT_FAILURE);
@@ -353,7 +353,7 @@ static void viewmat_get_orient_sensor(float viewmatrix[16], int viewportNum)
  @param viewmatrix View matrix for the viewportID
  @param viewportID The viewportID for this particular view matrix.
 */
-static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
+static void viewmat_validate_ipd(const float viewmatrix[16], int viewportID)
 {
 	if(desktop->num_viewports() != 2)
 		return;
@@ -379,10 +379,21 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
 		if(desktop->eye_type(0) == VIEWMAT_EYE_RIGHT)
 			flip = -1;
 
-		// Get the position matrix information
+		// The difference between the last columns of the two matrices
+		// will tell us the IPD. To understand why this is, you could
+		// take a view matrix and apply an additional translation in
+		// the X direction (in camera coordinates) by simply adding a
+		// value to the first value in the last column.
 		float pos1[4], pos2[4];
 		mat4f_getColumn(pos1, viewmatrix0, 3); // get last column
 		mat4f_getColumn(pos2, viewmatrix,  3); // get last column
+
+		/* For future reference: If we really wanted to extract the
+		   camera position in world coordinates from the view
+		   matrices, we would need to invert the matrices before
+		   getting the last column. However, then we'd have to
+		   calculate the distance between the two points instead of
+		   just looking at the difference in the 'x' value. */
 
 		// Get a vector between the eyes
 		float diff[4];
@@ -399,8 +410,13 @@ static void viewmat_validate_ipd(float viewmatrix[16], int viewportID)
 		{
 			msg(MSG_WARNING, "IPD=%.4f meters, delay=%ld us (IPD validation failed; occasional messages are OK!)\n", ipd, delay);
 		}
-		//msg(MSG_INFO, "IPD=%.4f meters, delay=%ld us\n", ipd, delay);
 
+#if 0
+		// Debugging
+		msg(MSG_INFO, "IPD=%.4f meters, delay=%ld us\n", ipd, delay);
+		msg(MSG_INFO, "pos1=%0.3f %0.3f %0.3f", pos1[0], pos1[1], pos1[2]);
+		msg(MSG_INFO, "pos2=%0.3f %0.3f %0.3f", pos2[0], pos2[1], pos2[2]);
+#endif
 	}
 }
 
