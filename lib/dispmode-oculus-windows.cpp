@@ -31,6 +31,31 @@ dispmodeOculusWindows::dispmodeOculusWindows()
 		eyeRenderTexture[eye] = new TextureBuffer(session, true, true, idealTextureSize, 1, NULL, 1);
 		eyeDepthBuffer[eye] = new DepthBuffer(eyeRenderTexture[eye]->GetSize(), 0);
 	}
+
+	//mirror texture
+	int w, h;
+	viewmat_window_size(&w, &h);
+	ovrMirrorTextureDesc desc;
+	memset(&desc, 0, sizeof(desc));
+	desc.Width = w;
+	desc.Height = h;
+	desc.Format = OVR_FORMAT_R8G8B8A8_UNORM_SRGB;
+
+	result = ovr_CreateMirrorTextureGL(session, &desc, &mirrorTexture);
+	if (!OVR_SUCCESS(result))
+	{
+		printf("error: failed to create mirror texture.\n");
+		return;
+	}
+
+	GLuint texId;
+	ovr_GetMirrorTextureBufferGL(session, mirrorTexture, &texId);
+	glGenFramebuffers(1, &mirrorFBO);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, mirrorFBO);
+	glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texId, 0);
+	glFramebufferRenderbuffer(GL_READ_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, 0);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
 //	ovr_SetTrackingOriginType(session, ovrTrackingOrigin_FloorLevel);
 
 }
@@ -91,6 +116,18 @@ void dispmodeOculusWindows::end_frame()
 	ovrLayerHeader* layers = &ld.Header;
 	ovrResult result = ovr_SubmitFrame(session, frameIndex, nullptr, &layers, 1);
 	frameIndex++;
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, mirrorFBO);
+	kuhl_errorcheck();
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	kuhl_errorcheck();
+	int w, h;
+	viewmat_window_size(&w, &h);
+	glBlitFramebuffer(0, (GLint)h, (GLint)w, 0,
+		0, 0, (GLint)w, (GLint)h,
+		GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	kuhl_errorcheck();
+	//	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
 	dispmode::end_frame(); // call our parent's implementation
 }

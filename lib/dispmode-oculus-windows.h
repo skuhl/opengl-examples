@@ -240,6 +240,9 @@ public:
 	double sensorSampleTime;
 	long long frameIndex;
 
+	// Mirroring
+	ovrMirrorTexture mirrorTexture = nullptr;
+	GLuint          mirrorFBO = 0;
 };
 
 
