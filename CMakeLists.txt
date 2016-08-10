@@ -51,12 +51,13 @@ include(${CMAKE_SOURCE_DIR}/CMakeModules/colorMessage.cmake)
 
 
 function(kuhl_add_library_path path)
+  message(STATUS "Looking for a library in: ${path}")
   file(GLOB POSSIBLE_PATHS ${path})
   foreach(possible_path ${POSSIBLE_PATHS})
     if(EXISTS ${possible_path})
-	  message(STATUS "Found one or more supporting libraries in ${possible_path}")
+        message(STATUS "      Found a library in: ${possible_path}")
 	  set(CMAKE_LIBRARY_PATH ${possible_path} ${CMAKE_LIBRARY_PATH} CACHE INTERNAL "")
-    endif()
+	endif()
   endforeach()
 endfunction(kuhl_add_library_path)
 
@@ -74,32 +75,41 @@ function(kuhl_add_paths path)
    return()
  endif()
 
- # GLFW
+  # GLFW
+ if(NOT GLFW_glfw_LIBRARY)
  kuhl_add_library_path(${path}/glfw/src)
  kuhl_add_include_path(${path}/glfw/include)
  # GLFW - Windows
  kuhl_add_library_path(${path}/glfw-*/src/Debug)
  kuhl_add_include_path(${path}/glfw-*/include)
-
+endif()
+ 
  # GLEW
+ if(NOT GLEW_LIBRARY)
  kuhl_add_library_path(${path}/glew/lib)
  kuhl_add_include_path(${path}/glew/include)
  # GLEW - Windows
  kuhl_add_library_path(${path}/glew-*/lib/Release/Win32)
  kuhl_add_include_path(${path}/glew-*/include)
+ endif()
 
  # Assimp
+ if(NOT ASSIMP_LIBRARIES)
  kuhl_add_library_path(${path}/assimp/lib)
  kuhl_add_include_path(${path}/assimp/include)
  # Assimp - Windows
  kuhl_add_library_path(${path}/assimp-*/lib/Debug)
  kuhl_add_include_path(${path}/assimp-*/include)
+ endif()
  
  # ImageMagick
+ if(NOT DEFINED ImageMagick_MagickCore_LIBRARY)
  kuhl_add_library_path(${path}/ImageMagick/.libs)
  kuhl_add_include_path(${path}/ImageMagick/)
+ endif()
 
  # VRPN
+ if(NOT DEFINED VRPN_LIBRARY_VRPN)
  if(WIN32)
  kuhl_add_library_path(${path}/vrpn/pc_win32/Debug)
  kuhl_add_library_path(${path}/vrpn/quat/pc_win32/Debug)
@@ -111,8 +121,10 @@ function(kuhl_add_paths path)
  kuhl_add_include_path(${path}/vrpn)
  kuhl_add_include_path(${path}/vrpn/quat)
  endif()
+ endif()
 
  # OVR - Linux
+ if(NOT DEFINED OVR_LIBRARIES)
  if(WIN32)
 	kuhl_add_include_path(${path}/OculusSDK/LibOVR/Include)
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -127,6 +139,7 @@ else()
  kuhl_add_library_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Lib/Linux/x86_64/Debug)
  kuhl_add_include_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Include)
  kuhl_add_include_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Src)
+endif()
 endif()
  
 endfunction(kuhl_add_paths)
