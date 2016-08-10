@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <GL/glew.h>
 #include "dispmode.h"
+#include "vecmat.h"
 #include "msg.h"
 #include "bufferswap.h"
 
@@ -8,22 +9,50 @@ dispmode::dispmode()
 {
 }
 
+/** Translates a viewportID into a specific eye. For HMD applications, viewportID=0
+ * is typically the left eye, it does not necessarily need to be.
+ *
+ * @param viewportID The viewport ID that we wish to know the eye that it corresponds to.
+ *
+ * @return The eye that the viewport corresponds to.
+ */
 viewmat_eye dispmode::eye_type(int viewportID)
 {
-	return VIEWMAT_EYE_UNKNOWN;
+	return VIEWMAT_EYE_MIDDLE;
 }
 
 
+/** Returns the number of viewports. For most desktop applications, it
+ * will return 1. For stereoscopic rendering (Oculus, anaglyph, etc),
+ * this function may return 2.
+ *
+ * @return The number of viewports that this display mode provides.
+ */
 int dispmode::num_viewports(void)
 {
 	return 1;
 }
 
+/** Retrives a viewport for the specified viewport ID.
+
+    @param viewportValue Specifies the viewport. The first two values
+    are the lower left corner of the viewport rectangle in pixels. The
+    last two values specify the width and the height of the viewport.
+
+    @param viewportID The ID for the viewport that we are requesting a
+    viewport for.
+*/
 void dispmode::get_viewport(int viewportValue[4], int viewportId)
 {
 
 }
 
+/** Retrieves a view frustum for the specified viewport ID.
+
+    @param result The resulting view frustum (left, right, bottom, top, near far).
+
+    @param viewportID The ID for the viewport that we are requesting a frustum for.
+*/
 void dispmode::get_frustum(float result[6], int viewportID)
 {
 
@@ -52,18 +81,33 @@ int dispmode::get_framebuffer(int viewportID)
 	return framebuffer;
 }
 	
-/* Ideally, dispmode returns a view frustum. This allows us to
- * further adjust the frustum for systems such as those that
- * provide a dynamic frustum (e.g., IVS display wall). However,
- * other systems might not provide a way to access the view
- * frustum and just provides us with a projection matrix (Oculus).
+/** Ideally, dispmode can provide either a frustum (get_frustum()) or
+ * a projection matrix (get_projmatrix()). By providing access to the
+ * frustum values, it allows us later adjust the frustum values later
+ * for applications which require a dynamic frustum (e.g., IVS display
+ * wall). However, other systems might not provide a way to access the
+ * view frustum and just provides us with a projection matrix
+ * (Oculus).
+ *
+ * @return Returns 1 if this dispmode object can only provide a
+ * projection matrix and is unable to provide a frustum with
+ * get_frustum.
  */
 int dispmode::provides_projmat_only()
 {
 	return 0;
 }
 
+/** Get a projection matrix for a given viewport. By default, this
+    function calls get_frustum() and then converts top/bottom/left/etc
+    values into a projection matrix. Some display modes may not provide
+    access to a frustum and only provide a matrix.
 
+    @param projmatrix The 4x4 projection matrix to be filled in by this function.
+
+    @param viewportID Specifies the ID of the viewport that the caller
+    wants a projection matrix for.
+*/
 void dispmode::get_projmatrix(float projmatrix[16], int viewportID)
 {
 	float f[6];  // left, right, bottom, top, near>0, far>0
@@ -71,24 +115,29 @@ void dispmode::get_projmatrix(float projmatrix[16], int viewportID)
 	mat4f_frustum_new(projmatrix, f[0], f[1], f[2], f[3], f[4], f[5]);
 }
 
+/** To be called prior to drawing a frame. May be necessary for some
+ * rendering modes. */
 void dispmode::begin_frame()
 {
 
 }
 
-
+/** To be called when done rendering a frame. This function swaps the
+ * buffers. In some rendering modes, it may also do additional work. */
 void dispmode::end_frame()
 {
 	bufferswap();
 }
 
-
+/** To be called prior to drawing in a viewport. May be necessary for
+ * some rendering modes. */
 void dispmode::begin_eye(int viewportID)
 {
 
 }
 
-
+/** To be called when done drawing to a viewport. May be necessary for
+ * some rendering modes. */
 void dispmode::end_eye(int viewportID)
 {
 

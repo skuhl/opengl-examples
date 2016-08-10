@@ -1,4 +1,10 @@
-#include "viewmat.h"
+/* Copyright (c) 2016 Scott Kuhl. All rights reserved.
+ * License: This code is licensed under a 3-clause BSD license. See
+ * the file named "LICENSE" for a full copy of the license.
+ */
+
+#pragma once
+#include "camcontrol.h"
 
 class camcontrolMouse : public camcontrol
 {

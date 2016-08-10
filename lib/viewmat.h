@@ -5,22 +5,24 @@
 
 /** @file
 
-    viewmat provides an easy-to-use interface for generating
-    appropriate view matrices for a variety of systems. Simply call
-    viewmat_init() when your program starts and th en call
-    viewmat_get() whenever you want to get a view matrix.
+    viewmat provides an easy-to-use interface for generating a
+    projection matrix (view frustum), view matrices (camera
+    position/orientation) while also rendering graphics correctly for
+    different display systems (desktop, anaglyph, Oculus, etc).
 
-    viewmat handles the details of talking with a VRPN server for IVS
-    and HMD systems. If you are running in a DGR environment, it also
-    makes sure that the view matrices are synchronized across all DGR
-    processes.
+    To use this function, call:
+    viewmat_init()
+    viewmat_begin_frame() prior to drawing a frame
+    viewmat_num_viewports() to get how many viewports/eyes we are rendering to
+    viewmat_get_viewport() to get the viewport position and dimensions
+    viewmat_begin_eye() prior to drawing each eye
+    viewmat_get() to get projection and view matrices for the eye.
+    viewmat_end_eye() when finished drawing graphics for an eye.
+    viewmat_end_frame() when finished drawing a frame.
 
-    VIEWMAT_MODE="mouse" - Can be set to ivs, hmd, none, mouse. If not
-    set, "mouse" is assumed.
-
-    VIEWMAT_VRPN_OBJECT="Head" - The name of the tracked object that
-    will be placed on the user's head. Currently only used in "ivs"
-    mode.
+    If you are running in a DGR environment, it also ensures that the
+    information is sent (dgr_update()) and that the view matrices are
+    synchronized across all DGR processes.
 
     @author Scott Kuhl
  */
@@ -53,106 +55,4 @@ void viewmat_get_viewport(int viewportValue[4], int viewportNum);
 	
 #ifdef __cplusplus
 } // end extern "C"
-
-
-#include "vecmat.h"
-class camcontrol
-{
-private:
-	float pos[3],look[3],up[3];
-	
-public:
-	camcontrol()
-	{
-		float inPos[3] = { 0,0,0 };
-		float inLook[3] = {0,0,-1};
-		float inUp[3] = {0,1,0};
-		vec3f_copy(pos, inPos);
-		vec3f_copy(look, inLook);
-		vec3f_copy(up, inUp);
-	};
-	
-	camcontrol(const float inPos[3], const float inLook[3], const float inUp[3])
-	{
-		vec3f_copy(pos, inPos);
-		vec3f_copy(look, inLook);
-		vec3f_copy(up, inUp);
-	};
-
-	/** Gets camera position and a rotation matrix for the camera. The
-	    get() method serves as a wrapper for this function and it
-	    automatically adjusts for the interpupilary distance if
-	    get_separate does not return the eye that we requested.
-	    
-	    @param outPos The position of the camera.
-	    
-	    @param outRot A rotation matrix for the camera.
-
-	    @return The eye that the matrix is actually for. In some
-	    cases, the requestedEye may not match the actual eye. For
-	    example, the mouse movement manipulator might always return
-	    VIEWMAT_EYE_MIDDLE regardless of which eye was requested (and
-	    the caller must then update it appropriately for a specific
-	    eye). Other systems such as that for the Oculus may return
-	    different matrices for different eyes.
-	*/
-	virtual viewmat_eye get_separate(float outPos[3], float outRot[16], viewmat_eye requestedEye)
-	{
-		mat4f_lookatVec_new(outRot, pos, look, up);
-		float zero[4] = { 0,0,0,1 };
-		mat4f_setColumn(outRot, zero, 3);
-
-		vec3f_copy(outPos, pos);
-		return VIEWMAT_EYE_MIDDLE;
-	};
-
-	/** Gets a view matrix.
-	    
-	    @param matrix The requested view matrix.
-	    
-	    @param requestedEye The eye that we are requesting.
-
-	    @return The eye that the matrix is actually for. In some
-	    cases, the requestedEye may not match the actual eye. For
-	    example, the mouse movement manipulator might always return
-	    VIEWMAT_EYE_MIDDLE regardless of which eye was requested (and
-	    the caller must then update it appropriately for a specific
-	    eye). Other systems such as that for the Oculus may return
-	    different matrices for different eyes.
-	*/
-	virtual viewmat_eye get(float matrix[16], viewmat_eye requestedEye) {
-		float pos[3], rot[16], trans[16];
-		viewmat_eye actualEye = this->get_separate(pos, rot, requestedEye);
-		mat4f_translate_new(trans, -pos[0],-pos[1],-pos[2]); // negate translation because we are translating camera, not an object
-		mat4f_transpose(rot); // transpose because we are rotating camera, not an object
-		mat4f_mult_mat4f_new(matrix, rot, trans);
-
-		if(actualEye == VIEWMAT_EYE_MIDDLE &&
-		   (requestedEye == VIEWMAT_EYE_LEFT ||
-		    requestedEye == VIEWMAT_EYE_RIGHT) )
-		{
-			/* Update the view matrix based on which eye we are rendering */
-			float eyeDist = 0.055f;  // TODO: Make this configurable.
-			float eyeShift = eyeDist/2.0f;
-			if(requestedEye == VIEWMAT_EYE_LEFT)
-				eyeShift = eyeShift * -1;
-			
-			// Negate eyeShift because the matrix would shift the world, not
-			// the eye by default.
-			float shiftMatrix[16];
-			mat4f_translate_new(shiftMatrix, -eyeShift, 0, 0);
-			
-			/* Adjust the view matrix by the eye offset */
-			mat4f_mult_mat4f_new(matrix, shiftMatrix, matrix);
-			
-			actualEye = requestedEye;
-		}
-		
-		return actualEye;
-	};
-};
-
-
-
-
 #endif
