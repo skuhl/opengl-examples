@@ -51,103 +51,107 @@ include(${CMAKE_SOURCE_DIR}/CMakeModules/colorMessage.cmake)
 
 
 function(kuhl_add_library_path path)
-  message(STATUS "Looking for a library in: ${path}")
-  file(GLOB POSSIBLE_PATHS ${path})
-  foreach(possible_path ${POSSIBLE_PATHS})
-    if(EXISTS ${possible_path})
-        message(STATUS "      Found a library in: ${possible_path}")
-	  set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${possible_path} CACHE INTERNAL "")
-	endif()
-  endforeach()
+	message(STATUS "Looking for: ${path}")
+	file(GLOB POSSIBLE_PATHS ${path})
+	foreach(possible_path ${POSSIBLE_PATHS})
+		if(EXISTS ${possible_path})
+			message(STATUS "      Found: ${possible_path}")
+			set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${possible_path} CACHE INTERNAL "")
+		endif()
+	endforeach()
 endfunction(kuhl_add_library_path)
 
 function(kuhl_add_include_path path)
-  file(GLOB POSSIBLE_PATHS ${path})
-  foreach(possible_path ${POSSIBLE_PATHS})
-	  if(EXISTS ${possible_path})
-		set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} ${possible_path} CACHE INTERNAL "")
-	  endif()
-  endforeach()
+	message(STATUS "Looking for: ${path}")
+	file(GLOB POSSIBLE_PATHS ${path})
+	foreach(possible_path ${POSSIBLE_PATHS})
+		if(EXISTS ${possible_path})
+			message(STATUS "      Found: ${possible_path}")
+			set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} ${possible_path} CACHE INTERNAL "")
+		endif()
+	endforeach()
 endfunction(kuhl_add_include_path)
 
 function(kuhl_add_paths path)
- if(NOT EXISTS ${path})
-   return()
- endif()
-
-  # GLFW
- if(NOT GLFW_glfw_LIBRARY)
- kuhl_add_library_path(${path}/glfw/src)
- kuhl_add_include_path(${path}/glfw/include)
- # GLFW - Windows
- kuhl_add_library_path(${path}/glfw-*/src/Debug)
- kuhl_add_library_path(${path}/glfw-*/src/Release)
- kuhl_add_include_path(${path}/glfw-*/include)
-endif()
- 
- # GLEW
- if(NOT GLEW_LIBRARY)
- kuhl_add_library_path(${path}/glew/lib)
- kuhl_add_include_path(${path}/glew/include)
- # GLEW - Windows
- kuhl_add_library_path(${path}/glew-*/lib/Release/Win32)
- kuhl_add_include_path(${path}/glew-*/include)
- endif()
-
- # Assimp
- if(NOT ASSIMP_LIBRARIES)
- kuhl_add_library_path(${path}/assimp/lib)
- kuhl_add_include_path(${path}/assimp/include)
- # Assimp - Windows
- kuhl_add_library_path(${path}/assimp-*/lib/Debug)
- kuhl_add_include_path(${path}/assimp-*/include)
- endif()
- 
- # ImageMagick
- if(NOT DEFINED ImageMagick_MagickCore_LIBRARY)
- kuhl_add_library_path(${path}/ImageMagick/.libs)
- kuhl_add_include_path(${path}/ImageMagick/)
- endif()
-
- # VRPN
- if(NOT DEFINED VRPN_LIBRARY_VRPN)
- if(WIN32)
- kuhl_add_library_path(${path}/vrpn/pc_win32/Debug)
- kuhl_add_library_path(${path}/vrpn/quat/pc_win32/Debug)
- kuhl_add_include_path(${path}/vrpn)
- kuhl_add_include_path(${path}/vrpn/quat)
-  else()
- kuhl_add_library_path(${path}/vrpn/build)
- kuhl_add_library_path(${path}/vrpn/build/quat)
- kuhl_add_include_path(${path}/vrpn)
- kuhl_add_include_path(${path}/vrpn/quat)
- endif()
- endif()
-
- # OVR - Linux
- if(NOT DEFINED OVR_LIBRARIES)
- if(WIN32)
-	kuhl_add_include_path(${path}/OculusSDK/LibOVR/Include)
-	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		kuhl_add_library_path(${path}/OculusSDK/LibOVR/Lib/Windows/x64/Debug/VS*/)
-		#kuhl_add_library_path(${path}/OculusSDK/LibOVR/Lib/Windows/x64/Release)
-	else()
-		kuhl_add_library_path(${path}/OculusSDK/LibOVR/Lib/Windows/Win32/Debug/VS*)
-		#kuhl_add_library_path(${path}/OculusSDK/LibOVR/Lib/Windows/Win32/Release)
+	if(NOT EXISTS ${path})
+		return()
 	endif()
-else()
- kuhl_add_library_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Lib/Linux/x86_64/Release)
- kuhl_add_library_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Lib/Linux/x86_64/Debug)
- kuhl_add_include_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Include)
- kuhl_add_include_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Src)
-endif()
-endif()
- 
+
+	# GLFW
+	if(NOT GLFW_glfw_LIBRARY)
+		kuhl_add_library_path(${path}/glfw/src)
+		kuhl_add_include_path(${path}/glfw/include)
+		# GLFW - Windows
+		kuhl_add_library_path(${path}/glfw-*/src/Debug)
+		kuhl_add_library_path(${path}/glfw-*/src/Release)
+		kuhl_add_include_path(${path}/glfw-*/include)
+	endif()
+	
+	# GLEW
+	if(NOT GLEW_LIBRARY)
+		kuhl_add_library_path(${path}/glew/lib)
+		kuhl_add_include_path(${path}/glew/include)
+		# GLEW - Windows
+		kuhl_add_library_path(${path}/glew-*/lib/Release/Win32)
+		kuhl_add_include_path(${path}/glew-*/include)
+	endif()
+
+	# Assimp
+	if(NOT ASSIMP_LIBRARIES)
+		kuhl_add_library_path(${path}/assimp/lib)
+		kuhl_add_include_path(${path}/assimp/include)
+		# Assimp - Windows
+		kuhl_add_library_path(${path}/assimp-*/lib/Debug)
+		kuhl_add_include_path(${path}/assimp-*/include)
+	endif()
+	
+	# ImageMagick
+	if(NOT DEFINED ImageMagick_MagickCore_LIBRARY)
+		kuhl_add_library_path(${path}/ImageMagick/.libs)
+		kuhl_add_include_path(${path}/ImageMagick/)
+	endif()
+
+	# VRPN
+	if(NOT DEFINED VRPN_LIBRARY_VRPN)
+		if(WIN32)
+			kuhl_add_library_path(${path}/vrpn/pc_win32/Debug)
+			kuhl_add_library_path(${path}/vrpn/quat/pc_win32/Debug)
+			kuhl_add_include_path(${path}/vrpn)
+			kuhl_add_include_path(${path}/vrpn/quat)
+		else()
+			kuhl_add_library_path(${path}/vrpn/build)
+			kuhl_add_library_path(${path}/vrpn/build/quat)
+			kuhl_add_include_path(${path}/vrpn)
+			kuhl_add_include_path(${path}/vrpn/quat)
+		endif()
+	endif()
+
+	# OVR - Linux
+	if(NOT DEFINED OVR_LIBRARIES)
+		if(WIN32)
+			kuhl_add_include_path(${path}/OculusSDK/LibOVR/Include)
+			if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+				kuhl_add_library_path(${path}/OculusSDK/LibOVR/Lib/Windows/x64/Debug/VS*/)
+				#kuhl_add_library_path(${path}/OculusSDK/LibOVR/Lib/Windows/x64/Release)
+			else()
+				kuhl_add_library_path(${path}/OculusSDK/LibOVR/Lib/Windows/Win32/Debug/VS*)
+				#kuhl_add_library_path(${path}/OculusSDK/LibOVR/Lib/Windows/Win32/Release)
+			endif()
+		else()
+			kuhl_add_library_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Lib/Linux/x86_64/Release)
+			kuhl_add_library_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Lib/Linux/x86_64/Debug)
+			kuhl_add_include_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Include)
+			kuhl_add_include_path(${path}/ovr_sdk_linux_0.5.0.1/LibOVR/Src)
+		endif()
+	endif()
+	
 endfunction(kuhl_add_paths)
 
-kuhl_add_paths(/home/kuhl/public-ogl/) # CCSR, self-administered machines
-kuhl_add_paths(/local/kuhl-public-share/opengl) # MTU campus linux lab machines
-kuhl_add_paths(/research/kuhl/public-ogl/) # ivs
+if(NOT WIN32)
+	kuhl_add_paths(/home/kuhl/public-ogl) # CCSR, self-administered machines
+	kuhl_add_paths(/local/kuhl-public-share/opengl) # MTU campus linux lab machines
+	kuhl_add_paths(/research/kuhl/public-ogl) # ivs
+endif()
 kuhl_add_paths(${CMAKE_CURRENT_SOURCE_DIR}/..) # Alongside this folder
 kuhl_add_paths(${CMAKE_CURRENT_SOURCE_DIR}/../opengl-libs) # Alongside this folder in a folder named opengl-libs
 
@@ -253,17 +257,17 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		file(GLOB SO_FILES "${ovrSoDir}/*.so" "${ovrSoDir}/*.so.*")
 		foreach(SOFILE ${SO_FILES})
 			add_custom_command(TARGET copyOVR PRE_BUILD
-			COMMAND ${CMAKE_COMMAND} -E
-			copy ${SOFILE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+				COMMAND ${CMAKE_COMMAND} -E
+				copy ${SOFILE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 		endforeach()
 
 		include_directories(${OVR_INCLUDE_DIRS})
 		set(MISSING_OVR_DEFINITION "")
     endif()
 elseif(WIN32)
-    find_package(OVR)
+	find_package(OVR)
 	if(OVR_FOUND)
-	    include_directories(${OVR_INCLUDE_DIRS})
+		include_directories(${OVR_INCLUDE_DIRS})
 		set(MISSING_OVR_DEFINITION "")
 	endif()
 endif()
