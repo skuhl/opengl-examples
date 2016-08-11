@@ -83,7 +83,7 @@ void drawPaddle(Paddle paddle, float depth);
 void clampPaddles()
 {
 	float frustum[6];
-	projmat_get_frustum(frustum, -1, -1, 0);
+	viewmat_get_frustum(frustum, 0);
 
     // left screen boundary
 	if(paddleA.xpos < frustum[0]+paddleA.width/2)
@@ -145,7 +145,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 void game()
 {
 	float frustum[6];
-	projmat_get_frustum(frustum, -1, -1, 0);
+	viewmat_get_frustum(frustum, 0);
 
 	if(USE_VRPN)
 	{
@@ -353,6 +353,9 @@ void game()
 
 void display()
 {
+	viewmat_begin_frame();
+	viewmat_begin_eye(0);
+	
 	/* Syncronize the DGR objects */
 	dgr_setget("paddleA", &paddleA, sizeof(Paddle));
 	dgr_setget("paddleB", &paddleB, sizeof(Paddle));
@@ -378,7 +381,7 @@ void display()
 	glLoadIdentity();
 
 	float frustum[6];
-	projmat_get_frustum(frustum, -1, -1, 0);
+	viewmat_get_frustum(frustum, 0);
 	glOrtho(frustum[0], frustum[1], frustum[2], frustum[3], frustum[4], frustum[5]);
 	  
 	glMatrixMode(GL_MODELVIEW);
@@ -394,7 +397,7 @@ void display()
 
 	// Draw the background stars
 	float masterfrust[6];
-	projmat_get_master_frustum(masterfrust);
+	viewmat_get_master_frustum(masterfrust);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glBindTexture(GL_TEXTURE_2D, texIdStars);
@@ -473,7 +476,8 @@ void display()
 		game();	
 	}
 
-	bufferswap();
+	viewmat_end_eye(0);
+	viewmat_end_frame();
 }
 
 void drawPaddle(Paddle paddle, float depth)
@@ -529,11 +533,15 @@ int main( int argc, char* argv[] )
 	
 	/* Initialize DGR */
 	dgr_init();     /* Initialize DGR based on environment variables. */
+	float initCamPos[3]  = {0,0,10}; // location of camera
+	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
+	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
+	viewmat_init(initCamPos, initCamLook, initCamUp);
 
 	float frustum[6]; // left, right, bottom, top, near, far
 	                  // 0     1      2       3    4     5
 	
-	projmat_get_frustum(frustum, -1, -1, 0);
+	viewmat_get_frustum(frustum, 0);
 	ball.xpos = (frustum[0] + frustum[1])/2.0;
 	ball.ypos = (frustum[2] + frustum[3])/2.0;
 	ball.speed = ball.minSpeed = (frustum[3]-frustum[2]) / 178.462f;

@@ -570,7 +570,11 @@ void viewmat_get_frustum(float frustum[6], int viewportID)
 	desktop->get_frustum(frustum, viewportID);
 }
 
-/** Returns the view frustum for the overall screen. */
+/** Returns the view frustum for the overall screen. For normal
+ * desktop applications, this will match the normal frustum. However,
+ * if this process is responsible for rendering a portion of a larger
+ * view frustum, this function will provide access to the larger
+ * overall frustum. */
 void viewmat_get_master_frustum(float frustum[6])
 {
 	const char* frustumString = kuhl_config_get("frustum.master");
@@ -590,6 +594,20 @@ void viewmat_get_master_frustum(float frustum[6])
 		}
 	}
 
-	msg(MSG_WARNING, "The 'frustum.master' configuration variable is missing or empty; we are assuming that the master view frustum matches the view frustum of viewport 0.");
+	/* If frustum.master wasn't set, we should notify the user. If
+	 * they are running a program in non-DGR mode, then there is
+	 * likely no problem with assuming that the master frustum matches
+	 * the viewport frustum. However, if DGR is set, then there is a
+	 * good chance that the user intends that the master frustum
+	 * differs from the viewport frustum. */
+	static int warnTheUser = 1;
+	if(warnTheUser)
+	{
+		msg_type warnValue = MSG_INFO;
+		if(dgr_is_enabled())
+			warnValue = MSG_WARNING;
+		msg(warnValue, "The 'frustum.master' configuration variable is missing or empty; we are assuming that the master view frustum matches the view frustum of viewport 0.");
+		warnTheUser = 0;
+	}
 	viewmat_get_frustum(frustum, 0);
 }
