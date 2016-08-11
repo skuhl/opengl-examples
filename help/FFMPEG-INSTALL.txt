@@ -1,0 +1,15 @@
+FFmpeg is required if you wish to load video files.
+
+=== Ubuntu instructions ===
+
+Run the following command to install the appropriate packages on your system:
+
+sudo apt install ffmpeg libavformat-dev libavdevice-dev libavcodec-dev libavutil-dev libswscale-dev
+
+
+
+=== Mac OS X ===
+
+Install homebrew and run the following command to install the appropriate packages on your system:
+
+brew install ffmpeg
