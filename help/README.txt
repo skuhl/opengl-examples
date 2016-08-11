@@ -2,9 +2,10 @@
 === Getting started
 ===
 
-Delete any cmake files to ensure we start from a fresh copy
+Unless you are certain Delete any cmake files to ensure we start from a fresh copy
 
-    rm -rf CMakeCache.txt CMakeFiles
+    Linux & macOS: ./cleanup.sh
+    Windows: Start cmake (see WINDOWS-VisualStudio.txt) and go to "File" and select "Delete cache".
 
 Search for required/optional libraries and create a Makefile.
 
@@ -29,16 +30,18 @@ Check out model loading and texturing capabilities
 
 Run code for an HMD (left/right eye screens side-by-side):
 
-    ./hmd.sh ./triangle
+    ./triangle --config config/hmd.ini
 
 Run the code using the Oculus HMD
 
-    ./oculus.sh ./triangle
+    ./triangle --config config/oculus.ini
 
 Run the code with red/cyan anaglyph 3D:
 
-    ./anaglyph.sh ./triangle
+    ./triangle --config config/anaglyph.ini
 
+TODO: The remainder of this section is out of date!
+		
 If you want to want to use VRPN to control the position and
 orientation of the camera, you need to:
     
