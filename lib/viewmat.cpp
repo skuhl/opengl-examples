@@ -563,7 +563,7 @@ void viewmat_get_frustum(float frustum[6], int viewportID)
 {
 	if(desktop->provides_projmat_only())
 	{
-		msg(MSG_FATAL, "The current display mode does not us with a view frustum.");
+		msg(MSG_FATAL, "The current display mode does not give us access to a view frustum.");
 		exit(EXIT_FAILURE);
 	}
 		
