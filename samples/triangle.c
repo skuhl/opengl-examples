@@ -14,10 +14,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "kuhl-util.h"
-#include "vecmat.h"
-#include "dgr.h"
-#include "viewmat.h"
+#include "libkuhl.h"
 static GLuint program = 0; /**< id value for the GLSL program */
 
 static kuhl_geometry triangle;

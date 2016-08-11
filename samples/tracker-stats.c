@@ -1,7 +1,5 @@
 #include <stdlib.h>
-#include "vrpn-help.h"
-#include "msg.h"
-#include "kuhl-util.h"
+#include "libkuhl.h"
 
 #define VRPN_OBJECT "DK2"
 #define COUNT 1000

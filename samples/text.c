@@ -14,11 +14,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "kuhl-util.h"
-#include "vecmat.h"
-#include "dgr.h"
-#include "viewmat.h"
-#include "font-helper.h"
+#include "libkuhl.h"
 GLuint program = 0; // id value for the GLSL program
 GLuint program_font = 0; // id value for the GLSL program
 

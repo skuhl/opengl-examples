@@ -7,12 +7,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "kuhl-util.h"
-#include "vecmat.h"
-#include "dgr.h"
-#include "viewmat.h"
-#include "vrpn-help.h"
-#include "bufferswap.h"
+#include "libkuhl.h"
 
 // Set this to 1 if you want to use the tracking system to control the
 // paddles. Set it to 0 to use the keyboard to control the paddles.

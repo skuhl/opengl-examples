@@ -15,11 +15,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "kuhl-util.h"
-#include "vecmat.h"
-#include "dgr.h"
-#include "viewmat.h"
-#include "vrpn-help.h"
+#include "libkuhl.h"
 GLuint program = 0; /**< id value for the GLSL program */
 
 int global_argc = 0;

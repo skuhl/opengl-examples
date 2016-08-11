@@ -23,15 +23,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "kuhl-util.h"
-#include "dgr.h"
-#ifdef KUHL_UTIL_USE_IMAGEMAGICK
-#include "imageio.h"
-#else
-#include "stb_image.h"
-#endif
-
-#include "viewmat.h"
+#include "libkuhl.h"
 
 #define SCROLL_SPEED 30  // number of seconds to scroll past one screen-width of image.
 #define MAX_TILES 100

@@ -15,10 +15,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "kuhl-util.h"
-#include "vecmat.h"
-#include "dgr.h"
-#include "viewmat.h"
+#include "libkuhl.h"
 GLuint program = 0; /**< id value for the GLSL program */
 
 float camPos[3]  = {0,1.5,0}; /**< location of camera, 1.5 m eyeheight */
