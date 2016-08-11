@@ -1,5 +1,5 @@
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
-    message(FATAL_ERROR "Don't run cmake here. Run it in the root folder of this repository.")
+	message(FATAL_ERROR "Don't run cmake here. Run it in the root folder of this repository.")
 endif()
 cmake_minimum_required(VERSION 2.6)
 
@@ -13,7 +13,7 @@ cmake_minimum_required(VERSION 2.6)
 # Programs that need ASSIMP
 set(NEED_ASSIMP viewer slerp explode flock frustum ik tracker-demo)
 # Programs that don't rely on ASSIMP
-set(NEED_NOTHING triangle triangle-shade triangle-color texture glinfo teartest picker prerend panorama text ogl2-triangle ogl2-texture tracker-stats videoplay)
+set(NEED_NOTHING triangle triangle-shade triangle-color texture glinfo teartest picker prerend panorama text ogl2-slideshow ogl2-triangle ogl2-texture tracker-stats videoplay)
 
 
 # IMPORTANT: If ASSIMP is installed, NEED_NOTHING will link against
@@ -87,7 +87,7 @@ foreach(arg ${PROGRAMS_TO_MAKE})
 	# Any time we make this program, copy all of the vertex and fragment program files into bin.
 	# add_dependencies(${arg} copyGLSL)
 	if(OVR_FOUND AND ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	    add_dependencies(${arg} copyOVR)
+		add_dependencies(${arg} copyOVR)
 	endif()
 
 endforeach()

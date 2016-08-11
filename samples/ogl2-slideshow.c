@@ -31,6 +31,8 @@
 #include "stb_image.h"
 #endif
 
+#include "viewmat.h"
+
 #define SCROLL_SPEED 30  // number of seconds to scroll past one screen-width of image.
 #define MAX_TILES 100
 #define SLIDESHOW_WAIT 10 // time in seconds to wait when autoadvance is turned on.
@@ -216,6 +218,9 @@ void loadTexture(int textureIndex)
 
 void display(void)
 {
+	viewmat_begin_frame();
+	viewmat_begin_eye(0);
+	
 	dgr_setget("currentTex", &currentTexture, sizeof(int));
 	dgr_setget("scrollAmount", &scrollAmount, sizeof(float));
 
@@ -241,8 +246,8 @@ void display(void)
 	/* The following two methods will get the master view frustum and
 	 * the current process view frustum. If we are running in a
 	 * standalone version, these two frustums will be the same. */
-	projmat_get_master_frustum(masterFrustum);
-	projmat_get_frustum(frustum, -1, -1, 0); // frustum of this process (master or slave)
+	viewmat_get_master_frustum(masterFrustum);
+	viewmat_get_frustum(frustum, 0); // frustum of this process (master or slave)
 
 	/* Set this view frustum for this process. */
 	glMatrixMode(GL_PROJECTION);
@@ -365,8 +370,8 @@ void display(void)
 		glutBitmapCharacter(font, str[i]);
 #endif
 
-	/* Flush and swap the OpenGL buffers. */
-	glfwSwapBuffers(kuhl_get_window());
+	viewmat_end_eye(0);
+	viewmat_end_frame();
 }
 
 
@@ -379,52 +384,55 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 		return;
 	
 	// Ignore keys if DGR is enabled and we are not master
-	if(dgr_is_enabled() && !dgr_is_master())
-		return;
-
-	if (key == 27 || key == 'q')  // escape key, exit program
-		exit(EXIT_SUCCESS);
-	
-	if (key == 'n' || key == ' ' || key == GLFW_KEY_PAGE_DOWN)
+//	if(dgr_is_enabled() && !dgr_is_master())
+//		return;
+	switch(key)
 	{
-		msg(MSG_INFO, "Advancing to next image, please wait.\n");
+		case GLFW_KEY_Q:
+		case GLFW_KEY_ESCAPE:
+			glfwSetWindowShouldClose(window, GL_TRUE);
+			break;
+
+		case GLFW_KEY_N:
+		case GLFW_KEY_PAGE_DOWN:
+			msg(MSG_INFO, "Advancing to next image, please wait.\n");
 		
-		// if auto-advance, just force next picture by adjusting time the
-		// picture was first displayed!
-		if(autoAdvance)
-			lastAdvance = 0;
-		else
-			currentTexture = getNextTexture();
+			// if auto-advance, just force next picture by adjusting time the
+			// picture was first displayed!
+			if(autoAdvance)
+				lastAdvance = 0;
+			else
+				currentTexture = getNextTexture();
+			
+			dgr_setget("currentTexture", &currentTexture, sizeof(int));
+			break;
 
-		dgr_setget("currentTexture", &currentTexture, sizeof(int));
-	}
+		case GLFW_KEY_B:
+		case GLFW_KEY_P:
+		case GLFW_KEY_PAGE_UP:
+			msg(MSG_INFO, "Advancing to previous image...please wait...\n");
 
-	if (key == 'b' || key == 'p' || key == GLFW_KEY_PAGE_UP) // back or previous
-	{
-		msg(MSG_INFO, "Advancing to previous image...please wait...\n");
+			// if auto-advance, just force next picture by adjusting time the
+			// picture was first displayed!
+			if(autoAdvance)
+				lastAdvance = 0;
+			else
+				currentTexture = getPrevTexture();
+			dgr_setget("currentTexture", &currentTexture, sizeof(int));
+			break;
 
-		// if auto-advance, just force next picture by adjusting time the
-		// picture was first displayed!
-		if(autoAdvance)
-			lastAdvance = 0;
-		else
-			currentTexture = getPrevTexture();
-		dgr_setget("currentTexture", &currentTexture, sizeof(int));
-	}
-
-
-	if(key == 's')
-	{
-		if(autoAdvance == 1)
-		{
-			msg(MSG_INFO, "stopping auto-advance.\n");
-			autoAdvance = 0;
-		}
-		else
-		{
-			msg(MSG_INFO, "starting auto-advance.\n");
-			autoAdvance = 1;
-		}
+		case GLFW_KEY_S:
+			if(autoAdvance == 1)
+			{
+				msg(MSG_INFO, "stopping auto-advance.\n");
+				autoAdvance = 0;
+			}
+			else
+			{
+				msg(MSG_INFO, "starting auto-advance.\n");
+				autoAdvance = 1;
+			}
+			break;
 	}
 }
 
@@ -519,6 +527,11 @@ int main(int argc, char** argv)
 
 	// Initialize DGR
 	dgr_init();
+	
+	float initCamPos[3]  = {0,0,10}; // location of camera
+	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
+	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
+	viewmat_init(initCamPos, initCamLook, initCamUp);
 
 	loadTexture(currentTexture);
 

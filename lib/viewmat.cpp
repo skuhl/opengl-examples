@@ -549,8 +549,47 @@ int viewmat_num_viewports()
 	return desktop->num_viewports();
 }
 
-
+/** Returns the framebuffer that this viewport is on. In many cases,
+ * this will be the framebuffer for your window. However, some
+ * rendering systems (such as the Oculus) render to an off-screen
+ * texture. */
 int viewmat_get_framebuffer(int viewportID)
 {
 	return desktop->get_framebuffer(viewportID);
+}
+
+/** Returns the view frustum for this viewport. */
+void viewmat_get_frustum(float frustum[6], int viewportID)
+{
+	if(desktop->provides_projmat_only())
+	{
+		msg(MSG_FATAL, "The current display mode does not us with a view frustum.");
+		exit(EXIT_FAILURE);
+	}
+		
+	desktop->get_frustum(frustum, viewportID);
+}
+
+/** Returns the view frustum for the overall screen. */
+void viewmat_get_master_frustum(float frustum[6])
+{
+	const char* frustumString = kuhl_config_get("frustum.master");
+	
+	if(frustumString != NULL)
+	{
+		if(sscanf(frustumString, "%f %f %f %f %f %f",
+		          &(frustum[0]), &(frustum[1]), &(frustum[2]),
+		          &(frustum[3]), &(frustum[4]), &(frustum[5])) != 6)
+		{
+			msg(MSG_FATAL, "Unable to parse 'frustum.master' configuration variable. It contained: %s", frustumString);
+			exit(EXIT_FAILURE);
+		}
+		else
+		{
+			return; // success
+		}
+	}
+
+	msg(MSG_WARNING, "The 'frustum.master' configuration variable is missing or empty; we are assuming that the master view frustum matches the view frustum of viewport 0.");
+	viewmat_get_frustum(frustum, 0);
 }

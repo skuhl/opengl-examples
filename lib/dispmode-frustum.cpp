@@ -6,7 +6,7 @@
 
 dispmodeFrustum::dispmodeFrustum(void)
 {
-	const char* frustumString = kuhl_config_get("projmat.frustum");
+	const char* frustumString = kuhl_config_get("frustum");
 	float inFrustum[6];
 	if(frustumString != NULL)
 	{
@@ -18,6 +18,7 @@ dispmodeFrustum::dispmodeFrustum(void)
 		}
 		else
 		{
+			msg(MSG_DEBUG, "Using view frustum: %s\n", frustumString);
 			set_frustum(inFrustum);
 			return;
 		}
