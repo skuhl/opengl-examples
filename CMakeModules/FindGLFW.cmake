@@ -160,10 +160,10 @@ else ()
 
         list(APPEND GLFW_x11_LIBRARY "${X11_Xrandr_LIB}" "${X11_Xxf86vm_LIB}" "${X11_Xcursor_LIB}" "${X11_Xinerama_LIB}" "${CMAKE_THREAD_LIBS_INIT}" -lrt -lXi -ldl)
 
-        find_library( GLFW_glfw_LIBRARY
-            NAMES 
-                glfw
+        find_library(GLFW_glfw_LIBRARY
+          NAMES
                 glfw3
+                glfw
             HINTS
                 "${GLFW_LOCATION}/lib"
                 "$ENV{GLFW_LOCATION}/lib"
@@ -232,6 +232,10 @@ if(GLFW_INCLUDE_DIR)
         set(GLFW_VERSION "${GLFW_VERSION_MAJOR}.${GLFW_VERSION_MINOR}.${GLFW_VERSION_REVISION}")
         set(GLFW_VERSION_STRING "${GLFW_VERSION}")
         mark_as_advanced(GLFW_VERSION)
+
+	if(${GLFW_VERSION} VERSION_LESS "3.1.2")
+	  message(WARNING "GLFW 3.1.2 or higher is required; will try to compile anyway.")
+	endif()
     endif()
     
 endif(GLFW_INCLUDE_DIR)
