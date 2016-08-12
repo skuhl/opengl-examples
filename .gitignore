@@ -5,6 +5,9 @@ Makefile
 cmake_install.cmake
 
 log.txt
+# log files created by ivs-test:
+ivs-test-left.txt
+ivs-test-right.txt
 
 /doxygen-docs
 
