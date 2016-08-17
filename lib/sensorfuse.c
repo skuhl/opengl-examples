@@ -83,5 +83,6 @@ void sensorfuse(float corrected[16], const float drifting[16], const float stabl
 	mat4f_rotateAxis_new(correction, -offsetAngleFiltered, 0,1,0);
 	mat4f_mult_mat4f_new(corrected, correction, drifting);
 	count++;
-
+	
+	//msg(MSG_DEBUG, "sensor fusion current offset: %f\n", offsetAngleFiltered);
 }

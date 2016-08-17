@@ -2,6 +2,8 @@
 #include "kuhl-util.h"
 #include "camcontrol-oculus-linux.h"
 #include "vecmat.h"
+#include "vrpn-help.h"
+#include "sensorfuse.h"
 
 camcontrolOculusLinux::camcontrolOculusLinux(dispmode *inDispmode, const float initialPos[3])
 	:camcontrol(inDispmode)
@@ -30,9 +32,9 @@ viewmat_eye camcontrolOculusLinux::get_separate(float pos[3], float rot[16], vie
 			exit(EXIT_FAILURE);
 	}
 
-
-	float finalOrient[16];
-	char vrpnObject = kuhl_config_get("viewmat.vrpn.object");
+	oculus->pose[eye] = ovrHmd_GetHmdPosePerEye(oculus->hmd, eye);
+	
+	const char *vrpnObject = kuhl_config_get("viewmat.vrpn.object");
 	if(vrpnObject != NULL)
 	{
 		float vrpnPos[3],vrpnOrient[16];
@@ -45,20 +47,34 @@ viewmat_eye camcontrolOculusLinux::get_separate(float pos[3], float rot[16], vie
 		                     oculus->pose[eye].Orientation.y,
 		                     oculus->pose[eye].Orientation.z,
 		                     oculus->pose[eye].Orientation.w);
-	
+
+#if 0
+		// This just contains the horizontal offsets for the IPD
 		float offset[16];
 		mat4f_translate_new(offset,
 		                    oculus->eye_rdesc[eye].HmdToEyeViewOffset.x,
 		                    oculus->eye_rdesc[eye].HmdToEyeViewOffset.y,
 		                    oculus->eye_rdesc[eye].HmdToEyeViewOffset.z);
-		mat4f_print(offset);
+#endif
 
-		sensorfuse(finalOrient, origOrient, vrpnOrient);
+		if(strcmp(vrpnObject, "DK2") == 0)
+		{
+			float offsetVicon[16];
+			mat4f_identity(offsetVicon);
+			mat4f_rotateAxis_new(offsetVicon, 90, 1,0,0);
+			mat4f_mult_mat4f_new(vrpnOrient, vrpnOrient, offsetVicon);
+		}
+
+		
+		// fill in the rot and pos variables:
+		//mat4f_copy(rot, origOrient);
+		//mat4f_copy(rot, vrpnOrient);
+		sensorfuse(rot, origOrient, vrpnOrient);
 		vec3f_copy(pos, vrpnPos);
+		return VIEWMAT_EYE_MIDDLE;
 	}
 	else
 	{
-		oculus->pose[eye] = ovrHmd_GetHmdPosePerEye(oculus->hmd, eye);
 		vec3f_set(pos,  // position (includes IPD offset)
 		          oculus->pose[eye].Position.x,
 		          oculus->pose[eye].Position.y,
