@@ -29,8 +29,7 @@
  * @param measured The newest, unfiltered measurement.
  *
  * @param measured_time The time that 'measured' was recorded in
- * microseconds. If -1, we will use the current time in the time
- * variable.
+ * microseconds. If -1, we will use the current time.
  *
  * @return The filtered data.
  *
@@ -79,7 +78,8 @@ float kalman_estimate(kalman_state * state, float measured, long measured_time)
 	}
 	for(int i=0; i<9; i++)
 		q[i] = q[i] * state->qScale;
-	// mat3d_print(q);
+//	printf("%f\n", dt);
+//	mat3d_print(q);
 
 	// === PREDICTION ===
 
@@ -87,6 +87,8 @@ float kalman_estimate(kalman_state * state, float measured, long measured_time)
 	// kx_minus = A * xk_prev     (no control input!)
 	double xk_minus[3];
 	mat3d_mult_vec3d_new(xk_minus, state->a, state->xk_prev);
+	if(state->predictOnly)
+		return xk_minus[0];
 
 	// Project the error covariance ahead.
 	// Pminus = A * P * A^T + Q
@@ -100,7 +102,7 @@ float kalman_estimate(kalman_state * state, float measured, long measured_time)
 	mat3d_mult_mat3d_new(p_minus, a_dot_p, a_transpose); // (A*P)*A^T
 	for(int i=0; i<9; i++)                               // add Q
 		p_minus[i] = p_minus[i] + q[i];
-
+	
 	
 	// === MEASUREMENT UPDATE or CORRECTION ===
 	// Compute the Kalman gain
@@ -161,9 +163,10 @@ void kalman_initialize(kalman_state * state, float sigma_meas, float qScale)
 	memset(state, 0, sizeof(kalman_state));
 
 	state->isEnabled = 1;
+	state->predictOnly = 0;
 	state->time_prev = -1;
 
-	float sigma_model = 100; // confidence in current state (smaller=more confident)
+	float sigma_model = 1; // confidence in current state (smaller=more confident)
 
 	/* kalman_estimate() creates a Q matrix appropriate for a model
 	   where we are handling position, velocity, and

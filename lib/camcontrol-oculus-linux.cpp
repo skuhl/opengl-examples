@@ -29,18 +29,47 @@ viewmat_eye camcontrolOculusLinux::get_separate(float pos[3], float rot[16], vie
 			msg(MSG_FATAL, "You requested an eye that does not exist.");
 			exit(EXIT_FAILURE);
 	}
+
+
+	float finalOrient[16];
+	char vrpnObject = kuhl_config_get("viewmat.vrpn.object");
+	if(vrpnObject != NULL)
+	{
+		float vrpnPos[3],vrpnOrient[16];
+		vrpn_get(kuhl_config_get("viewmat.vrpn.object"),
+		         NULL, vrpnPos, vrpnOrient);
+
+		float origOrient[16];
+		mat4f_rotateQuat_new(origOrient,
+		                     oculus->pose[eye].Orientation.x,
+		                     oculus->pose[eye].Orientation.y,
+		                     oculus->pose[eye].Orientation.z,
+		                     oculus->pose[eye].Orientation.w);
 	
-	oculus->pose[eye] = ovrHmd_GetHmdPosePerEye(oculus->hmd, eye);
-	vec3f_set(pos,  // position (includes IPD offset)
-	          oculus->pose[eye].Position.x,
-	          oculus->pose[eye].Position.y,
-	          oculus->pose[eye].Position.z);
+		float offset[16];
+		mat4f_translate_new(offset,
+		                    oculus->eye_rdesc[eye].HmdToEyeViewOffset.x,
+		                    oculus->eye_rdesc[eye].HmdToEyeViewOffset.y,
+		                    oculus->eye_rdesc[eye].HmdToEyeViewOffset.z);
+		mat4f_print(offset);
+
+		sensorfuse(finalOrient, origOrient, vrpnOrient);
+		vec3f_copy(pos, vrpnPos);
+	}
+	else
+	{
+		oculus->pose[eye] = ovrHmd_GetHmdPosePerEye(oculus->hmd, eye);
+		vec3f_set(pos,  // position (includes IPD offset)
+		          oculus->pose[eye].Position.x,
+		          oculus->pose[eye].Position.y,
+		          oculus->pose[eye].Position.z);
 		
-	mat4f_rotateQuat_new(rot,                          // rotation
-	                     oculus->pose[eye].Orientation.x,
-	                     oculus->pose[eye].Orientation.y,
-	                     oculus->pose[eye].Orientation.z,
-	                     oculus->pose[eye].Orientation.w);
+		mat4f_rotateQuat_new(rot,                          // rotation
+		                     oculus->pose[eye].Orientation.x,
+		                     oculus->pose[eye].Orientation.y,
+		                     oculus->pose[eye].Orientation.z,
+		                     oculus->pose[eye].Orientation.w);
+	}
 
 	// Add translation based on the user-specified initial
 	// position. You may choose to initialize the Oculus
@@ -48,6 +77,7 @@ viewmat_eye camcontrolOculusLinux::get_separate(float pos[3], float rot[16], vie
 	// standing eyeheight.
 	vec3f_add_new(pos, oculusPosition, pos);
 
+	
 #if 0
 	printf("eye=%s\n", eye == ovrEye_Left ? "left" : "right");
 	printf("Position: %f %f %f\n", pos[0], pos[1], pos[2]);
