@@ -1,3 +1,4 @@
+#include "windows-compat.h"
 #include "cfg_parse.h"
 
 /* for malloc, EXIT_SUCCESS and _FAILURE, exit */

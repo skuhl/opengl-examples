@@ -1,3 +1,4 @@
+#include "windows-compat.h"
 #include "font-helper.h"
 #include <GLFW/glfw3.h>
 #include "kuhl-util.h"

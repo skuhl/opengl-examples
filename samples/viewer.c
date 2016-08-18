@@ -8,13 +8,14 @@
  * @author Scott Kuhl
  */
 
+#include "libkuhl.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "libkuhl.h"
 GLuint program = 0; /**< id value for the GLSL program */
 
 int renderStyle = 2;
@@ -35,15 +36,15 @@ int showOrigin=0; // was --origin option used?
 
 /** Initial position of the camera. 1.55 is a good approximate
  * eyeheight in meters.*/
-const float initCamPos[3]  = {0,1.55,0};
+const float initCamPos[3]  = {0.0f,1.55f,0.0f};
 
 /** A point that the camera should initially be looking at. If
  * fitToView is set, this will also be the position that model will be
  * translated to. */
-const float initCamLook[3] = {0,0,-5};
+const float initCamLook[3] = {0.0f,0.0f,-5.0f};
 
 /** A vector indicating which direction is up. */
-const float initCamUp[3]   = {0,1,0};
+const float initCamUp[3]   = {0.0f,1.0f,0.0f};
 
 
 /** SketchUp produces files that older versions of ASSIMP think 1 unit
@@ -258,7 +259,7 @@ void get_model_matrix(float result[16])
 	{
 		if(INCHES_TO_METERS)
 		{
-			float inchesToMeters=1/39.3701;
+			float inchesToMeters=1/39.3701f;
 			mat4f_scale_new(result, inchesToMeters, inchesToMeters, inchesToMeters);
 		}
 		return;
@@ -285,8 +286,8 @@ void display()
 			float fps = bufferswap_fps(); // get current fps
 			char message[1024];
 			snprintf(message, 1024, "FPS: %0.2f", fps); // make a string with fps in it
-			float labelColor[3] = { 1,1,1 };
-			float labelBg[4] = { 0,0,0,.3 };
+			float labelColor[3] = { 1.0f,1.0f,1.0f };
+			float labelBg[4] = { 0.0f,0.0f,0.0f,.3f };
 
 			// If DGR is being used, only display FPS info if we are
 			// the master process.
@@ -321,7 +322,7 @@ void display()
 		 * after viewmat_begin_eye(). */
 		glScissor(viewport[0], viewport[1], viewport[2], viewport[3]);
 		glEnable(GL_SCISSOR_TEST);
-		glClearColor(.2,.2,.2,0); // set clear color to grey
+		glClearColor(.2f,.2f,.2f,0.0f); // set clear color to grey
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		glDisable(GL_SCISSOR_TEST);
 		glEnable(GL_DEPTH_TEST); // turn on depth testing
@@ -388,11 +389,11 @@ void display()
 		if(dgr_is_master())
 		{
 			float stretchLabel[16];
-			mat4f_scale_new(stretchLabel, 1/8.0 / viewmat_window_aspect_ratio(), 1/8.0, 1);
+			mat4f_scale_new(stretchLabel, 1/8.0f / viewmat_window_aspect_ratio(), 1/8.0f, 1.0f);
 			
 			/* Position label in the upper left corner of the screen */
 			float transLabel[16];
-			mat4f_translate_new(transLabel, -.9, .8, 0);
+			mat4f_translate_new(transLabel, -.9f, .8f, 0.0f);
 			mat4f_mult_mat4f_new(modelview, transLabel, stretchLabel);
 			glUniformMatrix4fv(kuhl_get_uniform("ModelView"), 1, 0, modelview);
 
@@ -419,7 +420,7 @@ void display()
 	 * animation to repeat. */
 	double time = glfwGetTime();
 	dgr_setget("time", &time, sizeof(double));
-	kuhl_update_model(modelgeom, 0, fmod(time,10));
+	kuhl_update_model(modelgeom, 0, fmodf((float)time,10.0f));
 	
 	viewmat_end_frame();
 
@@ -490,7 +491,7 @@ int main(int argc, char** argv)
 	viewmat_init(initCamPos, initCamLook, initCamUp);
 
 	// Clear the screen while things might be loading
-	glClearColor(.2,.2,.2,1);
+	glClearColor(.2f,.2f,.2f,1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	// Load the model from the file
