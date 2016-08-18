@@ -138,7 +138,7 @@ static void bufferswap_latencyreduce()
 	{
 		int refreshRate = bufferswap_get_refresh_rate();
 		// 1 / (frames/second) * 1000000 microseconds/second = microseconds/frame
-		vsyncTime = 1.0/refreshRate * 1000000;
+		vsyncTime = (int) (1.0/refreshRate * 1000000);
 		msg(MSG_INFO, "Latency reduction is turned on; assuming monitor is %dHz and we have %d microseconds/frame\n", refreshRate, vsyncTime);
 		msg(MSG_INFO, "Set bufferswap.latencyreduce to 0 to disable latency reduction.\n", refreshRate, vsyncTime);
 	}
@@ -169,9 +169,9 @@ static void bufferswap_latencyreduce()
 	if(count < 10) // initialize averages, skip first few frames.
 	{
 		if(count > 2)
-			avgRenderingLastFrame = preswap - postsleep_prev;
+			avgRenderingLastFrame = (float) (preswap - postsleep_prev);
 		
-		avgWaitingForVsync = timeWaitingForVsync;
+		avgWaitingForVsync = (float) timeWaitingForVsync;
 		postswap_prev = postswap;
 		postsleep_prev = postswap; // we aren't sleeping.
 		return;
@@ -206,7 +206,7 @@ static void bufferswap_latencyreduce()
 		}
 	}
 
-	const float alpha = .95; // weight to put on running average
+	const float alpha = .95f; // weight to put on running average
 
 	// Update average waiting for vsync time. Note: The wait time can
 	// get large if the frame rate is low. I.e., if we miss a vsync,
@@ -240,7 +240,7 @@ static void bufferswap_latencyreduce()
 	/* We have vsyncTime until the next vsync. Subtract out expected
 	 * rendering time and the buffer time. Also subtract out
 	 * additional time if we missed one or more frames. */
-	int sleepTime = vsyncTime - renderingTimeMax - buffer_time - missedFrames*1000;
+	int sleepTime = (int) (vsyncTime - renderingTimeMax - buffer_time - missedFrames*1000);
 
 #if 0
 	msg(MSG_INFO, "Sleeping for %6d = %6d(avail) - %6.0f(rendermax) - %d(buf) - %6.0f(missedframe)\n", sleepTime, vsyncTime, renderingTimeMax, buffer_time, missedFrames*1000);

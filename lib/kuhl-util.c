@@ -7,7 +7,7 @@
  * @author Scott Kuhl
  */
 
-
+#include "windows-compat.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -232,8 +232,8 @@ static GLFWwindow* kuhl_glfw_create_window(int width, int height, const char *ti
 		
 	if(theMonitor == NULL) // if windowed mode
 	{
-		float windowWidth = kuhl_config_int("window.width", width, width);
-		float windowHeight = kuhl_config_int("window.height", height, height);
+		int windowWidth = kuhl_config_int("window.width", width, width);
+		int windowHeight = kuhl_config_int("window.height", height, height);
 		return glfwCreateWindow(windowWidth, windowHeight, title, NULL, NULL);
 	}
 
@@ -2100,7 +2100,7 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName, G
 	 * bytes for each pixel (red, green, blue, alpha). The data in "image"
 	 * is in row major order. The first 4 bytes are the color information
 	 * for the lowest left pixel in the texture. */
-	*texName = kuhl_read_texture_rgba_array(image, width, height, wrapS, wrapT);
+	*texName = kuhl_read_texture_array(image, width, height, 4, wrapS, wrapT);
 	msg(MSG_DEBUG, "Finished reading '%s' (%dx%d, texName=%d) with STB\n", filename, width, height, *texName);
 	stbi_image_free(image);
 	
@@ -2610,7 +2610,7 @@ static char* kuhl_private_assimp_fullpath(const char *textureFile, const char *m
 		char drive[32];
 		char dir[1024];
 		_splitpath_s(editable, drive, 32, dir, 1024, NULL, 0, NULL, 0);
-		snprintf(fullpath, 1024, "%s%s\%s", drive, dir, textureFile);
+		snprintf(fullpath, 1024, "%s%s\\%s", drive, dir, textureFile);
 #else
 		char *dname = dirname(editable);
 		snprintf(fullpath, 1024, "%s/%s", dname, textureFile);

@@ -7,6 +7,7 @@
  * @author Scott Kuhl
  */
 
+#include "windows-compat.h"
 #include "mousemove.h"
 
 #if 0

@@ -24,14 +24,13 @@
 
 #pragma once
 
+#include "windows-compat.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <GLFW/glfw3.h>
 
-#if _WIN32
-#include <windows.h>
-#endif
 
 #if 0
 #ifdef __APPLE__

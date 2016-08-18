@@ -36,6 +36,7 @@
 
 #include "msg.h"
 #include "kuhl-config.h"
+#include "windows-compat.h"
 
 static FILE *f = NULL;  /**< The file stream for our log file */
 static char *logfile = NULL; /**< The filename of the log file. */
