@@ -8,13 +8,14 @@
  * @author Scott Kuhl
  */
 
+#include "libkuhl.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "libkuhl.h"
 static GLuint program = 0; /**< id value for the GLSL program */
 
 static kuhl_geometry triangle;
@@ -73,7 +74,7 @@ void display()
 
 		/* Calculate an angle to rotate the object. glfwGetTime() gets
 		 * the time in seconds since GLFW was initialized. Rotates 45 degrees every second. */
-		float angle = fmod(glfwGetTime()*45, 360);
+		float angle = fmodf(glfwGetTime()*45, 360);
 
 		/* Make sure all computers/processes use the same angle */
 		dgr_setget("angle", &angle, sizeof(GLfloat));
