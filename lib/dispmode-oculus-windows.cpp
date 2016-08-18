@@ -58,6 +58,20 @@ dispmodeOculusWindows::dispmodeOculusWindows()
 
 //	ovr_SetTrackingOriginType(session, ovrTrackingOrigin_FloorLevel);
 
+
+	/* Warn the user that we are using the IPD specified by Oculus. */
+	if (kuhl_config_isset("ipd"))
+	{
+		msg(MSG_WARNING, "You specified 'ipd=%s' in the config file. We are IGNORING this value because the Oculus API calculates the IPD for us.", kuhl_config_get("ipd"));
+
+		float offsetLeft[3];
+		float offsetRight[3];
+		get_eyeoffset(offsetLeft, VIEWMAT_EYE_LEFT);
+		get_eyeoffset(offsetRight, VIEWMAT_EYE_RIGHT);
+		float offsetDiff[3];
+		vec3f_sub_new(offsetDiff, offsetRight, offsetLeft);
+		msg(MSG_WARNING, "The Oculus API is telling us to use %0.3f cm for the IPD.", offsetDiff[0] * 100);
+	}
 }
 
 dispmodeOculusWindows::~dispmodeOculusWindows()
@@ -242,4 +256,28 @@ void dispmodeOculusWindows::get_projmatrix(float projmatrix[16], int viewportID)
 
 	//msg(MSG_BLUE, "Projmatrix:");
 	//mat4f_print(projmatrix);
+}
+
+void dispmodeOculusWindows::get_eyeoffset(float offset[3], viewmat_eye eye)
+{
+	/* IMPORTANT: If we are using the Oculus camcontrol, then this
+	* function shouldn't get called because get_separate() will
+	* already return the adjusted value.
+	*/
+
+	ovrEyeType oeye;
+	if (eye == VIEWMAT_EYE_LEFT)
+		oeye = ovrEye_Left;
+	else if (eye == VIEWMAT_EYE_RIGHT)
+		oeye = ovrEye_Right;
+	else
+	{
+		msg(MSG_FATAL, "Requested eye offset of something that wasn't the left or right eye");
+		exit(EXIT_FAILURE);
+	}
+
+	vec3f_set(offset,
+		HmdToEyeOffset[eye].x,
+		HmdToEyeOffset[eye].y,
+		HmdToEyeOffset[eye].z);
 }

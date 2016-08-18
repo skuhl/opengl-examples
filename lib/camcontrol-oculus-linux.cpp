@@ -38,8 +38,7 @@ viewmat_eye camcontrolOculusLinux::get_separate(float pos[3], float rot[16], vie
 	if(vrpnObject != NULL)
 	{
 		float vrpnPos[3],vrpnOrient[16];
-		vrpn_get(kuhl_config_get("viewmat.vrpn.object"),
-		         NULL, vrpnPos, vrpnOrient);
+		vrpn_get(vrpnObject, NULL, vrpnPos, vrpnOrient);
 
 		float origOrient[16];
 		mat4f_rotateQuat_new(origOrient,
@@ -71,6 +70,8 @@ viewmat_eye camcontrolOculusLinux::get_separate(float pos[3], float rot[16], vie
 		//mat4f_copy(rot, vrpnOrient);
 		sensorfuse(rot, origOrient, vrpnOrient);
 		vec3f_copy(pos, vrpnPos);
+
+		// Eye offset will be retrieved from a subsequent call to dispmodeOculusWindows::get_eyeoffset()
 		return VIEWMAT_EYE_MIDDLE;
 	}
 	else
