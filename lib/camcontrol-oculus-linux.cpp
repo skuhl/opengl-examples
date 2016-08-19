@@ -85,21 +85,15 @@ viewmat_eye camcontrolOculusLinux::get_separate(float pos[3], float rot[16], vie
 		                     oculus->pose[eye].Orientation.y,
 		                     oculus->pose[eye].Orientation.z,
 		                     oculus->pose[eye].Orientation.w);
+		
+		// Add translation based on the user-specified initial
+		// position. You may choose to initialize the Oculus
+		// position to y=1.5 meters to approximate a normal
+		// standing eyeheight.
+		vec3f_add_new(pos, oculusPosition, pos);
+		
+		return requestedEye;
+		
 	}
-
-	// Add translation based on the user-specified initial
-	// position. You may choose to initialize the Oculus
-	// position to y=1.5 meters to approximate a normal
-	// standing eyeheight.
-	vec3f_add_new(pos, oculusPosition, pos);
-
-	
-#if 0
-	printf("eye=%s\n", eye == ovrEye_Left ? "left" : "right");
-	printf("Position: %f %f %f\n", pos[0], pos[1], pos[2]);
-	printf("Orientation matrix:\n");
-	mat4f_print(rot);
-#endif
-	return requestedEye;
 }
 
