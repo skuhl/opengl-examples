@@ -1,3 +1,4 @@
+#include "windows-compat.h"
 #include <GLFW/glfw3.h>
 #include "kuhl-util.h"
 #include "mousemove.h"
@@ -17,7 +18,7 @@ camcontrolMouse::camcontrolMouse(dispmode *currentDisplayMode, const float pos[3
 	mousemove_set(pos[0],pos[1],pos[2],
 	              look[0],look[1],look[2],
 	              up[0],up[1],up[2]);
-	mousemove_speed(0.05, 0.5);
+	mousemove_speed(0.05f, 0.5f);
 }
 
 viewmat_eye camcontrolMouse::get_separate(float pos[3], float rot[16], viewmat_eye requestedEye)

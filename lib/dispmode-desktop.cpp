@@ -47,7 +47,7 @@ void dispmodeDesktop::get_frustum(float result[6], int viewportID)
 	float nearPlane = 0.1f;
 	float farPlane = 200.0f;
 	float vfov = 65.0f;
-	float fovyRad = vfov * M_PI/180.0f;
+	float fovyRad = (float) (vfov * M_PI/180.0f);
 	float height = nearPlane * tanf(fovyRad/2.0f);
 	float width = height * aspect;
 	result[0] = -width;

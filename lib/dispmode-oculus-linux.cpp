@@ -149,7 +149,7 @@ dispmodeOculusLinux::dispmodeOculusLinux()
 	ovrHmd_DismissHSWDisplay(hmd);
 
 	/* Warn the user that we are using the IPD specified by Oculus. */
-	if(kuhl_config_get("ipd"))
+	if(kuhl_config_isset("ipd"))
 	{
 		msg(MSG_WARNING, "You specified 'ipd=%s' in the config file. We are IGNORING this value because the Oculus API calculates the IPD for us.", kuhl_config_get("ipd"));
 

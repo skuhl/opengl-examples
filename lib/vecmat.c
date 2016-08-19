@@ -975,7 +975,7 @@ void eulerd_from_mat4d(double angles[3], const double m[16], const char order[3]
  * @param axis A vector representing the axis to rotate around (must have a non-zero length). */
 void mat3f_rotateAxisVec_new(float result[9], float degrees, const float axis[3])
 {
-	float angle = degrees * M_PI/180;
+	float angle = (float)(degrees * M_PI/180.0f);
 	float c = cosf(angle);
 	float s = sinf(angle);
 	float t = 1-c;
@@ -1169,8 +1169,8 @@ void mat4d_rotateAxis_new(double result[16], double degrees, double axisX, doubl
 void mat3f_rotateQuatVec_new(float matrix[9], const float quat[4])
 {
 	int X=0, Y=1, Z=2, W=3;
-	float s = 2.0 / (quat[X]*quat[X] + quat[Y]*quat[Y] +
-	                 quat[Z]*quat[Z] + quat[W]*quat[W]);
+	float s = 2.0f / (quat[X]*quat[X] + quat[Y]*quat[Y] +
+	                  quat[Z]*quat[Z] + quat[W]*quat[W]);
 	float xs, ys, zs,
 	      wx, wy, wz,
 	      xx, xy, xz,
@@ -1390,7 +1390,7 @@ void quatf_rotateAxis_new(float quat[4], float degrees, float x, float y, float 
 {
 	int X=0,Y=1,Z=2,W=3;
 	// Angle needs to be negated to make it correspond to the behavior of mat3f_rotateAxis_new().
-	float angle = -degrees * M_PI/180;
+	float angle = (float)(-degrees * M_PI/180.0f);
 
 	/* normalize vector */
 	float length = sqrtf( x*x + y*y + z*z );
@@ -1516,8 +1516,8 @@ void quatf_slerp_new(float result[4], const float start[4], const float end[4], 
 	else
 	{
 		vec4f_set(result, -copyOfStart[1], copyOfStart[0], -copyOfStart[3], copyOfStart[2]);
-		float startScale = sin((0.5-t)*M_PI);
-		float endScale = sin(t*M_PI);
+		float startScale = sinf((0.5-t)*M_PI);
+		float endScale = sinf(t*M_PI);
 		float scaledStart[4], scaledEnd[4];
 		vec4f_scalarMult_new(scaledStart, copyOfStart,  startScale);
 		vec4f_scalarMult_new(scaledEnd,   result,       endScale);

@@ -376,7 +376,7 @@ long kuhl_milliseconds(void)
 	LARGE_INTEGER freq, start;
 	QueryPerformanceFrequency(&freq);
 	QueryPerformanceCounter(&start);
-	return (start.QuadPart / freq.QuadPart) * 1000;
+	return (long) ((start.QuadPart / freq.QuadPart) * 1000);
 #else
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
@@ -470,7 +470,7 @@ int kuhl_randomInt(int min, int max)
 	fl = fl+min;          // [min, min+possibleVals)
 	                      // [min, min+(max-min+1))
 	                      // [min, max+1)
-	return floor(fl); // casting to int fails to work with negative values
+	return (int) floor(fl); // Using floor() makes negative values work.
 }
 
 /** Shuffles an array of items randomly.

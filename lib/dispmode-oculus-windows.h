@@ -230,6 +230,8 @@ public:
 	virtual void begin_eye(int viewportId);
 	virtual void end_eye(int viewportId);
 	virtual int get_framebuffer(int viewportID);
+	void get_eyeoffset(float offset[3], viewmat_eye eye);
+
 
 	TextureBuffer * eyeRenderTexture[2] = { nullptr, nullptr };
 	DepthBuffer   * eyeDepthBuffer[2] = { nullptr, nullptr };

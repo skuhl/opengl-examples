@@ -12,6 +12,7 @@
  * @author Scott Kuhl
  */
 
+#include "windows-compat.h"
 #include "orient-sensor.h"
 #include "kuhl-util.h"
 #include "serial.h"
