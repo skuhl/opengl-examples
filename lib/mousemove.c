@@ -34,11 +34,11 @@ static float cam_position[3];
 /** Current camera up vector. Since mousemove does not support roll,
  * this value is only changed when a user specifically sets it with
  * mousemove_set() or mousemove_setVec() */
-static float cam_up[3] = { 0, 1, 0 };
+static float cam_up[3] = { 0.0f, 1.0f, 0.0f };
 
 
-static float settings_rot_scale = 0.5;  /**< amount to scale rotations  */
-static float settings_trans_scale = .01;/**< amount to scale translations */
+static float settings_rot_scale = 0.5f;  /**< amount to scale rotations  */
+static float settings_trans_scale = .01f;/**< amount to scale translations */
 
 /** Currently pressed mouse button. -1=no button pressed, 0=left,
  * 1=middle, 2=right */
