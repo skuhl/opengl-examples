@@ -2100,7 +2100,7 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName, G
 	 * bytes for each pixel (red, green, blue, alpha). The data in "image"
 	 * is in row major order. The first 4 bytes are the color information
 	 * for the lowest left pixel in the texture. */
-	*texName = kuhl_read_texture_rgba_array(image, width, height, wrapS, wrapT);
+	*texName = kuhl_read_texture_array(image, width, height, 4, wrapS, wrapT);
 	msg(MSG_DEBUG, "Finished reading '%s' (%dx%d, texName=%d) with STB\n", filename, width, height, *texName);
 	stbi_image_free(image);
 	
