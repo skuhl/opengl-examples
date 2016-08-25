@@ -14,8 +14,8 @@ void sensorfuse(float corrected[16], const float drifting[16], const float stabl
 	float yawDrift = eulerDrift[2];
 	float yawStable = eulerStable[2];
 	
-	static float yawDriftPrev = 0;
-	static float yawStablePrev = 0;
+	static float yawDriftPrev = 0.0f;
+	static float yawStablePrev = 0.0f;
 
 	/* Adding 360 degrees to yaw results in no change. If we use the
 	   raw yaw values, this also means that if yaw is 359 and
@@ -23,14 +23,14 @@ void sensorfuse(float corrected[16], const float drifting[16], const float stabl
 	   changed significantly from the previous frame and add/subtract
 	   360 to get it so that there aren't discontinuities in our yaw.
 	*/
-	while(yawStable < yawStablePrev-270)
-		yawStable += 360;
-	while(yawStable > yawStablePrev+270)
-		yawStable -= 360;
-	while(yawDrift < yawDriftPrev-270)
-		yawDrift += 360;
-	while(yawDrift > yawDriftPrev+270)
-		yawDrift -= 360;
+	while(yawStable < yawStablePrev-270.0f)
+		yawStable += 360.0f;
+	while(yawStable > yawStablePrev+270.0f)
+		yawStable -= 360.0f;
+	while(yawDrift < yawDriftPrev-270.0f)
+		yawDrift += 360.0f;
+	while(yawDrift > yawDriftPrev+270.0f)
+		yawDrift -= 360.0f;
 
 	// The difference in yaw
 	float offsetAngle = yawDrift - yawStable;
@@ -54,23 +54,23 @@ void sensorfuse(float corrected[16], const float drifting[16], const float stabl
 	static float offsetAngleFiltered = 0; // filtered version of the offset angle
 
 	if(count == 0)
-		kalman_initialize(&kalman, 20, .000000001);
+		kalman_initialize(&kalman, 20.0f, .000000001f);
 	if(count < 30)
 		offsetAngleFiltered = offsetAngle;
 	else if(count == 30)
 	{
 		// reinitialize after sensors have settled down
 		offsetAngleFiltered = offsetAngle;
-		kalman_initialize(&kalman, 20, .000000001);
+		kalman_initialize(&kalman, 20.0f, .000000001f);
 		kalman.xk_prev[0] = offsetAngle;
 	}
 
 	// Since angle wraps around every 360 degrees, try to use an
 	// equivalent angle that is close to our filtered value.
-	while(offsetAngle < offsetAngleFiltered - 270)
-		offsetAngle += 360;
-	while(offsetAngle > offsetAngleFiltered + 270)
-		offsetAngle -= 360;
+	while(offsetAngle < offsetAngleFiltered - 270.0f)
+		offsetAngle += 360.0f;
+	while(offsetAngle > offsetAngleFiltered + 270.0f)
+		offsetAngle -= 360.0f;
 
 	if(ignoreStable == 1)
 		kalman.predictOnly = 1;
