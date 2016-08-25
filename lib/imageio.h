@@ -35,7 +35,7 @@ http://www.imagemagick.org/script/license.php
 #define MAGICKCORE_QUANTUM_DEPTH 16
 
 
-#include <magick/api.h>
+#include <magick/MagickCore.h>
 
 #ifdef __cplusplus
 extern "C" {
