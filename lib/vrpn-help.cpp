@@ -171,9 +171,9 @@ static int vrpn_connect(const char *fullname)
 
 	/* Initialize kalman filter */
 	for(int i=0; i<3; i++) /* position */
-		kalman_initialize(&(to->kalman[i]), 0.00004, 0.01);
+		kalman_initialize(&(to->kalman[i]), 0.00004f, 0.01f);
 	for(int i=3; i<7; i++) /* orientation */
-		kalman_initialize(&(to->kalman[i]), 0.0001, 0.01);
+		kalman_initialize(&(to->kalman[i]), 0.0001f, 0.01f);
 		
 	nameToTracker[std::string(fullname)] = to;
 	return 1;
