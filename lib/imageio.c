@@ -308,8 +308,8 @@ char* image_label(const char *label, int* width, int* height, float color[3], fl
 	// Figure out how big we'll need to draw
 	TypeMetric metric;
 	GetTypeMetrics(image, draw_info, &metric);
-	*width = metric.width;
-	*height = metric.height;
+	*width = (int) metric.width;
+	*height = (int) metric.height;
 
 	/* If user passed in an empty string as the label, then width and
 	 * height might get set to 0 which could later lead to a

@@ -73,7 +73,7 @@ void display()
 
 		/* Calculate an angle to rotate the object. glfwGetTime() gets
 		 * the time in seconds since GLFW was initialized. Rotates 45 degrees every second. */
-		float angle = fmod(glfwGetTime()*45, 360);
+		float angle = fmodf((float) (glfwGetTime()*45.0), 360);
 
 		/* Make sure all computers/processes use the same angle */
 		dgr_setget("angle", &angle, sizeof(GLfloat));
