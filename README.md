@@ -10,7 +10,7 @@ This code provides a library to support the development of basic OpenGL and virt
 * Video file loading: Videos can be displayed as textures if the ffmpeg library is available (tested on Linux and Mac OS X).
 * VRPN support: Can communicate with virtual reality tracking systems which support the VRPN protocol. Includes a utilities to record and playback motions.
 * Example programs: Includes numerous sample programs which demonstrate texturing, panorama images, 3D model loading and use of tracking systems.
-* Oculus support: Older Linux Oculus drivers are supported. Oculus support on Windows is a work in progress.
+* Oculus support: Current windows drivers and older Oculus drivers for Linux are supported.
 * Red/Cyan anaglyph stereoscopy.
 * Multi-host distributed rendering: If multiple computers power multiple screens, this library provides rudimentary support to specify which part of the screen each computer is responsible for rendering and communicating information to keep the scene synchronized.
 

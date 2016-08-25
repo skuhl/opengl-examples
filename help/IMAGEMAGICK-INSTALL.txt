@@ -1,8 +1,21 @@
-You can typically install ImageMagick using the package manager in
-your Linux distribution or homebrew for OS X.
+IMPORTANT: This software works with ImageMagick 6. ImageMagick 7 was
+released in 2016 with a few incompatible changes. Version 6 is still
+installed on most machines and there are plans to support it for at
+least 10 years. Until version 7 is available on more machines, we will
+focus on making sure opengl-examples works well with version 6.
 
+If you want to try ImageMagick 7, you will at least need to change one
+#include at the top of lib/imageio.h.
+
+More info:
+	- Porting code from v6 to v7: http://www.imagemagick.org/script/porting.php
+	- Website with latest version: http://imagemagick.org
+	- Website with v6 version: http://legacy.imagemagick.org
+
+	
 == Ubuntu instructions ==
-On Ubuntu 14.04, try installing the following two packages (and the
+
+On Ubuntu, try installing the following two packages (and the
 packages that they depend on):
 imagemagick
 libmagickcore-dev
@@ -24,7 +37,7 @@ Verify that imagemagick has access to fonts by running:
 
 convert -list font
 
-If fonts are not available, then try follow these instructions:
+If fonts are not available, then follow these instructions:
 http://stackoverflow.com/questions/24696433/
 
 

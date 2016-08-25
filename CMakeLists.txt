@@ -82,9 +82,12 @@ function(kuhl_add_paths path)
 		kuhl_add_library_path(${path}/glfw/src)
 		kuhl_add_include_path(${path}/glfw/include)
 		# GLFW - Windows
-		kuhl_add_library_path(${path}/glfw-*/src/Debug)
-		kuhl_add_library_path(${path}/glfw-*/src/Release)
 		kuhl_add_include_path(${path}/glfw-*/include)
+		kuhl_add_library_path(${path}/glfw-*/src/Debug)   # compiled from source
+		kuhl_add_library_path(${path}/glfw-*/src/Release) # compiled from source
+		kuhl_add_library_path(${path}/glfw-*/lib-vc2015)  # precompiled
+		kuhl_add_library_path(${path}/glfw-*/lib-vc2013)  # precompiled
+		kuhl_add_library_path(${path}/glfw-*/lib-vc2012)  # precompiled
 	endif()
 	
 	# GLEW

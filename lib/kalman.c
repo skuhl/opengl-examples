@@ -143,7 +143,7 @@ float kalman_estimate(kalman_state * state, float measured, long measured_time)
 	// vec3d_print(xk); // Print current estimate of pos, velocity, accel
 	state->time_prev = measured_time;
 	vec3d_copy(state->xk_prev, xk);
-	return xk[0];
+	return (float) xk[0];
 }
 
 /** Initializes a kalman_state struct.

@@ -24,7 +24,8 @@ STEP 2: Open the cmake-gui app. Set the "Where is the source code" and
 "Where to build the binaries" to be your opengl-examples folder. If
 you have previously completed this step but are getting unusual
 results, first go to "File" and click "Delete cache". Next, click
-"Configure". If there are any obvious error messages relating to the
+"Configure", proceed with the default 32-bit build (64-bit hasn't
+been tested). If there are any obvious error messages relating to the
 three libraries above, attempt to fix them. If the libraries are not
 being found, look at the top of the cmake output to see a listing of
 different directories where cmake is trying to find your libraries and
@@ -37,7 +38,7 @@ and the "viewer" program (a program that does depend on assimp).
 
 STEP 4: Look for the programs you built in
 opengl-examples/bin/Debug. But, before you try to run them, you will
-need to copy assimp-vc???-mtd.dll into the bin/Debug
+need to copy assimp-vc???-mtd.dll and glew32.dll into the bin/Debug
 folder too! You can find the dll files in the bin folders inside of
 the source code for the corresponding libraries.
 

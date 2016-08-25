@@ -186,5 +186,5 @@ you might not have access to from outside of that C file.
 
 Use the "meld" program to compare two different files in a
 user-friendly way. For example, if you want to see how two files
-differ from each other, try "meld ogl3-triangle.c
-ogl3-triangle-color.c".
+differ from each other, try "meld triangle.c
+triangle-color.c".

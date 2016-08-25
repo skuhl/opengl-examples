@@ -1,5 +1,7 @@
 #include <stdlib.h>
+#ifdef __linux__
 #include <unistd.h>
+#endif
 #include <stdio.h>
 #include <math.h>
 #include <stdbool.h>
