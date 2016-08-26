@@ -29,10 +29,12 @@ http://www.imagemagick.org/script/license.php
 
 #pragma once
 
+#ifndef _WIN32
 /* These variables resolve compile-time warning messages recent
  * versions of ImageMagick */
 #define MAGICKCORE_HDRI_ENABLE 0
 #define MAGICKCORE_QUANTUM_DEPTH 16
+#endif
 
 /* TODO: This changes to MagickCore/MagickCore.h in ImageMagick 7 */
 #include <magick/MagickCore.h>
