@@ -1,3 +1,4 @@
+#include "windows-compat.h"
 #include "kalman.h"
 #include "vecmat.h"
 
@@ -54,14 +55,14 @@ void sensorfuse(float corrected[16], const float drifting[16], const float stabl
 	static float offsetAngleFiltered = 0; // filtered version of the offset angle
 
 	if(count == 0)
-		kalman_initialize(&kalman, 20, .000000001);
+		kalman_initialize(&kalman, 20.0f, .000000001f);
 	if(count < 30)
 		offsetAngleFiltered = offsetAngle;
 	else if(count == 30)
 	{
 		// reinitialize after sensors have settled down
 		offsetAngleFiltered = offsetAngle;
-		kalman_initialize(&kalman, 20, .000000001);
+		kalman_initialize(&kalman, 20.0f, .000000001f);
 		kalman.xk_prev[0] = offsetAngle;
 	}
 

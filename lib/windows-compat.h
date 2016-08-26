@@ -9,8 +9,10 @@
 // Disable warnings about unsafe functions. For example, numerous warnings
 // about how strcpy() should be replaced with strcpy_s()
 #pragma warning(disable : 4996) //_CRT_SECURE_NO_WARNINGS
+#pragma warning(disable : 4244) // disable warnings about implicit conversions from double to float
 
 #include <Windows.h>
+#include <process.h>
 
 #ifdef __cplusplus
 extern "C" {
