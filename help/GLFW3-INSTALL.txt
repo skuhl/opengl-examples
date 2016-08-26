@@ -8,8 +8,17 @@ GLFW3 by installing the libglfw3 and libglfw3-dev packages.
 
 Install glfw via homebrew.
 
+=== Windows installation ==
 
-=== Compiling GLFW yourself ===
+Download a precompiled version (we recommend the 32-bit version).
+
+Alternatively, download the GLFW3 source, run cmake-gui and set the
+source code location and the place to build the binaries to the root
+directory of the GLFW3 source. Click configure, then generate. Then
+open the solution in Visual Studio and compile the library.
+
+
+=== Compiling GLFW yourself on Linux or Mac OS X ===
 
 If none of the options above work for you, you can download and compile GLFW yourself.
 

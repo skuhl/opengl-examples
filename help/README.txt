@@ -5,7 +5,7 @@
 Unless you are certain Delete any cmake files to ensure we start from a fresh copy
 
     Linux & macOS: ./cleanup.sh
-    Windows: Start cmake (see WINDOWS-VisualStudio.txt) and go to "File" and select "Delete cache".
+    Windows: Follow instructions in WINDOWS-VisualStudio.txt, not this file!
 
 Search for required/optional libraries and create a Makefile.
 
@@ -112,7 +112,6 @@ types of JPG, PNG and other file formats. However, ImageMagick
 supports nearly every possible file format.
 
  - For a guide to install ImageMagick, see IMAGEMAGICK-INSTALL.txt
- - Version 6.7.5-5 (circa 2012) or higher is recommended; the brightness of images in older versions may be incorrect.
  - Homepage: http://www.imagemagick.org/
  - License: http://www.imagemagick.org/script/license.php
 
