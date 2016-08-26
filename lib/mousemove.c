@@ -224,7 +224,7 @@ int mousemove_movement(int x, int y)
 	{
 		//printf("mousemove: whoops, pointed camera at up vector.");
 		// move the up vector slightly and try again:
-		u[0] += 0.05;
+		u[0] += 0.05f;
 		vec3f_cross_new(r,f,u);
 	}
 	vec3f_normalize(r);

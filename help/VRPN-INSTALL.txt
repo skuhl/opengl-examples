@@ -43,3 +43,8 @@ VRPN is available in homebrew.
 Download the latest VRPN release from github (see link in the Linux instructions above). Extract
 the file inside of a "opengl-libs" folder that is next to your "opengl-examples" folder. Open 
 the "vrpn.sln" solution in Visual Studio and build the "Library" project.
+
+Then, open cmake-gui for the opengl-examples project. Go to "File | Delete cache", then click
+the "Configure" button. Confirm that VRPN is found. Click "Generate". Finally, open the project
+in Visual Studio (and, if prompted, reload the project due to the changed files). Confirm that
+the triangle program builds and runs successfully.

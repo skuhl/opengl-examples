@@ -6,6 +6,7 @@
 /** @file
  * @author Scott Kuhl
  */
+#include "windows-compat.h"
 #include <string.h>
 #include <math.h>
 

@@ -1,3 +1,4 @@
+#include "windows-compat.h"
 #include "kalman.h"
 #include "vecmat.h"
 
