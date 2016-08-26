@@ -44,11 +44,29 @@ http://stackoverflow.com/questions/24696433/
 
 == Windows instructions ==
 
-None yet!
+Download a recent "legacy" version of ImageMagick at: legacy.imagemagick.org
+
+There are many versions to choose from. Select the file ending in "-Q8-x86-dll.exe"
+
+Run the installation program and check the following checkbox:
+"install development headers and libraries for C and C++"
+
+Open cmake-gui for the opengl-examples. Select "File | Delete cache". 
+
+Click the "configure" button. Ensure that ImageMagick is found.
+
+Click the "Generate button".
+
+Reopen the opengl-examples solution in Visual Studio, reload the project 
+if prompted. Recompile. Ensure that the "texture.exe" program runs. Note: The
+texture program will also run without ImageMagick present. If you want to
+verify that the program is using ImageMagick, inspect the log.txt file that
+the "texture.exe" program automatically creates and ensure that it mentions
+the ImageMagick version that you have installed.
 	
 
 	
-== Compiling form source ==
+== Compiling form source on Linux and OS X ==
 
 If you need to compile ImageMagick yourself:
 

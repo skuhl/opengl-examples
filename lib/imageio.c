@@ -7,6 +7,7 @@
  * @author Scott Kuhl
  */
 
+#include "windows-compat.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -271,8 +272,11 @@ char* image_label(const char *label, int* width, int* height, float color[3], fl
 	   look for config files. Without this, imagemagick prints errors about
 	   fonts when you try to make text labels.
 	*/
+#ifdef __linux__
 	setenv("MAGICK_CONFIGURE_PATH", "/home/kuhl/public-vrlab/ImageMagick/config", 1);
-	
+#endif
+
+
 //	if(!IsMagickInstantiated())
 	MagickCoreGenesis(NULL, MagickTrue);
 	ExceptionInfo exception;
