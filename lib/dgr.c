@@ -12,6 +12,7 @@
     @author Scott Kuhl
  */
 
+#include "windows-compat.h"
 
 #include <stdio.h>
 #include <stdlib.h>

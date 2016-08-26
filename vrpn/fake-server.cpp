@@ -17,7 +17,10 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <math.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
+
 #include <iostream>
 #include <cstdlib>
 #include <string>

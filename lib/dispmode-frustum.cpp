@@ -1,3 +1,4 @@
+#include "windows-compat.h"
 #include "msg.h"
 #include "viewmat.h"
 #include "vecmat.h"
@@ -25,7 +26,7 @@ dispmodeFrustum::dispmodeFrustum(void)
 	}
 
 	msg(MSG_WARNING, "Using default frustum values---this is probably not want you want.");
-	float defaultFrustum[6] = { -1,1,-1,1,.1,50 };
+	float defaultFrustum[6] = { -1.0f ,1.0f,-1.0f,1.0f,.1f,50.0f };
 	set_frustum(defaultFrustum);
 }
 
@@ -34,9 +35,9 @@ dispmodeFrustum::dispmodeFrustum(const float inFrustum[6])
 	set_frustum(inFrustum);
 }
 
-dispmodeFrustum::dispmodeFrustum(float left, float right, float bottom, float top, float near, float far)
+dispmodeFrustum::dispmodeFrustum(float left, float right, float bottom, float top, float nearPlane, float farPlane)
 {
-	float temp[6] = { left, right, bottom, top, near, far };
+	float temp[6] = { left, right, bottom, top, nearPlane, farPlane };
 	set_frustum(temp);
 }
 

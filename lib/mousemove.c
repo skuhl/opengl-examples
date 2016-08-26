@@ -34,11 +34,11 @@ static float cam_position[3];
 /** Current camera up vector. Since mousemove does not support roll,
  * this value is only changed when a user specifically sets it with
  * mousemove_set() or mousemove_setVec() */
-static float cam_up[3] = { 0, 1, 0 };
+static float cam_up[3] = { 0.0f, 1.0f, 0.0f };
 
 
-static float settings_rot_scale = 0.5;  /**< amount to scale rotations  */
-static float settings_trans_scale = .01;/**< amount to scale translations */
+static float settings_rot_scale = 0.5f;  /**< amount to scale rotations  */
+static float settings_trans_scale = .01f;/**< amount to scale translations */
 
 /** Currently pressed mouse button. -1=no button pressed, 0=left,
  * 1=middle, 2=right */
@@ -224,7 +224,7 @@ int mousemove_movement(int x, int y)
 	{
 		//printf("mousemove: whoops, pointed camera at up vector.");
 		// move the up vector slightly and try again:
-		u[0] += 0.05;
+		u[0] += 0.05f;
 		vec3f_cross_new(r,f,u);
 	}
 	vec3f_normalize(r);

@@ -3,8 +3,8 @@
 #include <GLFW/glfw3.h>
 #include "kuhl-util.h"
 
-#define min(x, y) (x < y) ? x : y
-#define max(x, y) (x > y) ? x : y
+//#define min(x, y) (x < y) ? x : y
+//#define max(x, y) (x > y) ? x : y
 
 #ifdef KUHL_UTIL_USE_FREETYPE
 static FT_Library lib;

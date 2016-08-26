@@ -15,6 +15,7 @@ extern "C" {
 
 typedef struct {
 	int isEnabled; /**< If set to 0, disable kalman filter */
+	int predictOnly; 
 	
 	double xk_prev[3]; /**< Filtered position, velocity, and acceleration */
 	long time_prev;    /**< Time of previous measurement in milliseconds */

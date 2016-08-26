@@ -7,7 +7,6 @@
  * @author Scott Kuhl
  */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -438,7 +437,7 @@ int mat4f_invert_new(float out[16], const float m[16])
 		return 0;
 	}
 
-	det = 1.0 / det;
+	det = 1.0f / det;
 
 	for(int i = 0; i < 16; i++)
 		out[i] = inv[i] * det;
@@ -523,7 +522,7 @@ int mat3f_invert_new(float out[9], const float m[9])
 		return 0;
 	}
 
-	det = 1.0/det;
+	det = 1.0f/det;
 
 	for(int i = 0; i < 9; i++)
 		out[i] = inv[i] * det;
@@ -834,7 +833,7 @@ void eulerf_from_mat3f(float angles[3], const float m[9], const char order[3])
 
 	// Convert to degrees.
 	for(int i=0; i<3; i++)
-		angles[i] = angles[i] * 180/M_PI;
+		angles[i] = angles[i] * 180.0f/(float)M_PI;
 }
 
 
@@ -975,7 +974,7 @@ void eulerd_from_mat4d(double angles[3], const double m[16], const char order[3]
  * @param axis A vector representing the axis to rotate around (must have a non-zero length). */
 void mat3f_rotateAxisVec_new(float result[9], float degrees, const float axis[3])
 {
-	float angle = degrees * M_PI/180;
+	float angle = (float)(degrees * M_PI/180.0f);
 	float c = cosf(angle);
 	float s = sinf(angle);
 	float t = 1-c;
@@ -984,11 +983,11 @@ void mat3f_rotateAxisVec_new(float result[9], float degrees, const float axis[3]
 	// Use fix described at:
 	// http://math.stackexchange.com/questions/38144
 	if(c > .9)
-		t = 2.0 * sinf(angle/2.0)*sinf(angle/2.0);
+		t = 2.0f * sinf(angle/2.0f)*sinf(angle/2.0f);
 
 	// If zero vector is passed in, return identity matrix
 	float length = vec3f_norm(axis);
-	if(length < .00001)
+	if(length < .00001f)
 	{
 		msg(MSG_ERROR, "Vector to rotate around was 0!");
 		mat3f_identity(result);
@@ -1169,8 +1168,8 @@ void mat4d_rotateAxis_new(double result[16], double degrees, double axisX, doubl
 void mat3f_rotateQuatVec_new(float matrix[9], const float quat[4])
 {
 	int X=0, Y=1, Z=2, W=3;
-	float s = 2.0 / (quat[X]*quat[X] + quat[Y]*quat[Y] +
-	                 quat[Z]*quat[Z] + quat[W]*quat[W]);
+	float s = 2.0f / (quat[X]*quat[X] + quat[Y]*quat[Y] +
+	                  quat[Z]*quat[Z] + quat[W]*quat[W]);
 	float xs, ys, zs,
 	      wx, wy, wz,
 	      xx, xy, xz,
@@ -1182,19 +1181,19 @@ void mat3f_rotateQuatVec_new(float matrix[9], const float quat[4])
 	yy = quat[Y] * ys;  yz = quat[Y] * zs;  zz = quat[Z] * zs;
 
 	// first row
-	matrix[0] = 1.0 - (yy + zz);
+	matrix[0] = 1.0f - (yy + zz);
 	matrix[3] = xy - wz;
 	matrix[6] = xz + wy;
 
 	// second row
 	matrix[1] = xy + wz;
-	matrix[4] = 1.0 - (xx + zz);
+	matrix[4] = 1.0f - (xx + zz);
 	matrix[7] = yz - wx;
 
 	// third row
 	matrix[2] = xz - wy;
 	matrix[5] = yz + wx;
-	matrix[8] = 1.0 - (xx + yy);
+	matrix[8] = 1.0f - (xx + yy);
 }
 
 /** Creates a 3x3 rotation matrix from a quaternion (x,y,z,w). For
@@ -1290,11 +1289,11 @@ void quatf_from_mat3f(float quat[4], const float matrix[9])
 	int X=0, Y=1, Z=2, W=3;
 	float trace = matrix[0]+matrix[4]+matrix[8]; // sum of diagonal
 
-   if (trace > 0.0)
+   if (trace > 0.0f)
    {
-	   float s = sqrtf(trace + 1.0);
-	   quat[W] = s * 0.5;
-	   s = 0.5 / s;
+	   float s = sqrtf(trace + 1.0f);
+	   quat[W] = s * 0.5f;
+	   s = 0.5f / s;
 
 	   quat[X] = (matrix[mat3_getIndex(Z,Y)] - matrix[mat3_getIndex(Y,Z)]) * s;
 	   quat[Y] = (matrix[mat3_getIndex(X,Z)] - matrix[mat3_getIndex(Z,X)]) * s;
@@ -1312,10 +1311,10 @@ void quatf_from_mat3f(float quat[4], const float matrix[9])
 	   int j = next[i];
 	   int k = next[j];
 	   
-	   float s = sqrtf( (matrix[mat3_getIndex(i,i)] - (matrix[mat3_getIndex(j,j)] + matrix[mat3_getIndex(k,k)])) + 1.0 );
-	   quat[i] = s * 0.5;
+	   float s = sqrtf( (matrix[mat3_getIndex(i,i)] - (matrix[mat3_getIndex(j,j)] + matrix[mat3_getIndex(k,k)])) + 1.0f );
+	   quat[i] = s * 0.5f;
 	   
-	   s = 0.5 / s;
+	   s = 0.5f / s;
 	   
 	   quat[W] = (matrix[mat3_getIndex(k,j)] - matrix[mat3_getIndex(j,k)]) * s;
 	   quat[j] = (matrix[mat3_getIndex(j,i)] + matrix[mat3_getIndex(i,j)]) * s;
@@ -1330,7 +1329,7 @@ void quatd_from_mat3d(double quat[4], const double matrix[9])
 
    if (trace > 0.0)
    {
-	   double s = sqrtf(trace + 1.0);
+	   double s = sqrt(trace + 1.0);
 	   quat[W] = s * 0.5;
 	   s = 0.5 / s;
 
@@ -1350,7 +1349,7 @@ void quatd_from_mat3d(double quat[4], const double matrix[9])
 	   int j = next[i];
 	   int k = next[j];
 	   
-	   float s = sqrtf( (matrix[mat3_getIndex(i,i)] - (matrix[mat3_getIndex(j,j)] + matrix[mat3_getIndex(k,k)])) + 1.0 );
+	   double s = sqrt( (matrix[mat3_getIndex(i,i)] - (matrix[mat3_getIndex(j,j)] + matrix[mat3_getIndex(k,k)])) + 1.0 );
 	   quat[i] = s * 0.5;
 	   
 	   s = 0.5 / s;
@@ -1390,7 +1389,7 @@ void quatf_rotateAxis_new(float quat[4], float degrees, float x, float y, float 
 {
 	int X=0,Y=1,Z=2,W=3;
 	// Angle needs to be negated to make it correspond to the behavior of mat3f_rotateAxis_new().
-	float angle = -degrees * M_PI/180;
+	float angle = (float)(-degrees * M_PI/180.0f);
 
 	/* normalize vector */
 	float length = sqrtf( x*x + y*y + z*z );
@@ -1408,8 +1407,8 @@ void quatf_rotateAxis_new(float quat[4], float degrees, float x, float y, float 
 	y /= length;
 	z /= length;
 
-	float cosA = cosf(angle / 2.0);
-	float sinA = sinf(angle / 2.0);
+	float cosA = cosf(angle / 2.0f);
+	float sinA = sinf(angle / 2.0f);
 	quat[W] = cosA;
 	quat[X] = sinA * x;
 	quat[Y] = sinA * y;
@@ -1500,12 +1499,12 @@ void quatf_slerp_new(float result[4], const float start[4], const float end[4], 
 		{
 			float omega = acosf(cosOmega);
 			float sinOmega = sinf(omega);
-			startScale = sinf((1.0-t)*omega / sinOmega);
+			startScale = sinf((1.0f-t)*omega / sinOmega);
 			endScale = sinf(t*omega)/sinOmega;
 		}
 		else
 		{
-			startScale = 1.0-t;
+			startScale = 1.0f-t;
 			endScale = t;
 		}
 		float scaledStart[4], scaledEnd[4];
@@ -1516,8 +1515,8 @@ void quatf_slerp_new(float result[4], const float start[4], const float end[4], 
 	else
 	{
 		vec4f_set(result, -copyOfStart[1], copyOfStart[0], -copyOfStart[3], copyOfStart[2]);
-		float startScale = sin((0.5-t)*M_PI);
-		float endScale = sin(t*M_PI);
+		float startScale = sinf((0.5f-t)*((float)M_PI));
+		float endScale = sinf(t*((float)M_PI));
 		float scaledStart[4], scaledEnd[4];
 		vec4f_scalarMult_new(scaledStart, copyOfStart,  startScale);
 		vec4f_scalarMult_new(scaledEnd,   result,       endScale);
@@ -1823,7 +1822,7 @@ void mat4f_perspective_new(float result[16], float  fovy, float  aspect, float  
 		msg(MSG_ERROR, "Field of view must be between 0 and 180 degrees. You set it to %f\n", fovy);
 		return;
 	}
-	float fovyRad = fovy * M_PI/180.0f;
+	float fovyRad = fovy * ((float)M_PI)/180.0f;
 	float height = near * tanf(fovyRad/2.0f);
 	float width = height * aspect;
 	mat4f_frustum_new(result, -width, width, -height, height, near, far);
