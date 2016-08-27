@@ -371,18 +371,7 @@ long kuhl_microseconds_start(void)
  * milliseconds */
 long kuhl_milliseconds(void)
 {
-#ifdef _WIN32
-	// TODO: check/fix me
-	LARGE_INTEGER freq, start;
-	QueryPerformanceFrequency(&freq);
-	QueryPerformanceCounter(&start);
-	return (long) ((start.QuadPart / freq.QuadPart) * 1000);
-#else
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	long ms = (tv.tv_sec * 1000L) + tv.tv_usec / 1000L;
-	return ms;
-#endif
+	return kuhl_microseconds() / 1000L;
 }
 
 /** Returns the number of milliseconds since the first time this
