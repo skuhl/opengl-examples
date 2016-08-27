@@ -36,6 +36,7 @@
 
 #include "msg.h"
 #include "kuhl-config.h"
+#include "kuhl-nodep.h"
 #include "windows-compat.h"
 
 static FILE *f = NULL;  /**< The file stream for our log file */
@@ -48,31 +49,26 @@ static char *logfile = NULL; /**< The filename of the log file. */
 */
 static void msg_timestamp(char *buf, int len)
 {
-#if _WIN32
-	snprintf(buf, len, "TODO");
-	return;
-#else
-	struct timeval tv;
-	if(gettimeofday(&tv, NULL) < 0)
+#if 1
+	// time relative to start time
+	static int needsInit = 1;
+	static long starttime;
+	if(needsInit)
 	{
-		msg(MSG_FATAL, "gettimeofday: %s", strerror(errno));
-		exit(EXIT_FAILURE);
+		starttime = kuhl_microseconds();
+		needsInit = 0;
 	}
 
-#if 0
+	long nowtime = kuhl_microseconds();
+	long difftime = nowtime-starttime;
+	double timestamp = difftime / 1000000.0;
+	snprintf(buf, len, "%11.6f", timestamp);
+#else
 	// Absolute time
 	struct tm *now = localtime(&(tv.tv_sec));
 	char buf1[1024];
 	strftime(buf1, 1024, "%H%M%S", now);
 	snprintf(buf, len, "%s.%06ld", buf1, tv.tv_usec);
-#else
-	// Relative to start time.
-	double time = tv.tv_sec + tv.tv_usec / 1000000.0;
-	static double firstTime = -1;
-	if(firstTime < 0)
-		firstTime = time;
-	snprintf(buf, len, "%11.6f", time-firstTime);
-#endif
 #endif
 }
 
