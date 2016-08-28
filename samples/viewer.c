@@ -69,14 +69,18 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 		case GLFW_KEY_ESCAPE:
 			glfwSetWindowShouldClose(window, GL_TRUE);
 			break;
-#if 0
-		case 'f': // full screen
-			glutFullScreen();
+		case GLFW_KEY_F: // toggle full screen
+		{
+			GLFWmonitor *primaryMonitor = glfwGetPrimaryMonitor();
+			const GLFWvidmode *currentMode = glfwGetVideoMode(primaryMonitor);
+			if(glfwGetWindowMonitor(kuhl_get_window())) // if full screen
+				// make windowed:
+				glfwSetWindowMonitor(kuhl_get_window(), NULL, 0, 0, 512, 512, GLFW_DONT_CARE);
+			else // if windowed
+				// make full screen:
+				glfwSetWindowMonitor(kuhl_get_window(), primaryMonitor, 0,0,currentMode->width, currentMode->height, currentMode->refreshRate);
 			break;
-		case 'F': // switch to window from full screen mode
-			glutPositionWindow(0,0);
-			break;
-#endif
+		}
 		case GLFW_KEY_R:
 		{
 			// Reload GLSL program from disk
