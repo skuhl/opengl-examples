@@ -1,3 +1,5 @@
+IMPORTANT: GLFW 3.1.2 (October 2015) or higher is required.
+
 === Linux installation ===
 
 On recent Ubuntu installations (16.04, for example), you can install
