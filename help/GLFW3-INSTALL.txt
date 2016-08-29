@@ -1,4 +1,4 @@
-IMPORTANT: GLFW 3.2 (June 2016) or higher is required.
+IMPORTANT: GLFW 3.1.2 (October 2015) or higher is required.
 
 === Linux installation ===
 
