@@ -26,7 +26,7 @@ Try running a program (all programs will be placed in the "bin" directory)
 
 Check out model loading and texturing capabilities
 
-    ./viewer --fit ../models/duck.dae
+    ./viewer --fit ../models/duck/duck.dae
 
 Run code for an HMD (left/right eye screens side-by-side):
 
