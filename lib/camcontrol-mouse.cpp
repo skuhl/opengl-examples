@@ -26,7 +26,14 @@ viewmat_eye camcontrolMouse::get_separate(float pos[3], float rot[16], viewmat_e
 	float look[3], up[3];
 	mousemove_get(pos, look, up);
 	mat4f_lookatVec_new(rot, pos, look, up);
+
+	// Translation will be in outPos, not in the rotation matrix.
 	float zero[4] = { 0,0,0,1 };
 	mat4f_setColumn(rot, zero, 3);
+
+	// Invert matrix because the rotation matrix will be inverted
+	// again later.
+	mat4f_invert(rot);
+	
 	return VIEWMAT_EYE_MIDDLE;
 }
