@@ -2,6 +2,7 @@
 #include "viewmat.h"
 #include "vecmat.h"
 #include "dispmode-desktop.h"
+#include "kuhl-config.h"
 
 dispmodeDesktop::dispmodeDesktop()
 {
@@ -44,9 +45,9 @@ void dispmodeDesktop::get_frustum(float result[6], int viewportID)
 	int viewportH = viewport[3];
 
 	float aspect = viewportW/(float)viewportH;
-	float nearPlane = 0.1f;
-	float farPlane = 200.0f;
-	float vfov = 65.0f;
+	float nearPlane = kuhl_config_float("nearplane", 0.1f, 0.1f);
+	float farPlane = kuhl_config_float("farplane", 200.0f, 200.0f);
+	float vfov = kuhl_config_float("vfov", 65.0f, 65.0f);
 	float fovyRad = (float) (vfov * M_PI/180.0f);
 	float height = nearPlane * tanf(fovyRad/2.0f);
 	float width = height * aspect;

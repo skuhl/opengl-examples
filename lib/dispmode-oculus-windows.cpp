@@ -248,7 +248,10 @@ void dispmodeOculusWindows::get_projmatrix(float projmatrix[16], int viewportID)
 	/* Oculus doesn't provide us with easy access to the view
 	* frustum information. We get the projection matrix directly
 	* from libovr. */
-	ovrMatrix4f ovrpersp = ovrMatrix4f_Projection(hmdDesc.DefaultEyeFov[eye], 0.2f, 1000.0f, ovrProjection_None);
+	ovrMatrix4f ovrpersp = ovrMatrix4f_Projection(hmdDesc.DefaultEyeFov[eye],
+	                                              kuhl_config_float("nearplane", 0.1f, 0.1f),
+	                                              kuhl_config_float("farplane", 200.0f, 200.0f),
+	                                              ovrProjection_None);
 	mat4f_setRow(projmatrix, &(ovrpersp.M[0][0]), 0);
 	mat4f_setRow(projmatrix, &(ovrpersp.M[1][0]), 1);
 	mat4f_setRow(projmatrix, &(ovrpersp.M[2][0]), 2);
