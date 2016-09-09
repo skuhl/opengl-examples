@@ -316,37 +316,6 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 		glfwSetInputMode(kuhl_get_window(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 }
 
-#if 0
-/** Some VRPN orientation sensors may be rotated differently than what we
- * expect them to be (for example, orientation is correct except that
- * the camera is pointing in the wrong direction). This function will
- * adjust the orientation matrix so that the camera is pointing in the
- * correct direction. */
-static void viewmat_fix_rotation(float orient[16])
-{
-
-}
-
-
-/** Get the view matrix from an orientation sensor. */
-static void viewmat_get_orient_sensor(float viewmatrix[16], int viewportNum)
-{
-	float quaternion[4];
-	orient_sensor_get(&viewmat_orientsense, quaternion);
-	
-	float cyclopsViewMatrix[16];
-	mat4f_rotateQuatVec_new(cyclopsViewMatrix, quaternion);
-	//viewmat_fix_rotation(cyclopsViewMatrix);
-	
-	/* set a default camera position */
-	float pos[4] = { 0, 1.5, 0, 1 };
-	mat4f_setColumn(cyclopsViewMatrix, pos, 3);
-	mat4f_invert(cyclopsViewMatrix);
-
-	//viewmat_get_generic(viewmatrix, cyclopsViewMatrix, viewportNum);
-}
-#endif
-
 
 /** Performs a sanity check on the IPD to ensure that it is not too small, big, or reversed.
 
