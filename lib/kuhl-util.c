@@ -342,6 +342,12 @@ void kuhl_ogl_init(int *argcp, char **argv, int width, int height, int oglProfil
 	}
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, oglProfile/10);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, oglProfile%10);
+	/* Provide an sRGB capable frame buffer if it is available. Note
+	   that sRGB conversion isn't enabled unless
+	   glEnable(GL_FRAMEBUFFER_SRGB) is also called. If you enable an
+	   sRGB framebuffer, you likely also want to have your textures
+	   use an sRGB internalformat. */
+	glfwWindowHint(GLFW_SRGB_CAPABLE, 1);
 
 	if(msaaSamples > 1)
 		glfwWindowHint(GLFW_SAMPLES, msaaSamples);
@@ -1746,12 +1752,12 @@ GLuint kuhl_read_texture_array(const unsigned char* array, int width, int height
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	kuhl_errorcheck();
 
-	GLuint internalformat = GL_RGB8;
+	GLuint internalformat = GL_RGB8;   // typically: GL_RGB8 or GL_SRGB8
 	GLuint imageformat = GL_RGB;
 	GLuint pixeldatatype = GL_UNSIGNED_BYTE;
 	if(components == 4)
 	{
-		internalformat = GL_RGBA8;
+		internalformat = GL_RGBA8; // typically: GL_RGBA8 or GL_SRGB8_ALPHA8
 		imageformat = GL_RGBA;
 	}
 	
