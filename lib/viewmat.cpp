@@ -405,7 +405,11 @@ static void viewmat_validate_ipd(const float viewmatrix[16], int viewportID)
  * left eye and viewportID=1 is the right eye. However, some Oculus
  * HMDs will result in this being swapped. To definitively know which
  * eye this view matrix corresponds to, examine the return value of
- * this function.
+ * this function. If viewportID == -1, then this function will return
+ * a value appropriate for a "middle" eye regardless of rendering
+ * mode. This is useful if you are rendering for an HMD but you
+ * actually want to know the position of the point between the center
+ * of the eyes.
  *
  * @return A viewmat_eye enum which indicates if this view matrix is
  * for the left, right, middle, or unknown eye.
@@ -413,7 +417,12 @@ static void viewmat_validate_ipd(const float viewmatrix[16], int viewportID)
  */
 viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 {
-	viewmat_eye eye = desktop->eye_type(viewportID);
+	viewmat_eye eye;
+	if(viewportID == -1)
+		eye = VIEWMAT_EYE_MIDDLE;
+	else
+		eye = desktop->eye_type(viewportID);
+	
 	
 	int viewport[4]; // x,y of lower left corner, width, height
 	desktop->get_viewport(viewport, viewportID);
