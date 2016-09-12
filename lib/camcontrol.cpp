@@ -38,8 +38,14 @@ camcontrol::camcontrol(dispmode *currentDisplayMode, const float inPos[3], const
 viewmat_eye camcontrol::get_separate(float outPos[3], float outRot[16], viewmat_eye requestedEye)
 {
 	mat4f_lookatVec_new(outRot, pos, look, up);
+
+	// Translation will be in outPos, not in the rotation matrix.
 	float zero[4] = { 0,0,0,1 };
 	mat4f_setColumn(outRot, zero, 3);
+
+	// Invert matrix because the rotation matrix will be inverted
+	// again later.
+	mat4f_invert(outRot);
 		
 	vec3f_copy(outPos, pos);
 	return VIEWMAT_EYE_MIDDLE;

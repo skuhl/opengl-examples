@@ -316,37 +316,6 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 		glfwSetInputMode(kuhl_get_window(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 }
 
-#if 0
-/** Some VRPN orientation sensors may be rotated differently than what we
- * expect them to be (for example, orientation is correct except that
- * the camera is pointing in the wrong direction). This function will
- * adjust the orientation matrix so that the camera is pointing in the
- * correct direction. */
-static void viewmat_fix_rotation(float orient[16])
-{
-
-}
-
-
-/** Get the view matrix from an orientation sensor. */
-static void viewmat_get_orient_sensor(float viewmatrix[16], int viewportNum)
-{
-	float quaternion[4];
-	orient_sensor_get(&viewmat_orientsense, quaternion);
-	
-	float cyclopsViewMatrix[16];
-	mat4f_rotateQuatVec_new(cyclopsViewMatrix, quaternion);
-	//viewmat_fix_rotation(cyclopsViewMatrix);
-	
-	/* set a default camera position */
-	float pos[4] = { 0, 1.5, 0, 1 };
-	mat4f_setColumn(cyclopsViewMatrix, pos, 3);
-	mat4f_invert(cyclopsViewMatrix);
-
-	//viewmat_get_generic(viewmatrix, cyclopsViewMatrix, viewportNum);
-}
-#endif
-
 
 /** Performs a sanity check on the IPD to ensure that it is not too small, big, or reversed.
 
@@ -436,7 +405,11 @@ static void viewmat_validate_ipd(const float viewmatrix[16], int viewportID)
  * left eye and viewportID=1 is the right eye. However, some Oculus
  * HMDs will result in this being swapped. To definitively know which
  * eye this view matrix corresponds to, examine the return value of
- * this function.
+ * this function. If viewportID == -1, then this function will return
+ * a value appropriate for a "middle" eye regardless of rendering
+ * mode. This is useful if you are rendering for an HMD but you
+ * actually want to know the position of the point between the center
+ * of the eyes.
  *
  * @return A viewmat_eye enum which indicates if this view matrix is
  * for the left, right, middle, or unknown eye.
@@ -444,7 +417,12 @@ static void viewmat_validate_ipd(const float viewmatrix[16], int viewportID)
  */
 viewmat_eye viewmat_get(float viewmatrix[16], float projmatrix[16], int viewportID)
 {
-	viewmat_eye eye = desktop->eye_type(viewportID);
+	viewmat_eye eye;
+	if(viewportID == -1)
+		eye = VIEWMAT_EYE_MIDDLE;
+	else
+		eye = desktop->eye_type(viewportID);
+	
 	
 	int viewport[4]; // x,y of lower left corner, width, height
 	desktop->get_viewport(viewport, viewportID);
