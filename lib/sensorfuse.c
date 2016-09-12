@@ -2,6 +2,15 @@
 #include "kalman.h"
 #include "vecmat.h"
 
+
+static float sensorfuse_getYaw(const float matrix[16])
+{
+	float euler[3];
+	eulerf_from_mat4f(euler, matrix, "XZY");
+	return euler[2];
+}
+
+
 /** Given orientation from a sensor that has drive in yaw and another
  * orientation from a less-smooth but non-drifting source, combine the
  * data into an orientation that is both smooth and matches the yaw of
@@ -9,11 +18,8 @@
  */
 void sensorfuse(float corrected[16], const float drifting[16], const float stable[16])
 {
-	float eulerDrift[3],eulerStable[3];
-	eulerf_from_mat4f(eulerDrift,  drifting, "XZY");
-	eulerf_from_mat4f(eulerStable, stable,   "XZY");
-	float yawDrift = eulerDrift[2];
-	float yawStable = eulerStable[2];
+	float yawDrift = sensorfuse_getYaw(drifting);
+	float yawStable = sensorfuse_getYaw(stable);
 	
 	static float yawDriftPrev = 0.0f;
 	static float yawStablePrev = 0.0f;
@@ -84,6 +90,12 @@ void sensorfuse(float corrected[16], const float drifting[16], const float stabl
 	mat4f_rotateAxis_new(correction, -offsetAngleFiltered, 0,1,0);
 	mat4f_mult_mat4f_new(corrected, correction, drifting);
 	count++;
-	
-	//msg(MSG_DEBUG, "sensor fusion current offset: %f\n", offsetAngleFiltered);
+
+#if 0
+	// Debugging
+	msg(MSG_INFO, "sensorfuse: filtered offset: %f\n", offsetAngleFiltered);
+	msg(MSG_INFO, "sensorfuse: current offset: %f\n", offsetAngle);
+	float yawCorrected = sensorfuse_getYaw(corrected);
+	msg(MSG_INFO, "sensorfuse: current error: %f\n", yawCorrected-yawStable);
+#endif
 }
