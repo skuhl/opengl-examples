@@ -55,17 +55,20 @@ void sensorfuse(float corrected[16], const float drifting[16], const float stabl
 	yawStablePrev = yawStable;
 	
 	static int count = 0;
-
+	// If we received a good record, increment
+	if (ignoreStable == 0)
+		count++;
 	
 	static kalman_state kalman;
 	static float offsetAngleFiltered = 0; // filtered version of the offset angle
 
-	if(count == 0)
+	if(count == 0 || count == 1)
 		kalman_initialize(&kalman, 20.0f, .000000001f);
 	if(count < 30)
 		offsetAngleFiltered = offsetAngle;
 	else if(count == 30)
 	{
+		msg(MSG_GREEN, "Sensor fusion is now active.");
 		// reinitialize after sensors have settled down
 		offsetAngleFiltered = offsetAngle;
 		kalman_initialize(&kalman, 20.0f, .000000001f);
@@ -83,19 +86,24 @@ void sensorfuse(float corrected[16], const float drifting[16], const float stabl
 		kalman.predictOnly = 1;
 	else
 		kalman.predictOnly = 0;
-	offsetAngleFiltered = kalman_estimate(&kalman, offsetAngle, count*16000);
+	//offsetAngleFiltered = kalman_estimate(&kalman, offsetAngle, count*16000);
+	offsetAngleFiltered = kalman_estimate(&kalman, offsetAngle, -1);
 
 	// Filtered Oculus data.
 	float correction[16];
 	mat4f_rotateAxis_new(correction, -offsetAngleFiltered, 0,1,0);
 	mat4f_mult_mat4f_new(corrected, correction, drifting);
-	count++;
+
+
 
 #if 0
 	// Debugging
-	msg(MSG_INFO, "sensorfuse: filtered offset: %f\n", offsetAngleFiltered);
-	msg(MSG_INFO, "sensorfuse: current offset: %f\n", offsetAngle);
+
+	// Note that the vicon data may be repeated more than expected because we are calling sensorfuse once per eye instead of once per frame.
+	msg(MSG_INFO, "sensorfuse: count: %d; viconLost %d", count, ignoreStable);
+	msg(MSG_INFO, "sensorfuse: filtered offset: %f", offsetAngleFiltered);
+	msg(MSG_INFO, "sensorfuse: current offset: %f", offsetAngle);
 	float yawCorrected = sensorfuse_getYaw(corrected);
-	msg(MSG_INFO, "sensorfuse: current error: %f\n", yawCorrected-yawStable);
+	msg(MSG_INFO, "sensorfuse: current error: %f", yawCorrected-yawStable);
 #endif
 }
