@@ -1827,14 +1827,14 @@ GLuint kuhl_read_texture_array(const unsigned char* array, int width, int height
 		             0, imageformat, pixeldatatype, array);
 	}
 
-	/* render textures perspectively correct---instead of interpolating
-	   textures in screen-space. */
 	kuhl_errorcheck();
 
 	/* The following two lines of code are only useful for OpenGL 1 or
 	 * 2 programs. They may cause an error message when called in a
 	 * newer version of OpenGL. */
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL); // only use texture, no other lighting applied!
+	/* Render textures perspectively correct---instead of
+	   interpolating textures in screen-space: */
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 	glGetError(); // discard any error messages.
 
