@@ -6,8 +6,6 @@ in vec3 out_Color;    // Vertex color
 in vec3 out_Normal;   // Normal vector in camera coordinates
 in vec3 out_CamCoord; // Position of fragment in camera coordinates
 
-in float out_Depth;   // Depth of fragment (range 0 through 1)
-
 uniform int HasTex;    // Is there a texture in tex?
 uniform sampler2D tex; // Diffuse texture
 uniform int renderStyle;

@@ -16,7 +16,6 @@ uniform mat4 GeomTransform;
 
 out vec2 out_TexCoord;
 out vec3 out_Color;
-out float out_Depth;
 out vec3 out_Normal;   // normal vector (camera coordinates)
 out vec3 out_CamCoord; // vertex position (camera coordinates)
 
