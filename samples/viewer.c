@@ -496,7 +496,7 @@ int main(int argc, char** argv)
 
 	// Load the model from the file
 	modelgeom = kuhl_load_model(modelFilename, modelTexturePath, program, bbox);
-	origingeom = kuhl_load_model("../models/origin/origin.obj", modelTexturePath, program, bbox);
+	origingeom = kuhl_load_model("../models/origin/origin.obj", modelTexturePath, program, NULL);
 
 
 
