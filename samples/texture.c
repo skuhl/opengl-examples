@@ -141,6 +141,7 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
 	                          1, 0,
 	                          1, 1 };
 	kuhl_geometry_attrib(geom, texcoordData, 2, "in_TexCoord", KG_WARN);
+	// The 2 parameter above means each texture coordinate is a 2D coordinate.
 
 
 	/* The data that we want to draw */
@@ -148,7 +149,7 @@ void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
 	                        1, 0, 0,
 	                        1, 1, 0};
 	kuhl_geometry_attrib(geom, vertexData, 3, "in_Position", KG_WARN);
-
+	// The 3 parameter above means that each vertex position is a 3D coordinate.
 
 	/* Load the texture. It will be bound to texId */	
 	GLuint texId = 0;

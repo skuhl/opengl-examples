@@ -1827,14 +1827,14 @@ GLuint kuhl_read_texture_array(const unsigned char* array, int width, int height
 		             0, imageformat, pixeldatatype, array);
 	}
 
-	/* render textures perspectively correct---instead of interpolating
-	   textures in screen-space. */
 	kuhl_errorcheck();
 
 	/* The following two lines of code are only useful for OpenGL 1 or
 	 * 2 programs. They may cause an error message when called in a
 	 * newer version of OpenGL. */
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL); // only use texture, no other lighting applied!
+	/* Render textures perspectively correct---instead of
+	   interpolating textures in screen-space: */
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 	glGetError(); // discard any error messages.
 
@@ -3743,6 +3743,12 @@ GLint kuhl_gen_framebuffer(int width, int height, GLuint *texture, GLuint *depth
 
 GLint kuhl_gen_framebuffer_msaa(int width, int height, GLuint *texture, GLuint *depthTexture, GLint samples)
 {
+	if(samples < 1)
+	{
+		msg(MSG_WARNING, "You requested %d samples when rendering to texture. Using 1 sample instead.", samples);
+		samples = 1;
+	}
+	
 	GLint origBoundTexture,origBoundFrameBuffer,origBoundRenderBuffer;;
 	glGetIntegerv(GL_TEXTURE_BINDING_2D,   &origBoundTexture);
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING,  &origBoundFrameBuffer);
@@ -3766,14 +3772,30 @@ GLint kuhl_gen_framebuffer_msaa(int width, int height, GLuint *texture, GLuint *
 		            width, height, maxTextureSize);
 		exit(EXIT_FAILURE);
 	}
-		
+
+	GLint colorSamples = samples;
+	glGetIntegerv(GL_MAX_COLOR_TEXTURE_SAMPLES, &maxSamples);
+	if(colorSamples > maxSamples)
+		colorSamples = maxSamples;
+	if(samples != colorSamples)
+		msg(MSG_WARNING, "Requested %d msaa samples when rendering to color texture, but only %d is supported.", samples, colorSamples);
+
+	/* Determine an appropriate number of samples to use based on
+	 * what this computer supports. */
+	glGetIntegerv(GL_MAX_DEPTH_TEXTURE_SAMPLES, &maxSamples);
+	GLsizei depthSamples = samples;
+	if(depthSamples > maxSamples)
+		depthSamples = maxSamples;
+	if(samples != depthSamples)
+		msg(MSG_WARNING, "Requested %d msaa samples when rendering to depth texture, but only %d is supported.", samples, depthSamples);
+	
 	
 	// set up texture
 	if(texture != NULL)
 	{
 		glGenTextures(1, texture);
 		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, *texture);
-		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB8,
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, colorSamples, GL_RGB,
 		                        width, height, GL_TRUE);
 		kuhl_errorcheck();
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -3786,7 +3808,7 @@ GLint kuhl_gen_framebuffer_msaa(int width, int height, GLuint *texture, GLuint *
 	{
 		glGenTextures(1, depthTexture);
 		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, *depthTexture);
-		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_DEPTH24_STENCIL8, width, height, GL_TRUE);
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, depthSamples, GL_DEPTH24_STENCIL8, width, height, GL_TRUE);
 		kuhl_errorcheck();
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -3800,11 +3822,19 @@ GLint kuhl_gen_framebuffer_msaa(int width, int height, GLuint *texture, GLuint *
 	glGenFramebuffers(1, &framebuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
-	// setup depth buffer
+	/* --- setup depth buffer ---*/
+	// First, determine number of samples.
+	GLsizei rbuffSamples = samples;
+	glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
+	if(rbuffSamples > maxSamples)
+		rbuffSamples = maxSamples;
+	if(samples != rbuffSamples)
+		msg(MSG_WARNING, "Requested %d msaa samples for renderbuffer, but only %d is supported.", samples, rbuffSamples);
+	// Next, create the depth buffer
 	GLuint depthbuffer = 0;
 	glGenRenderbuffers(1, &depthbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer);
-	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, width, height);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, rbuffSamples, GL_DEPTH24_STENCIL8, width, height);
 	
 	// Connect FBO to depth buffer
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER,
