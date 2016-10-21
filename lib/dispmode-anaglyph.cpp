@@ -3,9 +3,26 @@
 #include "viewmat.h"
 #include "vecmat.h"
 #include "dispmode-anaglyph.h"
+#include "kuhl-config.h"
 
 dispmodeAnaglyph::dispmodeAnaglyph()
 {
+	ipd = 6.0;
+	if(kuhl_config_get("ipd") == NULL)
+	{
+		msg(MSG_WARNING, "The 'ipd' setting was unset or empty. Defaulting to %0.2f cm.", ipd);
+	}
+	else
+	{
+		float ipd = kuhl_config_float("ipd", -1234.0f, -1234.0f);
+		if(ipd == -1234.0f)
+		{
+			msg(MSG_WARNING, "The 'ipd' setting was set an invalid value: '%s'", kuhl_config_get("ipd"));
+			msg(MSG_WARNING, "Defaulting IPD to %0.2f cm.");
+		}
+	}
+
+	
 }
 
 viewmat_eye dispmodeAnaglyph::eye_type(int viewportID)
@@ -16,6 +33,16 @@ viewmat_eye dispmodeAnaglyph::eye_type(int viewportID)
 		return VIEWMAT_EYE_RIGHT;
 	else
 		return VIEWMAT_EYE_UNKNOWN;
+}
+
+void dispmodeAnaglyph::get_eyeoffset(float offset[3], viewmat_eye eye)
+{
+	if(eye == VIEWMAT_EYE_LEFT)
+		vec3f_set(offset, -ipd/2.0f / 100.0f, 0, 0);
+	else if(eye == VIEWMAT_EYE_RIGHT)
+		vec3f_set(offset, ipd/2.0f / 100.0f, 0, 0);
+	else
+		vec3f_set(offset,0,0,0);
 }
 
 int dispmodeAnaglyph::num_viewports(void)
