@@ -17,7 +17,7 @@
 #include "libkuhl.h"
 static GLuint program = 0; /**< id value for the GLSL program */
 
-static kuhl_geometry triangle;
+static kuhl_geometry quad;
 static video_state* video = NULL;
 static char *videofilename = NULL;
 
@@ -44,7 +44,7 @@ static void update_video()
 		startTime = kuhl_microseconds();
 		
 		/* Tell this piece of geometry to use the texture we just loaded. */
-		kuhl_geometry_texture(&triangle, texId, "tex", KG_WARN);
+		kuhl_geometry_texture(&quad, texId, "tex", KG_WARN);
 
 		/* Get the frame that should be displayed next */
 		video = video_get_next_frame(video, videofilename);
@@ -58,6 +58,12 @@ static void update_video()
 		/* Display the frame we previously loaded */
 		glDeleteTextures(1, &texId);
 		texId = kuhl_read_texture_array(video->data, 1920, 1080, 3, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+
+		/* Tell this piece of geometry to use the texture we just
+		 * loaded. Frequently, texId won't change because we just
+		 * deleted the texture and then reloaded a texture (causing
+		 * the same id to be used again). */
+		kuhl_geometry_texture(&quad, texId, "tex", KG_WARN);
 
 		/* Get the next frame that should be displayed next */
 		video = video_get_next_frame(video, videofilename);
@@ -164,7 +170,7 @@ void display()
 		kuhl_errorcheck();
 		/* Draw the geometry using the matrices that we sent to the
 		 * vertex programs immediately above */
-		kuhl_geometry_draw(&triangle);
+		kuhl_geometry_draw(&quad);
 
 		glUseProgram(0); // stop using a GLSL program.
 		viewmat_end_eye(viewportID);
@@ -215,33 +221,6 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 }
 
 
-void init_geometryTriangle(kuhl_geometry *geom, GLuint prog)
-{
-	kuhl_geometry_new(geom, prog, 3, GL_TRIANGLES);
-
-	GLfloat texcoordData[] = {0, 0,
-	                          1, 0,
-	                          1, 1 };
-	kuhl_geometry_attrib(geom, texcoordData, 2, "in_TexCoord", KG_WARN);
-
-
-	/* The data that we want to draw */
-	GLfloat vertexData[] = {0, 0, 0,
-	                        1, 0, 0,
-	                        1, 1, 0};
-	kuhl_geometry_attrib(geom, vertexData, 3, "in_Position", KG_WARN);
-
-
-	/* Load the texture. It will be bound to texId */	
-	//GLuint texId = 0;
-	//kuhl_read_texture_file("../images/rainbow.png", &texId);
-
-	update_video();
-
-
-	kuhl_errorcheck();
-}
-
 int main(int argc, char** argv)
 {
 	/* Initialize GLFW and GLEW */
@@ -266,7 +245,7 @@ int main(int argc, char** argv)
 	glUseProgram(program);
 	kuhl_errorcheck();
 
-	init_geometryQuad(&triangle, program);
+	init_geometryQuad(&quad, program);
 	
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);
