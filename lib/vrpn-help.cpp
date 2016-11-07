@@ -247,7 +247,7 @@ static int vrpn_update(const char *fullname, float pos[3], float orient[16])
 	 * X = points to the right (while facing screen)
 	 * Y = points into the screen
 	 * Z = up
-	 * (left-handed coordinate system)
+	 * (right-handed coordinate system)
 	 *
 	 * PPT is typically calibrated so that:
 	 * X = the points to the wall that has two closets at both corners
