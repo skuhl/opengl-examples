@@ -66,6 +66,12 @@ int main(int argc, char** argv)
 	msg(MSG_INFO, "  GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 	msg(MSG_INFO, "       Version: %s", glGetString(GL_VENDOR));
 	msg(MSG_INFO, "      Renderer: %s", glGetString(GL_RENDERER));
+
+	/* texture size */
+	GLint maxTextureSize = 0;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+	msg(MSG_INFO, "Maximum texture size estimate: %dx%d\n", maxTextureSize, maxTextureSize);
+	
 	
 	exit(EXIT_SUCCESS);
 }
