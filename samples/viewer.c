@@ -178,6 +178,9 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			printf("Point size is %f (can be between %f and %f)\n", temp, sizeRange[0], sizeRange[1]);
 			kuhl_errorcheck();
 
+			// The only line width guaranteed to be available is
+			// 1. Larger sizes will be available if your OpenGL
+			// implementation or graphics card supports it.
 			GLfloat currentLineWidth;
 			GLfloat widthRange[2] = { -1.0f, -1.0f };
 			glGetFloatv(GL_LINE_WIDTH, &currentLineWidth);
