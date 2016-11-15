@@ -159,10 +159,16 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			}
 			break;
 		}
+		case GLFW_KEY_EQUAL:  // The = and + key on most keyboards
 		case GLFW_KEY_KP_ADD: // increase size of points and width of lines
 		{
+			// How can we distinguish between '=' and '+'? The 'mods'
+			// variable should contain GLFW_MOD_SHIFT if the shift key
+			// is pressed along with the '=' key. However, we accept
+			// both versions.
+			
 			GLfloat currentPtSize;
-			GLfloat sizeRange[2];
+			GLfloat sizeRange[2] = { -1.0f, -1.0f };
 			glGetFloatv(GL_POINT_SIZE, &currentPtSize);
 			glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, sizeRange);
 			GLfloat temp = currentPtSize+1;
@@ -173,7 +179,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			kuhl_errorcheck();
 
 			GLfloat currentLineWidth;
-			GLfloat widthRange[2];
+			GLfloat widthRange[2] = { -1.0f, -1.0f };
 			glGetFloatv(GL_LINE_WIDTH, &currentLineWidth);
 			glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, widthRange);
 			temp = currentLineWidth+1;
@@ -188,7 +194,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 		case GLFW_KEY_KP_SUBTRACT:
 		{
 			GLfloat currentPtSize;
-			GLfloat sizeRange[2];
+			GLfloat sizeRange[2] = { -1.0f, -1.0f };
 			glGetFloatv(GL_POINT_SIZE, &currentPtSize);
 			glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, sizeRange);
 			GLfloat temp = currentPtSize-1;
@@ -199,7 +205,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			kuhl_errorcheck();
 
 			GLfloat currentLineWidth;
-			GLfloat widthRange[2];
+			GLfloat widthRange[2] = { -1.0f, -1.0f };
 			glGetFloatv(GL_LINE_WIDTH, &currentLineWidth);
 			glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, widthRange);
 			temp = currentLineWidth-1;
