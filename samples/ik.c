@@ -306,11 +306,7 @@ void effector_target(float target[4])
 }
 
 
-
-/** Called by GLUT whenever the window needs to be redrawn. This
- * function should not be called directly by the programmer. Instead,
- * we can call glutPostRedisplay() to request that GLUT call display()
- * at some point. */
+/** Draws the 3D scene. */
 void display()
 {
 	/* Ensure the slaves use the same render style as the master
