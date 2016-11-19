@@ -219,8 +219,9 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			kuhl_errorcheck();
 			break;
 		}
-		
-		case GLFW_KEY_PERIOD: // Toggle different sections of the GLSL fragment shader
+		// Toggle different sections of the GLSL fragment shader
+		case GLFW_KEY_SPACE:
+		case GLFW_KEY_PERIOD:
 			renderStyle++;
 			if(renderStyle > 9)
 				renderStyle = 0;
