@@ -1721,6 +1721,9 @@ void kuhl_geometry_delete(kuhl_geometry *geom)
  *
  * @param height The height of the image represented by the array in pixels.
  *
+ * @param components Use 3 when the array contains RGB data and 4 when
+ * it contains RGBA data.
+ *
  * @param wrapS The wrapping texture parameter to apply to GL_TEXTURE_WRAP_S.
  *
  * @param wrapT The wrapping texture parameter to apply to GL_TEXTURE_WRAP_T.

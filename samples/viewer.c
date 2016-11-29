@@ -159,10 +159,16 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			}
 			break;
 		}
+		case GLFW_KEY_EQUAL:  // The = and + key on most keyboards
 		case GLFW_KEY_KP_ADD: // increase size of points and width of lines
 		{
+			// How can we distinguish between '=' and '+'? The 'mods'
+			// variable should contain GLFW_MOD_SHIFT if the shift key
+			// is pressed along with the '=' key. However, we accept
+			// both versions.
+			
 			GLfloat currentPtSize;
-			GLfloat sizeRange[2];
+			GLfloat sizeRange[2] = { -1.0f, -1.0f };
 			glGetFloatv(GL_POINT_SIZE, &currentPtSize);
 			glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, sizeRange);
 			GLfloat temp = currentPtSize+1;
@@ -172,8 +178,11 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			printf("Point size is %f (can be between %f and %f)\n", temp, sizeRange[0], sizeRange[1]);
 			kuhl_errorcheck();
 
+			// The only line width guaranteed to be available is
+			// 1. Larger sizes will be available if your OpenGL
+			// implementation or graphics card supports it.
 			GLfloat currentLineWidth;
-			GLfloat widthRange[2];
+			GLfloat widthRange[2] = { -1.0f, -1.0f };
 			glGetFloatv(GL_LINE_WIDTH, &currentLineWidth);
 			glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, widthRange);
 			temp = currentLineWidth+1;
@@ -188,7 +197,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 		case GLFW_KEY_KP_SUBTRACT:
 		{
 			GLfloat currentPtSize;
-			GLfloat sizeRange[2];
+			GLfloat sizeRange[2] = { -1.0f, -1.0f };
 			glGetFloatv(GL_POINT_SIZE, &currentPtSize);
 			glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, sizeRange);
 			GLfloat temp = currentPtSize-1;
@@ -199,7 +208,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			kuhl_errorcheck();
 
 			GLfloat currentLineWidth;
-			GLfloat widthRange[2];
+			GLfloat widthRange[2] = { -1.0f, -1.0f };
 			glGetFloatv(GL_LINE_WIDTH, &currentLineWidth);
 			glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, widthRange);
 			temp = currentLineWidth-1;
@@ -210,8 +219,9 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			kuhl_errorcheck();
 			break;
 		}
-		
-		case GLFW_KEY_PERIOD: // Toggle different sections of the GLSL fragment shader
+		// Toggle different sections of the GLSL fragment shader
+		case GLFW_KEY_SPACE:
+		case GLFW_KEY_PERIOD:
 			renderStyle++;
 			if(renderStyle > 9)
 				renderStyle = 0;
@@ -268,10 +278,7 @@ void get_model_matrix(float result[16])
 
 
 
-/** Called by GLUT whenever the window needs to be redrawn. This
- * function should not be called directly by the programmer. Instead,
- * we can call glutPostRedisplay() to request that GLUT call display()
- * at some point. */
+/** Draws the 3D scene. */
 void display()
 {
 	/* Display FPS if we are a DGR master OR if we are running without DGR. */

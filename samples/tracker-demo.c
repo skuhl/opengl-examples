@@ -21,8 +21,6 @@ GLuint program = 0; /**< id value for the GLSL program */
 int global_argc = 0;
 char **global_argv;
 
-static kuhl_fps_state fps_state;
-
 kuhl_geometry *modelgeom  = NULL;
 
 kuhl_geometry quad;
@@ -145,17 +143,12 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint prog)
 /** Draws the 3D scene. */
 void display()
 {
-	/* Get current frames per second calculations. */
-	float fps = kuhl_getfps(&fps_state);
-
-	if(dgr_is_enabled() == 0 || dgr_is_master())
+	static int frameCount = 0;
+	frameCount++;
+	if(frameCount > 60)
 	{
-		// If DGR is being used, only display dgr counter if we are
-		// the master process.
-
-		// Check if FPS value was just updated by kuhl_getfps()
-		if(fps_state.frame == 0)
-			msg(MSG_INFO, "FPS: %0.1f", fps);
+		frameCount = 0;
+		msg(MSG_INFO, "FPS: %.1f\n", bufferswap_fps());
 	}
 	
 	/* Render the scene once for each viewport. Frequently one

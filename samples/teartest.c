@@ -65,22 +65,22 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 }
 
 
-static kuhl_fps_state fps_state;
-int toggle = 0;
-/* Called by GLUT whenever the window needs to be redrawn. This
- * function should not be called directly by the programmer. Instead,
- * we can call glutPostRedisplay() to request that GLUT call display()
- * at some point. */
+/** Draws the 3D scene. */
 void display()
 {
 	int tmp=1;
 	// send something to DGR so the slaves don't think that the server has died.
 	dgr_setget("dummy", &tmp, sizeof(int));
 
-	float fps = kuhl_getfps(&fps_state);
-	if(fps_state.frame == 0)
-		msg(MSG_INFO, "FPS: %.1f\n", fps);
+	static int frameCount = 0;
+	frameCount++;
+	if(frameCount > 60)
+	{
+		frameCount = 0;
+		msg(MSG_INFO, "FPS: %.1f\n", bufferswap_fps());
+	}
 
+	static int toggle = 0;
 	toggle++;
 	if(toggle > 1)
 		toggle = 0;

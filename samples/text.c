@@ -50,16 +50,10 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 	}
 }
 
-/* Called by GLUT whenever the window needs to be redrawn. This
- * function should not be called directly by the programmer. Instead,
- * we can call glutPostRedisplay() to request that GLUT call display()
- * at some point. */
-static kuhl_fps_state fps_state;
+
+/** Draws the 3D scene. */
 void display()
 {
-	/* Get current frames per second calculations. */
-	float fps = kuhl_getfps(&fps_state);
-	
 	/* Render the scene once for each viewport. Frequently one
 	 * viewport will fill the entire screen. However, this loop will
 	 * run twice for HMDs (once for the left eye and once for the
@@ -148,8 +142,7 @@ void display()
 			//y = glutGet(GLUT_WINDOW_HEIGHT) - 36 * 2;
 			//y = 200;
 			char label[1024] = "FPS: -0.0";
-			// Check if FPS value was just updated by kuhl_getfps()
-			snprintf(label, 1024, "FPS: %0.1f", fps);
+			snprintf(label, 1024, "FPS: %0.1f", bufferswap_fps());
 			font_draw(&text, label, x, y);
 			kuhl_errorcheck();
 		}
@@ -242,8 +235,6 @@ int main(int argc, char** argv)
 
 	dgr_init();     /* Initialize DGR based on environment variables. */
 	
-	kuhl_getfps_init(&fps_state);
-
 	float initCamPos[3]  = {0,0,10}; // location of camera
 	float initCamLook[3] = {0,0,0}; // a point the camera is facing at
 	float initCamUp[3]   = {0,1,0}; // a vector indicating which direction is up
