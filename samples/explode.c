@@ -33,12 +33,6 @@ static float bbox[6];
  * FIT_TO_VIEW is not set, this is the location in world
  * coordinates that we want to model's origin to appear at. */
 static float placeToPutModel[3] = { 0, 0, 0 };
-/** SketchUp produces files that older versions of ASSIMP think 1 unit
- * is 1 inch. However, all of this software assumes that 1 unit is 1
- * meter. So, we need to convert some models from inches to
- * meters. Newer versions of ASSIMP correctly read the same files and
- * give us units in meters. */
-#define INCHES_TO_METERS 0
 
 typedef struct {
 	GLfloat velocity[3];
@@ -238,11 +232,6 @@ void get_model_matrix(float result[16])
 		/* Do inches to meters conversion if we are asked to. */
 		float scale[16];
 		mat4f_identity(scale);
-		if(INCHES_TO_METERS)
-		{
-			float inchesToMeters=1/39.3701;
-			mat4f_scale_new(scale, inchesToMeters, inchesToMeters, inchesToMeters);
-		}
 		mat4f_mult_mat4f_new(result, translate, scale);
 		return;
 	}

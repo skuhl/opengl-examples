@@ -47,13 +47,6 @@ static const float initCamLook[3] = {0.0f,0.0f,-5.0f};
 static const float initCamUp[3]   = {0.0f,1.0f,0.0f};
 
 
-/** SketchUp produces files that older versions of ASSIMP think 1 unit
- * is 1 inch. However, all of this software assumes that 1 unit is 1
- * meter. So, we need to convert some models from inches to
- * meters. Newer versions of ASSIMP correctly read the same files and
- * give us units in meters. */
-#define INCHES_TO_METERS 0
-
 #define GLSL_VERT_FILE "assimp.vert"
 #define GLSL_FRAG_FILE "assimp.frag"
 
@@ -263,15 +256,6 @@ void get_model_matrix(float result[16])
 		mat4f_translateVec_new(transMat, initCamLook);
 
 		mat4f_mult_mat4f_new(result, transMat, fitMat);
-		return;
-	}
-	else  // if NOT fitting to view.
-	{
-		if(INCHES_TO_METERS)
-		{
-			float inchesToMeters=1/39.3701f;
-			mat4f_scale_new(result, inchesToMeters, inchesToMeters, inchesToMeters);
-		}
 		return;
 	}
 }

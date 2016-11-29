@@ -36,14 +36,6 @@ static const float initCamLook[3] = {0,0,-5};
 /** A vector indicating which direction is up. */
 static const float initCamUp[3]   = {0,1,0};
 
-
-/** SketchUp produces files that older versions of ASSIMP think 1 unit
- * is 1 inch. However, all of this software assumes that 1 unit is 1
- * meter. So, we need to convert some models from inches to
- * meters. Newer versions of ASSIMP correctly read the same files and
- * give us units in meters. */
-#define INCHES_TO_METERS 0
-
 static int rotateStyle = 0;
 
 #define GLSL_VERT_FILE "assimp.vert"
@@ -112,11 +104,6 @@ void get_model_matrix(float result[16])
 	else  // if NOT fitting to view.
 	{
 		msg(MSG_ERROR, "Fit to view must be used for this program to work.");
-		if(INCHES_TO_METERS)
-		{
-			float inchesToMeters=1/39.3701;
-			mat4f_scale_new(result, inchesToMeters, inchesToMeters, inchesToMeters);
-		}
 		return;
 	}
 	float rotateAnimate[16];
