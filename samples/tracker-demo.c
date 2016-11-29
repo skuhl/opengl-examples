@@ -16,28 +16,29 @@
 #include <GLFW/glfw3.h>
 
 #include "libkuhl.h"
-GLuint program = 0; /**< id value for the GLSL program */
 
-int global_argc = 0;
-char **global_argv;
+static GLuint program = 0; /**< id value for the GLSL program */
 
-kuhl_geometry *modelgeom  = NULL;
+static int global_argc = 0;
+static char **global_argv;
 
-kuhl_geometry quad;
-GLuint *label = NULL;
-float *labelAspectRatio = NULL;
+static kuhl_geometry *modelgeom  = NULL;
+
+static kuhl_geometry quad;
+static GLuint *label = NULL;
+static float *labelAspectRatio = NULL;
 
 /** Initial position of the camera. 1.55 is a good approximate
  * eyeheight in meters.*/
-const float initCamPos[3]  = {0,1.55,5};
+static const float initCamPos[3]  = {0,1.55,5};
 
 /** A point that the camera should initially be looking at. If
  * fitToView is set, this will also be the position that model will be
  * translated to. */
-const float initCamLook[3] = {0,0,-5};
+static const float initCamLook[3] = {0,0,-5};
 
 /** A vector indicating which direction is up. */
-const float initCamUp[3]   = {0,1,0};
+static const float initCamUp[3]   = {0,1,0};
 
 
 #define GLSL_VERT_FILE "assimp.vert"

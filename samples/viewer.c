@@ -16,35 +16,35 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-GLuint program = 0; /**< id value for the GLSL program */
+static GLuint program = 0; /**< id value for the GLSL program */
 
-int renderStyle = 2;
+static int renderStyle = 2;
 
-kuhl_geometry *fpsgeom = NULL;
-kuhl_geometry *modelgeom  = NULL;
-kuhl_geometry *origingeom = NULL;
-float bbox[6];
+static kuhl_geometry *fpsgeom = NULL;
+static kuhl_geometry *modelgeom  = NULL;
+static kuhl_geometry *origingeom = NULL;
+static float bbox[6];
 
-int fitToView=0;  // was --fit option used?
+static int fitToView=0;  // was --fit option used?
 
 /** The following variable toggles the display an "origin+axis" marker
  * which draws a small box at the origin and draws lines of length 1
  * on each axis. Depending on which matrices are applied to the
  * marker, the marker will be in object, world, etc coordinates. */
-int showOrigin=0; // was --origin option used?
+static int showOrigin=0; // was --origin option used?
 
 
 /** Initial position of the camera. 1.55 is a good approximate
  * eyeheight in meters.*/
-const float initCamPos[3]  = {0.0f,1.55f,0.0f};
+static const float initCamPos[3]  = {0.0f,1.55f,0.0f};
 
 /** A point that the camera should initially be looking at. If
  * fitToView is set, this will also be the position that model will be
  * translated to. */
-const float initCamLook[3] = {0.0f,0.0f,-5.0f};
+static const float initCamLook[3] = {0.0f,0.0f,-5.0f};
 
 /** A vector indicating which direction is up. */
-const float initCamUp[3]   = {0.0f,1.0f,0.0f};
+static const float initCamUp[3]   = {0.0f,1.0f,0.0f};
 
 
 /** SketchUp produces files that older versions of ASSIMP think 1 unit

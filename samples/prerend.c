@@ -16,17 +16,17 @@
 #include <GLFW/glfw3.h>
 
 #include "libkuhl.h"
-GLuint program = 0; /**< id value for the GLSL program */
-GLuint prerendProgram = 0;
+static GLuint program = 0; /**< id value for the GLSL program */
+static GLuint prerendProgram = 0;
 
 #define USE_MSAA 1
-GLuint prerenderFrameBuffer = 0;
-GLuint prerenderFrameBufferAA = 0;
-GLuint prerenderTexID = 0;
+static GLuint prerenderFrameBuffer = 0;
+static GLuint prerenderFrameBufferAA = 0;
+static GLuint prerenderTexID = 0;
 
-kuhl_geometry triangle;
-kuhl_geometry quad;
-kuhl_geometry prerendQuad;
+static kuhl_geometry triangle;
+static kuhl_geometry quad;
+static kuhl_geometry prerendQuad;
 
 
 /* Called by GLFW whenever a key is pressed. */

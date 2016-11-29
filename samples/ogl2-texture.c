@@ -16,8 +16,8 @@
 
 #include "libkuhl.h"
 
-GLuint texID = 0;
-float texAspectRatio = 0;
+static GLuint texID = 0;
+static float texAspectRatio = 0;
 
 
 /* Called by GLFW whenever a key is pressed. */

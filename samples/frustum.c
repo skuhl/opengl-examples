@@ -16,15 +16,16 @@
 #include <GLFW/glfw3.h>
 
 #include "libkuhl.h"
-GLuint program = 0; /**< id value for the GLSL program */
 
-float camPos[3]  = {0,1.5,0}; /**< location of camera, 1.5 m eyeheight */
+static GLuint program = 0; /**< id value for the GLSL program */
+
+static float camPos[3]  = {0,1.5,0}; /**< location of camera, 1.5 m eyeheight */
 
 /** Position of screen in world coordinates:
  left, right, bottom, top, near, far */
-const float screen[6] = { -2, 2, 0, 4, -1, -100 };
+static const float screen[6] = { -2, 2, 0, 4, -1, -100 };
 
-kuhl_geometry *modelgeom = NULL;
+static kuhl_geometry *modelgeom = NULL;
 
 /* Called by GLFW whenever a key is pressed. */
 void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)

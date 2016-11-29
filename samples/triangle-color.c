@@ -15,9 +15,9 @@
 #include <GLFW/glfw3.h>
 
 #include "libkuhl.h"
-GLuint program = 0; /**< id value for the GLSL program */
 
-kuhl_geometry triangle;
+static GLuint program = 0; /**< id value for the GLSL program */
+static kuhl_geometry triangle;
 
 
 /* Called by GLFW whenever a key is pressed. */

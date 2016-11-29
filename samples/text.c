@@ -15,14 +15,15 @@
 #include <GLFW/glfw3.h>
 
 #include "libkuhl.h"
-GLuint program = 0; // id value for the GLSL program
-GLuint program_font = 0; // id value for the GLSL program
 
-kuhl_geometry triangle;
-font_info text;
+static GLuint program = 0; // id value for the GLSL program
+static GLuint program_font = 0; // id value for the GLSL program
 
-unsigned bufferLen = 8;
-char buffer[1024] = "Edit me!";
+static kuhl_geometry triangle;
+static font_info text;
+
+static unsigned bufferLen = 8;
+static char buffer[1024] = "Edit me!";
 
 /* Called by GLFW whenever a key is pressed. */
 void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
