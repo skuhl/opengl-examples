@@ -285,7 +285,7 @@ static void bufferswap_init(void)
 	if(viewmat_swapinterval == 0)
 	{
 		msg(MSG_WARNING, "Buffer swapping can happen at any time; FPS can go above monitor refresh rate; tearing may occur.");
-		msg(MSG_WARNING, "Set viewmat.swapinterval to -1 to swap buffers during monitor refresh.");
+		msg(MSG_WARNING, "Set viewmat.swapinterval to -1 to swap buffers during monitor refresh (except when FPS drops below monitor refresh rate).");
 	}
 
 	/* Swap interval settings:
