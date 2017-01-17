@@ -29,8 +29,9 @@ static int imageio_type_to_bytes(StorageType t)
 		case CharPixel:    return sizeof(char);
 		case DoublePixel:  return sizeof(double);
 		case FloatPixel:   return sizeof(float);
-		case IntegerPixel: return sizeof(int);
+			//case IntegerPixel: return sizeof(int);
 		case LongPixel:    return sizeof(long);
+		case LongLongPixel:    return sizeof(long long);
 		case ShortPixel:   return sizeof(short);
 		default:
 			fprintf(stderr, "imageio_type_to_bytes: Wrong type\n");
@@ -46,12 +47,11 @@ static int imageio_type_to_bytes(StorageType t)
 static Image* imageio_flip(Image *image)
 {
 	/* Flip image so origin is at bottom left. */
-	ExceptionInfo exception;
-	GetExceptionInfo(&exception);
-	Image *flipped = FlipImage(image, &exception);
+	ExceptionInfo *exception = AcquireExceptionInfo();
+	Image *flipped = FlipImage(image, exception);
 	DestroyImage(image);
-	MagickError(exception.severity, exception.reason, exception.description);
-	DestroyExceptionInfo(&exception);
+	MagickError(exception->severity, exception->reason, exception->description);
+	DestroyExceptionInfo(exception);
 	return flipped;
 }
 
@@ -62,7 +62,7 @@ int imageout(const imageio_info *iio_info, void* array)
 {
 	Image *image = NULL;
 	ImageInfo *image_info = CloneImageInfo((ImageInfo*)NULL);
-	ExceptionInfo exception;
+	ExceptionInfo *exception;
 
 	if(IMAGEIO_DEBUG) {
 		printf("imageout %s: Trying to write file with %lu bit/channel.\n", iio_info->filename, iio_info->depth);
@@ -74,9 +74,9 @@ int imageout(const imageio_info *iio_info, void* array)
 	//if(!IsMagickInstantiated())
 	MagickCoreGenesis(NULL, MagickTrue);
 
-	GetExceptionInfo(&exception);
+	exception = AcquireExceptionInfo();
 	image = ConstituteImage(iio_info->width, iio_info->height, iio_info->map,
-	                        iio_info->type, array, &exception);
+	                        iio_info->type, array, exception);
 
 	/* Tell imagemagick the colorspace of our data. If the colorspace
 	   is CMYK and the output file supports it, imagemagick may output
@@ -95,14 +95,14 @@ int imageout(const imageio_info *iio_info, void* array)
 	if(image->colorspace == sRGBColorspace)
 		image_info->type = TrueColorType;
 	
-	MagickError(exception.severity, exception.reason, exception.description);
+	MagickError(exception->severity, exception->reason, exception->description);
 	image = imageio_flip(image);
 
-	SyncAuthenticPixels(image, &image->exception);
+	SyncAuthenticPixels(image, exception);
 
 	/* Set image comment */
 	if(iio_info->comment != NULL)
-		SetImageProperty(image, "comment", iio_info->comment);
+		SetImageProperty(image, "comment", iio_info->comment, exception);
 
 	/* Set other image information. */
 	image_info->quality = iio_info->quality;
@@ -111,14 +111,14 @@ int imageout(const imageio_info *iio_info, void* array)
 	strncpy(image_info->filename, iio_info->filename, MaxTextExtent-1);
 	strncpy(image->filename, iio_info->filename, MaxTextExtent-1);
 	/* Write the image out to a file */
-	if(WriteImage(image_info, image) == MagickFalse)
+	if(WriteImage(image_info, image, exception) == MagickFalse)
 	{
-		fprintf(stderr, "imageout %s: ERROR %s\n", iio_info->filename, image->exception.reason);
+		fprintf(stderr, "imageout %s: ERROR %s\n", iio_info->filename, exception->reason);
 		return 0;
 	}
 	DestroyImageInfo(image_info);
 	DestroyImage(image);
-	DestroyExceptionInfo(&exception);
+	DestroyExceptionInfo(exception);
 	// No real need to destroy the MagickCore environment, the user
 	// might try to load another texture later...
 	//MagickCoreTerminus();
@@ -152,15 +152,14 @@ void* imagein(imageio_info *iio_info)
 
 	/* read in the image */
 	MagickCoreGenesis(NULL, MagickTrue);
-	ExceptionInfo exception;
-	GetExceptionInfo(&exception);
+	ExceptionInfo *exception = AcquireExceptionInfo();
 	
 	ImageInfo *image_info = CloneImageInfo((ImageInfo*)NULL);
 	strncpy(image_info->filename, iio_info->filename, MaxTextExtent-1);
-	Image *image = ReadImage(image_info, &exception);
+	Image *image = ReadImage(image_info, exception);
 	if(image == NULL)
 	{
-		fprintf(stderr, "imagein  %s: ERROR %s\n", iio_info->filename, exception.reason);
+		fprintf(stderr, "imagein  %s: ERROR %s\n", iio_info->filename, exception->reason);
 		return NULL;
 	}
 
@@ -168,8 +167,8 @@ void* imagein(imageio_info *iio_info)
 	   component seems sometimes causes the non-traparent texture to
 	   incorrectly be transparent. The following code attempts to fix
 	   this. */
-	if(GetImageAlphaChannel(image) == MagickFalse)
-		SetImageOpacity(image, 0);
+//	if(GetImageAlphaChannel(image) == MagickFalse)
+//		SetImageOpacity(image, 0);
 
 	/* Since ImageMagick 6.7.5-5 (circa 2012), RGB files without a
 	  defined colorspace will be marked as being sRGB under the
@@ -191,7 +190,7 @@ void* imagein(imageio_info *iio_info)
 	   image->colorspace != GRAYColorspace)
 	{
 		printf("imagein  %s: Applying colorspace transformation (%d to %d)...\n", iio_info->filename, image->colorspace, iio_info->colorspace);
-		TransformImageColorspace(image, iio_info->colorspace);
+		TransformImageColorspace(image, iio_info->colorspace, exception);
 	}
 	
 	
@@ -214,10 +213,10 @@ void* imagein(imageio_info *iio_info)
 
 	/* Copy the data into the array */
 	ExportImagePixels(image, 0, 0, image->columns, image->rows, iio_info->map,
-	                  iio_info->type, array, &exception);
+	                  iio_info->type, array, exception);
 
-	MagickError(exception.severity, exception.reason, exception.description);
-	SyncAuthenticPixels(image, &image->exception);
+	MagickError(exception->severity, exception->reason, exception->description);
+	SyncAuthenticPixels(image, exception);
 
 	/* Copy information from the file into our iio_info struct */
 	iio_info->width = image->columns;
@@ -225,7 +224,7 @@ void* imagein(imageio_info *iio_info)
 	iio_info->quality = -1;  /* N/A */
 	iio_info->depth = image->depth;
 
-	const char* imagecomment = GetImageProperty(image, "comment");
+	const char* imagecomment = GetImageProperty(image, "comment", exception);
 	if(imagecomment != NULL)
 	{
 		// allocate room to copy \0 in string:
@@ -238,7 +237,7 @@ void* imagein(imageio_info *iio_info)
 
 	DestroyImageInfo(image_info);
 	DestroyImage(image);
-	DestroyExceptionInfo(&exception);
+	DestroyExceptionInfo(exception);
 	// No real need to destroy the MagickCore environment, the user
 	// might try to load another texture later...
 	//MagickCoreTerminus();
@@ -279,21 +278,20 @@ char* image_label(const char *label, int* width, int* height, float color[3], fl
 
 //	if(!IsMagickInstantiated())
 	MagickCoreGenesis(NULL, MagickTrue);
-	ExceptionInfo exception;
-	GetExceptionInfo(&exception);
-	MagickPixelPacket background;
-	GetMagickPixelPacket(NULL, &background);
+	ExceptionInfo *exception = AcquireExceptionInfo();
+	PixelInfo background;
+	//MagickPixelPacket background;
+	GetPixelInfo(NULL, &background);
 
-	background.red     = (Quantum) (QuantumRange*(bgcolor[0]));
-	background.green   = (Quantum) (QuantumRange*(bgcolor[1]));
-	background.blue    = (Quantum) (QuantumRange*(bgcolor[2]));
-	// Opacity in values are flipped in imagemagick
-	background.opacity = (Quantum) (QuantumRange*(1-bgcolor[3]));
-	background.matte = MagickTrue;
+	background.red     = QuantumRange*bgcolor[0];
+	background.green   = QuantumRange*bgcolor[1];
+	background.blue    = QuantumRange*bgcolor[2];
+	background.alpha   = QuantumRange*bgcolor[3];
+	background.alpha_trait = BlendPixelTrait;
 
 	// Get a small image to draw on 
 	ImageInfo* image_info = CloneImageInfo((ImageInfo*)NULL);
-	Image* image = NewMagickImage(image_info, 10, 10, &background);
+	Image* image = NewMagickImage(image_info, 10, 10, &background, exception);
 	DrawInfo* draw_info = CloneDrawInfo(image_info, (DrawInfo*) NULL);
 
 	CloneString(&draw_info->text, label);
@@ -301,17 +299,18 @@ char* image_label(const char *label, int* width, int* height, float color[3], fl
 	draw_info->pointsize = pointsize;
 	draw_info->gravity = SouthEastGravity;
 	CloneString(&draw_info->geometry, "+0+0");
-	draw_info->fill.red   = (Quantum) (QuantumRange*color[0]);
-	draw_info->fill.green = (Quantum) (QuantumRange*color[1]);
-	draw_info->fill.blue  = (Quantum) (QuantumRange*color[2]);
+	draw_info->fill.red  = QuantumRange*color[0];
+	draw_info->fill.green= QuantumRange*color[1];
+	draw_info->fill.blue = QuantumRange*color[2];
+	
 	// disable antialiasing
 	// draw_info->text_antialias = MagickFalse;
 	// Opacity in values are flipped in imagemagick
-	draw_info->fill.opacity = 0; // opaque
+	draw_info->fill.alpha = QuantumRange; // opaque
 	
 	// Figure out how big we'll need to draw
 	TypeMetric metric;
-	GetTypeMetrics(image, draw_info, &metric);
+	GetTypeMetrics(image, draw_info, &metric, exception);
 	*width = (int) metric.width;
 	*height = (int) metric.height;
 
@@ -335,21 +334,21 @@ char* image_label(const char *label, int* width, int* height, float color[3], fl
 
 	// Get new image
 	image_info = AcquireImageInfo();
-	image = NewMagickImage(image_info, *width, *height, &background);
+	image = NewMagickImage(image_info, *width, *height, &background, exception);
 
 	/* TODO: If we draw a solid background and transparent text, we
 	 * don't get a texture where the text is see-through. */
-	AnnotateImage(image, draw_info);
+	AnnotateImage(image, draw_info, exception);
 //	DisplayImages(image_info, image); //(works best if image isn't transparent
 
 	image = imageio_flip(image);
 	char *array = malloc(4*(*width)*(*height));
 	ExportImagePixels(image, 0, 0, *width, *height, "RGBA",
-	                  CharPixel, array, &exception);
+	                  CharPixel, array, exception);
 	DestroyImageInfo(image_info);
 	DestroyImage(image);
 	DestroyDrawInfo(draw_info);
-	DestroyExceptionInfo(&exception);
+	DestroyExceptionInfo(exception);
 
 	// No real need to destroy the MagickCore environment, the user
 	// might try to load another texture later...

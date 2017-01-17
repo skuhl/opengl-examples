@@ -36,8 +36,8 @@ http://www.imagemagick.org/script/license.php
 #define MAGICKCORE_QUANTUM_DEPTH 16
 #endif
 
-/* TODO: This changes to MagickCore/MagickCore.h in ImageMagick 7 */
-#include <magick/MagickCore.h>
+// Use ImageMagick 7 API
+#include <MagickCore/MagickCore.h>
 
 #ifdef __cplusplus
 extern "C" {
