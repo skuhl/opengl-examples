@@ -16,18 +16,18 @@
 #include <GLFW/glfw3.h>
 
 #include "libkuhl.h"
-GLuint program = 0; /**< id value for the GLSL program */
 
-kuhl_geometry quad;
-kuhl_geometry cylinder;
+static GLuint program = 0; /**< id value for the GLSL program */
+static kuhl_geometry quad;
+static kuhl_geometry cylinder;
 
 /* cylindrical panorama textures */
-GLuint texIdLeft  = 0;
-GLuint texIdRight = 0;
+static GLuint texIdLeft  = 0;
+static GLuint texIdRight = 0;
 
 /* cubemap textures */
-GLuint cubemapLeftTex[6];
-GLuint cubemapRightTex[6];
+static GLuint cubemapLeftTex[6];
+static GLuint cubemapRightTex[6];
 
 
 
@@ -94,10 +94,7 @@ void setupCubemap(GLuint texId[6], kuhl_geometry q, const float origModelView[16
 }
 
 
-/* Called by GLUT whenever the window needs to be redrawn. This
- * function should not be called directly by the programmer. Instead,
- * we can call glutPostRedisplay() to request that GLUT call display()
- * at some point. */
+/** Draws the 3D scene. */
 void display()
 {
 	/* Render the scene once for each viewport. Frequently one

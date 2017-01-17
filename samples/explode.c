@@ -16,12 +16,12 @@
 #include <GLFW/glfw3.h>
 
 #include "libkuhl.h"
-GLuint program = 0; /**< id value for the GLSL program */
+static GLuint program = 0; /**< id value for the GLSL program */
 
-int renderStyle = 2;
+static int renderStyle = 2;
 
-kuhl_geometry *modelgeom = NULL;
-float bbox[6];
+static kuhl_geometry *modelgeom = NULL;
+static float bbox[6];
 
 /** Set this variable to 1 to force this program to scale the entire
  * model and translate it so that we can see the entire model. This is
@@ -32,22 +32,13 @@ float bbox[6];
  * center of the bottom face of the bounding box. If
  * FIT_TO_VIEW is not set, this is the location in world
  * coordinates that we want to model's origin to appear at. */
-float placeToPutModel[3] = { 0, 0, 0 };
-/** SketchUp produces files that older versions of ASSIMP think 1 unit
- * is 1 inch. However, all of this software assumes that 1 unit is 1
- * meter. So, we need to convert some models from inches to
- * meters. Newer versions of ASSIMP correctly read the same files and
- * give us units in meters. */
-#define INCHES_TO_METERS 0
-
-struct aiScene *scene;
-kuhl_geometry geom;
+static float placeToPutModel[3] = { 0, 0, 0 };
 
 typedef struct {
 	GLfloat velocity[3];
 } particle;
 
-particle **particles;
+static particle **particles;
 
 #define GLSL_VERT_FILE "assimp.vert"
 #define GLSL_FRAG_FILE "assimp.frag"
@@ -241,11 +232,6 @@ void get_model_matrix(float result[16])
 		/* Do inches to meters conversion if we are asked to. */
 		float scale[16];
 		mat4f_identity(scale);
-		if(INCHES_TO_METERS)
-		{
-			float inchesToMeters=1/39.3701;
-			mat4f_scale_new(scale, inchesToMeters, inchesToMeters, inchesToMeters);
-		}
 		mat4f_mult_mat4f_new(result, translate, scale);
 		return;
 	}
@@ -266,10 +252,7 @@ void get_model_matrix(float result[16])
 }
 
 
-/* Called by GLUT whenever the window needs to be redrawn. This
- * function should not be called directly by the programmer. Instead,
- * we can call glutPostRedisplay() to request that GLUT call display()
- * at some point. */
+/** Draws the 3D scene. */
 void display()
 {
 	dgr_setget("style", &renderStyle, sizeof(int));

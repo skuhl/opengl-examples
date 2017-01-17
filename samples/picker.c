@@ -18,11 +18,11 @@
 #include <GLFW/glfw3.h>
 
 #include "libkuhl.h"
-GLuint program = 0; /**< id value for the GLSL program */
+static GLuint program = 0; /**< id value for the GLSL program */
 
-kuhl_geometry cursor;
-kuhl_geometry triangle;
-kuhl_geometry quad;
+static kuhl_geometry cursor;
+static kuhl_geometry triangle;
+static kuhl_geometry quad;
 
 
 /* Called by GLFW whenever a key is pressed. */
@@ -40,10 +40,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 	}
 }
 
-/* Called by GLUT whenever the window needs to be redrawn. This
- * function should not be called directly by the programmer. Instead,
- * we can call glutPostRedisplay() to request that GLUT call display()
- * at some point. */
+/** Draws the 3D scene. */
 void display()
 {
 	/* Render the scene once for each viewport. Frequently one

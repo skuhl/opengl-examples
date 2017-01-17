@@ -16,43 +16,36 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-GLuint program = 0; /**< id value for the GLSL program */
+static GLuint program = 0; /**< id value for the GLSL program */
 
-int renderStyle = 2;
+static int renderStyle = 2;
 
-kuhl_geometry *fpsgeom = NULL;
-kuhl_geometry *modelgeom  = NULL;
-kuhl_geometry *origingeom = NULL;
-float bbox[6];
+static kuhl_geometry *fpsgeom = NULL;
+static kuhl_geometry *modelgeom  = NULL;
+static kuhl_geometry *origingeom = NULL;
+static float bbox[6];
 
-int fitToView=0;  // was --fit option used?
+static int fitToView=0;  // was --fit option used?
 
 /** The following variable toggles the display an "origin+axis" marker
  * which draws a small box at the origin and draws lines of length 1
  * on each axis. Depending on which matrices are applied to the
  * marker, the marker will be in object, world, etc coordinates. */
-int showOrigin=0; // was --origin option used?
+static int showOrigin=0; // was --origin option used?
 
 
 /** Initial position of the camera. 1.55 is a good approximate
  * eyeheight in meters.*/
-const float initCamPos[3]  = {0.0f,1.55f,0.0f};
+static const float initCamPos[3]  = {0.0f,1.55f,0.0f};
 
 /** A point that the camera should initially be looking at. If
  * fitToView is set, this will also be the position that model will be
  * translated to. */
-const float initCamLook[3] = {0.0f,0.0f,-5.0f};
+static const float initCamLook[3] = {0.0f,0.0f,-5.0f};
 
 /** A vector indicating which direction is up. */
-const float initCamUp[3]   = {0.0f,1.0f,0.0f};
+static const float initCamUp[3]   = {0.0f,1.0f,0.0f};
 
-
-/** SketchUp produces files that older versions of ASSIMP think 1 unit
- * is 1 inch. However, all of this software assumes that 1 unit is 1
- * meter. So, we need to convert some models from inches to
- * meters. Newer versions of ASSIMP correctly read the same files and
- * give us units in meters. */
-#define INCHES_TO_METERS 0
 
 #define GLSL_VERT_FILE "assimp.vert"
 #define GLSL_FRAG_FILE "assimp.frag"
@@ -151,10 +144,16 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			}
 			break;
 		}
+		case GLFW_KEY_EQUAL:  // The = and + key on most keyboards
 		case GLFW_KEY_KP_ADD: // increase size of points and width of lines
 		{
+			// How can we distinguish between '=' and '+'? The 'mods'
+			// variable should contain GLFW_MOD_SHIFT if the shift key
+			// is pressed along with the '=' key. However, we accept
+			// both versions.
+			
 			GLfloat currentPtSize;
-			GLfloat sizeRange[2];
+			GLfloat sizeRange[2] = { -1.0f, -1.0f };
 			glGetFloatv(GL_POINT_SIZE, &currentPtSize);
 			glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, sizeRange);
 			GLfloat temp = currentPtSize+1;
@@ -164,8 +163,11 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			printf("Point size is %f (can be between %f and %f)\n", temp, sizeRange[0], sizeRange[1]);
 			kuhl_errorcheck();
 
+			// The only line width guaranteed to be available is
+			// 1. Larger sizes will be available if your OpenGL
+			// implementation or graphics card supports it.
 			GLfloat currentLineWidth;
-			GLfloat widthRange[2];
+			GLfloat widthRange[2] = { -1.0f, -1.0f };
 			glGetFloatv(GL_LINE_WIDTH, &currentLineWidth);
 			glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, widthRange);
 			temp = currentLineWidth+1;
@@ -180,7 +182,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 		case GLFW_KEY_KP_SUBTRACT:
 		{
 			GLfloat currentPtSize;
-			GLfloat sizeRange[2];
+			GLfloat sizeRange[2] = { -1.0f, -1.0f };
 			glGetFloatv(GL_POINT_SIZE, &currentPtSize);
 			glGetFloatv(GL_SMOOTH_POINT_SIZE_RANGE, sizeRange);
 			GLfloat temp = currentPtSize-1;
@@ -191,7 +193,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			kuhl_errorcheck();
 
 			GLfloat currentLineWidth;
-			GLfloat widthRange[2];
+			GLfloat widthRange[2] = { -1.0f, -1.0f };
 			glGetFloatv(GL_LINE_WIDTH, &currentLineWidth);
 			glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, widthRange);
 			temp = currentLineWidth-1;
@@ -202,8 +204,9 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			kuhl_errorcheck();
 			break;
 		}
-		
-		case GLFW_KEY_PERIOD: // Toggle different sections of the GLSL fragment shader
+		// Toggle different sections of the GLSL fragment shader
+		case GLFW_KEY_SPACE:
+		case GLFW_KEY_PERIOD:
 			renderStyle++;
 			if(renderStyle > 9)
 				renderStyle = 0;
@@ -247,23 +250,11 @@ void get_model_matrix(float result[16])
 		mat4f_mult_mat4f_new(result, transMat, fitMat);
 		return;
 	}
-	else  // if NOT fitting to view.
-	{
-		if(INCHES_TO_METERS)
-		{
-			float inchesToMeters=1/39.3701f;
-			mat4f_scale_new(result, inchesToMeters, inchesToMeters, inchesToMeters);
-		}
-		return;
-	}
 }
 
 
 
-/** Called by GLUT whenever the window needs to be redrawn. This
- * function should not be called directly by the programmer. Instead,
- * we can call glutPostRedisplay() to request that GLUT call display()
- * at some point. */
+/** Draws the 3D scene. */
 void display()
 {
 	/* Display FPS if we are a DGR master OR if we are running without DGR. */

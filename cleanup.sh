@@ -46,6 +46,8 @@ echo
 echo "=== Cleaning other files"
 rm -vrf "${THIS_DIR}/doxygen-docs"
 rm -vf "${THIS_DIR}/bin/"*.frag "${THIS_DIR}/bin/"*.vert
+# These files shouldn't be here, but if someone accidentally puts them there, it breaks 'make' in the bin folder.
+rm -vf "${THIS_DIR}/bin/CMakeCache.txt" "${THIS_DIR}/bin/cmake_install.cmake" 
 # Linux:
 rm -vf "${THIS_DIR}/bin/"*libOVR*.so*
 # Mac:

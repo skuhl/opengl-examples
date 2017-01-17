@@ -119,6 +119,12 @@ void display()
 		kuhl_geometry_draw(&triangle);
 		kuhl_geometry_draw(&quad);
 
+		/* If we wanted to draw multiple triangles and quads at
+		 * different locations, we could call glUniformMatrix4fv again
+		 * to change the ModelView matrix and then call
+		 * kuhl_geometry_draw() again to draw that object again using
+		 * the new model matrix. */
+
 		glUseProgram(0); // stop using a GLSL program.
 		viewmat_end_eye(viewportID);
 	} // finish viewport loop

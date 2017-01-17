@@ -16,32 +16,29 @@
 #include <GLFW/glfw3.h>
 
 #include "libkuhl.h"
-GLuint program = 0; /**< id value for the GLSL program */
 
-GLuint fpsLabel = 0;
-float fpsLabelAspectRatio = 0;
-kuhl_geometry labelQuad;
+static GLuint program = 0; /**< id value for the GLSL program */
 
-kuhl_geometry *fpsgeom = NULL;
-kuhl_geometry *modelgeom = NULL;
-float bbox[6], fitMatrix[16];
+static kuhl_geometry *fpsgeom = NULL;
+static kuhl_geometry *modelgeom = NULL;
+static float bbox[6], fitMatrix[16];
 
 /** Initial position of the camera. 1.55 is a good approximate
  * eyeheight in meters.*/
-const float initCamPos[3]  = {0,1.55,0};
+static const float initCamPos[3]  = {0,1.55,0};
 
 /** A point that the camera should initially be looking at. If
  * fitToView is set, this will also be the position that model will be
  * translated to. */
-const float initCamLook[3] = {0,0,-5};
+static const float initCamLook[3] = {0,0,-5};
 
 /** A vector indicating which direction is up. */
-const float initCamUp[3]   = {0,1,0};
+static const float initCamUp[3]   = {0,1,0};
 
 
 
 #define NUM_MODELS 5000
-float positions[NUM_MODELS][3];
+static float positions[NUM_MODELS][3];
 
 #define GLSL_VERT_FILE "assimp.vert"
 #define GLSL_FRAG_FILE "assimp.frag"
@@ -85,11 +82,7 @@ void get_model_matrix(float result[16], float placeToPutModel[3])
 }
 
 
-
-/** Called by GLUT whenever the window needs to be redrawn. This
- * function should not be called directly by the programmer. Instead,
- * we can call glutPostRedisplay() to request that GLUT call display()
- * at some point. */
+/** Draws the 3D scene. */
 void display()
 {
 	/* Display FPS if we are a DGR master OR if we are running without

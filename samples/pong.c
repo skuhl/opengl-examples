@@ -55,25 +55,23 @@ typedef struct
 } Ball;
 
 
-float vrpnPos[3];
-float vrpnOrient[16];
+static float vrpnPos[3];
+static float vrpnOrient[16];
 
-time_t startTime = 0;
-int gameState = GS_WAITING;
+static time_t startTime = 0;
+static int gameState = GS_WAITING;
 
-Paddle paddleA = {.1, .02, .04, {87/255.0, 159/255.0, 210/255.0}, {19/255.0,119/255.0,189/255.0}, 0, .9, false}; //Create a blue paddle at the top of the screen
-Paddle paddleB = {.1, .02, .04, {220/255.0,50/255.0,47/255.0}, {225/255.0,95/255.0,93/255.0}, 0, -.9, false}; //Create a red paddle at the bottom of the screen
-Ball ball = {.02, 0, 4, 4, .013, .013, {0,0,0}, {255/255.0, 0/255.0, 0/255.0}, {0/255.0, 255/255.0, 0/255.0}, 0, 1, 0, 0}; //Create a ball that turns green when it speeds up.
-float planet[3] = {0.0f,0.0f,0.0f};
+static Paddle paddleA = {.1, .02, .04, {87/255.0, 159/255.0, 210/255.0}, {19/255.0,119/255.0,189/255.0}, 0, .9, false}; //Create a blue paddle at the top of the screen
+static Paddle paddleB = {.1, .02, .04, {220/255.0,50/255.0,47/255.0}, {225/255.0,95/255.0,93/255.0}, 0, -.9, false}; //Create a red paddle at the bottom of the screen
+static Ball ball = {.02, 0, 4, 4, .013, .013, {0,0,0}, {255/255.0, 0/255.0, 0/255.0}, {0/255.0, 255/255.0, 0/255.0}, 0, 1, 0, 0}; //Create a ball that turns green when it speeds up.
+static float planet[3] = {0.0f,0.0f,0.0f};
 
-GLUquadricObj *earth = NULL;
-GLUquadricObj *clouds = NULL;
-GLuint texIdEarth;
-GLuint texIdClouds;
-GLuint texIdStars;
-float ticks = 200.0f;
-
-float screen_width = 0.0f, screen_height = 0.0f;
+static GLUquadricObj *earth = NULL;
+static GLUquadricObj *clouds = NULL;
+static GLuint texIdEarth;
+static GLuint texIdClouds;
+static GLuint texIdStars;
+static float ticks = 200.0f;
 
 void drawPaddle(Paddle paddle, float depth);
 

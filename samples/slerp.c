@@ -16,40 +16,27 @@
 #include <GLFW/glfw3.h>
 
 #include "libkuhl.h"
-GLuint program = 0; /**< id value for the GLSL program */
-kuhl_geometry *modelgeom = NULL;
-float bbox[6];
 
-int fitToView=1;  // was --fit option used?
+static GLuint program = 0; /**< id value for the GLSL program */
+static kuhl_geometry *modelgeom = NULL;
+static float bbox[6];
 
-/** The following variable toggles the display an "origin+axis" marker
- * which draws a small box at the origin and draws lines of length 1
- * on each axis. Depending on which matrices are applied to the
- * marker, the marker will be in object, world, etc coordinates. */
-int showOrigin=0; // was --origin option used?
+static int fitToView=1;  // was --fit option used?
 
 
 /** Initial position of the camera. 1.55 is a good approximate
  * eyeheight in meters.*/
-const float initCamPos[3]  = {0,1.55,0};
+static const float initCamPos[3]  = {0,1.55,0};
 
 /** A point that the camera should initially be looking at. If
  * fitToView is set, this will also be the position that model will be
  * translated to. */
-const float initCamLook[3] = {0,0,-5};
+static const float initCamLook[3] = {0,0,-5};
 
 /** A vector indicating which direction is up. */
-const float initCamUp[3]   = {0,1,0};
+static const float initCamUp[3]   = {0,1,0};
 
-
-/** SketchUp produces files that older versions of ASSIMP think 1 unit
- * is 1 inch. However, all of this software assumes that 1 unit is 1
- * meter. So, we need to convert some models from inches to
- * meters. Newer versions of ASSIMP correctly read the same files and
- * give us units in meters. */
-#define INCHES_TO_METERS 0
-
-int rotateStyle = 0;
+static int rotateStyle = 0;
 
 #define GLSL_VERT_FILE "assimp.vert"
 #define GLSL_FRAG_FILE "assimp.frag"
@@ -117,11 +104,6 @@ void get_model_matrix(float result[16])
 	else  // if NOT fitting to view.
 	{
 		msg(MSG_ERROR, "Fit to view must be used for this program to work.");
-		if(INCHES_TO_METERS)
-		{
-			float inchesToMeters=1/39.3701;
-			mat4f_scale_new(result, inchesToMeters, inchesToMeters, inchesToMeters);
-		}
 		return;
 	}
 	float rotateAnimate[16];
@@ -212,10 +194,8 @@ void get_model_matrix(float result[16])
 	mat4f_mult_mat4f_new(result, transMat, result);
 }
 
-/** Called by GLUT whenever the window needs to be redrawn. This
- * function should not be called directly by the programmer. Instead,
- * we can call glutPostRedisplay() to request that GLUT call display()
- * at some point. */
+
+/** Draws the 3D scene. */
 void display()
 {
 	/* Render the scene once for each viewport. Frequently one
