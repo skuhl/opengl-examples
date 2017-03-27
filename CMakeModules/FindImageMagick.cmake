@@ -267,10 +267,7 @@ foreach(component ${ImageMagick_FIND_COMPONENTS}
       )
     list(APPEND ImageMagick_REQUIRED_VARS ImageMagick_MagickWand_LIBRARY)
   elseif(component STREQUAL "MagickCore")
-    FIND_IMAGEMAGICK_API(MagickCore MagickCore/MagickCore.h magick/MagickCore.h
-      MagickCore libMagickCore.so.5 CORE_RL_magick_ MagickCore-6.Q16 MagickCore-7.Q16HDRI MagickCore-Q16 MagickCore-6.Q8 MagickCore-Q8 MagickCore-6.Q16HDRI MagickCore-Q16HDRI MagickCore-6.Q8HDRI MagickCore-Q8HDRI 
-      )
-      # Removed 'Magick' from the above list so the older name of the library and it was therefore prioritizing the old version installed on IVS instead of the newer local copy.
+    FIND_IMAGEMAGICK_API(MagickCore MagickCore/MagickCore.h MagickCore-7.Q16HDRI libMagickCore-7.Q16HDRI)
     list(APPEND ImageMagick_REQUIRED_VARS ImageMagick_MagickCore_LIBRARY)
   else()
     if(ImageMagick_EXECUTABLE_DIR)
@@ -302,16 +299,16 @@ endif()
 set(ImageMagick_INCLUDE_DIRS ${ImageMagick_INCLUDE_DIRS})
 set(ImageMagick_LIBRARIES ${ImageMagick_LIBRARIES})
 
-if(ImageMagick_mogrify_EXECUTABLE)
-  execute_process(COMMAND ${ImageMagick_mogrify_EXECUTABLE} -version
-                  OUTPUT_VARIABLE imagemagick_version
-                  ERROR_QUIET
-                  OUTPUT_STRIP_TRAILING_WHITESPACE)
-  if(imagemagick_version MATCHES "^Version: ImageMagick ([-0-9\\.]+)")
-    set(ImageMagick_VERSION_STRING "${CMAKE_MATCH_1}")
-  endif()
-  unset(imagemagick_version)
-endif()
+# if(ImageMagick_mogrify_EXECUTABLE)
+#   execute_process(COMMAND ${ImageMagick_mogrify_EXECUTABLE} -version
+#                   OUTPUT_VARIABLE imagemagick_version
+#                   ERROR_QUIET
+#                   OUTPUT_STRIP_TRAILING_WHITESPACE)
+#   if(imagemagick_version MATCHES "^Version: ImageMagick ([-0-9\\.]+)")
+#     set(ImageMagick_VERSION_STRING "${CMAKE_MATCH_1}")
+#   endif()
+#   unset(imagemagick_version)
+# endif()
 
 #---------------------------------------------------------------------
 # Standard Package Output
