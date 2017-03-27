@@ -71,6 +71,7 @@ myTracker::myTracker( const char* name, bool* flags, vrpn_Connection *c, int fd 
 	this->type = flags[3];
 	this->fd = fd;
 	this->modifier = ((double) rand() / (RAND_MAX)) * (360);
+	this->lastrecord = kuhl_microseconds();
 	kuhl_getfps_init(&fps_state);
 }
 
@@ -174,9 +175,10 @@ void myTracker::mainloop()
 
 	char msgbuf[1000];
 	int len = vrpn_Tracker::encode_to(msgbuf);
-	
-	if(!quiet)printf(LINE_CLEAR "Microseconds since last record: %ld\n", kuhl_microseconds()-lastrecord);
-	lastrecord = kuhl_microseconds();
+
+	long now_microsecs = kuhl_microseconds();
+	if(!quiet)printf(LINE_CLEAR "Microseconds since last record: %ld\n", now_microsecs-lastrecord);
+	lastrecord = now_microsecs;
 	if (d_connection->pack_message(len, _timestamp, position_m_id, d_sender_id, msgbuf,
 	                               vrpn_CONNECTION_LOW_LATENCY))
 	{
