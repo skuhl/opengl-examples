@@ -315,7 +315,7 @@ void kuhl_limitfps(int fps)
 	if(limitfps_last.tv_usec == 0 && limitfps_last.tv_sec == 0)
 	{
 		limitfps_last.tv_usec = tv.tv_usec;
-		limitfps_last.tv_sec = tv.tv_sec;
+		limitfps_last.tv_sec  = tv.tv_sec;
 		return;
 	}
 	
@@ -330,7 +330,28 @@ void kuhl_limitfps(int fps)
 	// How many microseconds do we have to kill? 
 	suseconds_t microsec_sleep = (suseconds_t)microspf - elapsed_micro;
 	if(microsec_sleep > 0)
-		usleep(microsec_sleep);
+	{
+		/* Just calling usleep() works OK on some machines, but on
+		   others we sleep for too long. usleep() only guarantees that
+		   we will sleep at least as long as we request. It seemed to
+		   be a particular problem when we are trying to limit to
+		   100fps and on a macOS laptop. */
+		//usleep(microsec_sleep);
+
+		long first = kuhl_microseconds();
+		int loop = 1;
+		while(loop)
+		{
+			// How much more do we need to sleep?
+			long remain = microsec_sleep - (kuhl_microseconds() - first);
+			usleep(remain / 2); // sleep half of the remaining time.
+			remain = microsec_sleep - (kuhl_microseconds() - first);
+
+			// If we have little time remaining, just return.
+			if(remain <= 2)
+				loop = 0;
+		}
+	}
 	else
 	{
 		// printf("Sleep not needed! We are %ld behind.\n", microsec_sleep);
