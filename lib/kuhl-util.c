@@ -2701,6 +2701,7 @@ static const struct aiScene* kuhl_private_assimp_load(const char *modelFilename,
 	int aiProcessFlags = aiProcess_Triangulate|aiProcess_SortByPType; // required! Use only these flags for fast loading.
 	// aiProcessFlags |= aiProcessPreset_TargetRealtime_Fast;    // a bit slower, adds additional processing
 	aiProcessFlags |= aiProcessPreset_TargetRealtime_Quality; // Does even more processing during model load.
+	aiProcessFlags |= aiProcess_OptimizeMeshes|aiProcess_OptimizeGraph; // fixes models with many small meshes
 	const struct aiScene* scene = aiImportFileExWithProperties(modelFilenameVarying, aiProcessFlags, NULL, propStore);
 	free(modelFilenameVarying);
 	if(scene == NULL)
