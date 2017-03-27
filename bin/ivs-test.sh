@@ -17,7 +17,7 @@ if [[ ! -x "${PROGRAM}" ]]; then
 	echo "Executable is missing: ${PROGRAM}"
 	exit 1
 fi
-if [[ ! -x "dgr-relay}" ]]; then
+if [[ ! -x "dgr-relay" ]]; then
 	echo "Executable is missing: dgr-relay"
 	echo "Try running 'make' in the dgr folder."
 	exit 1

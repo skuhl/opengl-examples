@@ -24,6 +24,9 @@ static GLuint prerenderFrameBuffer = 0;
 static GLuint prerenderFrameBufferAA = 0;
 static GLuint prerenderTexID = 0;
 
+static GLuint prerenderWidth = 1024;
+static GLuint prerenderHeight = 1024;
+
 static kuhl_geometry triangle;
 static kuhl_geometry quad;
 static kuhl_geometry prerendQuad;
@@ -41,7 +44,18 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 		case GLFW_KEY_ESCAPE:
 			glfwSetWindowShouldClose(window, GL_TRUE);
 			break;
+
+		case GLFW_KEY_R:
+		{
+			// Reload GLSL program from disk
+			kuhl_delete_program(prerendProgram);
+			prerendProgram = kuhl_create_program("prerend.vert", "prerend.frag");
+			/* Apply the program to the model geometry */
+			kuhl_geometry_program(&prerendQuad, prerendProgram, KG_FULL_LIST);
+			break;
+		}
 	}
+
 }
 
 /** Draws the 3D scene. */
@@ -79,6 +93,13 @@ void display()
 		float viewMat[16], perspective[16];
 		viewmat_get(viewMat, perspective, viewportID);
 
+		// The perspective projection matrix we receive from
+		// viewmat_get() accounts for the aspect ratio of the
+		// window. Our aspect ratio should be fixed to the aspect
+		// ratio of the texture that we are prerendering to.
+		mat4f_perspective_new(perspective, 70, prerenderWidth/(float)prerenderHeight, .1, 100);
+
+
 		/* Calculate an angle to rotate the object. glfwGetTime() gets
 		 * the time in seconds since GLFW was initialized. Rotates 45 degrees every second. */
 		float angle = fmod(glfwGetTime()*45, 360);
@@ -115,6 +136,7 @@ void display()
 		                   1, // number of 4x4 float matrices
 		                   0, // transpose
 		                   modelview); // value
+
 		kuhl_errorcheck();
 
 		/* Setup prerender directly to texture once (and reuse the
@@ -124,13 +146,13 @@ void display()
 #if USE_MSAA==1
 			/* Generate a MSAA framebuffer + texture */
 			GLuint prerenderTexIDAA;
-			prerenderFrameBufferAA = kuhl_gen_framebuffer_msaa(viewport[2], viewport[3],
+			prerenderFrameBufferAA = kuhl_gen_framebuffer_msaa(prerenderWidth, prerenderHeight,
 			                                                   &prerenderTexIDAA,
 			                                                   NULL, 16);
 #endif
-			prerenderFrameBuffer = kuhl_gen_framebuffer(viewport[2], viewport[3],
-			                                                   &prerenderTexID,
-			                                                   NULL);
+			prerenderFrameBuffer = kuhl_gen_framebuffer(prerenderWidth, prerenderHeight,
+			                                            &prerenderTexID,
+			                                            NULL);
 			/* Apply the texture to our geometry and draw the quad. */
 			kuhl_geometry_texture(&prerendQuad, prerenderTexID, "tex", 1);
 		}
@@ -141,7 +163,7 @@ void display()
 #else
 		glBindFramebuffer(GL_FRAMEBUFFER, prerenderFrameBuffer);
 #endif
-		glViewport(0,0,viewport[2], viewport[3]);
+		glViewport(0,0,prerenderWidth, prerenderHeight);
 		kuhl_errorcheck();
 
 		/* Clear the framebuffer and the depth buffer. */
@@ -160,8 +182,8 @@ void display()
 		/* Copy the MSAA framebuffer into the normal framebuffer */
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, prerenderFrameBufferAA);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, prerenderFrameBuffer);
-		glBlitFramebuffer(0,0,viewport[2],viewport[3],
-		                  0,0,viewport[2],viewport[3],
+		glBlitFramebuffer(0,0,prerenderWidth,prerenderHeight,
+		                  0,0,prerenderWidth,prerenderHeight,
 		                  GL_COLOR_BUFFER_BIT, GL_NEAREST);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER,0);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER,0);
@@ -171,8 +193,11 @@ void display()
 		/* Set up the viewport to draw on the screen */
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
-
+		glUseProgram(prerendProgram);
 		kuhl_geometry_draw(&prerendQuad);
+
+
+		
 		viewmat_end_eye(viewportID);
 	} // finish viewport loop
 	viewmat_end_frame();
@@ -276,7 +301,7 @@ int main(int argc, char** argv)
 	glUseProgram(program);
 	kuhl_errorcheck();
 	/* Set the uniform variable in the shader that is named "red" to the value 1. */
-	glUniform1i(kuhl_get_uniform("red"), 1);
+	glUniform1i(kuhl_get_uniform("red"), 0);
 	kuhl_errorcheck();
 	/* Good practice: Unbind objects until we really need them. */
 	glUseProgram(0);
