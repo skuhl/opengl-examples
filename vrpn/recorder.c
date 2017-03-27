@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
 	
 	//Buffers for the data.
 	float pos[3];
-	float rotMat[9];
+	float rotMat[16];
 	
 	//Loop until Ctrl+C.
 	while(1)
