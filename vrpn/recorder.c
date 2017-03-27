@@ -35,16 +35,18 @@ int main(int argc, char* argv[])
 	
 	//Buffers for the data.
 	float pos[3];
-	float rotMat[9];
+	float rotMat4[16];  // 4x4 matrix, what we vrpn_get() gives us.
+	float rotMat3[9];   // a 3x3 rotation matrix, what we need to give to tdl_write()
 	
 	//Loop until Ctrl+C.
 	while(1)
 	{
 		//Get the next vrpn entry
-		vrpn_get(argv[2], NULL, pos, rotMat);
+		vrpn_get(argv[2], NULL, pos, rotMat4);
 		
 		//Write that entry to the file
-		tdl_write(fd, pos, rotMat);
+		mat3f_from_mat4f(rotMat3, rotMat4);
+		tdl_write(fd, pos, rotMat3);
 		
 		//IMPORTANT! Since there are no time stamps, this MUST be the same value as the fake
 		//server that is going to be reading the file, otherwise artificial speed ups or delays
