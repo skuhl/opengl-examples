@@ -82,7 +82,7 @@ void myTracker::mainloop()
 
 	float filePos[3];
 	float fileOrient[9];
-	static int timeThroughData = 0;
+	static int timeThroughData = 1;
 	if(type == FILE_TRACKER)
 	{
 		int readVal = tdl_read(fd, filePos, fileOrient);
@@ -91,6 +91,7 @@ void myTracker::mainloop()
 		{
 			timeThroughData++;
 
+			// When we reach end of file, start over again from beginning of file.
 			if(tdl_prepare(fd, NULL) == -1)
 			{
 				printf("Error going back to beginning of file.\n");
@@ -108,7 +109,7 @@ void myTracker::mainloop()
 	
 	if(!quiet)
 	{
-		printf(LINE_CLEAR "%s %d:\n", trackerName, timeThroughData);	
+		printf(LINE_CLEAR "%s (%d time though file):\n", trackerName, timeThroughData);	
 		printf(LINE_CLEAR "Records sent per second: %.1f\n", kuhl_getfps(&fps_state));	
 	}
 	
