@@ -41,7 +41,7 @@ using namespace std;
 class myTracker : public vrpn_Tracker
 {
   public:
-	myTracker( const char* name, bool* flags, vrpn_Connection *c = 0, int fd = -1 );
+	myTracker( const char* name, bool* flags, vrpn_Connection *c = 0, FILE* fs = NULL );
 	virtual ~myTracker() {};
 	virtual void mainloop();
 
@@ -55,12 +55,12 @@ class myTracker : public vrpn_Tracker
   	bool noise;
   	bool type;
   	char* trackerName;
-  	int fd;
+  	FILE *fs;
   	int modifier;
   	long lastrecord;
 };
 
-myTracker::myTracker( const char* name, bool* flags, vrpn_Connection *c, int fd ) :
+myTracker::myTracker( const char* name, bool* flags, vrpn_Connection *c, FILE* fs ) :
 	vrpn_Tracker( name, c )
 {
 	printf("Using tracker name: %s\n", name);
@@ -69,8 +69,9 @@ myTracker::myTracker( const char* name, bool* flags, vrpn_Connection *c, int fd 
 	this->quiet = flags[1];
 	this->noise = flags[2];
 	this->type = flags[3];
-	this->fd = fd;
+	this->fs = fs;
 	this->modifier = ((double) rand() / (RAND_MAX)) * (360);
+	this->lastrecord = kuhl_microseconds();
 	kuhl_getfps_init(&fps_state);
 }
 
@@ -81,25 +82,34 @@ void myTracker::mainloop()
 
 	float filePos[3];
 	float fileOrient[9];
-	int readVal = -1;
+	static int timeThroughData = 1;
 	if(type == FILE_TRACKER)
 	{
-		readVal = tdl_read(fd, filePos, fileOrient);
+		int readVal = tdl_read(fs, filePos, fileOrient);
 	
-		//Handle the end of the file or an error.
-		if(readVal == 1)
+		if(readVal == 1)  // end of file
 		{
-			tdl_prepare(fd, NULL);
+			timeThroughData++;
+
+			// When we reach end of file, start over again from beginning of file.
+			if(tdl_prepare(fs, NULL) == -1)
+			{
+				printf("Error going back to beginning of file.\n");
+				exit(EXIT_FAILURE);
+			}
+
+			// read data so that server has info to serve
+			tdl_read(fs, filePos, fileOrient);
 		}
-		else if(readVal == -1)
+		else if(readVal == -1)  // error
 		{
-			exit(0);
+			exit(EXIT_FAILURE);
 		}
 	}
 	
 	if(!quiet)
 	{
-		printf(LINE_CLEAR "%s:\n", trackerName);	
+		printf(LINE_CLEAR "%s (%d time though file):\n", trackerName, timeThroughData);	
 		printf(LINE_CLEAR "Records sent per second: %.1f\n", kuhl_getfps(&fps_state));	
 	}
 	
@@ -174,9 +184,10 @@ void myTracker::mainloop()
 
 	char msgbuf[1000];
 	int len = vrpn_Tracker::encode_to(msgbuf);
-	
-	if(!quiet)printf(LINE_CLEAR "Microseconds since last record: %ld\n", kuhl_microseconds()-lastrecord);
-	lastrecord = kuhl_microseconds();
+
+	long now_microsecs = kuhl_microseconds();
+	if(!quiet)printf(LINE_CLEAR "Microseconds since last record: %ld\n", now_microsecs-lastrecord);
+	lastrecord = now_microsecs;
 	if (d_connection->pack_message(len, _timestamp, position_m_id, d_sender_id, msgbuf,
 	                               vrpn_CONNECTION_LOW_LATENCY))
 	{
@@ -336,18 +347,18 @@ int main(int argc, char* argv[])
 		}
 		else
 		{
-			int fd = open(filesv[i], O_RDONLY);
-			if(fd == -1)
+			FILE *fs = fopen(filesv[i], "r");
+			if(fs == NULL)
 			{
 				fprintf(stderr, "Failed to open file \"%s\": %s\n", filesv[i], strerror(errno));
     			exit(1);
     		}
     		
     		char* name;
-			tdl_prepare(fd, &name);	
+			tdl_prepare(fs, &name);	
 			
 			if(verbose)printf("Creating tracker for %s from file %s\n", name, filesv[i]);
-			trackersv[i] = new myTracker(name, flags, m_Connection, fd);
+			trackersv[i] = new myTracker(name, flags, m_Connection, fs);
 			
 		}
 	}

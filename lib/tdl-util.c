@@ -1,16 +1,10 @@
-/*
+/**
  * This file contains useful methods for reading, writing and creating Tracked Data Log (.tdl) files
  * @author John Thomas
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#ifndef _WIN32
-#include <unistd.h>
-#endif
 #include <string.h>
 #include <stdio.h>
-#include <fcntl.h>
 
 #ifdef __cplusplus
 #include <cstdlib>
@@ -20,17 +14,17 @@
 
 #include "tdl-util.h"
 #include "msg.h"
-/*
+/**
  * Moves the cursor to the first data point entry.
  * This MUST be called before any calls to tdl_read.
  * Additionally, this will store the name of the tracked
  * object that the file contatins to the given pointer.
  *
- * @param int fd - a file descripter pointing to the file.
- *		  char** name - a pointer to the char* where the name should be stored.
- *						if this is null, the name will be ignored.
+ * @param f A file descripter pointing to the file.
+ * @param name A pointer to the char* where the name should be stored.
+ * if this is null, the name will be ignored.
  */
-int tdl_prepare(int fd, char** name)
+int tdl_prepare(FILE *f, char** name)
 {
 #ifdef _WIN32
 	msg(MSG_ERROR, "This function is not defined on Windows.");
@@ -38,9 +32,9 @@ int tdl_prepare(int fd, char** name)
 #else
 
 	//Seek to the begining of the file.
-	lseek(fd, 0, SEEK_SET);
+	rewind(f);
 	
-	if(tdl_validate(fd))
+	if(tdl_validate(f))
 	{
 		char c = 0;
 		char* tmpName = (char*)malloc(sizeof(char) * 33);
@@ -52,7 +46,7 @@ int tdl_prepare(int fd, char** name)
 		  The extra chars should be ignored, this is simple to set the cursor
 		  for further reads.
 		*/
-		while((bRead = read(fd, &c, 1)) > 0)
+		while((bRead = fread(&c, 1, 1, f)) == 1)
 		{
 			if(i < 33)
 			{
@@ -85,7 +79,7 @@ int tdl_prepare(int fd, char** name)
 #endif
 }
 
-/*
+/**
  * Creates a new empty tdl file. This will setup 
  *
  * Proper header: 219  84  68  76  13  10  26  10
@@ -100,9 +94,9 @@ int tdl_prepare(int fd, char** name)
  *					   There is a limit of 32 chars for the object name,
  *					   anything longer will be truncated.
  *
- * @return int - a file descripter pointing to the newly created file.
+ * @return FILE* - a file descripter pointing to the newly created file.
  */
-int tdl_create(const char* path, const char* name)
+FILE* tdl_create(const char* path, const char* name)
 {
 #ifdef _WIN32
 	msg(MSG_ERROR, "This function is not defined on Windows.");
@@ -124,11 +118,11 @@ int tdl_create(const char* path, const char* name)
 		pathLen += 4;
 	}
 
-	int fd = -1;
-	if((fd = open(path, O_CREAT | O_EXCL | O_RDWR , S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH)) < 0)
+	FILE *f = fopen(path, "w");
+	if(f == NULL)
 	{
 		perror("File creation failed");
-		return fd;
+		return f;
 	}
 	
 	unsigned char header[9];
@@ -141,23 +135,23 @@ int tdl_create(const char* path, const char* name)
 	header[6] = 26;//\032
 	header[7] = 10;//\n
 	header[8] = 0;//NULL term
-	if(write(fd, header, 9) < 9)
+	if(fwrite(header, 9, 1, f) != 1)
 	{
 		perror("Writing header failed");
-		return fd;
+		return f;
 	}
 	
 	//We +1 to the name length so that the term char is also written.
-	if(write(fd, name, nameLen+1) < nameLen+1)
+	if(fwrite(name, nameLen+1, 1, f) != 1)
 	{
 		perror("Writing object name failed");
-		return fd;
+		return f;
 	}
 	
-	return fd;
+	return f;
 #endif
 }
-/*
+/**
  * Returns the next tracked point in the file.
  * If the end of the file is reached, the file cursor will be
  * moved back to the beginning of the file.
@@ -171,80 +165,71 @@ int tdl_create(const char* path, const char* name)
  *				  1 if the end of the file was reached and the cursor was reset.
  *
  */
-int tdl_read(int fd, float pos[3], float orient[9])
+int tdl_read(FILE *f, float pos[3], float orient[9])
 {
 #ifdef _WIN32
 	msg(MSG_ERROR, "This function is not defined on Windows.");
 	return -1;
 #else
 
-	int posSize = 3*(signed int)sizeof(float);
-	int orientSize = 9*(signed int)sizeof(float);
+	const int posSize = 3*(signed int)sizeof(float);
+	const int orientSize = 9*(signed int)sizeof(float);
 	
-	int readVal = 0;
-	if((readVal = read(fd, pos, posSize)) < posSize)
+	int readVal = fread(pos, posSize, 1, f);
+	if(feof(f))
+		return 1; // EOF
+	if(readVal < 1)
 	{
-		if(readVal == 0){
-			//EOF
-			return 1;
-		}
-		else
-		{
-			perror("Reading position failed");
-			return -1;
-		}
+		perror("Reading position failed");
+		return -1;
+	}
+
+	readVal = fread(orient, orientSize, 1, f);
+	if(feof(f))
+		return 1; // EOF
+	if(readVal < 1)
+	{
+		perror("Reading orientation failed");
+		return -1;
 	}
 	
-	if((readVal = read(fd, orient, orientSize)) < orientSize)
-	{
-		if(readVal == 0){
-			//EOF
-			return 1;
-		}
-		else
-		{
-			perror("Reading position failed");
-			return -1;
-		}
-	}
-	
-	return 0;
+	return 0; // success
 #endif
 }
 
-/*
+/**
  * Writes the position and orientation properly formated to a file.
  *
- * @param int fd - the file to write to
+ * @param FILE *f - the file to write to
  * 		  float* pos - the position array 
  * 		  float* orient - the orientation array
  *
  */
-void tdl_write(int fd, float pos[3], float orient[9])
+void tdl_write(FILE *f, float pos[3], float orient[9])
 {
 #ifdef _WIN32
 	msg(MSG_ERROR, "This function is not defined on Windows.");
 #else
 
-	int posSize = 3*(signed int)sizeof(float);
-	int orientSize = 9*(signed int)sizeof(float);
-	if(write(fd, pos, posSize) < posSize)
+	const int posSize = 3*(signed int)sizeof(float);
+	const int orientSize = 9*(signed int)sizeof(float);
+	if(fwrite(pos, posSize, 1, f) != 1)
 	{
 		perror("Writing position failed");
 	}
 	
-	if(write(fd, orient, orientSize) < orientSize)
+	if(fwrite(orient, orientSize, 1, f) != 1)
 	{
 		perror("Writing orientation failed");
 	}
 #endif
 }
 
-/*
+/**
  * Checks the headers of a file to make sure it is a proper tdl file.
  * Note: the position of the cursor in the file MUST be at the CUR_START
  *
- * @param int fd - a file descripter pointing to the file.
+ * @param f - a file descripter pointing to the file.
  *
  * @return (C)int - 0 - the file is not valid.
  *					1 - the file is valid.
@@ -252,9 +237,9 @@ void tdl_write(int fd, float pos[3], float orient[9])
  *		   (C++)bool - whether or not the file is valid
  */
 #ifdef __cplusplus
-bool tdl_validate(int fd)
+bool tdl_validate(FILE *f)
 #else
-int tdl_validate(int fd)
+int tdl_validate(FILE *f)
 #endif
 {
 #ifdef _WIN32
@@ -263,8 +248,8 @@ int tdl_validate(int fd)
 #else
 	unsigned char buff[9];
 	int valid = 0;
-	ssize_t lenRead = read(fd, buff, 9);
-	if(lenRead == 9)
+	ssize_t lenRead = fread(buff, 9, 1, f);
+	if(lenRead == 1)
 	{
 		valid = buff[0] == 219 && buff[1] == 84 &&
 			    buff[2] == 68 && buff[3] == 76 && 
