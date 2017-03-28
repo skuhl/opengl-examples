@@ -344,12 +344,12 @@ void kuhl_limitfps(int fps)
 		{
 			// How much more do we need to sleep?
 			long remain = microsec_sleep - (kuhl_microseconds() - first);
-			usleep(remain / 2); // sleep half of the remaining time.
-			remain = microsec_sleep - (kuhl_microseconds() - first);
 
 			// If we have little time remaining, just return.
 			if(remain <= 2)
 				loop = 0;
+			else
+				usleep(remain / 2); // sleep half of the remaining time.
 		}
 	}
 	else

@@ -178,37 +178,28 @@ int tdl_read(int fd, float pos[3], float orient[9])
 	return -1;
 #else
 
-	int posSize = 3*(signed int)sizeof(float);
-	int orientSize = 9*(signed int)sizeof(float);
+	const int posSize = 3*(signed int)sizeof(float);
+	const int orientSize = 9*(signed int)sizeof(float);
 	
-	int readVal = 0;
-	if((readVal = read(fd, pos, posSize)) < posSize)
+	int readVal = read(fd, pos, posSize);
+	if(readVal == 0)
+		return 1; // EOF
+	if(readVal < posSize)
 	{
-		if(readVal == 0){
-			//EOF
-			return 1;
-		}
-		else
-		{
-			perror("Reading position failed");
-			return -1;
-		}
+		perror("Reading position failed");
+		return -1;
+	}
+
+	readVal = read(fd, orient, orientSize);
+	if(readVal == 0)
+		return 1; // EOF
+	if(readVal < posSize)
+	{
+		perror("Reading orientation failed");
+		return -1;
 	}
 	
-	if((readVal = read(fd, orient, orientSize)) < orientSize)
-	{
-		if(readVal == 0){
-			//EOF
-			return 1;
-		}
-		else
-		{
-			perror("Reading position failed");
-			return -1;
-		}
-	}
-	
-	return 0;
+	return 0; // success
 #endif
 }
 
