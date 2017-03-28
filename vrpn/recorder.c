@@ -19,15 +19,15 @@ int main(int argc, char* argv[])
 	//Check if we got the proper arguments.
 	if(argc < 3)
 	{
-		printf("Usage\n\trecorder <file name> <object name>\n");
+		printf("Usage\n\trecorder fileName objectName\n");
 		printf("\n");
 		printf("This program reads data from a VRPN server and saves it to a file that can be played back later.\n");
 		exit(1);
 	}
 
 	//Create a new TDL file.
-	int fd = tdl_create(argv[1], argv[2]);
-	if(fd == -1)
+	FILE *f = tdl_create(argv[1], argv[2]);
+	if(f == NULL)
 	{
 		printf("Failed to create file: %s\n", argv[1]);
 		exit(EXIT_FAILURE);
@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 		
 		//Write that entry to the file
 		mat3f_from_mat4f(rotMat3, rotMat4);
-		tdl_write(fd, pos, rotMat3);
+		tdl_write(f, pos, rotMat3);
 		
 		//IMPORTANT! Since there are no time stamps, this MUST be the same value as the fake
 		//server that is going to be reading the file, otherwise artificial speed ups or delays
@@ -55,5 +55,5 @@ int main(int argc, char* argv[])
 	}
 	
 	//Close up the fd (Useless code until code to stop loop is added)
-	close(fd);
+	fclose(f);
 }

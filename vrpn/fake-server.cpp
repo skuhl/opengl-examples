@@ -41,7 +41,7 @@ using namespace std;
 class myTracker : public vrpn_Tracker
 {
   public:
-	myTracker( const char* name, bool* flags, vrpn_Connection *c = 0, int fd = -1 );
+	myTracker( const char* name, bool* flags, vrpn_Connection *c = 0, FILE* fs = NULL );
 	virtual ~myTracker() {};
 	virtual void mainloop();
 
@@ -55,12 +55,12 @@ class myTracker : public vrpn_Tracker
   	bool noise;
   	bool type;
   	char* trackerName;
-  	int fd;
+  	FILE *fs;
   	int modifier;
   	long lastrecord;
 };
 
-myTracker::myTracker( const char* name, bool* flags, vrpn_Connection *c, int fd ) :
+myTracker::myTracker( const char* name, bool* flags, vrpn_Connection *c, FILE* fs ) :
 	vrpn_Tracker( name, c )
 {
 	printf("Using tracker name: %s\n", name);
@@ -69,7 +69,7 @@ myTracker::myTracker( const char* name, bool* flags, vrpn_Connection *c, int fd 
 	this->quiet = flags[1];
 	this->noise = flags[2];
 	this->type = flags[3];
-	this->fd = fd;
+	this->fs = fs;
 	this->modifier = ((double) rand() / (RAND_MAX)) * (360);
 	this->lastrecord = kuhl_microseconds();
 	kuhl_getfps_init(&fps_state);
@@ -85,21 +85,21 @@ void myTracker::mainloop()
 	static int timeThroughData = 1;
 	if(type == FILE_TRACKER)
 	{
-		int readVal = tdl_read(fd, filePos, fileOrient);
+		int readVal = tdl_read(fs, filePos, fileOrient);
 	
 		if(readVal == 1)  // end of file
 		{
 			timeThroughData++;
 
 			// When we reach end of file, start over again from beginning of file.
-			if(tdl_prepare(fd, NULL) == -1)
+			if(tdl_prepare(fs, NULL) == -1)
 			{
 				printf("Error going back to beginning of file.\n");
 				exit(EXIT_FAILURE);
 			}
 
 			// read data so that server has info to serve
-			tdl_read(fd, filePos, fileOrient);
+			tdl_read(fs, filePos, fileOrient);
 		}
 		else if(readVal == -1)  // error
 		{
@@ -347,18 +347,18 @@ int main(int argc, char* argv[])
 		}
 		else
 		{
-			int fd = open(filesv[i], O_RDONLY);
-			if(fd == -1)
+			FILE *fs = fopen(filesv[i], "r");
+			if(fs == NULL)
 			{
 				fprintf(stderr, "Failed to open file \"%s\": %s\n", filesv[i], strerror(errno));
     			exit(1);
     		}
     		
     		char* name;
-			tdl_prepare(fd, &name);	
+			tdl_prepare(fs, &name);	
 			
 			if(verbose)printf("Creating tracker for %s from file %s\n", name, filesv[i]);
-			trackersv[i] = new myTracker(name, flags, m_Connection, fd);
+			trackersv[i] = new myTracker(name, flags, m_Connection, fs);
 			
 		}
 	}
