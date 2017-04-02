@@ -8,7 +8,8 @@
  */
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/time.h>
+#include <sys/time.h> // gettimeofday
+#include <time.h> // localtime
 
 #include "vrpn-help.h"
 #include "kuhl-util.h"
