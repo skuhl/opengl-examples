@@ -2285,7 +2285,7 @@ void kuhl_video_record(const char *fileLabel, int fps)
 	{
 		kuhl_video_record_prev_sec  = tv.tv_sec;
 		kuhl_video_record_prev_usec = tv.tv_usec;
-		msg(MSG_INFO, "Recording %d frames per second\n", fps);
+		msg(MSG_INFO, "Recording %d frames per second. NOTE: If your screen is too large, then we may be unable to actually record images at the requested FPS rate.\n", fps);
 		msg(MSG_INFO, "Use either of the following commands to assemble Ogg video (Ogg video files are widely supported and not encumbered by patent restrictions):\n");
 		msg(MSG_INFO, "ffmpeg -r %d -f image2 -i %s-%%08d.%s -qscale:v 7 %s.ogv\n", fps, fileLabel, exten, fileLabel);
 		msg(MSG_INFO, " - or -\n");
