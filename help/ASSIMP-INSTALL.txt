@@ -35,7 +35,7 @@ Next, use one of the following two options:
  2) Edit opengl-examples/CMakeModules/FindASSIMP.txt so that this software can find your copy of the library.
 
 
---- OSX INSTRUCTIONS ---
+--- macOS INSTRUCTIONS ---
 
 Install homebrew and run "brew install assimp"
 
@@ -54,7 +54,7 @@ Click "Generate".
 
 Open "Assimp.sln" with Visual Studio.
 
-Right click on the ALL_BUILD solution and select "Build"
+Right click on the "assimp" solution and select "Build". If you try to build the ALL_BUILD solution and didn't set ASSIMP_BUILD_TESTS=OFF in cmake, then ALL_BUILD may not work correctly.
 
 Refer back to WINDOWS-VisualStudio.txt to get opengl-examples to work with your library.
 
