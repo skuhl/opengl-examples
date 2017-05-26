@@ -23,17 +23,17 @@ imagemagick
 libmagickcore-dev
 
 
-== Mac OS X - Homebrew instructions ==
+== macOS - Homebrew instructions ==
 
 Install imagemagick and ensure that ghostscript support is
 enabled. Ghostscript support is necessary to support using imagemagick
 to render text onto textures. Run the following command:
 
-brew install imagemagick --with-ghostscript
+brew install imagemagick@6 --with-ghostscript
 
 Verify that ghostscript support is enabled with:
 
-brew info imagemagick
+brew info imagemagick@6
 
 Verify that imagemagick has access to fonts by running:
 
