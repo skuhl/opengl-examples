@@ -8,9 +8,9 @@ If you want to use ASSIMP you should use the following versions:
 
    - Version 3.1.1 or higher is recommended.
    
-   - The latest version at the time of this writing, 4.0.0, works on
+   - The latest version at the time of this writing, 4.0.1, works on
      Linux and Mac but has received little testing. I have received no
-     reports of if 4.0.0 works on Windows (it should, let us know if
+     reports of if 4.0.1 works on Windows (it should, let us know if
      it does work).
 
 
