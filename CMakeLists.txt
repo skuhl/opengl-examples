@@ -81,31 +81,34 @@ function(kuhl_add_paths path)
 	if(NOT GLFW_glfw_LIBRARY)
 		kuhl_add_library_path(${path}/glfw/src)
 		kuhl_add_include_path(${path}/glfw/include)
-		# GLFW - Windows
-		kuhl_add_include_path(${path}/glfw-*/include)
-		kuhl_add_library_path(${path}/glfw-*/src/Debug)   # compiled from source
-		kuhl_add_library_path(${path}/glfw-*/src/Release) # compiled from source
-		kuhl_add_library_path(${path}/glfw-*/lib-vc2015)  # precompiled
-		kuhl_add_library_path(${path}/glfw-*/lib-vc2013)  # precompiled
-		kuhl_add_library_path(${path}/glfw-*/lib-vc2012)  # precompiled
+		if(WIN23) # GLFW - Windows
+			kuhl_add_include_path(${path}/glfw-*/include)
+			kuhl_add_library_path(${path}/glfw-*/src/Debug)   # compiled from source
+			kuhl_add_library_path(${path}/glfw-*/src/Release) # compiled from source
+			kuhl_add_library_path(${path}/glfw-*/lib-vc2015)  # precompiled
+			kuhl_add_library_path(${path}/glfw-*/lib-vc2013)  # precompiled
+			kuhl_add_library_path(${path}/glfw-*/lib-vc2012)  # precompiled
+		endif()
 	endif()
 	
 	# GLEW
 	if(NOT GLEW_LIBRARY)
 		kuhl_add_library_path(${path}/glew/lib)
 		kuhl_add_include_path(${path}/glew/include)
-		# GLEW - Windows
-		kuhl_add_library_path(${path}/glew-*/lib/Release/Win32)
-		kuhl_add_include_path(${path}/glew-*/include)
+		if(WIN32) # GLEW - Windows
+			kuhl_add_library_path(${path}/glew-*/lib/Release/Win32)
+			kuhl_add_include_path(${path}/glew-*/include)
+		endif()
 	endif()
 
 	# Assimp
 	if(NOT ASSIMP_LIBRARIES)
 		kuhl_add_library_path(${path}/assimp/lib)
 		kuhl_add_include_path(${path}/assimp/include)
-		# Assimp - Windows
-		kuhl_add_library_path(${path}/assimp-*/lib/Debug)
-		kuhl_add_include_path(${path}/assimp-*/include)
+		if(WIN32) # ASSIMP - Windows
+			kuhl_add_library_path(${path}/assimp-*/lib/Debug)
+			kuhl_add_include_path(${path}/assimp-*/include)
+		endif()
 	endif()
 	
 	# ImageMagick

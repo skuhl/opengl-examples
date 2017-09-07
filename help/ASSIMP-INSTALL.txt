@@ -5,14 +5,13 @@ You can find ASSIMP at: https://github.com/assimp/assimp/releases
 --- SELECTING AN ASSIMP VERSION ---
 
 If you want to use ASSIMP you should use the following versions: 
+
+   - Version 3.1.1 or higher is recommended.
    
-   - 3.0 or higher should work (but it has a problem where some models
-     are scaled incorrectly when loaded)
-
-   - 3.1.1 or 3.2 is recommended
-
-   - 3.3 or 3.3.1 should also work but hasn't been tested as heavily.
-
+   - The latest version at the time of this writing, 4.0.1, works on
+     Linux and Mac but has received little testing. I have received no
+     reports of if 4.0.1 works on Windows (it should, let us know if
+     it does work).
 
 
 --- LINUX INSTRUCTIONS ---
@@ -42,7 +41,7 @@ Install homebrew and run "brew install assimp"
 
 --- WINDOWS INSTRUCTIONS ---
 
-Download ASSIMP source code (we've tested with ASSIMP 3.2). Ensure that you have CMake and Visual Studio installed.
+Download ASSIMP source code (we've tested with ASSIMP 3.2 and 3.3; if you confirm that a newer version works, let us know!). Ensure that you have CMake and Visual Studio installed.
 
 Run cmake-gui
 

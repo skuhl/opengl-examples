@@ -27,6 +27,7 @@
 /frustum
 /tracker-demo
 /tracker-stats
+/zfight
 
 # Binaries created in vrpn folder
 /fake-server
