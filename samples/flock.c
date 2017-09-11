@@ -55,14 +55,6 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 		case GLFW_KEY_ESCAPE:
 			glfwSetWindowShouldClose(window, GL_TRUE);
 			break;
-#if 0
-		case 'f': // full screen
-			glutFullScreen();
-			break;
-		case 'F': // switch to window from full screen mode
-			glutPositionWindow(0,0);
-			break;
-#endif
 	}
 }
 

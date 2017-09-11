@@ -118,6 +118,11 @@ function(kuhl_add_paths path)
 
 		kuhl_add_include_path("C:/Program Files (x86)/ImageMagick-6.*/include")
 		kuhl_add_library_path("C:/Program Files (x86)/ImageMagick-6.*/")
+
+		# macOS homebrew. Need to add this path since default path
+		# contains ImageMagick 7
+		kuhl_add_library_path("/usr/local/opt/ImageMagick@6/lib")
+		kuhl_add_include_path("/usr/local/opt/ImageMagick@6/include/ImageMagick-6")
 	endif()
 
 	# VRPN
