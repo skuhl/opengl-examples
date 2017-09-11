@@ -73,9 +73,14 @@ function(kuhl_add_include_path path)
 endfunction(kuhl_add_include_path)
 
 function(kuhl_add_paths path)
-	if(NOT EXISTS ${path})
-		return()
-	endif()
+	# On the MTU lab machines, /local/kuhl-public-share/opengl has
+	# listing disabled. This apparently causes cmake to treat the
+	# directory as if it does not exist. I'm commenting this out until
+	# we make the folder listable or until cmake works as we expect.
+	#
+	#if(NOT EXISTS ${path})
+	#	return()
+	#endif()
 
 	# GLFW
 	if(NOT GLFW_glfw_LIBRARY)
