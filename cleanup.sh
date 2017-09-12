@@ -31,7 +31,7 @@ function cleandir()
 THIS_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 # Clean top level directory first so 'make clean' will work.
-cleandir ${THIS_DIR}
+cleandir "${THIS_DIR}"
 
 # Clean subdirectories
 for D in *; do # For each file and directory
@@ -56,7 +56,7 @@ rm -vrf "${THIS_DIR}/bin/"*.dSYM
 rm -vrf "${THIS_DIR}/bin/Debug"
 
 # Find any log files anywhere in this tree and delete them.
-find ${THIS_DIR} -type f \( -name 'log.txt' -o -name 'log-ivs-left.txt' -o -name 'log-ivs-right.txt' \) -exec rm -vf "{}" \;
+find "${THIS_DIR}" -type f \( -name 'log.txt' -o -name 'log-ivs-left.txt' -o -name 'log-ivs-right.txt' \) -exec rm -vf "{}" \;
 
 if [[ -x "${THIS_DIR}/.git" && -x /usr/bin/git ]]; then
 	echo
