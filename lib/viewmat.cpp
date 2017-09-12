@@ -303,17 +303,6 @@ void viewmat_init(const float pos[3], const float look[3], const float up[3])
 			msg(MSG_FATAL, "viewmat control mode: Unhandled mode '%s'.", controlModeString);
 			exit(EXIT_FAILURE);
 	}
-
-
-	
-	
-	// If there are two "viewports" then it is likely that we are
-	// doing stereoscopic rendering. Displaying the mouse cursor can
-	// interfere with stereo images, so we disable the cursor here.
-	if(desktop->num_viewports() == 2)
-		//glutSetCursor(GLUT_CURSOR_NONE);
-		// TODO: Switch to GLFW_CURSOR_DISABLED?
-		glfwSetInputMode(kuhl_get_window(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 }
 
 

@@ -234,7 +234,12 @@ static GLFWwindow* kuhl_glfw_create_window(int width, int height, const char *ti
 	{
 		int windowWidth = kuhl_config_int("window.width", width, width);
 		int windowHeight = kuhl_config_int("window.height", height, height);
-		return glfwCreateWindow(windowWidth, windowHeight, title, NULL, NULL);
+		GLFWwindow *window = glfwCreateWindow(windowWidth, windowHeight, title, NULL, NULL);
+		
+		/* If not fullscreen, hide cursor when it is requested. */
+		if(kuhl_config_boolean("window.hidecursor", 0,0))
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+		return window;
 	}
 
 	/* If full screen was requested, try to find a monitor that matches the name */
@@ -248,7 +253,7 @@ static GLFWwindow* kuhl_glfw_create_window(int width, int height, const char *ti
 		{
 			const GLFWvidmode *currentMode = glfwGetVideoMode(monitor);
 			GLFWwindow *window = glfwCreateWindow(currentMode->width, currentMode->height, title, monitor, NULL);
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); // hide mouse cursor
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); // always hide mouse cursor on full screen.
 			return window;
 		}
 	}
@@ -259,7 +264,7 @@ static GLFWwindow* kuhl_glfw_create_window(int width, int height, const char *ti
 	GLFWmonitor *monitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode *currentMode = glfwGetVideoMode(monitor);
 	GLFWwindow *window = glfwCreateWindow(currentMode->width, currentMode->height, title, monitor, NULL);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); // hide mouse cursor
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); // always hide mouse cursor on full screen
 	return window;
 }
 
