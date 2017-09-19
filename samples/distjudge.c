@@ -391,14 +391,14 @@ void display()
 	* process. */
 	dgr_setget("style", &renderStyle, sizeof(int));
 
-	glEnable(GL_FRAMEBUFFER_SRGB);
+	//glEnable(GL_FRAMEBUFFER_SRGB);
 
 	/* Render the scene once for each viewport. Frequently one
-	* viewport will fill the entire screen. However, this loop will
-	* run twice for HMDs (once for the left eye and once for the
-	* right). */
+	 * viewport will fill the entire screen. However, this loop will
+	 * run twice for HMDs (once for the left eye and once for the
+	 * right). */
 	viewmat_begin_frame();
-	for (int viewportID = 0; viewportID<viewmat_num_viewports(); viewportID++)
+	for(int viewportID=0; viewportID<viewmat_num_viewports(); viewportID++)
 	{
 		viewmat_begin_eye(viewportID);
 
@@ -409,14 +409,14 @@ void display()
 		glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
 		/* Clear the current viewport. Without glScissor(), glClear()
-		* clears the entire screen. We could call glClear() before
-		* this viewport loop---but in order for all variations of
-		* this code to work (Oculus support, etc), we can only draw
-		* after viewmat_begin_eye(). */
+		 * clears the entire screen. We could call glClear() before
+		 * this viewport loop---but in order for all variations of
+		 * this code to work (Oculus support, etc), we can only draw
+		 * after viewmat_begin_eye(). */
 		glScissor(viewport[0], viewport[1], viewport[2], viewport[3]);
 		glEnable(GL_SCISSOR_TEST);
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // set clear color to black
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		glDisable(GL_SCISSOR_TEST);
 		glEnable(GL_DEPTH_TEST); // turn on depth testing
 		kuhl_errorcheck();
@@ -656,12 +656,7 @@ void init_geometryQuad(kuhl_geometry *geom, GLuint program) {
 
 int main(int argc, char** argv)
 {
-
 	srand(time(NULL));
-
-	//for rendering direct to Oculus HMDs
-
-	//-----------------------end Oculus HMDs
 
 	/* Initialize GLFW and GLEW */
 	kuhl_ogl_init(&argc, argv, 960, 540, 32, 4);
@@ -738,7 +733,7 @@ int main(int argc, char** argv)
 	glDepthFunc(GL_LEQUAL); // makes far clamping work.
 
 
-	while (!glfwWindowShouldClose(kuhl_get_window()))
+	while(!glfwWindowShouldClose(kuhl_get_window()))
 	{
 		display();
 		kuhl_errorcheck();
