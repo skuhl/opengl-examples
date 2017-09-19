@@ -211,7 +211,9 @@ include_directories(${GLEW_INCLUDE_DIRS})
 
 
 # --- ImageMagick (recommended, optional) ---
-# ImageMagick 6.7.5-5 is recommended for colorspaces to be handled correctly.
+#
+# See help/IMAGEMAGICK_INSTALL.txt for information about the versions
+# that this code works with.
 find_package(ImageMagick COMPONENTS MagickCore)
 if(ImageMagick_FOUND)
 	include_directories(${ImageMagick_INCLUDE_DIRS})

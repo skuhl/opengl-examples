@@ -147,7 +147,7 @@ void get_vrpn_pos_current(float pos[3])
 {
 #if 0
 	float vrpnpos[3], vrpnorient[16];
-	vrpn_get("DK2", "141.219.28.17", vrpnpos, vrpnorient);
+	vrpn_get("DK2", "vrpnhost", vrpnpos, vrpnorient);
 
 	pos[0] = vrpnpos[0];
 	pos[1] = 0;
