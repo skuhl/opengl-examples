@@ -1,11 +1,12 @@
 --- GETTING STARTED ---
 
 STEP 0: Install Visual Studio (we have verified that it works with
-Visual Studio Community 2015) and make sure you include the C++
-compiler during the installation (by default, the C++ compiler is not
-installed in Visual Studio 2015 because it is "optional"). You will
-also need to install cmake for Windows. Finally, you may also want to
-install git to interact with the opengl-examples git repository.
+Visual Studio Community 2015 or 2017) and make sure you include the
+C++ compiler during the installation (by default, the C++ compiler is
+not installed in Visual Studio 2015 or 2017 because it is
+"optional"). You will also need to install cmake for Windows. Finally,
+you may also want to install git to interact with the opengl-examples
+git repository.
 
 NOTE about 32bit vs 64bit: This process has been tested when all of
 the libraries are 32-bit and you build the project as a 32-bit
