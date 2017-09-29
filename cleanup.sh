@@ -18,8 +18,10 @@ function cleandir()
 	rm -vrf  "${1}/Debug"
 	rm -vf   "${1}"/*.vcxproj
 	rm -vf   "${1}"/*.vcxproj.filters
+	rm -vf   "${1}"/*.vcxproj.user
 	rm -vrf  "${1}/.vs"
 	rm -vf   "${1}/opengl-examples.VC.db"
+	rm -vf   "${1}/opengl-examples.sln"
 	rm -vrf  "${1}/Win32"
 	
 	# Text editor backup files:
