@@ -2151,6 +2151,18 @@ static float kuhl_read_texture_file_stb(const char *filename, GLuint *texName, G
  */
 float kuhl_read_texture_file_wrap(const char *filename, GLuint *texName, GLuint wrapS, GLuint wrapT)
 {
+	if(filename == NULL)
+	{
+		msg(MSG_ERROR, "Failed to load texture file because filename was NULL.");
+		return -1;
+	}
+	if(texName == NULL)
+	{
+		msg(MSG_ERROR, "Failed to load texture file because texName was NULL.");
+		return -1;
+	}
+	
+	
 #ifdef KUHL_UTIL_USE_IMAGEMAGICK
 	return kuhl_read_texture_file_im(filename, texName, wrapS, wrapT);
 #else
