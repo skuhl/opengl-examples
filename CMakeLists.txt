@@ -246,14 +246,15 @@ endif()
 # Disabled on macOS since VRPN on High Sierra doesn't work:
 # https://github.com/Homebrew/homebrew-core/issues/18493
 if(NOT APPLE)
-find_package(VRPN)
+	find_package(VRPN)
+endif()
 if(VRPN_FOUND)
 	include_directories(${VRPN_INCLUDE_DIRS})
 	set(MISSING_VRPN_DEFINITION "")
 else()
 	set(MISSING_VRPN_DEFINITION "MISSING_VRPN")
 endif()
-endif()
+
 
 # --- FFMPEG ---
 find_package(FFmpeg)
