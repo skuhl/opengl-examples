@@ -2360,6 +2360,12 @@ static int textureIdMapSize = 0; /**< Number of items in textureIdMap */
  */
 static void kuhl_private_calc_bbox(const struct aiNode* nd, struct aiMatrix4x4* transform, const struct aiScene *scene, float bbox[6])
 {
+	// Create an identity transform matrix which we can use in case
+	// the transform parameter is NULL. We must declare it here since
+	// we will make transform point to it.
+	struct aiMatrix4x4 ident;
+	aiIdentityMatrix4(&ident);
+
 	/* When this method is called on the root node, the trafo matrix should be set to NULL. */
 	if(transform == NULL)
 	{
@@ -2370,9 +2376,6 @@ static void kuhl_private_calc_bbox(const struct aiNode* nd, struct aiMatrix4x4* 
 		bbox[4]=FLT_MAX;
 		bbox[5]=-FLT_MAX;
 		
-		// Set transform matrix to identity
-		struct aiMatrix4x4 ident;
-		aiIdentityMatrix4(&ident); 
 		transform = &ident;
 	}
 
