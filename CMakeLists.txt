@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 2.6)
 # Use homebrew gcc if it is installed.  This makes my code work with
 # VRPN (when clang is used, we get a linker error when linking to
 # vrpn).
-if(APPLE AND EXISTS /usr/local/bin/gcc-7 and EXISTS /usr/local/bin/g++-7)
+if(APPLE AND EXISTS /usr/local/bin/gcc-7 AND EXISTS /usr/local/bin/g++-7)
 	set(CMAKE_C_COMPILER "/usr/local/bin/gcc-7")
 	set(CMAKE_CXX_COMPILER "/usr/local/bin/g++-7")
 endif()
