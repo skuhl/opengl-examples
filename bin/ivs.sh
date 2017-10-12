@@ -137,12 +137,16 @@ cat <<EOF > "${SCRIPT_FILE}"
 killall xinit
 sleep 1
 
+export PATH=.:${PATH}
+
+
 # Start X
 xinit -- :1 &
+export DISPLAY=:1
 sleep 3
 
-export PATH=.:${PATH}
-export DISPLAY=:1
+# Disable screen blanking
+xset -dpms
 
 # Check if we can connect to X
 xdpyinfo > /dev/null
