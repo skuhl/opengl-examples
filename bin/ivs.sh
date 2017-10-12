@@ -146,7 +146,7 @@ export DISPLAY=:1
 sleep 3
 
 # Disable screen blanking
-xset -dpms
+xset s off -dpms
 
 # Check if we can connect to X
 xdpyinfo > /dev/null
