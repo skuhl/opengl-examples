@@ -3234,7 +3234,7 @@ static kuhl_geometry* kuhl_private_load_model(const struct aiScene *sc,
 				texCoord[i*2+0] = mesh->mTextureCoords[0][i].x;
 				texCoord[i*2+1] = mesh->mTextureCoords[0][i].y;
 			}
-			kuhl_geometry_attrib(geom, texCoord, 2, "in_TexCoord", 1);
+			kuhl_geometry_attrib(geom, texCoord, 2, "in_TexCoord", 0);
 			free(texCoord);
 		}
 
