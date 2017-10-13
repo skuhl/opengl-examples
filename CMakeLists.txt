@@ -3,11 +3,13 @@ cmake_minimum_required(VERSION 2.6)
 #set(CMAKE_C_COMPILER "gcc")
 #set(CMAKE_CXX_COMPILER "g++")
 
-# Use homebrew gcc if it is installed.
-#if(APPLE AND EXISTS /usr/local/bin/gcc-5)
-#set(CMAKE_C_COMPILER "/usr/local/bin/gcc-5")
-#set(CMAKE_CXX_COMPILER "/usr/local/bin/g++-5")
-#endif()
+# Use homebrew gcc if it is installed.  This makes my code work with
+# VRPN (when clang is used, we get a linker error when linking to
+# vrpn).
+if(APPLE AND EXISTS /usr/local/bin/gcc-7 AND EXISTS /usr/local/bin/g++-7)
+	set(CMAKE_C_COMPILER "/usr/local/bin/gcc-7")
+	set(CMAKE_CXX_COMPILER "/usr/local/bin/g++-7")
+endif()
 
 
 #set(CMAKE_C_COMPILER "clang")
@@ -243,9 +245,10 @@ endif()
 
 
 # --- VRPN ---
-# Disabled on macOS since VRPN on High Sierra doesn't work:
-# https://github.com/Homebrew/homebrew-core/issues/18493
-if(NOT APPLE)
+#
+# macOS: As of Oct 2017, using Clang as a compiler results in an error
+# when compiling against VRPN.
+if(NOT APPLE OR (APPLE AND ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")))
 	find_package(VRPN)
 endif()
 if(VRPN_FOUND)
