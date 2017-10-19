@@ -174,7 +174,6 @@ endfunction(kuhl_add_paths)
 if(NOT WIN32)
 	kuhl_add_paths(/home/kuhl/public-ogl) # CCSR, self-administered machines
 	kuhl_add_paths(/local/kuhl-public-share/opengl) # MTU campus linux lab machines
-	kuhl_add_paths(/research/kuhl/public-ogl) # ivs
 endif()
 kuhl_add_paths(${CMAKE_CURRENT_SOURCE_DIR}/..) # Alongside this folder
 kuhl_add_paths(${CMAKE_CURRENT_SOURCE_DIR}/../opengl-libs) # Alongside this folder in a folder named opengl-libs
