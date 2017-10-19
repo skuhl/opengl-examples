@@ -130,6 +130,10 @@ printMessage "Connecting to IVS computers..."
 for i in $NODES; do
     printMessage "Starting on X on ${i}"
 
+	EXEC="$1"
+	shift # remove IVS from args
+	shift # remove exec from args
+	
 	SCRIPT_FILE=".temp-dgr-run-$i.sh"
 	# use \$ to write a literal $ into the file
 cat <<EOF > "${SCRIPT_FILE}"
@@ -160,8 +164,8 @@ fi
 
 # Run our program with the arguments passed to it:
 cd ${IVS_TEMP_DIR}/bin
-echo ${1} --config config/ivs/${i%%.*}.ini "${@:2}"
-${1} --config config/ivs/${i%%.*}.ini "${@:2}"
+echo ${EXEC} --config config/ivs/${i%%.*}.ini "${@}"
+${EXEC} --config config/ivs/${i%%.*}.ini "${@}"
 
 # Kill any running jobs (for example, xinit) after our program exits
 kill `jobs -p` &> /dev/null
