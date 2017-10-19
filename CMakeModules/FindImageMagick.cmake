@@ -268,9 +268,10 @@ foreach(component ${ImageMagick_FIND_COMPONENTS}
     list(APPEND ImageMagick_REQUIRED_VARS ImageMagick_MagickWand_LIBRARY)
   elseif(component STREQUAL "MagickCore")
     FIND_IMAGEMAGICK_API(MagickCore magick/MagickCore.h
-      MagickCore libMagickCore.so.5 CORE_RL_magick_ MagickCore-6.Q16 MagickCore-Q16 MagickCore-6.Q8 MagickCore-Q8 MagickCore-6.Q16HDRI MagickCore-Q16HDRI MagickCore-6.Q8HDRI MagickCore-Q8HDRI 
+      MagickCore CORE_RL_magick_ MagickCore-6.Q16 MagickCore-Q16 MagickCore-6.Q8 MagickCore-Q8 MagickCore-6.Q16HDRI MagickCore-Q16HDRI MagickCore-6.Q8HDRI MagickCore-Q8HDRI 
       )
       # Removed 'Magick' from the above list so the older name of the library and it was therefore prioritizing the old version installed on IVS instead of the newer local copy.
+	  # Removed 'libMagickCore.so.5' from list above so we use the version we compiled ourselves on ccsr
     list(APPEND ImageMagick_REQUIRED_VARS ImageMagick_MagickCore_LIBRARY)
   else()
     if(ImageMagick_EXECUTABLE_DIR)

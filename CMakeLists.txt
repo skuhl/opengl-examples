@@ -120,8 +120,11 @@ function(kuhl_add_paths path)
 	
 	# ImageMagick
 	if(NOT DEFINED ImageMagick_MagickCore_LIBRARY)
+		kuhl_add_library_path(${path}/ImageMagick/magick/.libs)
+		kuhl_add_include_path(${path}/ImageMagick/magick)
+
 		kuhl_add_library_path(${path}/ImageMagick/.libs)
-		kuhl_add_include_path(${path}/ImageMagick/)
+		kuhl_add_include_path(${path}/ImageMagick)
 
 		kuhl_add_include_path("C:/Program Files (x86)/ImageMagick-6.*/include")
 		kuhl_add_library_path("C:/Program Files (x86)/ImageMagick-6.*/")
@@ -171,7 +174,6 @@ endfunction(kuhl_add_paths)
 if(NOT WIN32)
 	kuhl_add_paths(/home/kuhl/public-ogl) # CCSR, self-administered machines
 	kuhl_add_paths(/local/kuhl-public-share/opengl) # MTU campus linux lab machines
-	kuhl_add_paths(/research/kuhl/public-ogl) # ivs
 endif()
 kuhl_add_paths(${CMAKE_CURRENT_SOURCE_DIR}/..) # Alongside this folder
 kuhl_add_paths(${CMAKE_CURRENT_SOURCE_DIR}/../opengl-libs) # Alongside this folder in a folder named opengl-libs
