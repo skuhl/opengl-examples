@@ -3,9 +3,6 @@
 IVS_USER="$USER"
 IVS_TEMP_DIR="~$USER/opengl-examples-ivs-temp"
 
-MASTER_SEND_PORT=5676
-SLAVE_LISTEN_PORT=5676
-
 
 #NODES_SHORT="node1 node2 node3 node4 node5 node6 node7 node8"
 NODES_SHORT="node1 node2 node3 node4 node5 node6 node7 node8"
@@ -21,21 +18,36 @@ RSYNC_DEST="node1.ivs.research.mtu.edu"
 trap 'cleanup' ERR   # process exits with non-zero exit code
 trap 'cleanup' INT   # Ctrl+C
 cleanup() {
-        echo
-        # Removing the ssh socket file should kill any ssh processes that use it!
-        sleep .2
-		rm "./.temp-dgr-*"
-		
-        printMessage "Deleting any remaining DGR processes..."
-        # Redirect stdout and stderr to /dev/null--- the user doesn't
-        # need to see what was killed. Sometimes we'll get a message
-        # about 'no such process' from kill. This seems to be that
-        # "jobs -p" creates a list of jobs that is a little out of
-        # date, or the PIDs die before kill has a chance to kill them.
-        kill -TERM `jobs -p` &> /dev/null
-		stty sane
+	echo "Jobs running before cleanup:"
+	jobs -p -r
+	
 	echo
-        exit 1
+	sleep .2
+
+	for i in $NODES; do
+		echo "Killing jobs on $i..."
+		ssh -q -t -t -x -M ${IVS_USER}@${i} "killall ${1} xterm; sleep .2; echo 'jobs on node after'; ps ux"
+	done
+
+	sleep .2
+	rm ./.temp-dgr-*
+	killall dgr-relay
+
+    # Redirect stdout and stderr to /dev/null--- the user doesn't
+    # need to see what was killed. Sometimes we'll get a message
+    # about 'no such process' from kill. This seems to be that
+    # "jobs -p" creates a list of jobs that is a little out of
+    # date, or the PIDs die before kill has a chance to kill them.
+	kill `jobs -p -r` &> /dev/null
+	sleep .3
+
+	echo "Jobs to be terminated forcefully:"
+	jobs -p -r
+
+	kill -TERM `jobs -p -r` &> /dev/null
+	stty sane
+	echo
+	exit 1
 }
 
 
@@ -56,14 +68,12 @@ function printMessage()
 }
 
 
-function myssh()
-{
-    SSH_TO_HOST="$1"
-    shift
-    echo ssh -q -t -t -x -S ./.temp-dgr-ssh-socket-${SSH_TO_HOST} "${IVS_USER}@${SSH_TO_HOST}" "${@}"
-    ssh  -x -S ./.temp-dgr-ssh-socket-${SSH_TO_HOST} "${IVS_USER}@${SSH_TO_HOST}" "${@}"
-}
-
+for i in ${@}; do
+	if [[ $i == "--config" ]]; then
+		echo "Do not pass --config options to program when using ivs.sh"
+		exit 1
+	fi
+done
 
 for i in ivs.research.mtu.edu ${NODES}; do
     denyHostname "$i"
@@ -130,6 +140,10 @@ printMessage "Connecting to IVS computers..."
 for i in $NODES; do
     printMessage "Starting on X on ${i}"
 
+	EXEC="$1"
+	shift # remove IVS from args
+	shift # remove exec from args
+	
 	SCRIPT_FILE=".temp-dgr-run-$i.sh"
 	# use \$ to write a literal $ into the file
 cat <<EOF > "${SCRIPT_FILE}"
@@ -160,37 +174,45 @@ fi
 
 # Run our program with the arguments passed to it:
 cd ${IVS_TEMP_DIR}/bin
-echo ${1} --config config/ivs/${i%%.*}.ini "${@:2}"
-${1} --config config/ivs/${i%%.*}.ini "${@:2}"
+echo ${EXEC} --config config/ivs/${i%%.*}.ini "${@}"
+${EXEC} --config config/ivs/${i%%.*}.ini "${@}"
 
-# Kill any running jobs (for example, xinit) after our program exits
-kill `jobs -p` &> /dev/null
+# Kill any running jobs (for example, xinit) after our program exits.
+# kill xterm window which automatically gets created by xinit first.
+killall xterm
+#sleep 1
+# X should exit gracefully, if not kill it.
+#kill `jobs -r -p` &> /dev/null
 EOF
 
 printMessage "Starting node $i"
-#./sshpass.py ssh -q -t -t -x -M ${IVS_USER}@${i} "$(cat $SCRIPT_FILE)" &
 ssh -q -t -t -x -M ${IVS_USER}@${i} "$(cat $SCRIPT_FILE)" &
 
 #sleep 5   # Sleep between each computer we ssh into.
 done
 
-printMessage "Starting dgr-relay..."
-dgr-relay 5700 141.219.23.98 5701 141.219.23.99 5701 141.219.23.100 5701 141.219.23.101 5701 141.219.23.102 5701 141.219.23.103 5701 141.219.23.104 5701 141.219.23.105 5701 &
+#printMessage "Starting dgr-relay..."
+# dgr-relay 5700 141.219.23.98 5060 
+# 141.219.23.99 5060
+# 141.219.23.100 5060
+# 141.219.23.101 5060
+# 141.219.23.102 5060 
+# 141.219.23.103 5060
+# 141.219.23.104 5060
+# 141.219.23.105 5060 &
 
 sleep 1
 
 printMessage "Starting master"
 ${1} --config config/ivs/master.ini "${@:2}"
 
-# Loop until all jobs are completed. If there is only one job
-# remaining, it is probably the ssh master connection. We can kill
-# that by deleting the socket.
+# Loop until all jobs are completed.
 while (( 1 )); do
-    sleep 1
+	sleep 1
 #	jobs -r
-#	echo
-    if [[ `jobs -r | wc -l` -eq 1 ]]; then
-	printMessage "Looks like everything finished successfully, cleaning up..."
+	echo
+	if [[ `jobs -r | wc -l` -le 1 ]]; then
+		printMessage "Looks like everything finished successfully, cleaning up..."
 	cleanup
 	exit 0
     fi
