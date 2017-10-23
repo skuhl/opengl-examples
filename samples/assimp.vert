@@ -25,21 +25,28 @@ void main()
 	out_TexCoord = in_TexCoord;
 	out_Color = in_Color;
 
+	/* Calculate the actual modelview matrix: */
 	mat4 actualModelView;
 	if(NumBones > 0)
 	{
+		/* If we have an animated model/character that contains bones,
+		   we need to account for the bone matrices. */
 		mat4 m = in_BoneWeight.x * BoneMat[int(in_BoneIndex.x)] +
-			in_BoneWeight.y * BoneMat[int(in_BoneIndex.y)] +
-			in_BoneWeight.z * BoneMat[int(in_BoneIndex.z)] +
-			in_BoneWeight.w * BoneMat[int(in_BoneIndex.w)];
+		         in_BoneWeight.y * BoneMat[int(in_BoneIndex.y)] +
+		         in_BoneWeight.z * BoneMat[int(in_BoneIndex.z)] +
+		         in_BoneWeight.w * BoneMat[int(in_BoneIndex.w)];
 		actualModelView = ModelView * m;
 	}
 	else
+		/* If we have a model without animation/bones in it, we simply
+		 * need to account for the GeomTransform matrix embedded in
+		 * the 3D model. */
 		actualModelView = ModelView * GeomTransform;
 
+	mat3 NormalMat = transpose(inverse(mat3(actualModelView)));
+	
 	// Transform normal from object coordinates to camera coordinates
-	//out_Normal = normalize(NormalMat * in_Normal);
-	out_Normal = transpose(inverse(mat3(actualModelView)))*in_Normal.xyz;
+	out_Normal = NormalMat * in_Normal.xyz;
 
 	// Transform vertex from object to unhomogenized Normalized Device
 	// Coordinates (NDC).
