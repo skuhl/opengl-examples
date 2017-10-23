@@ -2014,21 +2014,19 @@ void kuhl_flip_texture_array(unsigned char *image, const int width, const int he
 	// printf("Flipping texture with width = %d, height = %d\n", width, height);
 	unsigned int bytesPerRow = components * width; // 1 byte per component
 	unsigned int pivot = height/2;
+
+	unsigned char *temp = kuhl_malloc(bytesPerRow);
 	for (unsigned i = 0; i < pivot; ++i) 
 	{
 		unsigned char *lineTop = (image + i * bytesPerRow);
 		unsigned char *lineBottom = (image + (height - i - 1) * bytesPerRow);
 		// printf("Swapping %d with %d\n", i, height-i-1);
-		for (unsigned j = 0; j < bytesPerRow; ++j)
-		{
-			unsigned char a = *lineTop;
-			unsigned char b = *lineBottom;
-			*lineTop = b;
-			*lineBottom = a;
-			lineTop++;
-			lineBottom++;
-		}
+
+		memcpy(temp, lineTop, bytesPerRow);
+		memcpy(lineTop, lineBottom, bytesPerRow);
+		memcpy(lineBottom, temp, bytesPerRow);
 	}
+	free(temp);
 }
 
 
