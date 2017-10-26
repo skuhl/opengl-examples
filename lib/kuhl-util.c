@@ -3495,7 +3495,7 @@ void kuhl_update_model(kuhl_geometry *first_geom, unsigned int animationNum, flo
  *
  * @return Returns a kuhl_geometry object that can be later drawn. If
  * the model contains multiple meshes, kuhl_geometry will be a linked
- * list (i.e., geom->next will not be NULL). Returns NULL on error.
+ * list (i.e., geom->next will not be NULL). Calls exit() on error.
  */
 kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDirname,
                                GLuint program, float bbox[6])
@@ -3506,7 +3506,8 @@ kuhl_geometry* kuhl_load_model(const char *modelFilename, const char *textureDir
 	if(scene == NULL)
 	{
 		msg(MSG_ERROR, "ASSIMP was unable to import the model '%s'.\n", modelFilename);
-		return NULL;
+		//return NULL;
+		exit(EXIT_FAILURE);
 	}
 
 	// Convert the information in aiScene into a kuhl_geometry object.
