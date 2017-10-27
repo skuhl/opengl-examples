@@ -1769,17 +1769,12 @@ void mat4d_perspective_new(double result[16], double fovy, double aspect, double
 
 /* Replacements for gluLookAt(). Also, provide versions where inputs
  * are arrays. */
-void mat4f_lookat_new(float result[16], float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upz);
-void mat4d_lookat_new(double result[16], double eyeX, double eyeY, double eyeZ, double centerX, double centerY, double centerZ, double upX, double upY, double upZ);
-void mat4f_lookatVec_new(float  result[16], const float  eye[3], const float  center[3], const float  up[3]);
-void mat4d_lookatVec_new(double result[16], const double eye[3], const double center[3], const double up[3]);
+void mat4f_lookat_new(float result[16], float camPosX, float camPosY, float camPosZ, float lookAtPtX, float lookAtPtY, float lookAtPtZ, float upVecX, float upVecY, float upVecz);
+void mat4d_lookat_new(double result[16], double camPosX, double camPosY, double camPosZ, double lookAtPtX, double lookAtPtY, double lookAtPtZ, double upVecX, double upVecY, double upVecZ);
+void mat4f_lookatVec_new(float  result[16], const float  camPos[3], const float  lookAtPt[3], const float  upVec[3]);
+void mat4d_lookatVec_new(double result[16], const double camPos[3], const double lookAtPt[3], const double upVec[3]);
 
-/* viewmat to lookat */
-void mat4f_viewmat_to_lookatVec(const float viewmat[16], float eye[3],  float center[3],  float up[3]);
-void mat4d_viewmat_to_lookatVec(const double viewmat[16], double eye[3], double center[3], double up[3]);
-	
 
-	
 /* Matrix stack implementation */
 void mat4f_stack_push(list *l);
 void mat4f_stack_mult(list *l, float m[16]);
