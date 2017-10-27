@@ -9,13 +9,14 @@
  * @author Scott Kuhl
  */
 
+#include "libkuhl.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "libkuhl.h"
 
 static GLuint program = 0; /**< id value for the GLSL program */
 static kuhl_geometry *modelgeom = NULL;
@@ -220,7 +221,7 @@ void display()
 		 * after viewmat_begin_eye(). */
 		glScissor(viewport[0], viewport[1], viewport[2], viewport[3]);
 		glEnable(GL_SCISSOR_TEST);
-		glClearColor(.2,.2,.2,0); // set clear color to grey
+		glClearColor(.2f,.2f,.2f,0.0f); // set clear color to grey
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		glDisable(GL_SCISSOR_TEST);
 		glEnable(GL_DEPTH_TEST); // turn on depth testing
