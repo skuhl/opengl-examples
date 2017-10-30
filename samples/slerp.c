@@ -110,8 +110,14 @@ void get_model_matrix(float result[16])
 	float rotateAnimate[16];
 	mat4f_identity(rotateAnimate);
 	float percentComplete = fmod(glfwGetTime(),4)/4.0;
-	
-	float startEuler[3] = { 0, 0, 0 };
+
+	/* Change the two angles below if you want to try interpolating
+	 * between orientations besides the default ones listed
+	 * below. Note that rotating between Euler angles between 0,0,0
+	 * and 0,-150,0 will look good. Problems are usually visible when
+	 * we have to interpolate between multiple values in the Euler
+	 * angles at the same time. */
+	float startEuler[3] = { 50, 0, 0 };
 	float endEuler[3] = { 0, -150, 0 };
 	float startMatrix[16], endMatrix[16];
 	mat4f_rotateEuler_new(startMatrix, startEuler[0], startEuler[1], startEuler[2], "XYZ");
