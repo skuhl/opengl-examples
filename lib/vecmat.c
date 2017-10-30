@@ -616,8 +616,11 @@ Intended to work with:
 XYZ XZY YXZ YZX ZXY ZYX (Tait-Bryan angles)
 XYX XZX YXY YZY ZXZ ZYZ (Euler angles)
 
-@param result The location to store the rotation matrix calculated from the Euler angles.
-@param a1_degrees The amount of rotation around the first axis in degrees (-180 to 180).
+@param result The location to store the rotation matrix calculated
+from the Euler angles.
+
+@param a1_degrees The amount of rotation around the first axis in
+degrees (-180 to 180).
 
 @param a2_degrees The amount of rotation around the second axis in
 degrees. If first and last rotation axes are different (Tait-Bryan
