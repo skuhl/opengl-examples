@@ -164,9 +164,14 @@ char* kuhl_find_file(const char *filename)
 	char commonDirs[32][256];
 	int commonDirsLen = 0;
 #ifdef _WIN32
-	strncpy(commonDirs[commonDirsLen++], "../../samples", 255); // On windows, binaries get put into extra subdirectory
+	// On windows, binaries get put into extra subdirectory
+	strncpy(commonDirs[commonDirsLen++], "../../samples", 255);
+	strncpy(commonDirs[commonDirsLen++], "../../models", 255);
+	strncpy(commonDirs[commonDirsLen++], "../../", 255);
 #else
 	strncpy(commonDirs[commonDirsLen++], "../samples", 255); // Find fragment programs in samples directory
+	strncpy(commonDirs[commonDirsLen++], "../models", 255);
+	strncpy(commonDirs[commonDirsLen++], "../", 255);
 #endif
 	strncpy(commonDirs[commonDirsLen++], "/home/kuhl/public-ogl/data", 255); // CCSR
 	strncpy(commonDirs[commonDirsLen++], "/local/kuhl-public-share/opengl/data", 255); // Rekhi
