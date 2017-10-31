@@ -250,7 +250,7 @@ endif()
 #
 # macOS: As of Oct 2017, using Clang as a compiler results in an error
 # when compiling against VRPN.
-if(NOT APPLE OR (APPLE AND ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")))
+if(NOT APPLE OR (APPLE AND (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")))
 	find_package(VRPN)
 endif()
 if(VRPN_FOUND)
