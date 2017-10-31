@@ -3,7 +3,6 @@
 /libOVR*.so*
 
 # Generated Binaries
-/dgr-relay
 /ogl2-slideshow
 /ogl2-texture
 /ogl2-triangle

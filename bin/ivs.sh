@@ -4,7 +4,6 @@ IVS_USER="$USER"
 IVS_TEMP_DIR="~$USER/opengl-examples-ivs-temp"
 
 
-#NODES_SHORT="node1 node2 node3 node4 node5 node6 node7 node8"
 NODES_SHORT="node1 node2 node3 node4 node5 node6 node7 node8"
 NODES=""
 for i in $NODES_SHORT; do
@@ -31,7 +30,6 @@ cleanup() {
 
 	sleep .2
 	rm ./.temp-dgr-*
-	killall dgr-relay
 
     # Redirect stdout and stderr to /dev/null--- the user doesn't
     # need to see what was killed. Sometimes we'll get a message
@@ -104,14 +102,8 @@ fi
 PATH=.:$PATH
 
 printMessage "Making sure everything is recompiled on this computer..."
-make --quiet "$1" dgr-relay
 make --quiet "$1"
 
-# Make sure that the dgr-relay and the program we want to execute exist and are executable.
-if [[ ! -x dgr-relay ]]; then
-    echo "dgr-relay program is missing or not executable. Have you compiled it?"
-    exit 1
-fi
 if [[ ! -x "$1" ]]; then
     echo "The program you want to run ($1) is missing or not executable. Have you compiled it?"
     exit 1
@@ -128,7 +120,7 @@ cat <<EOF > "${SCRIPT_FILE}"
 	cd ${IVS_TEMP_DIR}
 	./cleanup.sh
 	cmake .
-	make -j6 "$1" dgr-relay
+	make -j6 "$1"
 EOF
 ssh -q -t -t -x -M ${IVS_USER}@${i} "$(cat $SCRIPT_FILE)"
 
@@ -190,16 +182,6 @@ ssh -q -t -t -x -M ${IVS_USER}@${i} "$(cat $SCRIPT_FILE)" &
 
 #sleep 5   # Sleep between each computer we ssh into.
 done
-
-#printMessage "Starting dgr-relay..."
-# dgr-relay 5700 141.219.23.98 5060 
-# 141.219.23.99 5060
-# 141.219.23.100 5060
-# 141.219.23.101 5060
-# 141.219.23.102 5060 
-# 141.219.23.103 5060
-# 141.219.23.104 5060
-# 141.219.23.105 5060 &
 
 sleep 1
 

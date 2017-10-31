@@ -60,6 +60,9 @@ long kuhl_milliseconds_start(void);
 void kuhl_getfps_init(kuhl_fps_state *state);
 float kuhl_getfps(kuhl_fps_state *state);
 
+int kuhl_tokenize(char *result[], const int resultLen, const char *str, const char *delim);
+void kuhl_tokenize_free(char *result[], int resultlen);
+	
 #ifdef __cplusplus
 } // end extern "C"
 #endif

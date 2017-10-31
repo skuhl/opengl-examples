@@ -578,3 +578,42 @@ double kuhl_gauss(void)
 
 	return X;
 }
+
+
+/* Tokenizes a string by the provided delimiter. The results are
+ * stored in an array that has a length maxlen. Each string in the
+ * array should be free()'d by the caller. */
+int kuhl_tokenize(char *result[], const int resultLen, const char *str, const char *delim)
+{
+	if(result == NULL)
+		return 0;
+	
+	/* Make pointers in result array point to NULL */
+	for(int i=0; i<resultLen; i++)
+		result[i] = NULL;
+
+	/* Make a copy of str so that we can modify it */
+	char *str2 = strdup(str);
+	char *saveptr = NULL;
+	char *token = strtok_r(str2, delim, &saveptr);
+
+	/* Iterate through all tokens or as many tokens will fit into
+	 * result array. */
+	int curPos = 0;
+	while(token != NULL && curPos < resultLen)
+	{
+		/* Make a copy of the token, caller will have to free() it */
+		result[curPos++] = strdup(token);
+		token = strtok_r(NULL, " ", &saveptr);
+	}
+
+	free(str2);
+	return curPos; // return # of items in result array
+}
+
+void kuhl_tokenize_free(char *result[], int resultlen)
+{
+	for(int i=0; i<resultlen; i++)
+		if(result[i] != NULL)
+			free(result[i]);
+}
