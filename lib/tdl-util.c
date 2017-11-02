@@ -100,7 +100,7 @@ FILE* tdl_create(const char* path, const char* name)
 {
 #ifdef _WIN32
 	msg(MSG_ERROR, "This function is not defined on Windows.");
-	return -1;
+	return NULL;
 #else
 
 	int pathLen = strlen(path);

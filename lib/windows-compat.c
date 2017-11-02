@@ -2,8 +2,6 @@
 #include <Windows.h>
 #include <math.h>
 
-/* strtok_r() on Unix is named strtok_s() on Windows */
-#define strtok_r strtok_s
 
 #define RAND48_SEED_0   (0x330e)
 #define RAND48_SEED_1 (0xabcd)
