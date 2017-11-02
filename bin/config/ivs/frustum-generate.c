@@ -17,7 +17,7 @@
 #define VERT_COUNT 4
 #define VERT_SIZE (VERT_TOP - VERT_BOT)
 #define VERT_SCREEN_SIZE (VERT_SIZE / VERT_COUNT)
-#define NEAR 1.0
+#define NEAR 3.5
 #define FAR 100.0
 
 typedef struct {
@@ -50,7 +50,7 @@ char* getFrustum(int nodeNum, Frustum* input) {
     case 7: setFrustum(input, 0, 1, 1, 2); break;
     case 8: setFrustum(input, 0, 1, 0, 1); break;
   }
-  sprintf(frustumInfo, "frustum = %f %f %f %f %f %f", input->frustum_l, input->frustum_r, input->frustum_b, input->frustum_t, NEAR, FAR);
+  sprintf(frustumInfo, "frustum = %f %f %f %f %f %f\n", input->frustum_l, input->frustum_r, input->frustum_b, input->frustum_t, NEAR, FAR);
   return frustumInfo;
 }
 
