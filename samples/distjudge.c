@@ -717,7 +717,8 @@ int main(int argc, char** argv)
 
 	// for experiment recording
 	if (DISTANCE_EXP) {
-		const char *fname = "./results/dist.txt";
+		mkdir("./distjudge-results", 0700);
+		const char *fname = "./distjudge-results/dist.txt";
 		dis_record = fopen(fname, "w");
 		if (!dis_record) {
 			msg(MSG_FATAL, "Unable to open %s for writing.\n", fname);
