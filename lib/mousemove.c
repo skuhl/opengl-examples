@@ -10,13 +10,6 @@
 #include "windows-compat.h"
 #include "mousemove.h"
 
-#if 0
-#ifdef __APPLE__
-#include <OpenGL/gl.h>
-#else
-#include <GL/gl.h>
-#endif
-#endif
 #include <math.h>
 #include <stdio.h>
 
@@ -273,68 +266,12 @@ int mousemove_movement(int x, int y)
 }
 
 
-#ifdef MOUSEMOVE_GLUT
-
-/** A callback function suitable for use with
- * glutMouseFunc(). Typically, you would call
- * glutMouseFunc(mousemove_glutMouseFunc) to tell GLUT to call this
- * function whenever a mouse button is pressed. MOUSEMOVE_GLUT must be
- * defined in the preprocessor to use this function.
- *
- * @param button The mouse button that was pressed.
- * @param state Was the button pressed or released?
- * @param x The x coordinate of the mouse cursor.
- * @param y The y coordinate of the mouse cursor.
- * @see mousemove_buttonPress() mousemove_glfwMouseButtonCallback()
- */
-void mousemove_glutMouseFunc(int button, int state, int x, int y)
-{
-	int leftMidRight = -1;
-	switch(button)
-	{
-		case GLUT_LEFT_BUTTON:   leftMidRight = 0;  break;
-		case GLUT_MIDDLE_BUTTON: leftMidRight = 1;  break;
-		case GLUT_RIGHT_BUTTON:  leftMidRight = 2;  break;
-			/* FreeGLUT doesn't define these, but they are scroll
-			 * buttons. FreeGLUT also apparently provides a
-			 * glutMouseWheelFunc() callback function, but it isn't
-			 * called on all systems. See
-			 * http://stackoverflow.com/questions/14378
-			 */
-		case 3:  /* up */        leftMidRight = 3; x=0; y=-2; break;
-		case 4:  /* down */      leftMidRight = 4; x=0; y=2;  break;
-		default:                 leftMidRight = -1; break;
-	}
-	mousemove_buttonPress(state==GLUT_DOWN, leftMidRight, x, y);
-}
-
-/** A callback function suitable for use with
- *  glutMotionFunc(). Typically, you would call
- *  glutMotionFunc(mousemove_glutMotionFunc) to tell GLUT to call this
- *  function whenever a mouse is moved while a mouse button is
- *  pressed. MOUSEMOVE_GLUT must be defined in the preprocessor to use
- *  this function.
- *
- * @see mousemove_movement() mousemove_glfwCursorPosCallback()
- *
- * @param x The x coordinate of the mouse cursor.
- * @param y The y coordinate of the mouse cursor.
- */
-void mousemove_glutMotionFunc(int x, int y)
-{
-	if(mousemove_movement(x,y))
-		glutPostRedisplay();
-}
-#endif
-
-#ifdef MOUSEMOVE_GLFW
 
 /** A callback function suitable for use with
  * glfwSetMouseButtonCallback(). Typically, you would call
  * glftSetMouseButtonCallback(window, mousemove_glfwMouseButtonCallback) to
  * tell GLFW to call this function whenever a mouse button is
- * pressed. MOUSEMOVE_GLFW must be defined in the preprocessor to use
- * this function.
+ * pressed. 
  *
  * @see mousemove_buttonPress() mousemove_glutMouseFunc() 
  */
@@ -359,8 +296,7 @@ void mousemove_glfwMouseButtonCallback(GLFWwindow *window, int button, int actio
  *  glfwSetCursorPosCallback(). Typically, you would call
  *  glfwSetCursorPosCallback(window, mousemove_glfwCursorPosCallback) to tell
  *  GLFW to call this function whenever a mouse is moved while a mouse
- *  button is pressed. MOUSEMOVE_GLFW must be defined in the
- *  preprocessor to use this function.
+ *  button is pressed.
  *
  * @param window The GLFW window we are working with.
  * @param x The x coordinate of the mouse cursor.
@@ -391,6 +327,3 @@ void mousemove_glfwScrollCallback(GLFWwindow *window, double xoff, double yoff)
 	else if(yoff < 0)
 		mousemove_buttonPress(1, 4, 0, (int)(yoff*10));
 }
-
-
-#endif // ifdef MOUSEMOVE_GLFW
