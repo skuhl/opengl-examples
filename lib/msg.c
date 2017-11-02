@@ -17,6 +17,9 @@
    case of significant error messages, stderr. The messages printed to
    the console are also highlighted to attract attention to the most
    significant messages.
+
+   Compile with the -DMSG_SIMPLE option to reduce the number of
+   dependencies of this file.
    
     @author Scott Kuhl
  */
@@ -27,7 +30,6 @@
 #include <stdlib.h>
 #ifndef _WIN32
 #include <libgen.h> /* basename() */
-#include <sys/time.h> // gettimeofday()
 #include <unistd.h> // isatty()
 #endif
 #include <time.h> // localtime()
@@ -35,9 +37,12 @@
 #include <errno.h>
 
 #include "msg.h"
+
+#ifndef MSG_SIMPLE
 #include "kuhl-config.h"
 #include "kuhl-nodep.h"
 #include "windows-compat.h"
+#endif
 
 static FILE *f = NULL;  /**< The file stream for our log file */
 static char *logfile = NULL; /**< The filename of the log file. */
@@ -49,7 +54,13 @@ static char *logfile = NULL; /**< The filename of the log file. */
 */
 static void msg_timestamp(char *buf, int len)
 {
-#if 1
+	if(buf == NULL || len < 1)
+		return;
+	
+#ifdef MSG_SIMPLE
+	buf[0] = '\0';
+	return;
+#else
 	// time relative to start time
 	static int needsInit = 1;
 	static long starttime;
@@ -63,12 +74,14 @@ static void msg_timestamp(char *buf, int len)
 	long difftime = nowtime-starttime;
 	double timestamp = difftime / 1000000.0;
 	snprintf(buf, len, "%11.6f", timestamp);
-#else
+
+/*
 	// Absolute time
 	struct tm *now = localtime(&(tv.tv_sec));
 	char buf1[1024];
 	strftime(buf1, 1024, "%H%M%S", now);
 	snprintf(buf, len, "%s.%06ld", buf1, tv.tv_usec);
+*/
 #endif
 }
 
@@ -247,7 +260,11 @@ static void msg_init(void)
 	if(f != NULL)
 		return;
 
-	// Set to 1 to overwrite existing log file, 0 to append.
+
+#ifdef MSG_SIMPLE
+	// Set to 0 to overwrite existing log file, 1 to append.
+	const int append = 0;
+#else
 	const int append = kuhl_config_boolean("log.append", 0,0);
 
 	// Check if log file name is specified in an environment variable
@@ -256,6 +273,7 @@ static void msg_init(void)
 		logfile = strdup(config_logfile);
 	else
 		logfile = strdup("log.txt"); // default log file name
+#endif
 
 	/* When the first message gets printed, we will also probably call
 	 * kuhl_config_get() for the first time. kuhl_config_get() will
