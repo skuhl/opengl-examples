@@ -69,8 +69,8 @@ int main(int argc, char** argv) {
 
   for (int i = 1; i <= 8; i++) {
     char filename[100];
-    sprintf(filename, "Writing: node%d.ini", i);
-    printf("%s\n", filename);
+    sprintf(filename, "node%d.ini", i);
+    printf("Writing: %s\n", filename);
     Frustum frustum;
 
     //open ini
