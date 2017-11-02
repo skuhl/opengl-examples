@@ -26,5 +26,7 @@ extern "C" {
 }
 #endif
 
+/* strtok_r() on Unix is named strtok_s() on Windows */
+#define strtok_r strtok_s
 
 #endif  // end if windows
