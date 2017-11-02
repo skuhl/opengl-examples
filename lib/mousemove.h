@@ -25,14 +25,7 @@
  *                   0, 1, 0); // up vector<br>
  *    mousemove_speed(0.05, 0.5);
  *
- * 2) If you are using GLUT, compile with the -DMOUSEMOVE_GLUT option
- * passed to your compiler and setup the appropriate callbacks:
- *
- *    glutMotionFunc(mousemove_glutMotionFunc);<br>
- *    glutMouseFunc(mousemove_glutMouseFunc);
- *
- * If you are using GLFW3, compile with the -DMOUSEMOVE_GLFW option
- * passed to your compiler and set up the appropriate callbacks:
+ * 2) Set up the appropriate callbacks:
  *
  *    glfwSetMouseButtonCallback(window, mousemove_glfwMouseButtonCallback);<br>
  *    glfwSetCursorPosCallback(window, mousemove_glfwCursorPosCallback);<br>
@@ -53,36 +46,12 @@
 extern "C" {
 #endif
 
-#if defined(MOUSEMOVE_GLUT) && defined(MOUSEMOVE_GLFW)
-#error "mousemove requires MOUSEMOVE_GLUT or MOUSEMOVE_GLFW preprocessor variable to be set---you have both of them set."
-#endif
-	
-#if !defined(MOUSEMOVE_GLUT) && !defined(MOUSEMOVE_GLFW)
-#error "mousemove requires MOUSEMOVE_GLUT or MOUSEMOVE_GLFW preprocessor variable to be set."
-#endif
-
-#ifdef MOUSEMOVE_GLUT
-#ifdef FREEGLUT
-#include <GL/freeglut.h>
-#else
-#include <GLUT/glut.h>
-#endif
-#endif
-
-#ifdef MOUSEMOVE_GLFW
 #include <GLFW/glfw3.h>
-#endif
 
 
-#ifdef MOUSEMOVE_GLUT
-void mousemove_glutMouseFunc(int button, int state, int x, int y);
-void mousemove_glutMotionFunc(int x, int y);
-#endif
-#ifdef MOUSEMOVE_GLFW
 void mousemove_glfwCursorPosCallback(GLFWwindow *window, double x, double y);
 void mousemove_glfwMouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
 void mousemove_glfwScrollCallback(GLFWwindow *window, double xoff, double yoff);
-#endif
 
 /* Don't need to be called directly if you are using the GLUT or GLFW callback functions listed above. */
 void mousemove_buttonPress(int down, int button, int x, int y);
