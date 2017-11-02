@@ -616,8 +616,11 @@ Intended to work with:
 XYZ XZY YXZ YZX ZXY ZYX (Tait-Bryan angles)
 XYX XZX YXY YZY ZXZ ZYZ (Euler angles)
 
-@param result The location to store the rotation matrix calculated from the Euler angles.
-@param a1_degrees The amount of rotation around the first axis in degrees (-180 to 180).
+@param result The location to store the rotation matrix calculated
+from the Euler angles.
+
+@param a1_degrees The amount of rotation around the first axis in
+degrees (-180 to 180).
 
 @param a2_degrees The amount of rotation around the second axis in
 degrees. If first and last rotation axes are different (Tait-Bryan
@@ -1875,54 +1878,54 @@ void mat4d_perspective_new(double result[16], double fovy, double aspect, double
  *
  * @param result The resulting view transformation matrix.
  *
- * @param eye The position of the virtual camera (or eye).
+ * @param camPos The position of the virtual camera (or eye).
  *
- * @param center A point in 3D space that the camera is looking
- * at. (This value is not a vector that the camera is looking down).
+ * @param lookAtPt A point in 3D space that the camera is looking
+ * at. (This value is not a vector that the camera facing).
  *
- * @param up An up vector. If you don't know what to put here, start
+ * @param upVec An up vector. If you don't know what to put here, start
  * with 0,1,0. (The up vector must not be parallel to the view vector
- * calculated as center-eye.)
+ * calculated as lookAtPt-camPos.)
  */
 void mat4f_lookatVec_new(float result[16],
-                         const float eye[3],
-                         const float center[3],
-                         const float up[3])
+                         const float camPos[3],
+                         const float lookAtPt[3],
+                         const float upVec[3])
 {
 	/* Calculate look vector, sanity check */
-	float look[3], side[3], newUp[3], upCopy[3];
-	vec3f_sub_new(look, center, eye); // a look vector
+	float look[3], side[3], newUpVec[3], upVecCopy[3];
+	vec3f_sub_new(look, lookAtPt, camPos); // a look vector
 	if(vec3f_normSq(look) < .001)
 	{
 		msg(MSG_ERROR, "Your camera position (%f %f %f) is the same (or nearly the same) as the point that the camera should be looking at (%f %f %f). Setting view matrix to identity.\n",
-		    eye[0],    eye[1],    eye[2],
-		    center[0], center[1], center[2]);
+		    camPos[0],    camPos[1],    camPos[2],
+		    lookAtPt[0], lookAtPt[1], lookAtPt[2]);
 		mat4f_identity(result);
 		return;
 	}
 
 	/* Sanity check up vector */
-	vec3f_copy(upCopy, up); // a version of up variable that we can change.
-	if(vec3f_normSq(upCopy) < .001)
+	vec3f_copy(upVecCopy, upVec); // a version of up variable that we can change.
+	if(vec3f_normSq(upVecCopy) < .001)
 	{
-		msg(MSG_ERROR, "Your up vector (%f %f %f) is a zero vector or almost a zero vector. Assuming up vector is 0,1,0.\n", upCopy[0], upCopy[1], upCopy[2]);
-		vec3f_set(upCopy, 0, 1, 0);
+		msg(MSG_ERROR, "Your up vector (%f %f %f) is a zero vector or almost a zero vector. Assuming up vector is 0,1,0.\n", upVecCopy[0], upVecCopy[1], upVecCopy[2]);
+		vec3f_set(upVecCopy, 0, 1, 0);
 	}
 
-	vec3f_cross_new(side, look, upCopy);
+	vec3f_cross_new(side, look, upVecCopy);
 	if(vec3f_normSq(side) < .001)
 	{
 		msg(MSG_ERROR, "Your camera is facing the same direction as your up vector.");
-		msg(MSG_INFO, "CamPos:         %5.2f %5.2f %5.2f\n", eye[0], eye[1], eye[2]);
-		msg(MSG_INFO, "CamLookAtPoint: %5.2f %5.2f %5.2f\n", center[0], center[1], center[2]);
+		msg(MSG_INFO, "CamPos:         %5.2f %5.2f %5.2f\n", camPos[0], camPos[1], camPos[2]);
+		msg(MSG_INFO, "CamLookAtPoint: %5.2f %5.2f %5.2f\n", lookAtPt[0], lookAtPt[1], lookAtPt[2]);
 		msg(MSG_INFO, "CamLookVec:     %5.2f %5.2f %5.2f (calculated from camera position and lookat point)\n", look[0], look[1], look[2]);
-		msg(MSG_INFO, "CamUp:          %5.2f %5.2f %5.2f\n", upCopy[0], upCopy[1], upCopy[2]);
+		msg(MSG_INFO, "CamUp:          %5.2f %5.2f %5.2f\n", upVecCopy[0], upVecCopy[1], upVecCopy[2]);
 		mat4f_identity(result);
 		return;
 	}
 	vec3f_normalize(look);
 	vec3f_normalize(side);
-	vec3f_cross_new(newUp, side, look);
+	vec3f_cross_new(newUpVec, side, look);
 
 	/* Calculate rotation matrix that will be used to compute final matrix. */
 	float rotationPart[16];
@@ -1930,18 +1933,18 @@ void mat4f_lookatVec_new(float result[16],
 	rotationPart[ 0] = side[0];
 	rotationPart[ 4] = side[1];
 	rotationPart[ 8] = side[2];
-	rotationPart[ 1] = newUp[0];
-	rotationPart[ 5] = newUp[1];
-	rotationPart[ 9] = newUp[2];
+	rotationPart[ 1] = newUpVec[0];
+	rotationPart[ 5] = newUpVec[1];
+	rotationPart[ 9] = newUpVec[2];
 	rotationPart[ 2] = -look[0];
 	rotationPart[ 6] = -look[1];
 	rotationPart[10] = -look[2];
 
 	/* Calculate translation matrix that will be used to compute final matrix. */
-	float negEye[3];
-	vec3f_scalarMult_new(negEye, eye, -1);
+	float negCamPos[3];
+	vec3f_scalarMult_new(negCamPos, camPos, -1);
 	float translationPart[16];
-	mat4f_translateVec_new(translationPart, negEye);
+	mat4f_translateVec_new(translationPart, negCamPos);
 
 	/* Multiply the matrices together */
 	mat4f_mult_mat4f_new(result, rotationPart, translationPart);
@@ -1950,42 +1953,42 @@ void mat4f_lookatVec_new(float result[16],
  * defines the position and orientation of the virtual camera.
  * For full documentation, see mat4f_lookatVec_new()
  */
-void mat4d_lookatVec_new(double result[16], const double eye[3], const double center[3], const double up[3])
+void mat4d_lookatVec_new(double result[16], const double camPos[3], const double lookAtPt[3], const double upVec[3])
 {
 	/* Calculate look vector, sanity check */
-	double look[3], side[3], newUp[3], upCopy[3];
-	vec3d_sub_new(look, center, eye); // a look vector
+	double look[3], side[3], newUpVec[3], upVecCopy[3];
+	vec3d_sub_new(look, lookAtPt, camPos); // a look vector
 	if(vec3d_norm(look) < .001)
 	{
 		msg(MSG_ERROR, "Your camera position (%f %f %f) is the same (or nearly the same) as the point that the camera should be looking at (%f %f %f). Setting view matrix to identity.\n",
-		    eye[0],    eye[1],    eye[2],
-		    center[0], center[1], center[2]);
+		    camPos[0],    camPos[1],    camPos[2],
+		    lookAtPt[0], lookAtPt[1], lookAtPt[2]);
 		mat4d_identity(result);
 		return;
 	}
 
 	/* Sanity check up vector */
-	vec3d_copy(upCopy, up);
-	if(vec3d_norm(upCopy) < .001)
+	vec3d_copy(upVecCopy, upVec);
+	if(vec3d_norm(upVecCopy) < .001)
 	{
-		msg(MSG_ERROR, "Your up vector (%f %f %f) is a zero vector or almost a zero vector. Assuming up vector is 0,1,0.\n", upCopy[0], upCopy[1], upCopy[2]);
-		vec3d_set(upCopy, 0, 1, 0);
+		msg(MSG_ERROR, "Your up vector (%f %f %f) is a zero vector or almost a zero vector. Assuming up vector is 0,1,0.\n", upVecCopy[0], upVecCopy[1], upVecCopy[2]);
+		vec3d_set(upVecCopy, 0, 1, 0);
 	}
 
-	vec3d_cross_new(side, look, upCopy);
+	vec3d_cross_new(side, look, upVecCopy);
 	if(vec3d_normSq(side) < .001)
 	{
 		msg(MSG_ERROR, "Your camera is facing the same direction as your up vector.");
-		msg(MSG_INFO, "CamPos:         %5.2f %5.2f %5.2f\n", eye[0], eye[1], eye[2]);
-		msg(MSG_INFO, "CamLookAtPoint: %5.2f %5.2f %5.2f\n", center[0], center[1], center[2]);
+		msg(MSG_INFO, "CamPos:         %5.2f %5.2f %5.2f\n", camPos[0], camPos[1], camPos[2]);
+		msg(MSG_INFO, "CamLookAtPoint: %5.2f %5.2f %5.2f\n", lookAtPt[0], lookAtPt[1], lookAtPt[2]);
 		msg(MSG_INFO, "CamLookVec:     %5.2f %5.2f %5.2f (calculated from camera position and lookat point)\n", look[0], look[1], look[2]);
-		msg(MSG_INFO, "CamUp:          %5.2f %5.2f %5.2f\n", upCopy[0], upCopy[1], upCopy[2]);
+		msg(MSG_INFO, "CamUp:          %5.2f %5.2f %5.2f\n", upVecCopy[0], upVecCopy[1], upVecCopy[2]);
 		mat4d_identity(result);
 		return;
 	}
 	vec3d_normalize(look);
 	vec3d_normalize(side);
-	vec3d_cross_new(newUp, side, look);
+	vec3d_cross_new(newUpVec, side, look);
 
 	/* Calculate rotation matrix that will be used to compute final matrix. */
 	double rotationPart[16];
@@ -1993,18 +1996,18 @@ void mat4d_lookatVec_new(double result[16], const double eye[3], const double ce
 	rotationPart[ 0] = side[0];
 	rotationPart[ 4] = side[1];
 	rotationPart[ 8] = side[2];
-	rotationPart[ 1] = newUp[0];
-	rotationPart[ 5] = newUp[1];
-	rotationPart[ 9] = newUp[2];
+	rotationPart[ 1] = newUpVec[0];
+	rotationPart[ 5] = newUpVec[1];
+	rotationPart[ 9] = newUpVec[2];
 	rotationPart[ 2] = -look[0];
 	rotationPart[ 6] = -look[1];
 	rotationPart[10] = -look[2];
 
 	/* Calculate translation matrix that will be used to compute final matrix. */
-	double negEye[3];
-	vec3d_scalarMult_new(negEye, eye, -1);
+	double negCamPos[3];
+	vec3d_scalarMult_new(negCamPos, camPos, -1);
 	double translationPart[16];
-	mat4d_translateVec_new(translationPart, negEye);
+	mat4d_translateVec_new(translationPart, negCamPos);
 
 	/* Multiply the matrices together */
 	mat4d_mult_mat4d_new(result, rotationPart, translationPart);
@@ -2014,25 +2017,25 @@ void mat4d_lookatVec_new(double result[16], const double eye[3], const double ce
  * defines the position and orientation of the virtual camera.
  * For full documentation, see mat4f_lookatVec_new()
  */
-void mat4f_lookat_new(float result[16], float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ)
+void mat4f_lookat_new(float result[16], float camPosX, float camPosY, float camPosZ, float lookAtPtX, float lookAtPtY, float lookAtPtZ, float upVecX, float upVecY, float upVecZ)
 {
-	float eye[3], center[3], up[3];
-	vec3f_set(eye,       eyeX,    eyeY,    eyeZ);
-	vec3f_set(center, centerX, centerY, centerZ);
-	vec3f_set(up,         upX,     upY,     upZ);
-	mat4f_lookatVec_new(result, eye, center, up);
+	float camPos[3], lookAtPt[3], upVec[3];
+	vec3f_set(camPos,       camPosX,    camPosY,    camPosZ);
+	vec3f_set(lookAtPt, lookAtPtX, lookAtPtY, lookAtPtZ);
+	vec3f_set(upVec,         upVecX,     upVecY,     upVecZ);
+	mat4f_lookatVec_new(result, camPos, lookAtPt, upVec);
 }
 /** Creates a new lookat matrix (aka viewing transformation) which
  * defines the position and orientation of the virtual camera.
  * For full documentation, see mat4f_lookatVec_new()
  */
-void mat4d_lookat_new(double result[16], double eyeX, double eyeY, double eyeZ, double centerX, double centerY, double centerZ, double upX, double upY, double upZ)
+void mat4d_lookat_new(double result[16], double camPosX, double camPosY, double camPosZ, double lookAtPtX, double lookAtPtY, double lookAtPtZ, double upVecX, double upVecY, double upVecZ)
 {
-	double eye[3], center[3], up[3];
-	vec3d_set(eye,       eyeX,    eyeY,    eyeZ);
-	vec3d_set(center, centerX, centerY, centerZ);
-	vec3d_set(up,         upX,     upY,     upZ);
-	mat4d_lookatVec_new(result, eye, center, up);
+	double camPos[3], lookAtPt[3], upVec[3];
+	vec3d_set(camPos,       camPosX,    camPosY,    camPosZ);
+	vec3d_set(lookAtPt, lookAtPtX, lookAtPtY, lookAtPtZ);
+	vec3d_set(upVec,         upVecX,     upVecY,     upVecZ);
+	mat4d_lookatVec_new(result, camPos, lookAtPt, upVec);
 }
 
 

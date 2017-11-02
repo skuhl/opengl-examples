@@ -1509,7 +1509,7 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	/* Check that there is a valid program and VAO object for us to use. */
 	if(glIsProgram(geom->program) == 0)
 	{
-		msg(MSG_ERROR, "Program (%d) is invalid.\n", geom->program);
+		msg(MSG_ERROR, "Program (%d) is invalid. Have you initialized this kuhl_geometry object?\n", geom->program);
 		kuhl_errorcheck();
 		return;
 	}

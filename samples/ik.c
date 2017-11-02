@@ -22,22 +22,12 @@ static int renderStyle = 0;
 static kuhl_geometry *modelgeom = NULL;
 static float bbox[6];
 
-/** Set this variable to 1 to force this program to scale the entire
- * model and translate it so that we can see the entire model. This is
- * a useful setting to use when you are loading a new model that you
- * are unsure about the units and position of the model geometry. */
-#define FIT_TO_VIEW 0
-/** If FIT_TO_VIEW is set, this is the place to put the
- * center of the bottom face of the bounding box. If
- * FIT_TO_VIEW is not set, this is the location in world
- * coordinates that we want to model's origin to appear at. */
-static float placeToPutModel[3] = { 0, 0, 0 };
 
 #define GLSL_VERT_FILE "assimp.vert"
 #define GLSL_FRAG_FILE "assimp.frag"
 
 static float angles[] = { 10, 15, 20,  // arm 1
-                   20, 25, 30,  // arm 2
+                          20, 25, 30,  // arm 2
 };
 static int anglesCount = 6;
 static float target[4] = { 0, 4, 0, 1};
@@ -73,37 +63,6 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 }
 
 
-/** Gets a model matrix which is appropriate for the model that we have loaded. */
-void get_model_matrix(float result[16])
-{
-	mat4f_identity(result);
-	if(FIT_TO_VIEW == 0)
-	{
-		/* Translate the model to where we were asked to put it */
-		float translate[16];
-		mat4f_translateVec_new(translate, placeToPutModel);
-
-		/* Do inches to meters conversion if we are asked to. */
-		float scale[16];
-		mat4f_identity(scale);
-		mat4f_mult_mat4f_new(result, translate, scale);
-		return;
-	}
-	
-	/* Get a matrix to scale+translate the model based on the bounding
-	 * box. If the last parameter is 1, the bounding box will sit on
-	 * the XZ plane. If it is set to 0, the bounding box will be
-	 * centered at the specified point. */
-	float fitMatrix[16];
-	kuhl_bbox_fit(fitMatrix, bbox, 1);
-
-	/* Get a matrix that moves the model to the correct location. */
-	float moveToLookPoint[16];
-	mat4f_translateVec_new(moveToLookPoint, placeToPutModel);
-
-	/* Create a single model matrix. */
-	mat4f_mult_mat4f_new(result, moveToLookPoint, fitMatrix);
-}
 
 
 /** Get arm matrices given a set of angles. The arm2 matrix already has
@@ -355,10 +314,6 @@ void display()
 		                   1, // number of 4x4 float matrices
 		                   0, // transpose
 		                   perspective); // value
-
-//		float modelMat[16];
-//		get_model_matrix(modelMat);
-//		mat4f_stack_mult(stack, modelMat);
 
 
 

@@ -16,7 +16,6 @@ ivs-test-right.txt
 /bin/Debug/
 /lib/Debug/
 /samples/*.dir/
-/dgr/dgr-relay.dir/
 /lib/kuhl.dir/
 /.vs
 /Win32

@@ -131,7 +131,7 @@ void display()
 		 * matches what is in the z-buffer, then there is a definitive
 		 * answer about if the new fragment should be shown or not
 		 * based on the setting that is available in glDepthFunc() or
-		 * the default glFdepthFunc() setting.
+		 * the default glDepthFunc() setting.
 		 *
 		 * However, if we the geometry is almost the same (i.e., we
 		 * draw two quads on top of each other but don't make them

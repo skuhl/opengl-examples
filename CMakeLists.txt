@@ -250,7 +250,7 @@ endif()
 #
 # macOS: As of Oct 2017, using Clang as a compiler results in an error
 # when compiling against VRPN.
-if(NOT APPLE OR (APPLE AND ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")))
+if(NOT APPLE OR (APPLE AND (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")))
 	find_package(VRPN)
 endif()
 if(VRPN_FOUND)
@@ -270,10 +270,6 @@ if(FFMPEG_FOUND)
 	set(HAVE_FFMPEG_DEFINITION "")
 endif()
 
-# --- pthreads (required for DGR) ---
-set(CMAKE_THREADS_PREFER_PTHREAD TRUE)   # prefer pthread over other threading libraries
-# set(THREADS_PREFER_PTHREAD_FLAG TRUE)   # prefer -pthread compiler flag over just using -lpthread, but it might not be supported by all compilers.
-find_package(Threads)
 
 # --- LibOVR (Oculus Rift) ---
 set(MISSING_OVR_DEFINITION "MISSING_OVR")
@@ -304,7 +300,7 @@ elseif(WIN32)
 endif()
 
 # Set the preprocessor flags.
-set(PREPROC_DEFINE "MOUSEMOVE_GLFW;${FREETYPE_FOUND_DEFINITION};${ASSIMP_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION};${IMAGEMAGICK_FOUND_DEFINITION};${HAVE_FFMPEG_DEFINITION}")
+set(PREPROC_DEFINE "${FREETYPE_FOUND_DEFINITION};${ASSIMP_FOUND_DEFINITION};${MISSING_VRPN_DEFINITION};${MISSING_OVR_DEFINITION};${IMAGEMAGICK_FOUND_DEFINITION};${HAVE_FFMPEG_DEFINITION}")
 
 # Look in lib folder for libraries and header files
 include_directories("lib")
@@ -317,8 +313,6 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/lib)
 add_subdirectory(${PROJECT_SOURCE_DIR}/samples)
 # build fake vrpn server
 add_subdirectory(${PROJECT_SOURCE_DIR}/vrpn)
-# build DGR relay
-add_subdirectory(${PROJECT_SOURCE_DIR}/dgr)
 # build self tests
 add_subdirectory(${PROJECT_SOURCE_DIR}/selftests)
 

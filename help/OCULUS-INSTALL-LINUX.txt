@@ -1,5 +1,9 @@
-Linux support for Oculus Rift is still considered experimental, and must be
-compiled from source. You will need to be on a computer that you have root
+Linux support for Oculus Rift is considered experimental, and must be
+compiled from source. You will need to be on a computer that you have root.
+
+If you have an NVIDIA card with the 380 series drivers, the Oculus
+will likely not be detected as a display. The instructions here have
+been confirmed to work with NVIDIA driver version 340.
  
 IMPORTANT: These instructions are based on the Oculus SDK version
 0.5.0.1. If you use a different version, these instructions may not be

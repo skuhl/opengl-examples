@@ -39,13 +39,15 @@ viewmat_eye camcontrolOculusWindows::get_separate(float pos[3], float rot[16], v
 
 	// Get eye offsets
 	ovrEyeRenderDesc eyeRenderDesc[2];
-	eyeRenderDesc[0]  = ovr_GetRenderDesc(oculus->session, ovrEye_Left, oculus->hmdDesc.DefaultEyeFov[0]);
-	eyeRenderDesc[1] = ovr_GetRenderDesc(oculus->session, ovrEye_Right, oculus->hmdDesc.DefaultEyeFov[1]);
-	oculus->HmdToEyeOffset[0] = eyeRenderDesc[0].HmdToEyeOffset; // -X for left eye
-	oculus->HmdToEyeOffset[1] = eyeRenderDesc[1].HmdToEyeOffset; // +X for right eye
+	ovrPosef      hmdToEyeViewPose[2];
+	ovrHmdDesc hmdDesc = ovr_GetHmdDesc(oculus->session);
+	eyeRenderDesc[0] = ovr_GetRenderDesc(oculus->session, ovrEye_Left, hmdDesc.DefaultEyeFov[0]);
+	eyeRenderDesc[1] = ovr_GetRenderDesc(oculus->session, ovrEye_Right, hmdDesc.DefaultEyeFov[1]);
+	hmdToEyeViewPose[0] = eyeRenderDesc[0].HmdToEyePose;
+	hmdToEyeViewPose[1] = eyeRenderDesc[1].HmdToEyePose;
 
 	 // Given eye offsets, get position and orientation
-	ovr_GetEyePoses(oculus->session, oculus->frameIndex, ovrTrue, oculus->HmdToEyeOffset, oculus->EyeRenderPose, &(oculus->sensorSampleTime));
+	ovr_GetEyePoses(oculus->session, oculus->frameIndex, ovrTrue, hmdToEyeViewPose, oculus->EyeRenderPose, &(oculus->sensorSampleTime));
 	const char *vrpnObject = kuhl_config_get("viewmat.vrpn.object");
 	if (vrpnObject != NULL)
 	{

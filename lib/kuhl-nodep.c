@@ -164,9 +164,14 @@ char* kuhl_find_file(const char *filename)
 	char commonDirs[32][256];
 	int commonDirsLen = 0;
 #ifdef _WIN32
-	strncpy(commonDirs[commonDirsLen++], "../../samples", 255); // On windows, binaries get put into extra subdirectory
+	// On windows, binaries get put into extra subdirectory
+	strncpy(commonDirs[commonDirsLen++], "../../samples", 255);
+	strncpy(commonDirs[commonDirsLen++], "../../models", 255);
+	strncpy(commonDirs[commonDirsLen++], "../../", 255);
 #else
 	strncpy(commonDirs[commonDirsLen++], "../samples", 255); // Find fragment programs in samples directory
+	strncpy(commonDirs[commonDirsLen++], "../models", 255);
+	strncpy(commonDirs[commonDirsLen++], "../", 255);
 #endif
 	strncpy(commonDirs[commonDirsLen++], "/home/kuhl/public-ogl/data", 255); // CCSR
 	strncpy(commonDirs[commonDirsLen++], "/local/kuhl-public-share/opengl/data", 255); // Rekhi
@@ -577,4 +582,43 @@ double kuhl_gauss(void)
 	phase = 1 - phase;
 
 	return X;
+}
+
+
+/* Tokenizes a string by the provided delimiter. The results are
+ * stored in an array that has a length maxlen. Each string in the
+ * array should be free()'d by the caller. */
+int kuhl_tokenize(char *result[], const int resultLen, const char *str, const char *delim)
+{
+	if(result == NULL)
+		return 0;
+	
+	/* Make pointers in result array point to NULL */
+	for(int i=0; i<resultLen; i++)
+		result[i] = NULL;
+
+	/* Make a copy of str so that we can modify it */
+	char *str2 = strdup(str);
+	char *saveptr = NULL;
+	char *token = strtok_r(str2, delim, &saveptr);
+
+	/* Iterate through all tokens or as many tokens will fit into
+	 * result array. */
+	int curPos = 0;
+	while(token != NULL && curPos < resultLen)
+	{
+		/* Make a copy of the token, caller will have to free() it */
+		result[curPos++] = strdup(token);
+		token = strtok_r(NULL, " ", &saveptr);
+	}
+
+	free(str2);
+	return curPos; // return # of items in result array
+}
+
+void kuhl_tokenize_free(char *result[], int resultlen)
+{
+	for(int i=0; i<resultlen; i++)
+		if(result[i] != NULL)
+			free(result[i]);
 }
