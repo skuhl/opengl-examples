@@ -138,12 +138,8 @@ printMessage "Connecting to IVS computers..."
 
 # Start X on each computer
 for i in $NODES; do
-    printMessage "Starting on X on ${i}"
+	printMessage "Starting X on ${i}"
 
-	EXEC="$1"
-	shift # remove IVS from args
-	shift # remove exec from args
-	
 	SCRIPT_FILE=".temp-dgr-run-$i.sh"
 	# use \$ to write a literal $ into the file
 cat <<EOF > "${SCRIPT_FILE}"
@@ -174,8 +170,9 @@ fi
 
 # Run our program with the arguments passed to it:
 cd ${IVS_TEMP_DIR}/bin
-echo ${EXEC} --config config/ivs/${i%%.*}.ini "${@}"
-${EXEC} --config config/ivs/${i%%.*}.ini "${@}"
+# TODO: If there are spaces in the arguments, they won't work!
+echo ${1} --config config/ivs/${i%%.*}.ini ${@:2}
+${1} --config config/ivs/${i%%.*}.ini ${@:2}
 
 # Kill any running jobs (for example, xinit) after our program exits.
 # kill xterm window which automatically gets created by xinit first.
@@ -185,7 +182,9 @@ killall xterm
 #kill `jobs -r -p` &> /dev/null
 EOF
 
-printMessage "Starting node $i"
+echo ${SCRIPT_FILE}
+
+printMessage "Starting program on $i"
 ssh -q -t -t -x -M ${IVS_USER}@${i} "$(cat $SCRIPT_FILE)" &
 
 #sleep 5   # Sleep between each computer we ssh into.
