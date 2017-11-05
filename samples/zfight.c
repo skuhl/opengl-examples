@@ -163,7 +163,11 @@ void display()
 		 * you are drawing. To do this, try editing the fragment
 		 * program used by this program so that when the triangles are
 		 * red, that you also do: "gl_FragDepth = gl_FragCoord.z +
-		 * .001;"
+		 * .001;" IMPORTANT: If your fragment program sometimes sets
+		 * gl_FragDepth, it must always write it. If it is never
+		 * written, then it will be automatically set to
+		 * gl_FragCoord.z. For more details, see:
+		 * https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/gl_FragDepth.xhtml
 		*/
 		if(1) // TRY CHANGING THIS TO 0 to draw the white and red geometry *exactly* the same way.
 		{
