@@ -10,45 +10,7 @@
 #include "dgr.h"
 
 static int viewmat_swapinterval = 0;
-
-/** Call once per frame to update the 'fps' variable. */
 static float fps = 0;
-static void bufferswap_stats_fps(void)
-{
-#define FPS_SAMPLES 40
-	static long list[FPS_SAMPLES];
-	static int index = 0;         // where next value should be stored
-	static int listfull = 0;      // have we filled up the array?
-
-	long now = kuhl_microseconds();
-
-	if(listfull)
-	{
-		long oldest = list[index]; // the item we are going to overwrite is the oldest one in the list.
-		long change = now-oldest;  // time to render FPS_SAMPLES frames in microseconds
-		float usecPerFrame = (float) change/FPS_SAMPLES;
-		float secPerFrame = usecPerFrame / 1000000.0f;
-		fps = 1.0f/secPerFrame;
-	}
-
-	list[index] = now;
-	
-	index = (index+1) % FPS_SAMPLES; // increment index, wrap around
-	if(index == 0)
-		listfull = 1;
-
-	// msg(MSG_INFO, "FPS: %f", fps);
-	
-#undef FPS_SAMPLES
-}
-
-/** Retrieve the current FPS. This will work as long as you use
- * bufferswap() to swap your buffers. */
-float bufferswap_fps(void)
-{
-	return fps;
-}
-
 
 /** Guesses or esimates the refresh rate of the monitor that is
     displaying our graphics.
@@ -111,6 +73,78 @@ int bufferswap_get_refresh_rate(void)
 
 
 
+/** Call once per frame to update the 'fps' variable. */
+static void bufferswap_stats_fps(void)
+{
+#define FPS_SAMPLES 40
+	static long list[FPS_SAMPLES];
+	static int index = 0;         // where next value should be stored
+	static int listfull = 0;      // have we filled up the array?
+
+	long now = kuhl_microseconds();
+
+	list[index] = now;
+
+	/* List becomes full when we write last record in list */
+	if(listfull == 0 && index == FPS_SAMPLES-1)
+		listfull = 1;
+
+	long newestIdx = index;
+	long oldestIdx = (index+1)%FPS_SAMPLES;
+
+	// change = time to render FPS_SAMPLES-1 frames. If the list
+	// contains 40 timestamps, then the difference between the
+	// newest and oldest timestamp is time between 39 frames.
+	long change = list[newestIdx]-list[oldestIdx];
+	
+	/* Calculate FPS */
+	if(listfull == 1)
+	{
+		float usecPerFrame = (float) change/(FPS_SAMPLES-1);
+		float secPerFrame = usecPerFrame / 1000000.0f;
+		fps = 1.0f/secPerFrame;
+
+		int refreshRate = bufferswap_get_refresh_rate();
+		if(refreshRate == 59)
+			refreshRate = 60;
+		long expectedTimePerFrame = (1.0/refreshRate*1000000);
+		long timeLastFrame = list[newestIdx] - list[(newestIdx-1+FPS_SAMPLES)%FPS_SAMPLES];
+
+		if(timeLastFrame > expectedTimePerFrame*1.5)
+		{
+			msg(MSG_DEBUG, "Skipped a frame. %ld usec between framebuffer swaps (budget %ld usec).", timeLastFrame, expectedTimePerFrame);
+		}
+
+#if 0
+		// Show the time spent to render all of the frames that we
+		// have records for. Note that index points to the oldest item
+		// in the array. Since the array stores the time that each
+		// frame happened, we subtract to get the time spent rendering
+		// each frame.
+		for(int i=oldestIdx+1; i<oldestIdx+FPS_SAMPLES; i++)
+			printf("%ld ", list[i%FPS_SAMPLES]-list[(i-1)%FPS_SAMPLES]);
+		printf("\n");
+#endif
+	}
+
+	
+
+	index = (index+1) % FPS_SAMPLES; // increment index, wrap around
+	// msg(MSG_INFO, "FPS: %f", fps);
+	
+#undef FPS_SAMPLES
+}
+
+/** Retrieve the current FPS. This will work as long as you use
+ * bufferswap() to swap your buffers. */
+float bufferswap_fps(void)
+{
+	return fps;
+}
+
+
+
+
 static void bufferswap_simple(void)
 {
 	glfwSwapBuffers(kuhl_get_window());
@@ -126,9 +160,9 @@ static void bufferswap_latencyreduce()
 	static int count = 0;
 	if(count < 100)
 		count++;
-	static float avgRenderingLastFrame = -1;
-	static float avgRenderingLastFrameDev = 0;
-	static float avgWaitingForVsync = -1;
+	static int avgRenderingLastFrame = -1;
+	static int avgRenderingLastFrameDev = 0;
+	static int avgWaitingForVsync = -1;
 	static long postswap_prev = -1;
 	static long postsleep_prev = -1;
 
@@ -137,6 +171,8 @@ static void bufferswap_latencyreduce()
 	if(vsyncTime == -1)
 	{
 		int refreshRate = bufferswap_get_refresh_rate();
+		if(refreshRate == 59)
+			refreshRate = 60;
 		// 1 / (frames/second) * 1000000 microseconds/second = microseconds/frame
 		vsyncTime = (int) (1.0/refreshRate * 1000000);
 		msg(MSG_INFO, "Latency reduction is turned on; assuming monitor is %dHz and we have %d microseconds/frame\n", refreshRate, vsyncTime);
@@ -178,35 +214,13 @@ static void bufferswap_latencyreduce()
 	}
 
 	/* Figure out if we missed a frame */
-	float missedFrames = 0.0f;
-	long elapsed = postswap - postswap_prev;
+	int elapsed = postswap - postswap_prev;
+	/* How much time does it appear that we miss the vsync by. */
+	int missedBy = elapsed - vsyncTime;
+	if(missedBy < 0)
+		missedBy = 0;
 	
-	if(elapsed > (((long)vsyncTime)*3)/2)
-	{
-		static int maxMessages = 20;
-		missedFrames = elapsed / (float) vsyncTime - 1.0f;
-		if(count > 60) // don't print message for first 60 frames.
-		{
-			if(maxMessages >= 0)
-				maxMessages--;
-
-			if(maxMessages > 0)
-				msg(MSG_INFO, "Missed approximately %0.2f frame(s), %ld usec have elapsed", missedFrames, elapsed);
-			else
-			{
-				if(maxMessages == 0)
-					msg(MSG_INFO, "No more messages about dropped frames, but messages will still be saved to log file.");
-				msg(MSG_DEBUG, "Missed approximately %0.2f frame(s), %ld usec have elapsed", missedFrames, elapsed);
-			}
-#if 0				
-			msg(MSG_WARNING, "Displayed previous frame at  %ld", postswap_prev);
-			msg(MSG_WARNING, "Displayed this frame at      %ld", postswap);
-			msg(MSG_WARNING, "Expected this frame before   %ld", postswap_prev+(((long)vsyncTime)*3)/2);
-#endif
-		}
-	}
-
-	const float alpha = .95f; // weight to put on running average
+	const float alpha = .98f; // weight to put on running average
 
 	// Update average waiting for vsync time. Note: The wait time can
 	// get large if the frame rate is low. I.e., if we miss a vsync,
@@ -217,8 +231,8 @@ static void bufferswap_latencyreduce()
 	/* Update our estimates of the time it takes to render a
 	 * frame---both the average and our estimate of the deviation.  */
 	int timeRenderingLastFrame = preswap - postsleep_prev;
-	avgRenderingLastFrame    = alpha * avgRenderingLastFrame + (1-alpha) * timeRenderingLastFrame;
-	avgRenderingLastFrameDev = alpha * avgRenderingLastFrameDev + (1-alpha)*(fabsf(avgRenderingLastFrame-timeRenderingLastFrame));
+	avgRenderingLastFrame    = alpha * avgRenderingLastFrame    + (1-alpha) * timeRenderingLastFrame;
+	avgRenderingLastFrameDev = alpha * avgRenderingLastFrameDev + (1-alpha) * abs(avgRenderingLastFrame-timeRenderingLastFrame);
 	
 	if(count < 60) // collected enough data so our averages are reasonable.
 	{
@@ -228,24 +242,18 @@ static void bufferswap_latencyreduce()
 	}
 
 	/* Add in more time based on our deviation estimate */
-	float renderingTimeMax = avgRenderingLastFrame + avgRenderingLastFrameDev * 2;
-
-	/** The ideal time that we want to save in microseconds. If we set
-	 * this to 1000, and we have 16666 microseconds per frame, then we
-	 * will try to sleep such that the rendering will finish at
-	 * 16666-1000=15666 microseconds. If we set this value to 0, then
-	 * we won't save any extra time and we risk missing a frame. */
-	const int buffer_time = 1500;
+	int renderingTimeMax = avgRenderingLastFrame + avgRenderingLastFrameDev * 2;
 
 	/* We have vsyncTime until the next vsync. Subtract out expected
 	 * rendering time and the buffer time. Also subtract out
 	 * additional time if we missed one or more frames. */
-	int sleepTime = (int) (vsyncTime - renderingTimeMax - buffer_time - missedFrames*1000);
+	static const int safetyNet = 1500;
+	int sleepTime = (int) (vsyncTime - safetyNet - renderingTimeMax);
 
 #if 0
-	msg(MSG_INFO, "Sleeping for %6d = %6d(avail) - %6.0f(rendermax) - %d(buf) - %6.0f(missedframe)\n", sleepTime, vsyncTime, renderingTimeMax, buffer_time, missedFrames*1000);
-	msg(MSG_INFO, "LastRender=%d AvgRender=%.0f AvgRenderDev=%.0f VsyncWait=%d AvgVsyncWait=%.0f",
-	    timeRenderingLastFrame, avgRenderingLastFrame, avgRenderingLastFrameDev, timeWaitingForVsync, avgWaitingForVsync);
+	msg(MSG_INFO, "Sleeping for %6d = %6d(avail) - %d(safety) - %d(rendermax) \n", sleepTime, vsyncTime, safetyNet, renderingTimeMax);
+	msg(MSG_INFO, "LastRender=%d AvgRender=%d AvgRenderDev=%d VsyncWait=%d AvgVsyncWait=%df MissedBy=%ld",
+	    timeRenderingLastFrame, avgRenderingLastFrame, avgRenderingLastFrameDev, timeWaitingForVsync, avgWaitingForVsync, missedBy);
 #endif
 	
 	postsleep_prev = postswap;

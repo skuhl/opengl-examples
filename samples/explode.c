@@ -131,6 +131,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 		case GLFW_KEY_ESCAPE:
 			glfwSetWindowShouldClose(window, GL_TRUE);
 			break;
+		case GLFW_KEY_EQUAL:  // The = and + key on most keyboards
 		case GLFW_KEY_KP_ADD: // increase size of points and width of lines
 		{
 			GLfloat currentPtSize;
