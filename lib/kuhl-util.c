@@ -1783,8 +1783,8 @@ GLuint kuhl_read_texture_array(const unsigned char* array, int width, int height
 		float maxAniso;
 		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAniso);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAniso);
-		msg(MSG_DEBUG, "Anisotropic filtering: Available, set to maximum value (%0.1f)\n",
-		       maxAniso);
+		// Don't print message because kuhl_make_label() creates textures repeatedly.
+		//msg(MSG_DEBUG, "Anisotropic filtering: Available, set to maximum value (%0.1f)\n", maxAniso);
 	}
 
 	kuhl_errorcheck();
@@ -1992,6 +1992,7 @@ kuhl_geometry* kuhl_label_geom(kuhl_geometry *geom, GLuint program, float *width
 	float fpsLabelAspectRatio = kuhl_make_label(message,
 	                                            &labelTexture,
 	                                            color, bgcolor, pointsize);
+
 	if(labelTexture != 0)
 	{
 		kuhl_geometry_texture(geom, labelTexture, "tex", 1);
