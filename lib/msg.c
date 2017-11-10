@@ -264,6 +264,7 @@ static void msg_init(void)
 #ifdef MSG_SIMPLE
 	// Set to 0 to overwrite existing log file, 1 to append.
 	const int append = 0;
+	logfile = strdup("log.txt");
 #else
 	const int append = kuhl_config_boolean("log.append", 0,0);
 
