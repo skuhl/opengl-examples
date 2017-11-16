@@ -1342,6 +1342,12 @@ unsigned int kuhl_geometry_count(const kuhl_geometry *geom)
 */
 void kuhl_geometry_new(kuhl_geometry *geom, GLuint program, unsigned int vertexCount, GLint primitive_type)
 {
+	if(geom == NULL)
+	{
+		msg(MSG_FATAL, "You called kuhl_geometry_new() with geom parameter set to NULL.");
+		exit(EXIT_FAILURE);
+	}
+	
 	kuhl_errorcheck();
 
 	/* Ask OpenGL for one vertex array object "name" (really an
@@ -1679,7 +1685,7 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
  * kuhl_geometry_indices(). It also frees the vertex array object in
  * kuhl_geometry.
  *
- * Important note: kuhl_geometry_init() does not allocate space for
+ * Important note: kuhl_geometry_new() does not allocate space for
  * textures---so kuhl_geometry_delete() does not delete textures! This
  * behavior is useful in the event that a single texture is shared
  * among several kuhl_geometry structs.
