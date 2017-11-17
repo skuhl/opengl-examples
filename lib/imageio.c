@@ -294,6 +294,7 @@ char* image_label(const char *label, int* width, int* height, float color[3], fl
 	// Get a small image to draw on 
 	ImageInfo* image_info = CloneImageInfo((ImageInfo*)NULL);
 	Image* image = NewMagickImage(image_info, 10, 10, &background);
+	SetImageDepth(image, 8); // make sure we are drawing to an 8-bit image
 	DrawInfo* draw_info = CloneDrawInfo(image_info, (DrawInfo*) NULL);
 
 	CloneString(&draw_info->text, label);
