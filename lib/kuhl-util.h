@@ -25,7 +25,7 @@
 #pragma once
 
 #include "windows-compat.h"
-
+#define _GNU_SOURCE
 #include <math.h>
 #include <stdio.h>
 #include <string.h>

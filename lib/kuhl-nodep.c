@@ -9,7 +9,7 @@
  * easy to use this file with other projects.
  */
 
-#define __GNU_SOURCE // make sure are allowed to use GNU extensions. Redundant if compiled with -std=gnu99
+#define _GNU_SOURCE // make sure are allowed to use GNU extensions. Redundant if compiled with -std=gnu99
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>

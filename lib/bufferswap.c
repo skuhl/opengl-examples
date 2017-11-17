@@ -1,6 +1,7 @@
 #ifdef _WIN32
 #include "windows-compat.h" // usleep() on windows
 #else
+#define _GNU_SOURCE
 #include <unistd.h> // usleep() on Linux and Mac
 #endif
 
