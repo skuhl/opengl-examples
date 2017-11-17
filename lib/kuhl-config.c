@@ -15,7 +15,10 @@
  *
  */
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 #include "kuhl-util.h"

@@ -10,6 +10,10 @@
 
 #include "libkuhl.h"
 
+// mkdir()
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
