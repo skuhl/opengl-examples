@@ -1571,11 +1571,14 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	 * messages. */
 	int numBones = 0;
 #ifdef KUHL_UTIL_USE_ASSIMP
-	loc = glGetUniformLocation(geom->program, "BoneMat");
-	if(loc != -1 && geom->bones)
+	if(geom->bones)
 	{
-		glUniformMatrix4fv(loc, MAX_BONES, 0, geom->bones->matrices[0]);
-		numBones = geom->bones->count;
+		loc = glGetUniformLocation(geom->program, "BoneMat");
+		if(loc != -1)
+		{
+			glUniformMatrix4fv(loc, MAX_BONES, 0, geom->bones->matrices[0]);
+			numBones = geom->bones->count;
+		}
 	}
 #endif
 	loc = glGetUniformLocation(geom->program, "NumBones");
@@ -1585,7 +1588,7 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 	loc = glGetUniformLocation(geom->program, "GeomTransform");
 	if(loc != -1)
 		glUniformMatrix4fv(loc, 1, 0, geom->matrix);
-	else
+	else if(geom->has_been_drawn == 0)
 	{ /* If the geom->matrix was not the identity and if it is not in
 	   * the GLSL shader program, print a helpful warning message. */
 		float identity[16];
@@ -1593,7 +1596,7 @@ void kuhl_geometry_draw(kuhl_geometry *geom)
 		float sum = 0;
 		for(int i=0; i<16; i++)
 			sum += fabsf(identity[i] - (geom->matrix)[i]);
-		if(sum > 0.00001 && geom->has_been_drawn == 0)
+		if(sum > 0.00001)
 		{
 			printf("\n\n");
 			printf("ERROR: You must include a 'uniform mat4 GeomTransform' variable in your GLSL shader (program %d) when you load/display a model with kuhl-util. This matrix should be applied to the vertices in your model before you multiply by your modelview matrix in the vertex program. For example:\n\ngl_Position = Projection * ModelView * GeomTransform * in_Position\n\n", geom->program);
