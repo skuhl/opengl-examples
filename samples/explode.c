@@ -113,9 +113,6 @@ void update()
 		}
 		g = g->next;
 	}
-
-
-	
 }
 
 
@@ -144,17 +141,6 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			glPointSize(temp);
 			printf("Point size is %f (can be between %f and %f)\n", temp, sizeRange[0], sizeRange[1]);
 			kuhl_errorcheck();
-
-			GLfloat currentLineWidth;
-			GLfloat widthRange[2] = { -1.0f, -1.0f };
-			glGetFloatv(GL_LINE_WIDTH, &currentLineWidth);
-			glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, widthRange);
-			temp = currentLineWidth+1;
-			if(temp > widthRange[1])
-				temp = widthRange[1];
-			glLineWidth(temp);
-			printf("Line width is %f (can be between %f and %f)\n", temp, widthRange[0], widthRange[1]);
-			kuhl_errorcheck();
 			break;
 		}
 		case GLFW_KEY_MINUS: // decrease size of points and width of lines
@@ -170,17 +156,6 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			glPointSize(temp);
 			printf("Point size is %f (can be between %f and %f)\n", temp, sizeRange[0], sizeRange[1]);
 			kuhl_errorcheck();
-
-			GLfloat currentLineWidth;
-			GLfloat widthRange[2] = { -1.0f, -1.0f };
-			glGetFloatv(GL_LINE_WIDTH, &currentLineWidth);
-			glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, widthRange);
-			temp = currentLineWidth-1;
-			if(temp < widthRange[0])
-				temp = widthRange[0];
-			glLineWidth(temp);
-			printf("Line width is %f (can be between %f and %f)\n", temp, widthRange[0], widthRange[1]);
-			kuhl_errorcheck();
 			break;
 		}
 		case GLFW_KEY_X:
@@ -188,24 +163,6 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 			break;
 		case GLFW_KEY_Z:
 			update();
-			break;
-		case GLFW_KEY_SPACE: // Toggle different sections of the GLSL fragment shader
-			renderStyle++;
-			if(renderStyle > 9)
-				renderStyle = 0;
-			switch(renderStyle)
-			{
-				case 0: printf("Render style: Diffuse (headlamp light)\n"); break;
-				case 1: printf("Render style: Texture (color is used on non-textured geometry)\n"); break;
-				case 2: printf("Render style: Texture+diffuse (color is used on non-textured geometry)\n"); break;
-				case 3: printf("Render style: Vertex color\n"); break;
-				case 4: printf("Render style: Vertex color + diffuse (headlamp light)\n"); break;
-				case 5: printf("Render style: Normals\n"); break;
-				case 6: printf("Render style: Texture coordinates\n"); break;
-				case 7: printf("Render style: Front (green) and back (red) faces based on winding\n"); break;
-				case 8: printf("Render style: Front (green) and back (red) based on normals\n"); break;
-				case 9: printf("Render style: Depth (white=far; black=close)\n"); break;
-			}
 			break;
 	}
 }
