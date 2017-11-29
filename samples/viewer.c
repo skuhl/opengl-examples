@@ -77,7 +77,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 		case GLFW_KEY_W:
 		{
 			// Toggle between wireframe and solid
-			int polygonMode;
+			GLint polygonMode;
 			glGetIntegerv(GL_POLYGON_MODE, &polygonMode);
 			if(polygonMode == GL_LINE)
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -88,7 +88,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 		case GLFW_KEY_P:
 		{
 			// Toggle between points and solid
-			int polygonMode;
+			GLint polygonMode;
 			glGetIntegerv(GL_POLYGON_MODE, &polygonMode);
 			if(polygonMode == GL_POINT)
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -99,7 +99,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 		case GLFW_KEY_C:
 		{
 			// Toggle front, back, and no culling
-			int cullMode;
+			GLint cullMode;
 			glGetIntegerv(GL_CULL_FACE_MODE, &cullMode);
 			if(glIsEnabled(GL_CULL_FACE))
 			{
