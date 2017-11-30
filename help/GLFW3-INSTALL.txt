@@ -13,6 +13,7 @@ Install glfw via homebrew.
 === Windows installation ==
 
 Download a precompiled version (we recommend the 32-bit version).
+You can find it at: http://www.glfw.org/download.html
 
 Alternatively, download the GLFW3 source, run cmake-gui and set the
 source code location and the place to build the binaries to the root
