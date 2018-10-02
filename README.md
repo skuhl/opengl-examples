@@ -1,6 +1,8 @@
 OpenGL examples
 ===============
 
+This project has moved to Gitlab: https://gitlab.com/kuhl/opengl-examples
+
 This code provides a library to support the development of basic OpenGL and virtual reality applications. It was developed at Michigan Technological University for interactive computer graphics and virtual reality courses. Features include:
 
 * Cross platform: Runs on Linux, Mac OS X, and Windows.
